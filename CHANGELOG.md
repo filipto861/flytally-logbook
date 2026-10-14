@@ -1,5 +1,15 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency acceptance browser failure triage (Draft PR #338)
+
+- Owner-local acceptance of `5957261f`: PostgreSQL16 schema 8/8, complete Node tests 1528/1528, TypeScript/Next builds PASS; authenticated Playwright 3/8 PASS, 5/8 FAIL. Combined gate correctly failed.
+- Fixed direct `flight_expenses.amount_encoding` / `.amount_minor_units` SELECT on v20 flight detail using optional `to_jsonb` metadata extraction.
+- Opt-in 3.8 browser runner now installs the standalone v21 review DDL **once after disposable PostgreSQL bootstrap**, before Playwright. Existing D3b/legacy cases continue with NULL metadata; no change to production auto-migrations.
+- Split KWD/JPY and signed v13 test registrations/IDs by desktop/mobile to prevent real duplicate-flight guards being triggered by prior project, and wait for a strictly newer manual backup ID.
+- Added diagnostic errors for signed v13 backup HTTP download and recovery preflight/action failure; root cause of previous v13 HTTP failure remains **UNVERIFIED** until rerun.
+- Current branch-head tests/build/browser **NOT RUN**. Production Neon, migration and deployment untouched; v21 remains unregistered. A passing browser suite is still required.
+
+
 ## 14 October 2026 — Currency v13 recovery schema guard and browser acceptance (Draft #338)
 
 - Added explicit v21 compatibility preflight before both signed v13 exact restore preview and execution; detects exact monetary metadata in ordinary and archived records and refuses recovery when any required target schema column is missing. All-NULL legacy metadata is not converted to a guessed currency.
