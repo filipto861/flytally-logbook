@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Currency v21 restore acceptance evidence (14 Oct 2026):** PostgreSQL integration cases added for round-tripping KWD flight and expense amount tuples and aborting the complete transaction if a child amount encoding is invalid. New tests NOT RUN; Trash currency-bearing restore remains unavailable pending controlled runtime implementation.
+
+
 **Currency 3.8.0 recovery integration in progress (14 Oct 2026):** exact restore expense matching now retains source integer amount and encoding/exponent identity, reading missing pre-v21 columns safely as absent. No currency guessing or FX. New work NOT RUN; overall 3.8.0 not released.
 
 
