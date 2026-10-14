@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**3.8.0 signed backup browser acceptance (14 Oct, not released):** The authenticated v13 browser test now downloads via the normal user-visible Download link rather than a separate APIRequestContext which returned HTTP 401 in the isolated localhost fixture. A browser-origin GET diagnoses auth failures; the downloaded file is checked for version, server signature and exact currency before restore. All production endpoint authentication remains unchanged. Latest browser result on predecessor `a3f0d809`: **6/8 PASS**; updated test **NOT RUN**.
+
+
 **3.8.0 Currency browser recovery hardening (14 Oct 2026; unreleased):** Flight detail expense projection now reads optional v21 precision fields through `to_jsonb`, compatible with v20 and v21. Opt-in owner-local desktop/mobile browser runner applies the reviewed v21 candidate once to its verified disposable PostgreSQL fixture before all tests, with unique currency test identities per browser project. Signed v13 recovery and KWD/JPY Trash test diagnostics improved. **Owner-local full suite and PG passed on `5957261f`, but browser acceptance failed (3/8); newer fix commit NOT TESTED.** No production v21 migration or release.
 
 
