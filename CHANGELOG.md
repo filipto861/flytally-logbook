@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Align legacy browser source-contract assertions with canonical Currency fixture (unreleased)
+
+- On exact `aac5222f7b7757298dd7b9028d465c43d5cbba49`, owner-local fixture test **9/9 PASS**, Gate1 TypeScript and isolated PostgreSQL **6/6 + 9/9 + 3/3 PASS**; full Node **1546/1549 PASS**, three FAIL from obsolete `generate_series(1,19)` assertions in `safety-pilot-pic-sp2`, `v323-auth-browser`, `v340-flight-entry-phase1`. No build/browser gate executed in this rerun.
+- Updated those three historical fixture contract assertions, not their aviation/financial behavior, to require canonical v1..19 migration names and ordered registry with no test-only placeholder. No application runtime, SQL migration or production fixture altered. Test-only commits `7c1b7820f690c44cc07b13fe5d9da549606aed75`, `8052f2d427b2d5f73a7f9f766b4bc4aa0722f023`. Source inspection confirmed new assertion strings match fixture; **local targeted/full test, build and browser still NOT RUN on corrected commit**.
+- PR #338 stays **Draft**; Neon canonical remains physical v20, no merge/migration/deploy, independent review and owner authorization remain open.
+
 ## 14 October 2026 — Repair disposable Currency v21 browser migration fixture (unreleased; retest pending)
 
 - Owner-local full acceptance at exact `d671707d9de30d1710ad7a9944461b4b5e2a3731`: isolated PG16 migration gates PASS (6/6 static, 9/9 integration, 3/3 execution SQL); TypeScript PASS; full Node **1549/1549 PASS**; Next.js build PASS in both standard and browser steps. Authenticated browser tests **0/8 FAIL** (desktop/mobile) at startup with `v21: registry name drift at version 1`; login redirects were only symptoms. Browser database was a separately verified, disposable PG16 instance; shutdown succeeded.
