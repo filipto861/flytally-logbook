@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+## 14 October 2026 — Signed-v13 preflight fixture and protected GPS deletion browser follow-up (Draft #338)
+
+- Owner browser on exact `4e0975f5`: optimized Next build PASS; isolated PG16/browser **5/8 PASS**. Signed v13 HTTP 401 fixed: real browser downloaded backup and proceeded to restore preview; desktop/mobile preview failed because browser fixture `fstd_sessions` lacked `record_revision` (not an established production schema defect).
+- Updated disposable FSTD table to mirror the canonical certified-correction optimizer columns `record_revision`, `correction_reason`, `correction_opened_at`, `correction_opened_by_user_id`; added source contract regression.
+- One desktop D3b GPS track deletion timed out after 5 seconds with DOM row still visible. Updated its browser test to separately wait for persisted deletion and refreshed UI, retaining the signed pre-restore backup/remaining-track checks. No claim that the previous deletion persisted or failed; next run must determine this.
+- New HEAD TypeScript, unit, PostgreSQL, browser and build **NOT RUN**. No migration v21 registration, production DB action, merge or deployment.
+
+
 ## 14 October 2026 — Signed v13 authenticated download test fix (Draft #338)
 
 - Owner-local Playwright on `a3f0d809`: **6/8 PASS**; both desktop/mobile failures were the signed v13 `page.request` download GET returning HTTP 401. Existing D3b and monetary Trash UI flows passed, no runtime or PostgreSQL failure reported.
