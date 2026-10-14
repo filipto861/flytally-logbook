@@ -6,6 +6,8 @@ This is the **capability register**, not a dated test log. Implementation and pr
 
 **Currency 3.8.0 consolidated Draft PR #338 (13 Oct 2026):** ISO-backed Settings currency choice/server validation and conservative unknown legacy denomination presentation are implemented on branch; disabled unsafe global highest-cost sorting and excluded unverified aircraft costs from currency-labelled expense totals. Current rates, new expenses and flight cost snapshots still need v21 exact currency write/read integration before the release; no migration activated. **Status: IN PROGRESS / NOT DEPLOYED.**
 
+**Currency 3.8.0 implementation hardening (14 Oct 2026):** Strict saved rate snapshots and error handling, expense ISO scaling/read projection, visible invalid-expense state, v21-null-aware legacy Trash restore are implemented in Draft #338; not merged/tested on current HEAD. New-money Trash restore and signed v13 backup still gate release.
+
 **Currency 3.8.0 accelerated delivery (14 Oct 2026):** Consolidated in-progress currency UI/backend in Draft PR #338; one local acceptance runner now combines disposable PostgreSQL16, full tests and build. New runner NOT RUN; no v21 registration, deployment or historical re-denomination.
 
 **Currency M2-A-1 compatibility assessment (13 Oct 2026):** Isolated PostgreSQL 16 and static tests each 6/6 PASS on candidate `8a9e03e0`. Source audit identifies signed portable v13 backup, aircraft share decimal/coercion, billing and certified/void provenance as integration boundaries; new currency write paths and v21 activation remain NOT IMPLEMENTED. [Audit](docs/product/3_8_0_CURRENCY_M2A1_COMPATIBILITY_AUDIT_2026-10-13.md).
