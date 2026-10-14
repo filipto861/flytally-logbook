@@ -11,6 +11,7 @@ $expectedBranch = "feat/3.8.0-m2a0-schema-review-main"
 $oldPath = $env:Path
 $oldDatabaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
 $oldPgIntegration = [Environment]::GetEnvironmentVariable("FLYTALLY_POSTGRES_INTEGRATION", "Process")
+$oldV21Release = [Environment]::GetEnvironmentVariable("FLYTALLY_V21_RELEASE_DISPOSABLE", "Process")
 $oldPgPassword = [Environment]::GetEnvironmentVariable("PGPASSWORD", "Process")
 $temporaryRoot = $null
 $dataDir = $null
@@ -96,6 +97,7 @@ try {
   $env:PGPASSWORD = ""
   $env:DATABASE_URL = "postgresql://flytally@127.0.0.1:$port/flytally_currency_test"
   $env:FLYTALLY_POSTGRES_INTEGRATION = "1"
+  $env:FLYTALLY_V21_RELEASE_DISPOSABLE = "1"
   # Format each database field explicitly to avoid platform-dependent scalar
   # concatenation and preserve actionable, non-secret diagnostics on mismatch.
   $identityOutput = @(& $psql -X -w -v ON_ERROR_STOP=1 -At -F "|" -d $env:DATABASE_URL -c "SELECT current_database(), current_user, host(inet_server_addr()), inet_server_port()")
@@ -116,6 +118,8 @@ try {
   Assert-Exit "Static M2-A-0 tests"
   npm run test:target -- tests/integration/postgres-currency-v21-schema.test.ts
   Assert-Exit "Focused PostgreSQL M2-A-0 tests"
+  npm run test:target -- tests/integration/postgres-currency-v21-release.test.ts
+  Assert-Exit "Disposable PostgreSQL v21 production artifact migration test"
   if ($Full) {
     npm run test:postgres:full
     Assert-Exit "Full PostgreSQL regression"
@@ -124,6 +128,7 @@ try {
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
   Restore-Env "FLYTALLY_POSTGRES_INTEGRATION" $oldPgIntegration
+  Restore-Env "FLYTALLY_V21_RELEASE_DISPOSABLE" $oldV21Release
   Restore-Env "PGPASSWORD" $oldPgPassword
   $env:Path = $oldPath
 
