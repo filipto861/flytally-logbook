@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications";
 import { ensureV300AircraftSharingSchema } from "@/lib/v300-aircraft-sharing-schema";
-import { parseAircraftShareSnapshot,type AircraftShareRate,type AircraftShareSnapshot } from "@/lib/aircraft-sharing";
+import { parseAircraftShareSnapshot,encodeAircraftShareRate,type AircraftShareRate,type AircraftShareSnapshot } from "@/lib/aircraft-sharing";
 import { parseOptionalBilling } from "@/lib/billing";
 import { validateAircraftProfile } from "@/lib/aircraft-profile-validation";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
@@ -30,7 +30,7 @@ export async function shareAircraftProfile(_:ShareAircraftState,form:FormData):P
   ) LIMIT 1` as Array<{display_name:string}>;
   if(!connection[0])return{ok:false,message:"Aircraft profiles can only be sent to accepted Connections."};
 
-  const rows=await sql`SELECT a.id,a.registration,a.aircraft_type,a.aircraft_make,a.aircraft_model,a.aircraft_variant,a.icao_type,a.aircraft_class,a.regulatory_category,a.balloon_class,a.balloon_group,a.evidence,a.default_role,a.default_operation_type,a.default_engine_type,a.billing_basis,a.note,a.part_fcl_credit_class,a.part_fcl_credit_basis,a.part_fcl_credit_from,a.default_price_per_hour,
+  const rows=await sql`SELECT a.id,a.registration,a.aircraft_type,a.aircraft_make,a.aircraft_model,a.aircraft_variant,a.icao_type,a.aircraft_class,a.regulatory_category,a.balloon_class,a.balloon_group,a.evidence,a.default_role,a.default_operation_type,a.default_engine_type,a.billing_basis,a.note,a.part_fcl_credit_class,a.part_fcl_credit_basis,a.part_fcl_credit_from,a.default_price_per_hour,a.default_price_currency_code,a.default_price_currency_minor_units,a.default_price_per_hour_decimal::text default_price_per_hour_decimal,
     p.mime_type photo_mime_type,p.image_base64 photo_base64
     FROM aircraft a LEFT JOIN aircraft_photos p ON p.aircraft_id=a.id AND p.user_id=a.user_id
     WHERE a.id=${sourceAircraftId} AND a.user_id=${session.userId} LIMIT 1` as Array<Record<string,unknown>>;
@@ -41,16 +41,29 @@ export async function shareAircraftProfile(_:ShareAircraftState,form:FormData):P
   const profile={
     registration:text(aircraft.registration).toUpperCase(),aircraftType:text(aircraft.aircraft_type),aircraftMake:text(aircraft.aircraft_make),aircraftModel:text(aircraft.aircraft_model),aircraftVariant:text(aircraft.aircraft_variant),icaoType:text(aircraft.icao_type).toUpperCase(),aircraftClass:text(aircraft.aircraft_class).toUpperCase(),regulatoryCategory:text(aircraft.regulatory_category).toUpperCase(),balloonClass:text(aircraft.balloon_class).toUpperCase(),balloonGroup:text(aircraft.balloon_group).toUpperCase(),evidence:text(aircraft.evidence).toUpperCase(),partFclCreditClass:text(aircraft.part_fcl_credit_class).toUpperCase(),partFclCreditBasis:text(aircraft.part_fcl_credit_basis),partFclCreditFrom:text(aircraft.part_fcl_credit_from).slice(0,10)
   };
-  const snapshot:AircraftShareSnapshot={profile};
+  const snapshot:AircraftShareSnapshot={version:2,profile};
   if(includeDefaults)snapshot.defaults={defaultRole:text(aircraft.default_role)||"PIC",defaultOperationType:text(aircraft.default_operation_type).toUpperCase(),defaultEngineType:text(aircraft.default_engine_type).toUpperCase(),billingBasis:text(aircraft.billing_basis)};
 
-  const rates=(includeCurrentRate||includeRateHistory)?await sql`SELECT aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source FROM rates WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${profile.registration} ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 250` as Array<Record<string,unknown>>:[];
-  const mapped=rates.map(row=>({aircraftType:text(row.aircraft_type),validFrom:text(row.valid_from).slice(0,10),pricePerHour:Number(row.price_per_hour)||0,dryPricePerHour:row.dry_price_per_hour===null||row.dry_price_per_hour===undefined?null:Number(row.dry_price_per_hour)||0,source:text(row.source)} satisfies AircraftShareRate)).filter(rate=>rate.pricePerHour>0&&iso(rate.validFrom));
+  const rates=(includeCurrentRate||includeRateHistory)?await sql`SELECT aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source,currency_code,currency_minor_units,price_per_hour_decimal::text price_per_hour_decimal,dry_price_per_hour_decimal::text dry_price_per_hour_decimal FROM rates WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${profile.registration} ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 250` as Array<Record<string,unknown>>:[];
+  const rateRows=rates.filter(row=>iso(text(row.valid_from).slice(0,10)));
+  const encoded=rateRows.map(encodeAircraftShareRate);
+  if(encoded.some(value=>value===null))return{ok:false,message:"A saved aircraft rate has inconsistent currency data. Review the rate before sharing."};
+  const mapped=encoded as AircraftShareRate[];
   if(includeCurrentRate){
     const current=mapped.find(rate=>rate.validFrom<=today());
     const fallback=Number(aircraft.default_price_per_hour)||0;
     if(current)snapshot.currentRate=current;
-    else if(fallback>0)snapshot.currentRate={aircraftType:profile.aircraftType,validFrom:today(),pricePerHour:fallback,dryPricePerHour:null,source:"Shared current aircraft rate"};
+    else if(fallback>0){
+      const sharedFallback=encodeAircraftShareRate({
+        aircraft_type:profile.aircraftType,valid_from:today(),price_per_hour:fallback,
+        dry_price_per_hour:null,source:"Shared current aircraft rate",
+        currency_code:aircraft.default_price_currency_code,
+        currency_minor_units:aircraft.default_price_currency_minor_units,
+        price_per_hour_decimal:aircraft.default_price_per_hour_decimal,dry_price_per_hour_decimal:null
+      });
+      if(!sharedFallback)return{ok:false,message:"The default aircraft rate has inconsistent currency data. Review it before sharing."};
+      snapshot.currentRate=sharedFallback;
+    }
   }
   if(includeRateHistory&&mapped.length)snapshot.rateHistory=mapped;
   if(includeNotes)snapshot.note=text(aircraft.note).slice(0,5000);
