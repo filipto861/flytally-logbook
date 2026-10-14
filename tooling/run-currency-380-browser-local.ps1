@@ -16,6 +16,7 @@ $oldD3bTargetedPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_TARGET
 $oldD3bMigrationsPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE", "Process")
 $oldPgPassword = [Environment]::GetEnvironmentVariable("PGPASSWORD", "Process")
 $oldAuthBrowser = [Environment]::GetEnvironmentVariable("FLYTALLY_AUTH_BROWSER", "Process")
+$oldCurrencyBrowser = [Environment]::GetEnvironmentVariable("FLYTALLY_CURRENCY_V21_BROWSER", "Process")
 $oldLocalPostgres = [Environment]::GetEnvironmentVariable("FLYTALLY_LOCAL_POSTGRES", "Process")
 $oldSessionSecret = [Environment]::GetEnvironmentVariable("SESSION_SECRET", "Process")
 $oldSigningSecret = [Environment]::GetEnvironmentVariable("SIGNING_SECRET", "Process")
@@ -116,6 +117,7 @@ try {
   $env:PGPASSWORD = ""
   $env:DATABASE_URL = "postgresql://flytally@127.0.0.1:$port/flytally_currency_test"
   $env:FLYTALLY_AUTH_BROWSER = "1"
+  $env:FLYTALLY_CURRENCY_V21_BROWSER = "1"
   $env:FLYTALLY_LOCAL_POSTGRES = "1"
   # Format each database field explicitly to avoid platform-dependent scalar
   # concatenation and preserve actionable, non-secret diagnostics on mismatch.
@@ -143,6 +145,7 @@ try {
   Restore-Env "FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE" $oldD3bMigrationsPg16
   Restore-Env "PGPASSWORD" $oldPgPassword
   Restore-Env "FLYTALLY_AUTH_BROWSER" $oldAuthBrowser
+  Restore-Env "FLYTALLY_CURRENCY_V21_BROWSER" $oldCurrencyBrowser
   Restore-Env "FLYTALLY_LOCAL_POSTGRES" $oldLocalPostgres
   Restore-Env "SESSION_SECRET" $oldSessionSecret
   Restore-Env "SIGNING_SECRET" $oldSigningSecret
