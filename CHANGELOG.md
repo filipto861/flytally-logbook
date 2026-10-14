@@ -1,5 +1,14 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency v13 recovery schema guard and browser acceptance (Draft #338)
+
+- Added explicit v21 compatibility preflight before both signed v13 exact restore preview and execution; detects exact monetary metadata in ordinary and archived records and refuses recovery when any required target schema column is missing. All-NULL legacy metadata is not converted to a guessed currency.
+- Corrected double-escaped rate-decimal regex in currency-bearing Trash runtime that would reject valid values such as `1234.125`. Added unit/source regression cases.
+- Added 3.8.0 authenticated desktop/mobile browser scenarios to verify exact KWD/JPY Trash restoration and signed stored v13 backup download/restore. Preserved the 55 original browser contracts and their frozen historical run evidence; registered four new canonical browser targets.
+- Added `tooling/run-currency-380-browser-local.ps1` creating and shutting down a dedicated local PG16 cluster; consolidated acceptance now supports optional `-WithBrowser`.
+- All tests/build/browser on latest HEAD **NOT RUN**. Earlier owner-local PASS at `46d8b184` only. Production v21 migration **NOT REGISTERED**, no remote DB changes, no merge/deploy.
+
+
 ## 14 October 2026 — Currency-aware atomic Trash restore (Draft #338)
 
 - Added a v21 archive restore path within the existing one-transaction flight, GPS track, expense and archive-mark CTE. Restore preserves precise source rate decimal/currency/exponent and per-expense encoding/minor units; existing v20 legacy statement remains intact.
