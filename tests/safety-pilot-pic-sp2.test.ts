@@ -84,10 +84,10 @@ test("SP2 browser coverage exercises manual and connected Actual PIC modes on th
   assert.match(db,/resetSafetyPilotPicFixture/);
   // The disposable v1..v19 fixture must use canonical migration names, not
   // an anonymous generated-series registry that v21 correctly rejects.
-  assert.match(bootstrap,/readFileSync\\(new URL\\("\\.\\.\\/lib\\/migration-plan\\.ts"/);
-  assert.match(bootstrap,/preappliedMigrations\\.length!==19/);
-  assert.match(bootstrap,/preappliedMigrations\\.some\\(\\(migration,index\\)=>migration\\.version!==index\\+1\\)/);
-  assert.match(bootstrap,/preappliedMigrations\\.map\\(migration/);
+  assert.ok(bootstrap.includes('readFileSync(new URL("../lib/migration-plan.ts"'));
+  assert.ok(bootstrap.includes("preappliedMigrations.length!==19"));
+  assert.ok(bootstrap.includes("preappliedMigrations.some((migration,index)=>migration.version!==index+1)"));
+  assert.ok(bootstrap.includes("preappliedMigrations.map(migration"));
   assert.doesNotMatch(bootstrap,/browser-smoke-preapplied/);
   assert.match(bootstrap,/pic_commander_basis TEXT CHECK/);
   assert.match(bootstrap,/CREATE TABLE flight_connected_crew/);
