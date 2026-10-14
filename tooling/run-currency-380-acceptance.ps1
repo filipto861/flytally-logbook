@@ -1,4 +1,4 @@
-# FlyTally 3.8.0 Currency — one-command owner-local acceptance.
+# FlyTally 3.8.0 Currency - one-command owner-local acceptance.
 # No remote DB, no migration registration, no deployment. ASCII for Windows PowerShell 5.1.
 # Usage: powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-380-acceptance.ps1
 $ErrorActionPreference = "Stop"
