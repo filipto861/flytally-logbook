@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency 3.8.0 owner-local acceptance PASS; controlled release outstanding
+
+- On exact SHA `0192570a240dc3473b6dea15c7908a15e7ee16d8`: targeted share 6/6; TypeScript PASS; static SQL 6/6; disposable PG16 9/9; full Node 1544/1544; Next build PASS with 41/41 static pages; authenticated desktop/mobile Playwright 8/8. Both temporary local PG servers stopped. Local-only evidence, no CI or production test.
+- Read-only production preflight: Vercel READY/main `dcc8ebbf`; Neon PG18.6 registry versions 1–20 contiguous, no v21 fields/constraints. Counts rates/aircraft/flights/expenses/deleted/backups 33/25/315/0/8/24.
+- No release authority provided, v21 remains unregistered REVIEW candidate, no production DB/deploy/merge. Protect verified backup and historical evidence, approve migration and registry sequencing before deployment.
+
 ## 14 October 2026 — Align aircraft sharing source-contract test with SQL aliases (unreleased)
 
 - Owner-local complete Currency 3.8.0 acceptance ran on exact `f1a3b63ab533d7521c64319e50058d8ec0f4edf6`. TypeScript **PASS**, static v21 schema checks **6/6 PASS**, native disposable PG16 **9/9 PASS**, full Node source/unit **1543/1544 PASS**; one failing source-contract regex at `tests/v380-currency-share-integrity.test.ts:87`. PostgreSQL cluster on `127.0.0.1:56397` stopped cleanly. Because Gate 2 failed, Next.js build and authenticated desktop/mobile browser gates **NOT RUN**.
