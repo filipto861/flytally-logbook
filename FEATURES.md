@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Currency 3.8.0 signed v13 browser completion (14 Oct; Draft #338):** Owner-local desktop/mobile browser on `afe862a6` passed 7/8, including all monetary Trash flows and mobile signed-v13 exact restore. Desktop signed-v13 did not complete within default whole-test 30s; reason still unverified. Browser recovery now requires an explicit server-side success/error result before checking exact persisted rates and expenses, with bounded longer timeout for the backup+restore workflow. Current changes NOT RUN and unreleased.
+
+
 **Currency 3.8.0 browser verification (14 Oct; Draft #338):** The protected signed-v13 Download flow is now exercised with real browser session successfully reaching restore preview. Follow-up work fixes missing FSTD certification correction columns in **disposable test fixture only**, and separates GPS deletion database verification from UI revalidation. Previous exact browser `4e0975f5`: build PASS, **5/8 browser**; new HEAD NOT RUN. Currency v21 remains unregistered and unreleased.
 
 
