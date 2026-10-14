@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Currency 3.8.0 recovery integration in progress (14 Oct 2026):** exact restore expense matching now retains source integer amount and encoding/exponent identity, reading missing pre-v21 columns safely as absent. No currency guessing or FX. New work NOT RUN; overall 3.8.0 not released.
+
+
 **Capability inventory reviewed:** 13 October 2026. **Current release status and next milestone:** [ROADMAP](ROADMAP.md). **Dated release/deploy evidence:** [CHANGELOG](CHANGELOG.md). This inventory describes capabilities and restrictions; it does not independently establish deployment or provider permission.
 
 This is the **capability register**, not a dated test log. Implementation and production statements below are limited by their stated scope. Execution order and outstanding release gates are in [ROADMAP](ROADMAP.md); merged changes and source evidence in [CHANGELOG](CHANGELOG.md). The [verbatim previous feature inventory](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) retains every earlier milestone claim and test candidate for audit; old `Draft`/`FAIL`/`OFF` captions there are historical.
