@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency source-level pre-release review and independent AI handoff (Draft #338)
+
+- READ-ONLY inspected exact `ab4aff5a` source: identified that aircraft sharing sends legacy Number-only rates and recipient ON CONFLICT updates legacy price fields without exact monetary metadata; confirmed stored dual-amount validator checks each field's validity but not legacy-vs-exact amount consistency. Runtime new SQL needs physical v21 ahead of deployment while migration registry remains v20. These are unshipped **release blockers** and require independent validation/targeted tests.
+- Created [review + independent DeepSeek handoff](docs/product/3_8_0_CURRENCY_PRE_RELEASE_INDEPENDENT_REVIEW_HANDOFF_2026-10-14.md) with source paths, frozen D1–D4, minimal M3/M4 milestone design, acceptance matrix and distinctions between source facts and NOT RUN checks. DeepSeek review **NOT YET RECEIVED**.
+- No runtime/test/SQL modifications, no new tests run, no Neon branch/DDL/DML, no merge/deploy. PR remains Draft; earlier `669708fe` application acceptance and isolated PG18 rehearsal remain scoped historic evidence.
+
 ## 14 October 2026 — v21 temporary-Neon PG18.6 migration rehearsal (unreleased; Draft #338)
 
 - Owner-authorized temporary child of Logbook Shadow production created and verified as nonprimary/nondefault: `ft-380-v21-pg18-rehearsal-20261014` (`br-gentle-glade-b1erhgaj`, parent `br-dark-math-b1snjzub`). Database `neondb`, PostgreSQL **18.6**, initial contiguous migrations v1–v20, no v21 columns/checks.
