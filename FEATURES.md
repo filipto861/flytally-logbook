@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Currency 3.8.0 browser verification (14 Oct; Draft #338):** The protected signed-v13 Download flow is now exercised with real browser session successfully reaching restore preview. Follow-up work fixes missing FSTD certification correction columns in **disposable test fixture only**, and separates GPS deletion database verification from UI revalidation. Previous exact browser `4e0975f5`: build PASS, **5/8 browser**; new HEAD NOT RUN. Currency v21 remains unregistered and unreleased.
+
+
 **3.8.0 signed backup browser acceptance (14 Oct, not released):** The authenticated v13 browser test now downloads via the normal user-visible Download link rather than a separate APIRequestContext which returned HTTP 401 in the isolated localhost fixture. A browser-origin GET diagnoses auth failures; the downloaded file is checked for version, server signature and exact currency before restore. All production endpoint authentication remains unchanged. Latest browser result on predecessor `a3f0d809`: **6/8 PASS**; updated test **NOT RUN**.
 
 
