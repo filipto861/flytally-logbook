@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Fix TypeScript parser stop discovered by owner-local Currency acceptance
+
+- Owner-local exact `4093fd34` combined acceptance started a verified disposable PostgreSQL16 on `127.0.0.1:64768` and stopped at **typecheck TS1128**, `lib/aircraft-sharing.ts:137`; all later stages **NOT RUN**. Database identity matched; isolated server shut down cleanly.
+- Corrected an extra `}` closing `parsed.defaults` on source line 118, one-line syntax patch in commit `965c8988dd3ea1d2556cd2b0a4d756d080ae6bde`; no behavior or database change intended. A direct GitHub compare to previous HEAD confirmed **only** `lib/aircraft-sharing.ts` changed (1 addition/1 deletion).
+- New commit local/CI typecheck, tests, build and browser **NOT RUN**; PR #338 stays Draft, v21 unregistered, no Neon/Vercel production mutations. Complete owner-local acceptance must be rerun on corrected HEAD.
+
 ## 14 October 2026 — Currency sharing and signed recovery hardening candidate (PR #338; NOT YET VERIFIED)
 
 - Owner froze one coherent implementation block, one full acceptance and one controlled release. Source edits staged through application-code SHA `ff22625b40f06faeb32b574d17cec14bb9bafaa6` on Draft PR #338; no new branch/production change.
