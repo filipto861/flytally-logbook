@@ -62,3 +62,21 @@ test("saved expenses project encoding and exponent before displaying or rewritin
   assert.match(detailPage,/SELECT id,category,label,amount_minor,currency,amount_encoding,amount_minor_units,created_at::text/);
   assert.match(detailPage,/FlightExpensesStandalone action=/);
 });
+
+test("invalid expense currencies and precision never disappear from financial summary",()=>{
+  assert.match(costTotalsLabel([{amount_minor:1500,currency:"XAU"}]),/Some expense amounts unavailable/);
+  assert.equal(costTotalsLabel([
+    {amount_minor:1200,currency:"EUR",amount_encoding:"iso_minor_units",amount_minor_units:2},
+    {amount_minor:1234,currency:"JPY",amount_encoding:"iso_minor_units",amount_minor_units:3}
+  ]),"12.00 EUR · Some expense amounts unavailable");
+});
+
+test("legacy v21-null monetary columns remain restorable while known new metadata stays protected",()=>{
+  const trash=readFileSync(new URL("../lib/flight-trash.ts",import.meta.url),"utf8");
+  assert.match(trash,/flight_data->>'price_currency_code' IS NULL/);
+  assert.match(trash,/flight_data->>'price_currency_minor_units' IS NULL/);
+  assert.match(trash,/flight_data->>'price_per_hour_decimal' IS NULL/);
+  assert.match(trash,/e\.value->>'amount_encoding' IS NOT NULL/);
+  assert.doesNotMatch(trash,/AND NOT \(flight_data \?\| ARRAY\['price_currency_code'/);
+  assert.match(trash,/This archived flight requires the newer monetary restore process/);
+});
