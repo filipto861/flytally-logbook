@@ -85,7 +85,7 @@ export async function acceptAircraftProfileShare(shareId:number,form:FormData){
     SELECT 1 FROM pilot_connections c WHERE c.status='accepted' AND ((c.requester_user_id=s.source_user_id AND c.recipient_user_id=s.recipient_user_id) OR (c.recipient_user_id=s.source_user_id AND c.requester_user_id=s.recipient_user_id))
   ) connected FROM aircraft_profile_shares s JOIN users u ON u.id=s.source_user_id WHERE s.id=${shareId} AND s.recipient_user_id=${session.userId} AND s.status='pending' LIMIT 1` as Array<Record<string,unknown>>;
   const row=rows[0];if(!row||!row.connected)redirect(`/connections/aircraft/${shareId}?error=unavailable`);
-  const snapshot=parseAircraftShareSnapshot(row.snapshot_data),p=snapshot.profile,reg=p.registration;if(!reg)redirect(`/connections/aircraft/${shareId}?error=invalid`);
+  const snapshot=parseAircraftShareSnapshot(row.snapshot_data),p=snapshot.profile,reg=p.registration;if(snapshot.rateError)redirect(`/connections/aircraft/${shareId}?error=rates`);if(!reg)redirect(`/connections/aircraft/${shareId}?error=invalid`);
   const validated=validateAircraftProfile({
     aircraftMake:p.aircraftMake,aircraftModel:p.aircraftModel,evidence:p.evidence,aircraftClass:p.aircraftClass,regulatoryCategory:p.regulatoryCategory,
     balloonClass:p.balloonClass,balloonGroup:p.balloonGroup,partFclCreditClass:p.partFclCreditClass,partFclCreditBasis:p.partFclCreditBasis,partFclCreditFrom:p.partFclCreditFrom,
@@ -105,15 +105,43 @@ export async function acceptAircraftProfileShare(shareId:number,form:FormData){
   if(importDefaults&&snapshot.defaults){const operationDefaultIncluded=snapshot.defaults.defaultOperationType!==undefined,engineDefaultIncluded=snapshot.defaults.defaultEngineType!==undefined;queries.push(sql`UPDATE aircraft SET default_role=${snapshot.defaults.defaultRole||"PIC"},default_operation_type=CASE WHEN ${operationDefaultIncluded} THEN ${snapshot.defaults.defaultOperationType||null} ELSE default_operation_type END,default_engine_type=CASE WHEN ${engineDefaultIncluded} THEN ${snapshot.defaults.defaultEngineType||null} ELSE default_engine_type END,billing_basis=${snapshot.defaults.billingBasis},updated_at=NOW() WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg}`)};
   if(importNotes)queries.push(sql`UPDATE aircraft SET note=${snapshot.note||""},updated_at=NOW() WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg}`);
   if(importPhoto)queries.push(sql`INSERT INTO aircraft_photos(aircraft_id,user_id,mime_type,image_base64,updated_at) SELECT a.id,${session.userId},${text(row.photo_mime_type)||"image/jpeg"},${text(row.photo_base64)},NOW() FROM aircraft a WHERE a.user_id=${session.userId} AND UPPER(TRIM(a.registration))=${reg} ON CONFLICT(aircraft_id) DO UPDATE SET user_id=EXCLUDED.user_id,mime_type=EXCLUDED.mime_type,image_base64=EXCLUDED.image_base64,updated_at=NOW()`);
-  const addRate=(rate:AircraftShareRate,source:string)=>{if(rate.pricePerHour<=0||!iso(rate.validFrom))return;queries.push(sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source) VALUES(${session.userId},${reg},${rate.aircraftType||p.aircraftType},${rate.validFrom},${rate.pricePerHour},${rate.dryPricePerHour},${source}) ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET aircraft_type=EXCLUDED.aircraft_type,price_per_hour=EXCLUDED.price_per_hour,dry_price_per_hour=EXCLUDED.dry_price_per_hour,source=EXCLUDED.source`)};
+  const rateStatementIndexes:number[]=[];
+  const addRate=(rate:AircraftShareRate,source:string)=>{
+    const exact=rate.rateKind==="exact",currencyCode=exact?rate.currencyCode:null,
+      minorUnits=exact?rate.minorUnits:null,priceDecimal=exact?rate.priceDecimal:null,
+      dryDecimal=exact?rate.dryPriceDecimal:null;
+    rateStatementIndexes.push(queries.length);
+    queries.push(sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,
+      price_per_hour,dry_price_per_hour,source,currency_code,currency_minor_units,
+      price_per_hour_decimal,dry_price_per_hour_decimal)
+      VALUES(${session.userId},${reg},${rate.aircraftType||p.aircraftType},${rate.validFrom},
+        ${rate.pricePerHour},${rate.dryPricePerHour},${source},${currencyCode},
+        ${minorUnits},${priceDecimal},${dryDecimal})
+      ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET
+        aircraft_type=EXCLUDED.aircraft_type,price_per_hour=EXCLUDED.price_per_hour,
+        dry_price_per_hour=EXCLUDED.dry_price_per_hour,source=EXCLUDED.source,
+        currency_code=EXCLUDED.currency_code,currency_minor_units=EXCLUDED.currency_minor_units,
+        price_per_hour_decimal=EXCLUDED.price_per_hour_decimal,
+        dry_price_per_hour_decimal=EXCLUDED.dry_price_per_hour_decimal
+      WHERE ${exact} OR (rates.currency_code IS NULL AND rates.currency_minor_units IS NULL
+        AND rates.price_per_hour_decimal IS NULL AND rates.dry_price_per_hour_decimal IS NULL)
+      RETURNING id`);
+  };
   if(importHistory)for(const rate of snapshot.rateHistory??[])addRate(rate,rate.source||"Shared rate history");
   if(importCurrent&&snapshot.currentRate)addRate(snapshot.currentRate,snapshot.currentRate.source||"Shared current rate");
   queries.push(sql`UPDATE aircraft_profile_shares SET status='accepted',responded_at=NOW(),imported_aircraft_id=(SELECT id FROM aircraft WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg} LIMIT 1) WHERE id=${shareId} AND recipient_user_id=${session.userId} AND status='pending'`);
-  await sql.transaction(queries);
+  let rateSkipped=false;
+  try{
+    const results=await sql.transaction(queries);
+    rateSkipped=rateStatementIndexes.some(index=>!Array.isArray(results[index])||results[index].length!==1);
+  }catch(error){
+    console.error("aircraft-share-import-failed",{shareId,userId:session.userId,error});
+    redirect(`/connections/aircraft/${shareId}?error=rates`);
+  }
   await sql`UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE user_id=${session.userId} AND href=${`/connections/aircraft/${shareId}`}`;
   await notifyUser(Number(row.source_user_id),{kind:"aircraft_share_accepted",title:`${reg} added to aircraft`,body:`${text(row.source_name)?"Your aircraft profile share was accepted.":"Aircraft profile share accepted."}`,href:"/database",dedupeKey:`aircraft-share-accepted:${shareId}`});
   refreshSharing();revalidatePath("/flights");revalidatePath("/dashboard");
-  redirect(`/database?imported=${encodeURIComponent(reg)}`);
+  redirect(`/database?imported=${encodeURIComponent(reg)}${rateSkipped?"&ratesSkipped=1":""}`);
 }
 
 export async function declineAircraftProfileShare(shareId:number){
