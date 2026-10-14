@@ -68,7 +68,7 @@ function parseShareRate(value:unknown,version:1|2):AircraftShareRate|null{
     typeof dryDecimal!=="string"||!/^(?:0|[1-9]\d{0,14})(?:\.\d{1,12})?$/.test(dryDecimal)
     ||Number(dryDecimal)!==dry)return null;
   return{...base,rateKind:"exact",currencyCode:currency.code,minorUnits:currency.minorUnits,
-    priceDecimal:r.priceDecimal,dryPriceDecimal};
+    priceDecimal:r.priceDecimal,dryPriceDecimal:dryDecimal};
 }
 
 /** Reusable, fail-closed transport mapping of the DB's legacy+exact columns.
