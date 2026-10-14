@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency exact account restore expense identity (Draft PR #338)
+
+- Recorded local PASS at previous `59a8f861` (typecheck, PostgreSQL16 6/6, static SQL 6/6, full 1518/1518 tests, Next build).
+- Changed exact restore expense matching to compare raw persisted minor integer text with explicit encoding/scale, rather than Number coercion; reads metadata via to_jsonb for pre-v21 compatibility. Added source contract regression tests.
+- New HEAD tests, end-to-end signed v13 restore, browser, production DB and deploy NOT RUN. v21 unregistered.
+
+
 This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 - `ROADMAP.md` is forward-looking and may contain planned work.
