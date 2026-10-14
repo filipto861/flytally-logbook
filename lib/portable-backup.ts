@@ -11,6 +11,35 @@ export type PortableBackup={
   integrity:{algorithm:string;payload_sha256:string;signature_version?:number;server_signature?:string};
 };
 
+/**
+ * v13 format stays unchanged; inspect records rather than trusting schema_version.
+ * An upgraded database can export all-null v21 fields for legacy records.
+ * Such NULLs do NOT prove a historical denomination.
+ */
+export function backupContainsExactMonetaryData(backup:PortableBackup):boolean{
+  const present=(value:unknown)=>value!==null&&value!==undefined;
+  const asRow=(value:unknown):BackupRow|null=>
+    value!==null&&typeof value==="object"&&!Array.isArray(value)?value as BackupRow:null;
+  const has=(value:unknown,keys:readonly string[])=>{
+    const row=asRow(value);
+    return !!row&&keys.some(key=>present(row[key]));
+  };
+  const rate=["currency_code","currency_minor_units","price_per_hour_decimal","dry_price_per_hour_decimal"];
+  const aircraft=["default_price_currency_code","default_price_currency_minor_units","default_price_per_hour_decimal"];
+  const flight=["price_currency_code","price_currency_minor_units","price_per_hour_decimal"];
+  const expense=["amount_encoding","amount_minor_units"];
+  const any=(rows:readonly BackupRow[]|undefined,keys:readonly string[])=>
+    (rows??[]).some(row=>has(row,keys));
+  const archived=(row:BackupRow)=>has(row.flight_data,flight)
+    ||(Array.isArray(row.expenses_data)&&row.expenses_data.some(item=>has(item,expense)));
+  return any(backup.rates,rate)||any(backup.aircraft,aircraft)
+    ||any(backup.flights,flight)||any(backup.flight_expenses,expense)
+    ||(backup.deleted_flights??[]).some(archived)
+    ||(backup.voided_certified_flights??[]).some(row=>has(row.flight_snapshot,flight))
+    ||(backup.voided_flight_archive_items??[]).some(row=>
+      has(row.source_data,flight)||has(row.source_data,expense));
+}
+
 const legacyArrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks","track_points"] as const;
 const currentCoreArrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks"] as const;
 const v6Arrays=[...legacyArrays,"audit_log","fstd_sessions","flight_certified_revisions","fstd_certified_revisions","deleted_flights"] as const;
