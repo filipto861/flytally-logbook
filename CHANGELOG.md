@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency 3.8.0 local acceptance complete and production read-only preflight (Draft #338)
+
+- Owner Windows combined `tooling/run-currency-380-acceptance.ps1 -WithBrowser` on exact `669708fec856f5e88072a474f2b97b573a7881f6`: TypeScript PASS, draft v21 SQL source **6/6**, native disposable PostgreSQL16 **8/8**, full Node **1533/1533**, optimized local Next.js build PASS, authenticated desktop/mobile Playwright **8/8** including exact KWD/JPY Trash and scoped signed stored-v13 round-trip. Local database identities matched; both test clusters stopped safely. This is **local**, not CI or live release evidence.
+- Separate assistant **read-only** Neon production catalog/config preflight: `Logbook Shadow` project `muddy-dust-14049657`, branch `production`/`br-dark-math-b1snjzub`, database `neondb`, PostgreSQL **18.6**. Registry v1–v20 contiguous; 12 draft v21 monetary columns and four constraints not present. Vercel `logbook` production `DATABASE_URL` endpoint host/database compared in memory to the matching Neon production compute `neondb`: MATCH, with no credential disclosed or settings changed.
+- No changes to runtime, SQL registration, user data, remote DDL/DML or deployment. Migration rehearsal/PG18 production applicability, broad historical certified/void/share/backup coverage, ISO provenance caveat, owner go/no-go, merge and deploy remain open. PR stays Draft. This **documentation-only** follow-up does not change the tested code tree; new docs HEAD full acceptance **NOT RUN**.
+
 ## 14 October 2026 — Currency combined acceptance SQL test reconciliation (Draft #338)
 
 - Owner-local `a9c01c1c` combined acceptance: TypeScript PASS; static schema 6/6 PASS; verified isolated PostgreSQL16 8/8 PASS; full Node source/unit suite **1532/1533** (one stale `tests/flight-expenses.test.ts` assertion); build/browser not reached in this fail-fast invocation. The independent browser 8/8 PASS remained verified on that exact previous SHA.
