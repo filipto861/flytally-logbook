@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Currency 3.8.0 full acceptance gate (14 Oct, Draft #338):** Owner-local `a9c01c1c` typecheck, static 6/6 and disposable PostgreSQL16 8/8 PASS; full source/unit suite 1532/1533 due to outdated SQL shape assertion, not a proven functional regression. The flight expense test now requires the v20-safe/v21-exact `to_jsonb` projection and original persisted expense fields. New HEAD NOT TESTED; prior authenticated browser 8/8 PASS applies to `a9c01c1c` only. No production migration/merge/deploy.
+
+
 **Currency 3.8.0 signed v13 browser completion (14 Oct; Draft #338):** Owner-local desktop/mobile browser on `afe862a6` passed 7/8, including all monetary Trash flows and mobile signed-v13 exact restore. Desktop signed-v13 did not complete within default whole-test 30s; reason still unverified. Browser recovery now requires an explicit server-side success/error result before checking exact persisted rates and expenses, with bounded longer timeout for the backup+restore workflow. Current changes NOT RUN and unreleased.
 
 
