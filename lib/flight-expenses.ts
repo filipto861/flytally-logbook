@@ -75,6 +75,7 @@ export function costTotalsLabel(expenses:ReadonlyArray<ExpenseCostRow>,aircraftC
     const source=supportedIsoCurrency(item.currency),needsLegacyNote=item.legacy&&source?.minorUnits!==item.minorUnits;
     return needsLegacyNote?formatted+" (legacy 2-decimal storage)":formatted;
   });
+  if(expenses.some(row=>expenseTotals([row]).length===0))known.push("Some expense amounts unavailable");
   if(Number.isFinite(aircraftCost)&&aircraftCost>0)known.push("Aircraft rate currency unknown");
   return known.length?known.join(" · "):"—";
 }
