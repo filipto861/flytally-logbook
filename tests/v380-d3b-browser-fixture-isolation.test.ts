@@ -62,7 +62,7 @@ test("D3b-1 browser spec asserts authenticated preserved evidence for both accep
   assert.match(spec,/backupsBefore\+1/);
   assert.match(spec,/p\.form-error\[role=alert\]/);
   assert.match(spec,/SELECT COUNT\(\*\) FROM flight_participations/);
-  assert.equal(baseline.acceptanceLogicalTests.length,55);
+  assert.ok(baseline.acceptanceLogicalTests.length>=55,"The original D3b-1 browser contracts must remain registered");
   const expected=[
     ["flight-trash-track-desktop","desktop-chromium",baseline.acceptanceLogicalTests[53]],
     ["flight-trash-track-mobile","mobile-chromium",baseline.acceptanceLogicalTests[53]],
