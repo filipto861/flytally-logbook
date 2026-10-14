@@ -41,6 +41,7 @@ function seed(flightId,withParticipation=false){
 
 test("D3b-1 browser: deleting one GPS track preserves the other, then Trash atomically archives expenses and retained GPS",async({page})=>{
   test.skip(!authenticated,"Requires freshly isolated localhost authentication fixture, not any existing database.");
+  test.setTimeout(75_000); // pre-delete protected backup + DB transaction + server revalidation
   const flightId=9961,{selected,retained}=seed(flightId);
   await loginBrowserPilot(page,`/flights/${flightId}`);
   await page.goto(`/flights/${flightId}?tab=gps`);
@@ -53,7 +54,12 @@ test("D3b-1 browser: deleting one GPS track preserves the other, then Trash atom
   await expect(removeSelected).toBeVisible();
   const backupsBefore=Number(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='pre_restore'"));
   await removeSelected.getByRole("button",{name:"Delete"}).click();
-  await expect(manager.locator("form.track-row").filter({hasText:"selected.csv"})).toHaveCount(0);
+  // Deletion requires a signed pre-restore backup before the transaction.
+  // Distinguish persistence failure from a stale UI after revalidation.
+  await expect.poll(()=>scalar(`SELECT COUNT(*) FROM flight_tracks WHERE id=${selected} AND user_id=9001`),
+    {timeout:20_000,message:"Track deletion did not persist after the protective backup"}).toBe("0");
+  await expect(manager.locator("form.track-row").filter({hasText:"selected.csv"}))
+    .toHaveCount(0,{timeout:15_000});
   expect(Number(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='pre_restore'"))).toBe(backupsBefore+1);
   await expect(manager.locator("form.track-row").filter({hasText:"retained.csv"})).toHaveCount(1);
   expect(scalar(`SELECT COUNT(*) FROM flight_tracks WHERE id=${selected}`)).toBe("0");
