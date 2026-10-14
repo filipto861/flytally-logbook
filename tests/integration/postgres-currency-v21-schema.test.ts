@@ -209,3 +209,31 @@ test("invalid currency-bearing expense rolls back the parent flight in the same 
   assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=131"),"0");
   assert.equal(run("SELECT COUNT(*) FROM flight_expenses WHERE id=32"),"0");
 });
+
+
+test("exact-recipient rate survives legacy share conflict; exact share updates the entire tuple",{skip:!enabled},()=>{
+  run("INSERT INTO rates(id,user_id,registration,valid_from,price_per_hour,dry_price_per_hour,currency_code,currency_minor_units,price_per_hour_decimal,dry_price_per_hour_decimal) VALUES(10,1,'OK-SHARE','2026-10-01',1200,800,'EUR',2,1200,800)");
+  const legacyImport=rows(`INSERT INTO rates(id,user_id,registration,valid_from,price_per_hour,dry_price_per_hour,currency_code,currency_minor_units,price_per_hour_decimal,dry_price_per_hour_decimal)
+    VALUES(11,1,'OK-SHARE','2026-10-01',900,500,NULL,NULL,NULL,NULL)
+    ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET price_per_hour=EXCLUDED.price_per_hour,
+      dry_price_per_hour=EXCLUDED.dry_price_per_hour,currency_code=EXCLUDED.currency_code,
+      currency_minor_units=EXCLUDED.currency_minor_units,price_per_hour_decimal=EXCLUDED.price_per_hour_decimal,
+      dry_price_per_hour_decimal=EXCLUDED.dry_price_per_hour_decimal
+    WHERE FALSE OR (rates.currency_code IS NULL AND rates.currency_minor_units IS NULL
+      AND rates.price_per_hour_decimal IS NULL AND rates.dry_price_per_hour_decimal IS NULL)
+    RETURNING id`);
+  assert.deepEqual(legacyImport,[],"A legacy share must not update an exact recipient");
+  assert.deepEqual(rows("SELECT price_per_hour,currency_code,currency_minor_units,price_per_hour_decimal::text amount FROM rates WHERE id=10"),
+    [{price_per_hour:1200,currency_code:"EUR",currency_minor_units:2,amount:"1200"}]);
+  run(`INSERT INTO rates(id,user_id,registration,valid_from,price_per_hour,dry_price_per_hour,currency_code,currency_minor_units,price_per_hour_decimal,dry_price_per_hour_decimal)
+    VALUES(11,1,'OK-SHARE','2026-10-01',1234.125,500.001,'KWD',3,1234.125,500.001)
+    ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET
+      price_per_hour=EXCLUDED.price_per_hour,dry_price_per_hour=EXCLUDED.dry_price_per_hour,
+      currency_code=EXCLUDED.currency_code,currency_minor_units=EXCLUDED.currency_minor_units,
+      price_per_hour_decimal=EXCLUDED.price_per_hour_decimal,
+      dry_price_per_hour_decimal=EXCLUDED.dry_price_per_hour_decimal
+    WHERE TRUE OR (rates.currency_code IS NULL AND rates.currency_minor_units IS NULL
+      AND rates.price_per_hour_decimal IS NULL AND rates.dry_price_per_hour_decimal IS NULL)`);
+  assert.deepEqual(rows("SELECT price_per_hour,currency_code,currency_minor_units,price_per_hour_decimal::text amount,dry_price_per_hour_decimal::text dry FROM rates WHERE id=10"),
+    [{price_per_hour:1234.125,currency_code:"KWD",currency_minor_units:3,amount:"1234.125",dry:"500.001"}]);
+});
