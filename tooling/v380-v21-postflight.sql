@@ -3,7 +3,7 @@
 \if :{?expected_database}
 \else
   \echo 'Required -v expected_database=... is missing. STOP.'
-  \quit 3
+  SELECT 1/0; -- ON_ERROR_STOP must terminate with a non-zero exit
 \endif
 
 -- READ ONLY. Must run immediately after migration and before new v21 writes.
