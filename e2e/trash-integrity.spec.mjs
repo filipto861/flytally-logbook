@@ -161,12 +161,20 @@ test("Currency 3.8 browser: signed portable v13 restores exact flight and expens
   await manual.click();
   await expect.poll(()=>Number(scalar("SELECT COALESCE(MAX(id),0) FROM account_backups WHERE user_id=9001 AND kind='manual'"))).toBeGreaterThan(previousBackupId);
   const backupId=scalar("SELECT MAX(id) FROM account_backups WHERE user_id=9001 AND kind='manual'");
-  const response=await page.request.get("/api/backups/"+backupId);
-  const responseBody=await response.text();
-  expect(response.ok(),
-    "Signed v13 stored-backup download failed: HTTP "+response.status()+", "+responseBody.slice(0,1200)
-  ).toBe(true);
-  const backup=JSON.parse(responseBody);
+  // The stored-backup endpoint authenticates through the real browser session.
+  // Playwright's APIRequestContext does not have the same Secure-cookie behavior
+  // on this HTTP loopback fixture as browser navigation; use the actual UI link.
+  await page.reload();
+  const downloadLink=page.locator(`.stored-backup-list a[href="/api/backups/${backupId}"]`);
+  await expect(downloadLink).toBeVisible();
+  const downloadPromise=page.waitForEvent("download",{timeout:15000});
+  await downloadLink.click();
+  const downloaded=await downloadPromise;
+  expect(downloaded.suggestedFilename()).toMatch(/^flytally-stored-backup-.*\\.json$/);
+  const stream=await downloaded.createReadStream();
+  const chunks=[];
+  for await(const chunk of stream)chunks.push(Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk));
+  const backup=JSON.parse(Buffer.concat(chunks).toString("utf8"));
   expect(backup.version).toBe(13);
   expect(backup.integrity.signature_version).toBe(1);
   expect(backup.integrity.server_signature).toMatch(/^[a-fA-F0-9]{64}$/);
