@@ -141,3 +141,52 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
     FROM flight_expenses WHERE flight_id=${restoredId} AND user_id=9001 AND currency='JPY'`)).toBe("250:JPY:iso_minor_units:0");
   expect(scalar(`SELECT COUNT(*) FROM flight_tracks WHERE flight_id=${restoredId} AND user_id=9001`)).toBe("2");
 });
+
+
+test("Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",async({page})=>{
+  test.skip(!authenticated,"Signed monetary recovery requires isolated authenticated localhost PostgreSQL.");
+  const draft=readFileSync(new URL("../sql/drafts/3_8_0_currency_v21_additive_candidate.sql",import.meta.url),"utf8");
+  runBrowserSql(draft);
+  const flightId=9964;
+  seed(flightId);
+  runBrowserSql(`UPDATE flights SET registration='OK-C381',price_per_hour=9876.125,
+    price_currency_code='KWD',price_currency_minor_units=3,price_per_hour_decimal=9876.125
+    WHERE id=${flightId} AND user_id=9001;
+    UPDATE flight_expenses SET amount_minor=6789,currency='KWD',amount_encoding='iso_minor_units',amount_minor_units=3
+    WHERE flight_id=${flightId} AND user_id=9001;`);
+  await loginBrowserPilot(page,"/data");
+  await page.goto("/data?view=recovery");
+  const manual=page.getByRole("button",{name:"Create backup now"});
+  await expect(manual).toBeVisible();
+  await manual.click();
+  await expect.poll(()=>Number(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='manual'"))).toBeGreaterThan(0);
+  const backupId=scalar("SELECT MAX(id) FROM account_backups WHERE user_id=9001 AND kind='manual'");
+  const response=await page.request.get("/api/backups/"+backupId);
+  expect(response.ok()).toBe(true);
+  const backup=await response.json();
+  expect(backup.version).toBe(13);
+  expect(backup.integrity.signature_version).toBe(1);
+  expect(backup.integrity.server_signature).toMatch(/^[a-fA-F0-9]{64}$/);
+  expect(backup.flights.find(row=>Number(row.id)===flightId)?.price_currency_code).toBe("KWD");
+  expect(backup.flights.find(row=>Number(row.id)===flightId)?.price_per_hour_decimal).toBe("9876.125");
+  expect(backup.flight_expenses.find(row=>Number(row.flight_id)===flightId)?.amount_minor_units).toBe(3);
+  await page.goto(`/flights/${flightId}`);
+  await page.locator("details.flight-detail-more").locator("summary").click();
+  await page.getByRole("button",{name:"Move to trash"}).click();
+  await page.getByRole("button",{name:"Confirm deletion"}).click();
+  await expect(page).toHaveURL(/\/flights(?:\?|$)/,{timeout:20000});
+  expect(scalar(`SELECT COUNT(*) FROM flights WHERE id=${flightId} AND user_id=9001`)).toBe("0");
+  await page.goto("/data?view=recovery");
+  const backupArticle=page.locator(".stored-backup-list article").filter({
+    has:page.locator("span.backup-kind.manual")
+  }).first();
+  await expect(backupArticle).toBeVisible();
+  await backupArticle.getByRole("button",{name:"Restore preview"}).click();
+  await expect(backupArticle).toContainText("missing records will be added");
+  await backupArticle.getByRole("textbox",{name:"Type RESTORE"}).fill("RESTORE");
+  await backupArticle.getByRole("button",{name:"Restore missing data"}).click();
+  await expect.poll(()=>scalar(`SELECT price_currency_code||':'||price_currency_minor_units||':'||price_per_hour_decimal::text
+    FROM flights WHERE id=${flightId} AND user_id=9001`),{timeout:15000}).toBe("KWD:3:9876.125");
+  expect(scalar(`SELECT amount_minor||':'||currency||':'||amount_encoding||':'||amount_minor_units
+    FROM flight_expenses WHERE flight_id=${flightId} AND user_id=9001`)).toBe("6789:KWD:iso_minor_units:3");
+});
