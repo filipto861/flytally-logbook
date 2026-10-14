@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 14 October 2026 — Currency one-command acceptance workflow (Draft PR #338)
+
+- Added Windows PowerShell 5.1-compatible `tooling/run-currency-380-acceptance.ps1` to execute disposable local PostgreSQL 16 M2 tests, complete Node24 test suite, and local production build with immediate failure stop and exact commit guard.
+- Tool only: does not register or execute v21 on remote DB, merge, or deploy. New runner and current implementation branch are NOT RUN; authenticated browser and complete signed v13 restore remain separate release gates.
+
 ## 13 October 2026 — Currency consolidated implementation batch (Draft PR #338)
 
 - Implemented source-backed all-monetary ISO currency dropdown in Settings, enforced validated code in both account-setting mutations, and displayed explicit invalid configuration errors; no account preference silently converts stored amounts.
