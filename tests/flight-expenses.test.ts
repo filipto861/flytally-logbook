@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {costTotalsLabel,parseExpenseAmountMinor,parseFlightExpenses} from "../lib/flight-expenses.ts";
 
 test("legacy expense amounts retain their historical two-decimal integer encoding",()=>{
@@ -54,4 +55,10 @@ test("cost summary groups known currencies but never converts unknown aircraft-r
     "25.00 CZK · 35.00 EUR · Aircraft rate currency unknown");
   assert.match(costTotalsLabel([{amount_minor:1450,currency:"JPY",amount_encoding:"legacy_two_decimal",amount_minor_units:2}]),
     /legacy 2-decimal storage/);
+});
+
+test("saved expenses project encoding and exponent before displaying or rewriting",()=>{
+  const detailPage=readFileSync(new URL("../app/(protected)/flights/[id]/page.tsx",import.meta.url),"utf8");
+  assert.match(detailPage,/SELECT id,category,label,amount_minor,currency,amount_encoding,amount_minor_units,created_at::text/);
+  assert.match(detailPage,/FlightExpensesStandalone action=/);
 });
