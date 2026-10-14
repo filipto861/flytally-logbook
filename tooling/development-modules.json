@@ -923,7 +923,11 @@
         "flight-trash-track-desktop",
         "flight-trash-track-mobile",
         "flight-trash-protected-desktop",
-        "flight-trash-protected-mobile"
+        "flight-trash-protected-mobile",
+        "currency-trash-desktop",
+        "currency-trash-mobile",
+        "currency-backup-v13-desktop",
+        "currency-backup-v13-mobile"
       ],
       "connections-workflows": [
         "connections-accept-desktop",
@@ -961,7 +965,9 @@
         "flight-trash-track-desktop",
         "flight-trash-track-mobile",
         "flight-trash-protected-desktop",
-        "flight-trash-protected-mobile"
+        "flight-trash-protected-mobile",
+        "currency-trash-desktop",
+        "currency-trash-mobile"
       ],
       "identity-auth": [
         "auth-login-shell-desktop",
@@ -975,6 +981,12 @@
         "shell-core-desktop",
         "shell-core-mobile",
         "responsive-entry-desktop"
+      ],
+      "data-recovery": [
+        "currency-trash-desktop",
+        "currency-trash-mobile",
+        "currency-backup-v13-desktop",
+        "currency-backup-v13-mobile"
       ]
     },
     "pathTargets": [
@@ -1128,7 +1140,11 @@
       "shell-offline-desktop",
       "shell-offline-mobile",
       "verifier-evidence-desktop",
-      "verifier-evidence-mobile"
+      "verifier-evidence-mobile",
+      "currency-trash-desktop",
+      "currency-trash-mobile",
+      "currency-backup-v13-desktop",
+      "currency-backup-v13-mobile"
     ],
     "targets": {
       "shell-core-desktop": {
@@ -1404,6 +1420,26 @@
       "flight-trash-protected-mobile": {
         "spec": "e2e/trash-integrity.spec.mjs",
         "title": "D3b-1 browser: pending collaboration refuses ordinary Trash with no archive or evidence deletion",
+        "project": "mobile-chromium"
+      },
+      "currency-trash-desktop": {
+        "spec": "e2e/trash-integrity.spec.mjs",
+        "title": "Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",
+        "project": "desktop-chromium"
+      },
+      "currency-trash-mobile": {
+        "spec": "e2e/trash-integrity.spec.mjs",
+        "title": "Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",
+        "project": "mobile-chromium"
+      },
+      "currency-backup-v13-desktop": {
+        "spec": "e2e/trash-integrity.spec.mjs",
+        "title": "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
+        "project": "desktop-chromium"
+      },
+      "currency-backup-v13-mobile": {
+        "spec": "e2e/trash-integrity.spec.mjs",
+        "title": "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
         "project": "mobile-chromium"
       }
     }
