@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Controlled-release snapshot verification caused unexpected Neon production branch swap (OPEN incident)
+
+- Pre-migration manual snapshot `snap-proud-fire-b1bm8oac` created from Neon original `production` primary `br-dark-math-b1snjzub`. A `restore_snapshot` attempt with `finalize:true` unexpectedly reassigned production primary/default branch and its original compute to restored `br-raspy-fog-b1btvu5t`; former branch remains preserved, no data deletion executed. This was **not** an intended or separately approved topology change. Release immediately **STOPPED**.
+- Live read-only post-incident verification: Vercel prod database hostname is the Neon endpoint now serving the restored branch; the former branch has a distinct compute. Row counts and deterministic content hashes for **52/52 tables match** on both branches at the time of testing; no observed content drift. This does not establish zero service interruption or future equality.
+- Incident documented in `docs/product/3_8_0_NEON_SNAPSHOT_RESTORE_INCIDENT_2026-10-14.md`. **No v21 migration, application deploy, PR merge or further production writes performed**. Local full acceptance on prior `0192570a` remains valid for unchanged application code. Require explicit owner approval of retained new primary vs separately managed restoration before continuing.
+
 ## 14 October 2026 — Currency 3.8.0 owner-local acceptance PASS; controlled release outstanding
 
 - On exact SHA `0192570a240dc3473b6dea15c7908a15e7ee16d8`: targeted share 6/6; TypeScript PASS; static SQL 6/6; disposable PG16 9/9; full Node 1544/1544; Next build PASS with 41/41 static pages; authenticated desktop/mobile Playwright 8/8. Both temporary local PG servers stopped. Local-only evidence, no CI or production test.
