@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency 3.8.0 complete local implementation acceptance PASS (NOT RELEASED)
+
+- Exact owner-local code SHA `4f8165272ff5dc33facdc60af1931f37b97c0303`: targeted 38/38 PASS; TypeScript PASS; native disposable PostgreSQL16 tests **6/6 static**, **9/9 integration**, **3/3 executed v21 release SQL**; full Node **1549/1549 PASS**; Next.js 16.3.2 optimized build **PASS 41/41** in both standard and browser phases; isolated authenticated desktop/mobile Playwright **8/8 PASS**; browser PostgreSQL schema evidence verified exactly one registry21 row, 12 columns, 4 CHECKs. Both localhost PG clusters identity-checked and stopped. **Owner-local, not CI or production**.
+- Post-acceptance READ ONLY GitHub/Vercel/Neon identity verified: PR #338 still Draft, `main` and Vercel latest READY `dcc8ebbf`; Vercel production `DATABASE_URL` points to canonical restored Neon `br-raspy-fog-b1btvu5t`/PG18.6/`neondb`, registry v20, 0/12 v21 columns, 0/4 v21 checks, live counts `33/25/315/0/3/12/24` (rates/aircraft/flights/expenses/voids/provenance/backups). Current canonical Neon primary `protected:false`; old snapshot is from the former primary.
+- Added `docs/product/3_8_0_V21_LOCAL_ACCEPTANCE_AND_FINAL_RELEASE_GATES_2026-10-14.md` to separate completed local implementation from **pending** independent reviewer, ISO provenance, actual signed-v13 real-history recovery, fresh approved backup, PG18 compatibility and separate owner production DDL GO. No source/runtime/SQL changes, no production schema mutation, merge or deployment. All prior failing test runs remain preserved in history.
+
 ## 14 October 2026 — Align legacy browser source-contract assertions with canonical Currency fixture (unreleased)
 
 - On exact `aac5222f7b7757298dd7b9028d465c43d5cbba49`, owner-local fixture test **9/9 PASS**, Gate1 TypeScript and isolated PostgreSQL **6/6 + 9/9 + 3/3 PASS**; full Node **1546/1549 PASS**, three FAIL from obsolete `generate_series(1,19)` assertions in `safety-pilot-pic-sp2`, `v323-auth-browser`, `v340-flight-entry-phase1`. No build/browser gate executed in this rerun.

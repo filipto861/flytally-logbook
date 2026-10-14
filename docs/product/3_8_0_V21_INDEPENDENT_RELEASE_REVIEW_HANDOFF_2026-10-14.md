@@ -1,5 +1,11 @@
 # Independent read-only reviewer handoff — FlyTally Logbook 3.8 Currency v21
 
+## 14 October 2026 — Current reviewer input (supersedes stale status notes below)
+
+**Full owner-local acceptance PASS on exact v21 release application SHA `4f8165272ff5dc33facdc60af1931f37b97c0303`.** Targeted fixture 38/38; TypeScript PASS; PG16 source 6/6, integration 9/9, executable release SQL 3/3; Node 1549/1549; Next build 41/41 twice; authenticated desktop/mobile Playwright 8/8; browser postflight v21 registry/columns/CHECKs 1/12/4. Current main/Vercel production READY still `dcc8ebbf`, approved Neon canonical `br-raspy-fog-b1btvu5t`, PG18.6, registry 1..20, 0/12 v21 columns and 0/4 checks. **No production DDL, merge, deploy or independent review has yet taken place.**
+
+Read `docs/product/3_8_0_V21_LOCAL_ACCEPTANCE_AND_FINAL_RELEASE_GATES_2026-10-14.md` before reviewing. Existing lower-section statements of **NOT locally accepted** were historical at handoff creation and are **superseded** by the evidence above, not silently overwritten. Examine source at accepted SHA and return review findings with exact paths/line numbers. **No writes or deploys**. Additional newly detected release risk: Neon primary reports `protected:false`.
+
 ## Critical additional design decision: fail-closed v21 runtime execution (14 October)
 
 A review before local acceptance found that registering v21 in the automatic migration list could otherwise permit an unapproved v20->v21 schema write at runtime. Current `lib/db-optimization.ts` therefore **explicitly rejects a pending v21** unless `FLYTALLY_LOCAL_POSTGRES=1` and `DATABASE_URL` is a verified loopback hostname. This supports isolated local browser/PG fixtures only. A real new/recovered database must be advanced through the separately controlled v21 SQL artifact (version21 registry inserted atomically) before deploying the version21 runtime; this deliberately supersedes any implication that production/fresh cloud installation might auto-apply v21. Ask reviewer to test both branches and verify no service startup side effects beyond existing v20 bootstrap if registry21 is absent. Review whether this flag/loopback check should be stricter, especially where other local databases could be present.
