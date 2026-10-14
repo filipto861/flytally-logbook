@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Correct PostgreSQL test harness for exact-recipient sharing conflict (unreleased)
+
+- On exact `dc9b217477d4bd2b213c553656a270cffc7ad810`, user-local `npm run typecheck` **PASS**. Combined local acceptance Gate 1: temporary PostgreSQL16 `127.0.0.1:62277` identity verified; v21 static tests **6/6 PASS**, native integration **8/9 PASS**. The ninth new sharing-conflict test failed with PostgreSQL syntax error at `INSERT INTO`, because the test's `rows()` helper embeds its input in `FROM (...) t` and is designed for SELECT, not a standalone INSERT. Temporary server stopped. Later full Node, production build and authenticated browser **NOT RUN**.
+- Minimal test-only fix at `2709b47f2648fb1977cd2a9dd1339ee0bc74dea5`: use existing `run()` to execute top-level `INSERT ... RETURNING id` and assert no returned ID, then retain exact-recipient immutability and KWD exact-upsert assertions. GitHub diff: test file only, 2 lines replaced. **Corrected integration test NOT YET RETESTED**, no feature/SQL/runtime changes.
+- ROADMAP/CHANGELOG evidence updated; PR #338 Draft, v21 remains unregistered, no production Neon/Vercel changes. Next gate: repeat combined local acceptance on exact new HEAD.
+
 ## 14 October 2026 — Preserve strict type narrowing for exact shared dry rates (unreleased)
 
 - Owner-local standalone `npm run typecheck` at `340ab061dc1375ef1d436086025b20c45fb810f9` failed TS2322 on `lib/aircraft-sharing.ts:71`; TypeScript could not prove that `dryDecimal` obtained from a generic object was `string|null`.
