@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Align aircraft sharing source-contract test with SQL aliases (unreleased)
+
+- Owner-local complete Currency 3.8.0 acceptance ran on exact `f1a3b63ab533d7521c64319e50058d8ec0f4edf6`. TypeScript **PASS**, static v21 schema checks **6/6 PASS**, native disposable PG16 **9/9 PASS**, full Node source/unit **1543/1544 PASS**; one failing source-contract regex at `tests/v380-currency-share-integrity.test.ts:87`. PostgreSQL cluster on `127.0.0.1:56397` stopped cleanly. Because Gate 2 failed, Next.js build and authenticated desktop/mobile browser gates **NOT RUN**.
+- The test expected contiguous unqualified default rate columns although the original sender query correctly selects `a.default_price_currency_code,a.default_price_currency_minor_units`. Source assertion fixed in **test-only** commit `82c3efeabff9c4a52937e939eaf2214f0aa2f283`; all remaining assertions of the same test were checked against the live PR source as a read-only text match. **Full Node and combined acceptance have NOT been rerun** on corrected SHA.
+- No implementation, production schema, migration registry, deployment or merge change; PR #338 Draft. Next owner-local targeted test followed by combined full acceptance.
+
 ## 14 October 2026 — Correct PostgreSQL test harness for exact-recipient sharing conflict (unreleased)
 
 - On exact `dc9b217477d4bd2b213c553656a270cffc7ad810`, user-local `npm run typecheck` **PASS**. Combined local acceptance Gate 1: temporary PostgreSQL16 `127.0.0.1:62277` identity verified; v21 static tests **6/6 PASS**, native integration **8/9 PASS**. The ninth new sharing-conflict test failed with PostgreSQL syntax error at `INSERT INTO`, because the test's `rows()` helper embeds its input in `FROM (...) t` and is designed for SELECT, not a standalone INSERT. Temporary server stopped. Later full Node, production build and authenticated browser **NOT RUN**.
