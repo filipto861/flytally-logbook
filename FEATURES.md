@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**3.8.0 Currency browser recovery hardening (14 Oct 2026; unreleased):** Flight detail expense projection now reads optional v21 precision fields through `to_jsonb`, compatible with v20 and v21. Opt-in owner-local desktop/mobile browser runner applies the reviewed v21 candidate once to its verified disposable PostgreSQL fixture before all tests, with unique currency test identities per browser project. Signed v13 recovery and KWD/JPY Trash test diagnostics improved. **Owner-local full suite and PG passed on `5957261f`, but browser acceptance failed (3/8); newer fix commit NOT TESTED.** No production v21 migration or release.
+
+
 **Currency 3.8.0 backup and browser acceptance candidate (14 Oct 2026):** Portable backup format remains signed v13. A currency-bearing payload now requires compatible v21 schema for preview and execution; legacy NULL-only rows remain compatible. Verified logic added for detecting exact currency in primary rows and archived JSON, plus a decimal-regex fix in Trash. Desktop/mobile browser scenarios for precise KWD/JPY Trash and signed v13 restoration are registered and wired to a separate isolated localhost PG16 runner. **New HEAD test execution NOT RUN; not a released feature.**
 
 
