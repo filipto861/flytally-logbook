@@ -54,13 +54,9 @@ if(process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
      process.env.FLYTALLY_LOCAL_POSTGRES!=="1"){
     throw new Error("Currency v21 browser SQL requires the named disposable localhost fixture.");
   }
-  const candidate=readFileSync(fileURLToPath(new URL("../sql/drafts/3_8_0_currency_v21_additive_candidate.sql",import.meta.url)),"utf8");
-  const migrated=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-q"],{
-    input:candidate,encoding:"utf8",stdio:["pipe","inherit","inherit"],env:browserEnv,
-  });
-  if(migrated.error)throw migrated.error;
-  if(migrated.status!==0)process.exit(migrated.status??1);
-  console.log("Disposable Currency browser fixture v21 candidate applied; production unchanged.");
+  // Do not pre-apply review-only DDL without its registry row. The running app
+  // will apply v20 then v21 atomically using its localhost-only guarded path.
+  console.log("Disposable Currency browser fixture is ready for guarded runtime v20/v21 migration.");
 }
 
 const require=createRequire(import.meta.url);
@@ -68,4 +64,28 @@ const playwrightPackage=require.resolve("@playwright/test/package.json");
 const playwrightCli=join(dirname(playwrightPackage),"cli.js");
 const browserResult=spawnSync(process.execPath,[playwrightCli,"test","--config=playwright.config.mjs",...process.argv.slice(2)],{stdio:"inherit",env:browserEnv});
 if(browserResult.error)throw browserResult.error;
+if(browserResult.status===0&&process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
+  // Browser actions exercised the application against a disposable localhost DB.
+  // Independently verify that the runtime finished the complete v21 migration.
+  const evidenceQuery=`SELECT (SELECT COUNT(*) FROM public.flytally_schema_migrations
+    WHERE version=21 AND name='source-backed currency exact-money'),
+    (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND (
+      (table_name='rates' AND column_name IN ('currency_code','currency_minor_units','price_per_hour_decimal','dry_price_per_hour_decimal'))
+      OR (table_name='aircraft' AND column_name IN ('default_price_currency_code','default_price_currency_minor_units','default_price_per_hour_decimal'))
+      OR (table_name='flights' AND column_name IN ('price_currency_code','price_currency_minor_units','price_per_hour_decimal'))
+      OR (table_name='flight_expenses' AND column_name IN ('amount_encoding','amount_minor_units'))
+    )),
+    (SELECT COUNT(*) FROM pg_constraint WHERE conname IN (
+      'rates_exact_currency_tuple_v21_check','aircraft_exact_currency_tuple_v21_check',
+      'flights_exact_currency_tuple_v21_check','expenses_amount_encoding_v21_check'
+    ))`;
+  const observed=spawnSync("psql",["-d",databaseUrl,"-X","-w","-v","ON_ERROR_STOP=1","-At","-F","|","-c",evidenceQuery],{
+    encoding:"utf8",env:browserEnv,
+  });
+  if(observed.error)throw observed.error;
+  if(observed.status!==0||String(observed.stdout).trim()!=="1|12|4"){
+    throw new Error("Currency browser runtime v21 registry/column/constraint postcheck failed.");
+  }
+  console.log("Verified disposable currency browser runtime v21: 1 registry, 12 columns, 4 CHECKs.");
+}
 process.exit(browserResult.status??1);

@@ -79,8 +79,24 @@ test("Currency browser v21 setup only runs inside a dedicated disposable localho
   assert.match(harness,/FLYTALLY_CURRENCY_V21_BROWSER==="1"/);
   assert.match(harness,/parsedDatabaseUrl\.hostname!=="127\.0\.0\.1"/);
   assert.match(harness,/parsedDatabaseUrl\.pathname!=="\/flytally_currency_test"/);
-  assert.ok(harness.indexOf("const bootstrapResult=")<harness.indexOf("const candidate=readFileSync("));
-  assert.ok(harness.indexOf("const candidate=readFileSync(")<harness.indexOf("const browserResult="));
+  const fixture=readFileSync(new URL("../tooling/bootstrap-browser-smoke-db.mjs",import.meta.url),"utf8");
+  const plan=readFileSync(new URL("../lib/migration-plan.ts",import.meta.url),"utf8");
+  const runtime=readFileSync(new URL("../lib/db-optimization.ts",import.meta.url),"utf8");
+  const migrations=[...plan.matchAll(/\\{version:(\\d+),name:"([^"]+)"\\}/g)]
+    .map(match=>({version:Number(match[1]),name:match[2]}));
+  assert.deepEqual(migrations.map(item=>item.version),Array.from({length:21},(_,index)=>index+1));
+  for(const item of migrations){
+    assert.ok(runtime.includes(item.version+':"'+item.name+'"'),"Registry/runtime name mismatch "+item.version);
+  }
+  assert.match(fixture,/readFileSync\\(new URL\\("\.\.\\/lib\\/migration-plan\\.ts"/);
+  assert.match(fixture,/preappliedMigrations\\.length!==19/);
+  assert.match(fixture,/preappliedMigrations\\.map\\(migration/);
+  assert.doesNotMatch(fixture,/browser-smoke-preapplied/);
+  assert.ok(harness.indexOf("const bootstrapResult=")<harness.indexOf("const browserResult="));
+  assert.doesNotMatch(harness,/3_8_0_currency_v21_additive_candidate\\.sql/);
+  assert.match(harness,/guarded runtime v20\\/v21 migration/);
+  assert.match(harness,/runtime v21 registry\\/column\\/constraint postcheck failed/);
+  assert.match(harness,/String\\(observed\\.stdout\\)\\.trim\\(\\)!=="1\\|12\\|4"/);
   assert.match(runner,/\$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"/);
   assert.match(runner,/Restore-Env "FLYTALLY_CURRENCY_V21_BROWSER"/);
 });
