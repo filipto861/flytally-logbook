@@ -1037,12 +1037,27 @@ const migrationQueries=(version:number)=>{
   throw new Error(`Unknown database migration ${version}`);
 };
 
+function allowDisposableLocalV21Migration(){
+  if(process.env.FLYTALLY_LOCAL_POSTGRES!=="1"||!process.env.DATABASE_URL)return false;
+  try{
+    const hostname=new URL(process.env.DATABASE_URL).hostname;
+    return ["127.0.0.1","localhost","::1","[::1]"].includes(hostname);
+  }catch{
+    return false;
+  }
+}
+
 async function migrateDatabase(){
   await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
     version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
   const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
   for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    // Physical v21 + registry must already be applied by the separately approved
+    // schema-first SQL. Only verified disposable loopback fixtures can auto-build it.
+    if(version===21&&!allowDisposableLocalV21Migration()){
+      throw new Error("Currency schema v21 requires approved explicit migration before runtime.");
+    }
     await sql.transaction([
       sql`SELECT pg_advisory_xact_lock(704190104)`,
       ...migrationQueries(version),

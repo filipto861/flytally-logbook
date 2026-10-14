@@ -72,3 +72,12 @@ test("release preflight and runtime refuse any partial v21 state and require cer
     assert.match(s,/registry not exactly 1\.\.21/);
   }
 });
+
+test("production runtime never performs an unsanctioned v21 automatic migration",()=>{
+  assert.match(runtime,/if\(version===21&&!allowDisposableLocalV21Migration\(\)\)/);
+  assert.match(runtime,/Currency schema v21 requires approved explicit migration before runtime/);
+  assert.match(runtime,/FLYTALLY_LOCAL_POSTGRES!=="1"/);
+  assert.match(runtime,/new URL\(process\.env\.DATABASE_URL\)\.hostname/);
+  assert.match(runtime,/\["127\.0\.0\.1","localhost","::1","\[::1\]"\]/);
+  assert.doesNotMatch(runtime,/FLYTALLY_V21_RELEASE_DISPOSABLE.*process\.env/);
+});
