@@ -26,7 +26,7 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
     getDatabaseData(userId),
     view==="aircraft"?sql`SELECT u.id,u.display_name,COALESCE(s.home_airport,'') home_airport FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END LEFT JOIN user_settings s ON s.user_id=u.id WHERE c.status='accepted' AND (c.requester_user_id=${userId} OR c.recipient_user_id=${userId}) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>:Promise.resolve([] as Array<Record<string,unknown>>),
     getUserSaveableCalendarDefault(userId),
-    view==="aircraft"?sql`SELECT currency FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<{currency:string}>>:Promise.resolve([] as Array<{currency:string}>),
+    view==="aircraft"?sql`SELECT currency FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>:Promise.resolve([] as Array<{currency:string}>),
   ]);
   const catalog=view==="airports"&&airportSearch?searchAirportCatalog(airportSearch,Number(params.airportPage||1),50):null;
   const activeAircraft=data.aircraft.filter(item=>Boolean(Number(item.active))).length,inactiveAircraft=data.aircraft.length-activeAircraft;
