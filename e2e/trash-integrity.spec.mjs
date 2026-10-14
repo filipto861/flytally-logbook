@@ -129,7 +129,9 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
   const row=page.locator(".flight-trash article").filter({hasText:"OK-C380"});
   await expect(row).toHaveCount(1);
   await row.getByRole("button",{name:"Restore flight"}).click();
-  await expect(page.locator(".flight-trash [role=status]")).toContainText("Flight restored",{timeout:15000});
+  await expect(page.locator(".flight-trash [role=status]"),
+    "Trash restore did not succeed: "+(await page.locator(".flight-trash [role=alert]").textContent()||"no error displayed")
+  ).toContainText("Flight restored",{timeout:15000});
   const restoredId=scalar(`SELECT restored_flight_id FROM deleted_flights
     WHERE original_flight_id=${flightId} AND user_id=9001 AND restored_at IS NOT NULL ORDER BY id DESC LIMIT 1`);
   expect(restoredId).toMatch(/^[0-9]+$/);
@@ -162,7 +164,9 @@ test("Currency 3.8 browser: signed portable v13 restores exact flight and expens
   await expect.poll(()=>Number(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='manual'"))).toBeGreaterThan(0);
   const backupId=scalar("SELECT MAX(id) FROM account_backups WHERE user_id=9001 AND kind='manual'");
   const response=await page.request.get("/api/backups/"+backupId);
-  expect(response.ok()).toBe(true);
+  expect(response.ok(),
+    "Signed v13 stored-backup download failed: HTTP "+response.status()+", "+(await response.text()).slice(0,1200)
+  ).toBe(true);
   const backup=await response.json();
   expect(backup.version).toBe(13);
   expect(backup.integrity.signature_version).toBe(1);
@@ -182,7 +186,9 @@ test("Currency 3.8 browser: signed portable v13 restores exact flight and expens
   }).first();
   await expect(backupArticle).toBeVisible();
   await backupArticle.getByRole("button",{name:"Restore preview"}).click();
-  await expect(backupArticle).toContainText("missing records will be added");
+  await expect(backupArticle,
+    "Signed v13 recovery preflight did not succeed: "+(await page.locator(".backup-center [role=alert]").textContent()||"no error displayed")
+  ).toContainText("missing records will be added");
   await backupArticle.getByRole("textbox",{name:"Type RESTORE"}).fill("RESTORE");
   await backupArticle.getByRole("button",{name:"Restore missing data"}).click();
   await expect.poll(()=>scalar(`SELECT price_currency_code||':'||price_currency_minor_units||':'||price_per_hour_decimal::text
