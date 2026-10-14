@@ -95,13 +95,14 @@ test("D3b-1 browser: pending collaboration refuses ordinary Trash with no archiv
 });
 
 
-test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",async({page})=>{
+test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",async({page},testInfo)=>{
   test.skip(!authenticated,"Requires dedicated disposable localhost PostgreSQL16 and authenticated browser fixture.");
-  const flightId=9963;
+  const flightId=testInfo.project.name==="mobile-chromium"?9973:9963;
+  const registration=testInfo.project.name==="mobile-chromium"?"OK-C383":"OK-C380";
   seed(flightId);
   runBrowserSql(`
     BEGIN;
-    UPDATE flights SET registration='OK-C380',price_per_hour=1234.125,
+    UPDATE flights SET registration='${registration}',price_per_hour=1234.125,
       price_currency_code='KWD',price_currency_minor_units=3,price_per_hour_decimal=1234.125
       WHERE id=${flightId} AND user_id=9001;
     UPDATE flight_expenses SET amount_minor=12345,currency='KWD',
@@ -121,7 +122,7 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
     AND user_id=9001 AND flight_data->>'price_currency_code'='KWD'
     AND expenses_data @> '[{"amount_encoding":"iso_minor_units","amount_minor_units":0,"currency":"JPY"}]'::jsonb`)).toBe("1");
   await page.goto("/data?view=deleted");
-  const row=page.locator(".flight-trash article").filter({hasText:"OK-C380"});
+  const row=page.locator(".flight-trash article").filter({hasText:registration});
   await expect(row).toHaveCount(1);
   await row.getByRole("button",{name:"Restore flight"}).click();
   await expect(page.locator(".flight-trash [role=status]"),
@@ -140,11 +141,12 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
 });
 
 
-test("Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",async({page})=>{
+test("Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",async({page},testInfo)=>{
   test.skip(!authenticated,"Signed monetary recovery requires isolated authenticated localhost PostgreSQL.");
-  const flightId=9964;
+  const flightId=testInfo.project.name==="mobile-chromium"?9974:9964;
+  const registration=testInfo.project.name==="mobile-chromium"?"OK-C384":"OK-C381";
   seed(flightId);
-  runBrowserSql(`UPDATE flights SET registration='OK-C381',price_per_hour=9876.125,
+  runBrowserSql(`UPDATE flights SET registration='${registration}',price_per_hour=9876.125,
     price_currency_code='KWD',price_currency_minor_units=3,price_per_hour_decimal=9876.125
     WHERE id=${flightId} AND user_id=9001;
     UPDATE flight_expenses SET amount_minor=6789,currency='KWD',amount_encoding='iso_minor_units',amount_minor_units=3
@@ -153,14 +155,16 @@ test("Currency 3.8 browser: signed portable v13 restores exact flight and expens
   await page.goto("/data?view=recovery");
   const manual=page.getByRole("button",{name:"Create backup now"});
   await expect(manual).toBeVisible();
+  const previousBackupId=Number(scalar("SELECT COALESCE(MAX(id),0) FROM account_backups WHERE user_id=9001 AND kind='manual'"));
   await manual.click();
-  await expect.poll(()=>Number(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='manual'"))).toBeGreaterThan(0);
+  await expect.poll(()=>Number(scalar("SELECT COALESCE(MAX(id),0) FROM account_backups WHERE user_id=9001 AND kind='manual'"))).toBeGreaterThan(previousBackupId);
   const backupId=scalar("SELECT MAX(id) FROM account_backups WHERE user_id=9001 AND kind='manual'");
   const response=await page.request.get("/api/backups/"+backupId);
+  const responseBody=await response.text();
   expect(response.ok(),
-    "Signed v13 stored-backup download failed: HTTP "+response.status()+", "+(await response.text()).slice(0,1200)
+    "Signed v13 stored-backup download failed: HTTP "+response.status()+", "+responseBody.slice(0,1200)
   ).toBe(true);
-  const backup=await response.json();
+  const backup=JSON.parse(responseBody);
   expect(backup.version).toBe(13);
   expect(backup.integrity.signature_version).toBe(1);
   expect(backup.integrity.server_signature).toMatch(/^[a-fA-F0-9]{64}$/);
