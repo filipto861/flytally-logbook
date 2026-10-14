@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency combined acceptance SQL test reconciliation (Draft #338)
+
+- Owner-local `a9c01c1c` combined acceptance: TypeScript PASS; static schema 6/6 PASS; verified isolated PostgreSQL16 8/8 PASS; full Node source/unit suite **1532/1533** (one stale `tests/flight-expenses.test.ts` assertion); build/browser not reached in this fail-fast invocation. The independent browser 8/8 PASS remained verified on that exact previous SHA.
+- Updated the source regression to require the exact `to_jsonb(e)->>'amount_encoding'` and typed `amount_minor_units` projection with original expense identity, owner scope and date fields, rather than rejecting a v20-compatible SQL query. No runtime or DB change.
+- Current new HEAD targeted/full tests/build/browser **NOT RUN**; production v21 SQL remains an unapplied/unregistered candidate. Draft PR, Neon and release untouched.
+
+
 ## 14 October 2026 — signed v13 desktop restore browser completion diagnostics (Draft #338)
 
 - Owner-local `afe862a6`: isolated PG16 identity verified, local optimized Next build PASS, authenticated Playwright **7/8 PASS**. D3b/GPS and KWD/JPY Trash desktop/mobile PASS; signed v13 mobile PASS. Desktop signed-v13 exhausted overall 30s test timeout while SQL polling returned no flight row; no application error/success was captured, so persistence outcome remains unknown.
