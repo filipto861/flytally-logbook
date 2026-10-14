@@ -1,5 +1,4 @@
 import {test,expect} from "@playwright/test";
-import {readFileSync} from "node:fs";
 import {loginBrowserPilot} from "./browser-actions.mjs";
 import {runBrowserSql,browserSqlScalar} from "./browser-db.mjs";
 
@@ -98,10 +97,6 @@ test("D3b-1 browser: pending collaboration refuses ordinary Trash with no archiv
 
 test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",async({page})=>{
   test.skip(!authenticated,"Requires dedicated disposable localhost PostgreSQL16 and authenticated browser fixture.");
-  // Apply this REVIEW candidate exclusively inside the localhost browser fixture.
-  // runBrowserSql is auth-gated and refuses non-loopback PostgreSQL.
-  const draft=readFileSync(new URL("../sql/drafts/3_8_0_currency_v21_additive_candidate.sql",import.meta.url),"utf8");
-  runBrowserSql(draft);
   const flightId=9963;
   seed(flightId);
   runBrowserSql(`
@@ -147,8 +142,6 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
 
 test("Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",async({page})=>{
   test.skip(!authenticated,"Signed monetary recovery requires isolated authenticated localhost PostgreSQL.");
-  const draft=readFileSync(new URL("../sql/drafts/3_8_0_currency_v21_additive_candidate.sql",import.meta.url),"utf8");
-  runBrowserSql(draft);
   const flightId=9964;
   seed(flightId);
   runBrowserSql(`UPDATE flights SET registration='OK-C381',price_per_hour=9876.125,
