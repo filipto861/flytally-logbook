@@ -85,3 +85,23 @@ Existing unit tests `tests/v380-currency-rate-snapshot.test.ts` exercise missing
 - Additional verification needed: signed v13 edge cases, historic integrity, live Neon SDK behavior, ISO provenance and explicit owner approval.
 - This document is a **first reviewer handoff**; DeepSeek independent verdict **NOT YET RECEIVED**.
 - ROADMAP / FEATURES / CHANGELOG updated in the same docs-only work cycle; PR #338 stays Draft.
+
+
+## 14 October 2026 — owner-approved 3-phase execution and implemented candidate (not tested)
+
+Owner explicitly chose **one coherent implementation block → one complete acceptance → one controlled production release**; prior nine-step recommendation is not the implementation schedule. After the DeepSeek independent read-only review, the following source edits were staged in Draft #338 at application-code SHA `ff22625b40f06faeb32b574d17cec14bb9bafaa6`:
+
+- Exact aircraft profile rate sharing uses version 2 and source code/minor units/decimal + derived legacy presentation double. Versionless or explicit version 1 legacy pending shares remain unknown-denomination; unsupported/partial v2 metadata is rejected, not downgraded.
+- New recipient rate import updates legacy and v21 fields together. If an existing exact rate conflicts with incoming legacy data, the SQL conflict predicate refuses the legacy overwrite and the recipient gets a visible skipped-rate message. Importing exact data is an explicit replacement of the selected recipient rate.
+- `validateCurrencyRateSnapshot` now compares `Number(rate_decimal)` with the legacy-double cache, rejects contradictory stored rate data and never rewrites it.
+- Signed-v13 recovery checks monetary tuples (including archived/void snapshots) for partial ISO metadata, wrong exponent, contradictory legacy/exact cache and unsupported currencies before preparing/executing restore; all-null v20 legacy states remain accepted.
+- Added pure/source and PostgreSQL (local disposable only) regression cases.
+
+**Verification state on this new code: NOT RUN** for TypeScript, complete Node, static/PG, build and authenticated desktop/mobile browser. No production DB or migrations changed. Previously recorded full local acceptance is on old code SHA `669708fe`; PG18.6 temporary migration rehearsal is a separate, already cleaned-up DDL-only proof.
+
+**Release dependency:** v21 physical schema must be safely in place before deploying this runtime; no registration or automatic migration was added. Next owner action is one local combined acceptance invocation:
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-380-acceptance.ps1 -WithBrowser
+```
+Stop on failures, capture exact SHA and statuses. Only after real PASS can production preflight, fresh backup/restore recovery approval, v21 migration, merge/deploy and smoke be considered.

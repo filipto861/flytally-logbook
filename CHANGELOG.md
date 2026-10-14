@@ -1,5 +1,14 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency sharing and signed recovery hardening candidate (PR #338; NOT YET VERIFIED)
+
+- Owner froze one coherent implementation block, one full acceptance and one controlled release. Source edits staged through application-code SHA `ff22625b40f06faeb32b574d17cec14bb9bafaa6` on Draft PR #338; no new branch/production change.
+- Added versioned v2 exact aircraft-rate sharing and explicit legacy-unknown v1 compatibility in `lib/aircraft-sharing.ts` and `app/(protected)/connections/aircraft-share-actions.ts`. Sender includes actual source money tuple; receiver writes all fields together and conditional legacy conflict cannot mutate a recipient's existing exact metadata. UI displays exact currency or 'currency unknown' and reports skipped conflicting legacy rates, no invented CZK.
+- Validates derived DOUBLE cache against decimal source in `lib/currency-rate-snapshot.ts`; no unapproved epsilon/guess-based conversion.
+- Added signed-v13 backup semantic monetary preflight in `lib/portable-backup.ts` before preview and execution in `lib/account-restore-v6.ts`, preserving all-null legacy unknowns and distinguishing JSONB numeric archive tokens from NUMERIC string values; fail-closed on partial/wrong scale/currency/contradiction.
+- Added `tests/v380-currency-share-integrity.test.ts`, `tests/v380-currency-backup-evidence.test.ts` and an isolated PostgreSQL import conflict case. These are **IMPLEMENTED, NOT RUN**. Prior 1533/1533 acceptance belongs only to older `669708fe` SHA. Current code typecheck, tests, build, Playwright, production smoke **NOT RUN**.
+- v21 SQL remains unregistered; PR Draft; no Neon production DDL/DML, GitHub merge or Vercel production deploy. Next: one full `tooling/run-currency-380-acceptance.ps1 -WithBrowser` at exact HEAD, fix any proved regressions, then owner-controlled migration/release gate.
+
 ## 14 October 2026 — Currency source-level pre-release review and independent AI handoff (Draft #338)
 
 - READ-ONLY inspected exact `ab4aff5a` source: identified that aircraft sharing sends legacy Number-only rates and recipient ON CONFLICT updates legacy price fields without exact monetary metadata; confirmed stored dual-amount validator checks each field's validity but not legacy-vs-exact amount consistency. Runtime new SQL needs physical v21 ahead of deployment while migration registry remains v20. These are unshipped **release blockers** and require independent validation/targeted tests.
