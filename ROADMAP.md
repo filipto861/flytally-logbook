@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**Currency 3.8.0 monetary Trash runtime (14 Oct 2026):** Draft PR #338 now has two explicit restore SQL variants selected only after read-only archived-snapshot and installed-v21-column preflight. Currency branch preserves flight original decimal/code/scale and expense encoding/scale within the existing flight+track+expense+mark transaction; candidate matches preflight archive digest to prevent stale snapshot substitution. Legacy branch keeps original pre-v21 SQL. Added source integrity tests and disposable-PG atomic restore/rollback cases. **Current exact HEAD tests, PG and build NOT RUN**; no production schema registration or migration. Do not mark release-ready until local integration plus signed portable v13/browser acceptance.
+
+
 **Currency 3.8.0 isolated restore verification (14 Oct 2026):** Added two actual PostgreSQL16 integration cases for exact v21 monetary flight/expense JSON restoration in one transaction and fail-closed rollback on corrupt expense encoding. New test cases NOT RUN on branch HEAD yet. Legacy `restoreDeletedFlightRecord` still blocks non-null currency snapshots; runtime wiring must follow verified atomic design without losing v20 protections. No schema registration, production migration or deployment.
 
 
