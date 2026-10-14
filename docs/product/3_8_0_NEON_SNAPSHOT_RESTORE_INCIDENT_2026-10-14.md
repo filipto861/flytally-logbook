@@ -1,5 +1,9 @@
 # 14 October 2026 — Unintended Neon snapshot restore production-branch switch
 
+## Owner resolution and follow-up validation (14 October, later same day)
+
+The owner **explicitly approved retaining `br-raspy-fog-b1btvu5t` as canonical production**. No automatic branch reversal, snapshot restore or infrastructure deletion is authorized or planned. Read-only recheck: Neon default/primary still `br-raspy-fog-b1btvu5t` and its `ep-proud-bar-b1ts6cq1` compute hostname matches Vercel production `DATABASE_URL`; database path is `neondb`. Both branches remain identical for table row counts and content fingerprints across **52/52** public tables at this later check. Vercel production READY deployment and GitHub main remain `dcc8ebbf`. Log query found no error/fatal entries in the available four-hour production Vercel runtime window, but cannot prove uninterrupted availability. All v21 fields/constraints remain absent; registry 1–20 only. The unwanted topology change has a recorded owner decision and no observed row drift, while its operational incident history and follow-up remain documented. Controlled v21 release still blocked until approved execution-grade schema-first migration and fresh acceptance. Proposed contract: `docs/product/3_8_0_V21_EXACT_PRODUCTION_MIGRATION_PLAN_2026-10-14.md`.
+
 **State: incident OPEN. Release STOP. No v21 migration, Git merge, or production deploy executed.**
 
 ## Trigger and scope

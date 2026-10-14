@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Owner retains restored production branch; prepare reviewed v21 migration sequence (docs only)
+
+- Owner explicitly accepted Neon branch `br-raspy-fog-b1btvu5t` as canonical production. Former `br-dark-math-b1snjzub` and snapshot `snap-proud-fire-b1bm8oac` retained; no reverse branch swap. Fresh read-only current primary and Vercel DB hostname/database checks agree.
+- Two-branch repeat inventory: identical row counts/content hashes on **52/52** public tables at the measurement moment. Production schema still registered v1–v20, with 0 of 12 target currency columns and 0 of 4 v21 CHECKs. Existing main/production Vercel app remains `dcc8ebbf`; no v21 SQL, merge or deploy.
+- Added `docs/product/3_8_0_V21_EXACT_PRODUCTION_MIGRATION_PLAN_2026-10-14.md`: targeted preflight, new snapshot on current primary, no finalizing restore test, separate reviewed explicit SQL/registry + v21 runtime support, atomic DDL before deployment, postflight content checks, smoke, stop/rollback. **DESIGN ONLY**, execution artifact/runtime code not yet implemented and not approved. Existing local acceptance `0192570a` remains source baseline but will need rerun after migration code changes.
+
 ## 14 October 2026 — Controlled-release snapshot verification caused unexpected Neon production branch swap (OPEN incident)
 
 - Pre-migration manual snapshot `snap-proud-fire-b1bm8oac` created from Neon original `production` primary `br-dark-math-b1snjzub`. A `restore_snapshot` attempt with `finalize:true` unexpectedly reassigned production primary/default branch and its original compute to restored `br-raspy-fog-b1btvu5t`; former branch remains preserved, no data deletion executed. This was **not** an intended or separately approved topology change. Release immediately **STOPPED**.
