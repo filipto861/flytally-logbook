@@ -216,9 +216,10 @@ CREATE TABLE deleted_flights (
   restored_at TIMESTAMPTZ,
   restored_flight_id BIGINT
 );
--- The browser fixture pre-applies schema v1..v19. Keep the two FSTD
--- tables expected by v13 full-account pre-track-delete signed backups;
--- these definitions mirror the original optimizer migration shape.
+-- This disposable browser fixture pre-applies schema v1..v19 plus the
+-- certified-correction optimizer changes. Both FSTD tables must expose the
+-- exact columns used by v13 recovery preview/execution, including v1.3x
+-- record_revision and correction evidence, without changing production SQL.
 CREATE TABLE fstd_sessions (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
