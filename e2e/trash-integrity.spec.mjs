@@ -168,8 +168,8 @@ test("Currency 3.8 browser: signed portable v13 restores exact flight and expens
   expect(backup.integrity.signature_version).toBe(1);
   expect(backup.integrity.server_signature).toMatch(/^[a-fA-F0-9]{64}$/);
   expect(backup.flights.find(row=>Number(row.id)===flightId)?.price_currency_code).toBe("KWD");
-  expect(backup.flights.find(row=>Number(row.id)===flightId)?.price_per_hour_decimal).toBe("9876.125");
-  expect(backup.flight_expenses.find(row=>Number(row.flight_id)===flightId)?.amount_minor_units).toBe(3);
+  expect(String(backup.flights.find(row=>Number(row.id)===flightId)?.price_per_hour_decimal)).toBe("9876.125");
+  expect(Number(backup.flight_expenses.find(row=>Number(row.flight_id)===flightId)?.amount_minor_units)).toBe(3);
   await page.goto(`/flights/${flightId}`);
   await page.locator("details.flight-detail-more").locator("summary").click();
   await page.getByRole("button",{name:"Move to trash"}).click();
