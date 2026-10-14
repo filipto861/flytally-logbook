@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 14 October 2026 — signed v13 desktop restore browser completion diagnostics (Draft #338)
+
+- Owner-local `afe862a6`: isolated PG16 identity verified, local optimized Next build PASS, authenticated Playwright **7/8 PASS**. D3b/GPS and KWD/JPY Trash desktop/mobile PASS; signed v13 mobile PASS. Desktop signed-v13 exhausted overall 30s test timeout while SQL polling returned no flight row; no application error/success was captured, so persistence outcome remains unknown.
+- Limited whole-test timeout extension to **90s for signed v13 workflow only** (includes download, Trash, protection backup and atomic restore). Test now waits up to 45s for explicit Server Action success or diagnostic error *before* querying exact restored KWD and expense values, and bounds final DB verification at 10s. Added source regression guard. No application, auth, database schema or monetary runtime changes.
+- Latest HEAD unit, PG, browser and build **NOT RUN**. Production migration v21 unregistered; PR stays Draft.
+
+
 ## 14 October 2026 — Signed-v13 preflight fixture and protected GPS deletion browser follow-up (Draft #338)
 
 - Owner browser on exact `4e0975f5`: optimized Next build PASS; isolated PG16/browser **5/8 PASS**. Signed v13 HTTP 401 fixed: real browser downloaded backup and proceeded to restore preview; desktop/mobile preview failed because browser fixture `fstd_sessions` lacked `record_revision` (not an established production schema defect).
