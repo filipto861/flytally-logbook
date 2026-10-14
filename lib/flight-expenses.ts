@@ -30,7 +30,7 @@ export function parseFlightExpenses(form:FormData):{data?:FlightExpenseInput[];e
   if(count>20)return{error:"A flight can contain at most 20 additional expense items."};
   const data:FlightExpenseInput[]=[];
   for(let index=0;index<count;index++){
-    const categoryRaw=String(categories[index]??"").trim().toUpperCase(),label=String(labels[index]??"").trim().slice(0,80),amountRaw=String(amounts[index]??"").trim(),currency=String(currencies[index]??"").trim().toUpperCase(),encoding=String(encodings[index]??"legacy_two_decimal").trim();
+    const categoryRaw=String(categories[index]??"").trim().toUpperCase(),label=String(labels[index]??"").trim().slice(0,80),amountRaw=String(amounts[index]??"").trim(),currency=String(currencies[index]??"").trim().toUpperCase(),encoding=String(encodings[index]??"").trim();
     if(!categoryRaw&&!label&&!amountRaw&&!currency)continue;
     if(!FLIGHT_EXPENSE_CATEGORIES.includes(categoryRaw as FlightExpenseCategory))return{error:`Expense ${index+1}: select a valid type.`};
     if(categoryRaw==="OTHER"&&!label)return{error:`Expense ${index+1}: enter a description for the custom expense.`};
