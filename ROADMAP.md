@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**Currency 3.8.0 combined local acceptance:** owner-local evidence at `59a8f861` PASS (Node typecheck, static SQL 6/6, disposable PG16 6/6, complete Node tests 1518/1518, local Next build). **Current continuation:** exact account restore expense matching preserves raw amount text and explicit encoding/scale in Draft PR #338; tests on new HEAD NOT RUN. Signed v13 round-trip, non-legacy Trash restore, browser, v21 migration production preflight remain outstanding; v21 unregistered.
+
+
 **Current planning state:** 13 October 2026  
 **Canonical repository:** `filipto861/flytally-logbook`; `main` is the source of truth.  
 **Shipped product version:** `3.7.0`; deployment/build/alias verified at `39ee01b7` (footer derives from package; direct browser screenshot NOT RUN)  
