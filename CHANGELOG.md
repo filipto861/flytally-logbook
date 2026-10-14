@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 14 October 2026 — Stage guarded Currency v21 release tooling and new integration tests (unreleased, unverified)
+
+- Added explicit SQL `tooling/v380-v21-preflight.sql`, `v380-v21-migrate.sql`, `v380-v21-postflight.sql`. The migration copies exactly the established 12 nullable/non-defaulted columns and four CHECKs, guards exact v20 registry/protection, rejects any partial v21, uses bounded statement/lock timeout and advisory transaction lock, inserts v21 registry in the same transaction, and validates the result before commit. Expected DB passed explicitly; Neon branch must be separately verified.
+- Registered version 21 `source-backed currency exact-money` in `lib/migration-plan.ts` and `lib/db-optimization.ts`, including exact additive runtime DDL and fail-closed precheck. Corrected a generated source-insertion defect in a follow-up commit before acceptance. Historical version 1–20 untouched. Kept review-only `sql/drafts/3_8_0_currency_v21_additive_candidate.sql` unchanged.
+- Added four static source/parity tests plus three native disposable PostgreSQL16 release artifact integration scenarios; updated `tooling/run-currency-m2a0-local.ps1` to run them after its existing fixture test with an isolated-loopback-only environment flag. Static read-only comparison found source parity 4 ALTER + 4 CHECK and one runtime registration. **TypeScript, Node, PostgreSQL, build, browser on NEW SHA NOT RUN.**
+- No production DDL, Neon branch operation, merge or deploy. Draft PR #338. Owner's approved canonical Neon production remains `br-raspy-fog-b1btvu5t`; separate migration execution GO required.
+
 ## 14 October 2026 — Owner retains restored production branch; prepare reviewed v21 migration sequence (docs only)
 
 - Owner explicitly accepted Neon branch `br-raspy-fog-b1btvu5t` as canonical production. Former `br-dark-math-b1snjzub` and snapshot `snap-proud-fire-b1bm8oac` retained; no reverse branch swap. Fresh read-only current primary and Vercel DB hostname/database checks agree.
