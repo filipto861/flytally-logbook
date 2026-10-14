@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 14 October 2026 — Currency acceptance regression reconciliation (Draft PR #338)
+
+- Owner-local at `83e7c54d`: typecheck PASS; disposable PostgreSQL16 6/6, static M2 checks 6/6 PASS; full suite 1511/1518 PASS (7 FAIL); build NOT RUN. Ephemeral database stopped; no production DB accessed.
+- Preserved canonical `FlightForm` prop order with new explicit currency preference; reconciled historical source tests with registered unexecuted `sql/drafts` path, extended flight expense insert/price snapshot tuple, and nullable-v21-aware legacy Trash checks. Genuine non-null currency-bearing snapshots remain excluded from v20 restore writer.
+- Latest HEAD tests/typecheck/build/browser NOT RUN; PR #338 still Draft, no v21 registration/merge/deploy.
+
 ## 14 October 2026 — Currency default-query typing correction (Draft PR #338)
 
 - Corrected two unsupported Neon query type assertions in Aircraft and New Flight pages. Both queries now treat settings rows as untrusted `Record<string,unknown>` before passing the currency through source-backed ISO validation. No runtime DB behavior change.
