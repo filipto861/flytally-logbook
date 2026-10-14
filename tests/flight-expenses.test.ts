@@ -62,12 +62,12 @@ test("saved expenses project encoding and exponent before displaying or rewritin
   // v21 exact fields are optional on pre-migration v20 deployments.
   // Project both fields through the row JSON while retaining all original
   // identifiers and preserving the numeric minor-unit scale for edits.
-  assert.match(detailPage,/SELECT e\\.id,e\\.category,e\\.label,e\\.amount_minor,e\\.currency,/);
-  assert.match(detailPage,/to_jsonb\\(e\\)->>'amount_encoding' amount_encoding/);
-  assert.match(detailPage,/\\(to_jsonb\\(e\\)->>'amount_minor_units'\\)::smallint amount_minor_units/);
-  assert.match(detailPage,/e\\.created_at::text created_at FROM flight_expenses e WHERE e\\.user_id=/);
+  assert.match(detailPage,/SELECT e\.id,e\.category,e\.label,e\.amount_minor,e\.currency,/);
+  assert.match(detailPage,/to_jsonb\(e\)->>'amount_encoding' amount_encoding/);
+  assert.match(detailPage,/\(to_jsonb\(e\)->>'amount_minor_units'\)::smallint amount_minor_units/);
+  assert.match(detailPage,/e\.created_at::text created_at FROM flight_expenses e WHERE e\.user_id=/);
   assert.doesNotMatch(detailPage,/SELECT id,category,label,amount_minor,currency,amount_encoding,amount_minor_units,created_at::text/);
-  assert.match(detailPage,/const expenses=expenseRows as FlightExpenseRecord\\[\\]/);
+  assert.match(detailPage,/const expenses=expenseRows as FlightExpenseRecord\[\]/);
   assert.match(detailPage,/FlightExpensesStandalone action=/);
 });
 
