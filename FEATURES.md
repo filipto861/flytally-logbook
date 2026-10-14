@@ -6,6 +6,8 @@ This is the **capability register**, not a dated test log. Implementation and pr
 
 **Currency 3.8.0 consolidated Draft PR #338 (13 Oct 2026):** ISO-backed Settings currency choice/server validation and conservative unknown legacy denomination presentation are implemented on branch; disabled unsafe global highest-cost sorting and excluded unverified aircraft costs from currency-labelled expense totals. Current rates, new expenses and flight cost snapshots still need v21 exact currency write/read integration before the release; no migration activated. **Status: IN PROGRESS / NOT DEPLOYED.**
 
+**Currency 3.8.0 local verification progress (14 Oct 2026):** At commit `83e7c54d`, TypeScript and isolated PostgreSQL tests passed; full 1518-test run had 7 historical source-assertion failures and no build. Source assertion compatibility updated in Draft #338 without enabling v21; full rerun on latest HEAD pending. Certified/void history, backup and currency-bearing Trash restore remain release gates.
+
 **Currency 3.8.0 implementation hardening (14 Oct 2026):** Strict saved rate snapshots and error handling, expense ISO scaling/read projection, visible invalid-expense state, v21-null-aware legacy Trash restore are implemented in Draft #338; not merged/tested on current HEAD. New-money Trash restore and signed v13 backup still gate release.
 
 **Currency 3.8.0 accelerated delivery (14 Oct 2026):** Consolidated in-progress currency UI/backend in Draft PR #338; one local acceptance runner now combines disposable PostgreSQL16, full tests and build. New runner NOT RUN; no v21 registration, deployment or historical re-denomination.
