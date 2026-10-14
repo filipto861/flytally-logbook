@@ -102,7 +102,7 @@ test("isolated browser FSTD correction columns match the canonical DB optimizer 
   const fstd=fixture.slice(fixture.indexOf("CREATE TABLE fstd_sessions ("),fixture.indexOf("CREATE TABLE fstd_certified_revisions ("));
   assert.ok(fstd.startsWith("CREATE TABLE fstd_sessions ("));
   for(const column of ["record_revision","correction_reason","correction_opened_at","correction_opened_by_user_id"]){
-    assert.match(fstd,new RegExp("^  "+column+"\\\\s", "m"),"Missing "+column+" in browser FSTD fixture");
+    assert.match(fstd,new RegExp("^  "+column+"\\s", "m"),"Missing "+column+" in browser FSTD fixture");
     assert.ok(optimizer.includes("ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS "+column),
       "Missing canonical FSTD optimizer provenance for "+column);
   }
