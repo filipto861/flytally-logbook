@@ -65,3 +65,22 @@ test("exact v21 Trash rate validator accepts decimal rates rather than double-es
   assert.equal(decimal.test("1e6"),false);
   assert.equal(decimal.test("NaN"),false);
 });
+
+test("flight detail expense projection reads exact money on v21 and stays valid on legacy v20",()=>{
+  const source=readFileSync(new URL("../app/(protected)/flights/[id]/page.tsx",import.meta.url),"utf8");
+  assert.match(source,/to_jsonb\(e\)->>'amount_encoding' amount_encoding/);
+  assert.match(source,/\(to_jsonb\(e\)->>'amount_minor_units'\)::smallint amount_minor_units/);
+  assert.doesNotMatch(source,/SELECT id,category,label,amount_minor,currency,amount_encoding,amount_minor_units,created_at/);
+});
+
+test("Currency browser v21 setup only runs inside a dedicated disposable localhost fixture",()=>{
+  const harness=readFileSync(new URL("../tooling/run-auth-browser.mjs",import.meta.url),"utf8");
+  const runner=readFileSync(new URL("../tooling/run-currency-380-browser-local.ps1",import.meta.url),"utf8");
+  assert.match(harness,/FLYTALLY_CURRENCY_V21_BROWSER==="1"/);
+  assert.match(harness,/parsedDatabaseUrl\.hostname!=="127\.0\.0\.1"/);
+  assert.match(harness,/parsedDatabaseUrl\.pathname!=="\/flytally_currency_test"/);
+  assert.ok(harness.indexOf("const bootstrapResult=")<harness.indexOf("const candidate=readFileSync("));
+  assert.ok(harness.indexOf("const candidate=readFileSync(")<harness.indexOf("const browserResult="));
+  assert.match(runner,/\$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"/);
+  assert.match(runner,/Restore-Env "FLYTALLY_CURRENCY_V21_BROWSER"/);
+});
