@@ -70,7 +70,7 @@ test("F1.3 preserves expense child persistence outside FlightInput",()=>{
   for(const [name,block] of [["create",create],["update",update]] as const){
     assert.match(block,/expenseResult=parseFlightExpenses\(form\)/,name);
     assert.match(block,/expenseJson=JSON\.stringify\(expenseResult\.data\.map/,name);
-    assert.match(block,/INSERT INTO flight_expenses\(user_id,flight_id,category,label,amount_minor,currency\)/,name);
+    assert.match(block,/INSERT INTO flight_expenses\(user_id,flight_id,category,label,amount_minor,currency,amount_encoding,amount_minor_units\)/,name);
   }
   assert.doesNotMatch(parser,/flight_expenses|expenseJson|expenseCategory/);
 });
@@ -98,7 +98,7 @@ test("F1.3 preserves create duplicate protection from normalized identity",()=>{
 });
 
 test("F1.3 preserves update lock, correction and stored-price boundaries",()=>{
-  assert.match(update,/SELECT registration,date::text date,price_per_hour,locked_at,certified_at,/);
+  assert.match(update,/SELECT registration,date::text date,price_per_hour,price_currency_code AS currency_code,price_currency_minor_units AS currency_minor_units,price_per_hour_decimal::text AS rate_decimal,locked_at,certified_at,/);
   assert.match(update,/if\(existing\.locked_at\)return\{error:"This flight is locked\. Unlock it before editing\."\}/);
   assert.match(update,/connectedPicUserId>0&&existing\.certified_at/);
   assert.match(update,/shouldResolveStoredPrice\(existing,f\.registration,f\.date\)/);
