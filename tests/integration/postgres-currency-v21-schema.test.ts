@@ -204,7 +204,7 @@ test("v21 monetary draft and expense snapshot restore exactly in one disposable 
 
 test("invalid currency-bearing expense rolls back the parent flight in the same transaction",{skip:!enabled},()=>{
   const flight=JSON.stringify({id:131,user_id:1,date:"2026-10-12",price_per_hour:1200,price_currency_code:"JPY",price_currency_minor_units:0,price_per_hour_decimal:"1200",certification_hash:"",certification_version:8,record_revision:1,correction_reason:""});
-  const badExpense=JSON.stringify({id:32,user_id:1,flight_id:131,category:"LANDING",amount_minor:1000,currency:"JPY",amount_encoding:"iso_minor_units",amount_minor_units:null});
+  const badExpense=JSON.stringify({id:32,user_id:1,flight_id:131,category:"LANDING",label:"Invalid precision fixture",amount_minor:1000,currency:"JPY",amount_encoding:"iso_minor_units",amount_minor_units:null});
   reject("BEGIN; INSERT INTO flights SELECT (json_populate_record(NULL::flights,'"+flight.replaceAll("'","''")+"'::json)).*; INSERT INTO flight_expenses SELECT (json_populate_record(NULL::flight_expenses,'"+badExpense.replaceAll("'","''")+"'::json)).*; COMMIT;",/expenses_amount_encoding_v21_check/);
   assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=131"),"0");
   assert.equal(run("SELECT COUNT(*) FROM flight_expenses WHERE id=32"),"0");
