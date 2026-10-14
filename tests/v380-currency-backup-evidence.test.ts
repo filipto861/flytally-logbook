@@ -27,6 +27,18 @@ test("valid ISO 0/2/3 original monetary tuples are accepted before signed restor
   })),null);
 });
 
+test("signed v13 JSONB archived snapshots preserve valid numeric decimal tokens",()=>{
+  const flight={price_per_hour:1234.125,price_currency_code:"KWD",
+    price_currency_minor_units:3,price_per_hour_decimal:1234.125};
+  assert.equal(validateBackupMonetaryEvidence(sample({
+    deleted_flights:[{flight_data:flight,expenses_data:[
+      {currency:"JPY",amount_minor:150,amount_encoding:"iso_minor_units",amount_minor_units:0}
+    ]}],
+    voided_certified_flights:[{flight_snapshot:flight}],
+    voided_flight_archive_items:[{source_data:flight}]
+  })),null);
+});
+
 test("all-null v21 fields and legacy 2-digit expenses remain unmodified unknown denomination",()=>{
   assert.equal(validateBackupMonetaryEvidence(sample({
     rates:[{price_per_hour:1250,currency_code:null,currency_minor_units:null,price_per_hour_decimal:null}],
