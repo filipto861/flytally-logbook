@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Correct failed acceptance at TypeScript `TS2552` (unreleased)
+
+- User ran owner-local `run-currency-380-acceptance.ps1 -WithBrowser` at exact `3f9efa0accc68492d9ba45fb2022f67b104dfbee`: disposable PostgreSQL16 identity on port `49235` verified; `npm run typecheck` **FAIL** `TS2552` line 71 of `lib/aircraft-sharing.ts`. Isolated cluster shut down correctly, no later acceptance stages ran.
+- Root cause: `dryPriceDecimal` returned as an undeclared shorthand although `dryDecimal` is the validated local variable. Minimal one-line fix `dryPriceDecimal:dryDecimal` in source SHA `5705254cae1d1b952a4dcee8cd389adcffb54214`. GitHub compare from failing SHA reports one line added/removed in that file only.
+- Corrected source **NOT YET TYPECHECKED / ACCEPTED**. Next check `npm run typecheck` first in owner-local environment, then entire combined acceptance on a known current SHA. No production migration, merge or deploy.
+
 ## 14 October 2026 — Fix TypeScript parser stop discovered by owner-local Currency acceptance
 
 - Owner-local exact `4093fd34` combined acceptance started a verified disposable PostgreSQL16 on `127.0.0.1:64768` and stopped at **typecheck TS1128**, `lib/aircraft-sharing.ts:137`; all later stages **NOT RUN**. Database identity matched; isolated server shut down cleanly.
