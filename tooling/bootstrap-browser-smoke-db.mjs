@@ -17,7 +17,7 @@ const quote=value=>`'${String(value).replaceAll("'","''")}'`;
 
 // This disposable fixture models a database with migrations 1..19 already
 // registered. Use the canonical registry names instead of fake placeholders:
- // v21 runtime correctly rejects a name mismatch, including in test fixtures.
+// v21 runtime correctly rejects a name mismatch, including in test fixtures.
 const migrationPlan=readFileSync(new URL("../lib/migration-plan.ts",import.meta.url),"utf8");
 const preappliedMigrations=[...migrationPlan.matchAll(/\{version:(\d+),name:"([^"]+)"\}/g)]
   .map(match=>({version:Number(match[1]),name:match[2]}))

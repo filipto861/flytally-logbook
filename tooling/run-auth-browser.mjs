@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -45,8 +44,8 @@ const bootstrapResult=spawnSync(process.execPath,[bootstrap],{stdio:"inherit",en
 if(bootstrapResult.error)throw bootstrapResult.error;
 if(bootstrapResult.status!==0)process.exit(bootstrapResult.status??1);
 
-// Only the explicitly opted-in Currency 3.8.0 browser runner may upgrade
-// its already-bootstrapped disposable fixture. Never register v21 in runtime.
+// Only explicitly opted-in Currency browser acceptance may use the verified
+// disposable localhost fixture for runtime v20/v21 schema initialization.
 if(process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
   if(parsedDatabaseUrl.hostname!=="127.0.0.1" ||
      parsedDatabaseUrl.pathname!=="/flytally_currency_test" ||
