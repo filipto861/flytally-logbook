@@ -107,3 +107,14 @@ test("isolated browser FSTD correction columns match the canonical DB optimizer 
       "Missing canonical FSTD optimizer provenance for "+column);
   }
 });
+
+test("signed v13 desktop recovery waits for an explicit Server Action result before asserting restored money",()=>{
+  const browser=readFileSync(new URL("../e2e/trash-integrity.spec.mjs",import.meta.url),"utf8");
+  const signed=browser.slice(browser.indexOf('test("Currency 3.8 browser: signed portable v13'));
+  assert.match(signed,/test\.setTimeout\(90_000\)/);
+  assert.match(signed,/Exact recovery completed atomically\./);
+  assert.match(signed,/Restore error: /);
+  const status=signed.indexOf('page.locator(".backup-center [role=status]")');
+  const persisted=signed.indexOf("SELECT price_currency_code||");
+  assert.ok(status>0&&persisted>status,"Check the actual authenticated restore result before PostgreSQL values");
+});
