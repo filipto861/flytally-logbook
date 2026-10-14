@@ -1,5 +1,9 @@
 # Independent read-only reviewer handoff — FlyTally Logbook 3.8 Currency v21
 
+## Critical additional design decision: fail-closed v21 runtime execution (14 October)
+
+A review before local acceptance found that registering v21 in the automatic migration list could otherwise permit an unapproved v20->v21 schema write at runtime. Current `lib/db-optimization.ts` therefore **explicitly rejects a pending v21** unless `FLYTALLY_LOCAL_POSTGRES=1` and `DATABASE_URL` is a verified loopback hostname. This supports isolated local browser/PG fixtures only. A real new/recovered database must be advanced through the separately controlled v21 SQL artifact (version21 registry inserted atomically) before deploying the version21 runtime; this deliberately supersedes any implication that production/fresh cloud installation might auto-apply v21. Ask reviewer to test both branches and verify no service startup side effects beyond existing v20 bootstrap if registry21 is absent. Review whether this flag/loopback check should be stricter, especially where other local databases could be present.
+
 Date: 2026-10-14. Reviewer: DeepSeek or Claude (independent). Owner: final decision maker. Status: **Draft PR #338, code staged, NOT locally accepted on new SHA; NEVER execute against production**.
 
 Repository: `filipto861/flytally-logbook`. Branch: `feat/3.8.0-m2a0-schema-review-main`. Historic accepted application SHA: `0192570a240dc3473b6dea15c7908a15e7ee16d8`. Current work adds runtime migration support and changes the acceptance contract; historic PASS must NOT be reused as current PASS.

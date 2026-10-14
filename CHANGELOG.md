@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 14 October 2026 — Block unsanctioned runtime v21 migration on real databases (unreleased, untested)
+
+- Applied fail-closed guard in `lib/db-optimization.ts` before any version-21 DDL transaction: if version21 is pending, runtime throws unless the environment explicitly marks disposable local PostgreSQL and `DATABASE_URL` hostname is loopback. The normal production path requires a separately approved schema-first SQL migration that has **already written registry version 21** before v21 app code is deployed. No remote schema upgrade may silently originate from application startup.
+- Added static source contract for the guard. Neither this code SHA nor the earlier v21 release SQL candidate has passed local TypeScript/Node/PG/build/browser acceptance yet. No production SQL, deployment or merge.
+
 ## 14 October 2026 — Stage guarded Currency v21 release tooling and new integration tests (unreleased, unverified)
 
 - Added explicit SQL `tooling/v380-v21-preflight.sql`, `v380-v21-migrate.sql`, `v380-v21-postflight.sql`. The migration copies exactly the established 12 nullable/non-defaulted columns and four CHECKs, guards exact v20 registry/protection, rejects any partial v21, uses bounded statement/lock timeout and advisory transaction lock, inserts v21 registry in the same transaction, and validates the result before commit. Expected DB passed explicitly; Neon branch must be separately verified.
