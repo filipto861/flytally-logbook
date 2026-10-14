@@ -22,7 +22,7 @@ export default async function NewFlightPage({searchParams}:{searchParams:Promise
     sql`SELECT DISTINCT u.display_name FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END WHERE c.status='accepted' AND ((c.requester_user_id=${userId} AND c.requester_label='instructor') OR (c.recipient_user_id=${userId} AND c.recipient_label='instructor')) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>,
     getAcceptedPicConnections(userId),
     getIntelligentEntryContext(userId),
-    sql`SELECT currency FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<{currency:string}>>,
+    sql`SELECT currency FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
   ]);
   const defaultCurrency=supportedIsoCurrency(currencyRows[0]?.currency)?.code??"";
   const instructors=instructorRows.map(row=>({name:String(row.display_name??"").trim()})).filter(item=>item.name),manualInitial={...defaults,departure:params.departure?params.departure.trim().toUpperCase():defaults.departure},manualFormId="new-flight-manual-form";
