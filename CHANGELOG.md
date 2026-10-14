@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Fix Windows CRLF parsing in v21 static SQL source contract (unreleased)
+
+- Owner-local `npm run typecheck` on `3cb1eeb74d6f99f40e18d3e871c5b11b377bd7c4`: **PASS**. Targeted v21 release contract: **4/5 PASS**, first check failed `0 !== 4` because regex expected exactly LF (`\n`) in an ALTER TABLE block but SQL has Windows CRLF (`\r\n`) on checkout.
+- Test-only commit `3f7b685bb6dad158b5f71f6d922b20360c110510` changes the parser to accept `\r?\n`, preserving all eight draft/executable/runtime SQL parity assertions. Source comparison on repository LF and simulated Windows CRLF found 4 ALTER and 4 CHECK definitions; all eight matched both release SQL and runtime. **Corrected local test and full acceptance NOT RUN**.
+- No migration SQL/runtime functionality change, no Neon SQL, PR merge or Vercel deploy. Next owner reruns targeted static then consolidated local acceptance.
+
 ## 14 October 2026 — Block unsanctioned runtime v21 migration on real databases (unreleased, untested)
 
 - Applied fail-closed guard in `lib/db-optimization.ts` before any version-21 DDL transaction: if version21 is pending, runtime throws unless the environment explicitly marks disposable local PostgreSQL and `DATABASE_URL` hostname is loopback. The normal production path requires a separately approved schema-first SQL migration that has **already written registry version 21** before v21 app code is deployed. No remote schema upgrade may silently originate from application startup.
