@@ -7,8 +7,9 @@ const root=path.resolve(import.meta.dirname,"..");
 const migrationPlan=fs.readFileSync(path.join(root,"lib/migration-plan.ts"),"utf8");
 const dbOptimizations=fs.readFileSync(path.join(root,"lib/db-optimization.ts"),"utf8");
 
-test("3.5.0 registers certified-flight voiding as schema v20",()=>{
-  assert.match(migrationPlan,/DATABASE_SCHEMA_VERSION=20/);
+test("3.5.0 certified-flight voiding remains registered at v20 after later schema versions",()=>{
+  const currentSchemaVersion=Number(migrationPlan.match(/DATABASE_SCHEMA_VERSION=(\d+)/)?.[1]);
+  assert.ok(Number.isInteger(currentSchemaVersion)&&currentSchemaVersion>=20,"v20 must not be retired by later migrations");
   assert.match(migrationPlan,/\{version:20,name:"certified flight void archive and provenance"\}/);
   assert.match(dbOptimizations,/20:"certified flight void archive and provenance"/);
 });
