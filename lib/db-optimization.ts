@@ -28,6 +28,7 @@ const migrationNames:Record<number,string>={
   18:"aircraft default operation type",
   19:"aircraft default engine type",
   20:"certified flight void archive and provenance",
+  21:"source-backed currency exact-money",
 };
 
 const migrationQueries=(version:number)=>{
@@ -843,6 +844,1122 @@ const migrationQueries=(version:number)=>{
     sql`CREATE TRIGGER trg_logbook_protect_locked_flight
       BEFORE UPDATE OR DELETE ON flights
       FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight()`,
+  ];
+  if(version===21)return[
+    sql`DO $v380$
+    DECLARE
+      expected_names text[] := ARRAY[
+        'flight audit and locking',
+        'backups and recoverable trash',
+        'core query indexes',
+        'restore and route performance indexes',
+        'EASA FCL.050 flight logbook fields',
+        'FCL.050 structured aircraft, FSTD and certification',
+        'certified flight correction revisions',
+        'certified FSTD correction revisions',
+        'private beta authentication foundation',
+        'private pilot connections',
+        'instructor flight approvals',
+        'shared flight participation',
+        'crew connections and verified approvals',
+        'user-owned structured flight expenses',
+        'Safety Pilot connected PIC collaboration',
+        'general PIC invitation provenance',
+        'historical flight aircraft identity preservation',
+        'aircraft default operation type',
+        'aircraft default engine type',
+        'certified flight void archive and provenance'
+      ];
+      actual_name text;
+      v integer;
+    BEGIN
+      IF pg_is_in_recovery() THEN
+        RAISE EXCEPTION 'v21: cannot migrate a recovery replica';
+      END IF;
+      IF to_regclass('public.flytally_schema_migrations') IS NULL THEN
+        RAISE EXCEPTION 'v21: migration registry absent';
+      END IF;
+      FOR v IN 1..20 LOOP
+        SELECT name INTO actual_name FROM public.flytally_schema_migrations WHERE version=v;
+        IF actual_name IS DISTINCT FROM expected_names[v] THEN
+          RAISE EXCEPTION 'v21: registry name drift at version %',v;
+        END IF;
+      END LOOP;
+      IF (SELECT COUNT(*) FROM public.flytally_schema_migrations)<>20
+        OR EXISTS(SELECT 1 FROM public.flytally_schema_migrations WHERE version<1 OR version>20) THEN
+        RAISE EXCEPTION 'v21: registry must be exactly 1 through 20';
+      END IF;
+      IF NOT (to_regclass('public.rates') IS NOT NULL AND
+          to_regclass('public.aircraft') IS NOT NULL AND
+          to_regclass('public.flights') IS NOT NULL AND
+          to_regclass('public.flight_expenses') IS NOT NULL) THEN
+        RAISE EXCEPTION 'v21: required monetary table missing';
+      END IF;
+      IF to_regclass('public.voided_certified_flights') IS NULL
+        OR to_regclass('public.flight_source_provenance') IS NULL
+        OR to_regprocedure('public.logbook_protect_locked_flight()') IS NULL
+        OR to_regprocedure('public.logbook_protect_source_provenance()') IS NULL
+        OR NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.flights'::regclass
+          AND tgname='trg_logbook_protect_locked_flight' AND NOT tgisinternal)
+        OR NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.flights'::regclass
+          AND tgname='trg_logbook_prevent_voided_flight_id_reuse' AND NOT tgisinternal) THEN
+        RAISE EXCEPTION 'v21: required v20 protected history or triggers missing';
+      END IF;
+      IF EXISTS(
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='public' AND (
+          (table_name='rates' AND column_name='currency_code')
+          OR (table_name='rates' AND column_name='currency_minor_units')
+          OR (table_name='rates' AND column_name='price_per_hour_decimal')
+          OR (table_name='rates' AND column_name='dry_price_per_hour_decimal')
+          OR (table_name='aircraft' AND column_name='default_price_currency_code')
+          OR (table_name='aircraft' AND column_name='default_price_currency_minor_units')
+          OR (table_name='aircraft' AND column_name='default_price_per_hour_decimal')
+          OR (table_name='flights' AND column_name='price_currency_code')
+          OR (table_name='flights' AND column_name='price_currency_minor_units')
+          OR (table_name='flights' AND column_name='price_per_hour_decimal')
+          OR (table_name='flight_expenses' AND column_name='amount_encoding')
+          OR (table_name='flight_expenses' AND column_name='amount_minor_units')
+        )
+      ) THEN
+        RAISE EXCEPTION 'v21: partial or existing monetary columns - fail closed';
+      END IF;
+      IF EXISTS(
+        SELECT 1 FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
+        JOIN pg_namespace n ON n.oid=t.relnamespace
+        WHERE n.nspname='public' AND c.conname IN ('rates_exact_currency_tuple_v21_check','aircraft_exact_currency_tuple_v21_check','flights_exact_currency_tuple_v21_check','expenses_amount_encoding_v21_check')
+      ) THEN
+        RAISE EXCEPTION 'v21: partial or existing CHECK constraints - fail closed';
+      END IF;
+    END;
+    $v380import "server-only";
+import { sql } from "@/lib/db";
+import { DATABASE_SCHEMA_VERSION,pendingMigrationVersions } from "@/lib/migration-plan";
+
+declare global{
+  // eslint-disable-next-line no-var
+  var __logbookOptimization:Promise<void>|undefined;
+}
+
+const migrationNames:Record<number,string>={
+  1:"flight audit and locking",
+  2:"backups and recoverable trash",
+  3:"core query indexes",
+  4:"restore and route performance indexes",
+  5:"EASA FCL.050 flight logbook fields",
+  6:"FCL.050 structured aircraft, FSTD and certification",
+  7:"certified flight correction revisions",
+  8:"certified FSTD correction revisions",
+  9:"private beta authentication foundation",
+  10:"private pilot connections",
+  11:"instructor flight approvals",
+  12:"shared flight participation",
+  13:"crew connections and verified approvals",
+  14:"user-owned structured flight expenses",
+  15:"Safety Pilot connected PIC collaboration",
+  16:"general PIC invitation provenance",
+  17:"historical flight aircraft identity preservation",
+  18:"aircraft default operation type",
+  19:"aircraft default engine type",
+  20:"certified flight void archive and provenance",
+};
+
+const migrationQueries=(version:number)=>{
+  if(version===1)return[
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS locked_by_user_id BIGINT`,
+    sql`CREATE TABLE IF NOT EXISTS flight_audit_log (
+      id BIGSERIAL PRIMARY KEY,flight_id BIGINT NOT NULL,user_id BIGINT NOT NULL,actor_user_id BIGINT,
+      action TEXT NOT NULL CHECK(action IN ('created','updated','deleted')),old_data JSONB,new_data JSONB,
+      changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
+      BEGIN
+        IF TG_OP='DELETE' AND OLD.locked_at IS NOT NULL THEN RAISE EXCEPTION 'Locked flight cannot be deleted'; END IF;
+        IF TG_OP='UPDATE' AND OLD.locked_at IS NOT NULL
+          AND (to_jsonb(OLD)-'locked_at'-'locked_by_user_id') IS DISTINCT FROM (to_jsonb(NEW)-'locked_at'-'locked_by_user_id') THEN
+          RAISE EXCEPTION 'Locked flight cannot be changed';
+        END IF;
+        IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DO $$ BEGIN
+      IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_protect_locked_flight' AND tgrelid='flights'::regclass AND NOT tgisinternal) THEN
+        CREATE TRIGGER trg_logbook_protect_locked_flight BEFORE UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight();
+      END IF;
+    END $$`,
+    sql`CREATE OR REPLACE FUNCTION logbook_audit_flight_change() RETURNS TRIGGER AS $$
+      BEGIN
+        IF TG_OP='INSERT' THEN
+          INSERT INTO flight_audit_log(flight_id,user_id,actor_user_id,action,new_data) VALUES(NEW.id,NEW.user_id,NEW.user_id,'created',to_jsonb(NEW));
+          RETURN NEW;
+        ELSIF TG_OP='UPDATE' THEN
+          IF to_jsonb(OLD) IS DISTINCT FROM to_jsonb(NEW) THEN
+            INSERT INTO flight_audit_log(flight_id,user_id,actor_user_id,action,old_data,new_data) VALUES(NEW.id,NEW.user_id,NEW.user_id,'updated',to_jsonb(OLD),to_jsonb(NEW));
+          END IF;
+          RETURN NEW;
+        ELSE
+          INSERT INTO flight_audit_log(flight_id,user_id,actor_user_id,action,old_data) VALUES(OLD.id,OLD.user_id,OLD.user_id,'deleted',to_jsonb(OLD));
+          RETURN OLD;
+        END IF;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DO $$ BEGIN
+      IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_audit_flight_change' AND tgrelid='flights'::regclass AND NOT tgisinternal) THEN
+        CREATE TRIGGER trg_logbook_audit_flight_change AFTER INSERT OR UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_audit_flight_change();
+      END IF;
+    END $$`,
+  ];
+  if(version===2)return[
+    sql`CREATE TABLE IF NOT EXISTS account_backups (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,kind TEXT NOT NULL CHECK(kind IN ('automatic','manual','pre_restore')),
+      version INTEGER NOT NULL,exported_at TIMESTAMPTZ NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      payload_base64 TEXT NOT NULL,payload_sha256 TEXT NOT NULL,raw_bytes BIGINT NOT NULL,compressed_bytes BIGINT NOT NULL,counts JSONB NOT NULL DEFAULT '{}'::jsonb
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS deleted_flights (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,original_flight_id BIGINT NOT NULL,delete_token TEXT NOT NULL UNIQUE,
+      flight_data JSONB NOT NULL,tracks_data JSONB NOT NULL DEFAULT '[]'::jsonb,deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      purge_after TIMESTAMPTZ NOT NULL DEFAULT (NOW()+INTERVAL '90 days'),restored_at TIMESTAMPTZ,restored_flight_id BIGINT
+    )`,
+  ];
+  if(version===3)return[
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_date ON flights(user_id,date DESC,id DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_registration ON flights(user_id,registration)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_tracks_user_flight ON flight_tracks(user_id,flight_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_rates_user_registration_date ON rates(user_id,registration,valid_from DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_aircraft_user_active ON aircraft(user_id,active,registration)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_airports_user_active ON airports(user_id,active,ident)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_expiries_user_active_date ON user_expiries(user_id,active,expiry_date)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_flight_audit_user_flight ON flight_audit_log(user_id,flight_id,changed_at DESC,id DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_account_backups_user_date ON account_backups(user_id,created_at DESC,id DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_deleted_flights_user_date ON deleted_flights(user_id,restored_at,purge_after,deleted_at DESC,id DESC)`,
+  ];
+  if(version===4)return[
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_restore_key ON flights(user_id,date,registration,off_block,departure,arrival)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_tracks_restore_key ON flight_tracks(user_id,flight_id,file_name,point_count)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_tracks_user_time ON flight_tracks(user_id,start_utc,id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_route ON flights(user_id,departure,arrival,date DESC)`,
+  ];
+  if(version===5)return[
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS operation_type TEXT NOT NULL DEFAULT 'SP'`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS engine_type TEXT NOT NULL DEFAULT 'SE'`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS landings_day INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS landings_night INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS night_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS ifr_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS pic_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS copilot_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS dual_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS instructor_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS verification_name TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS verification_reference TEXT NOT NULL DEFAULT ''`,
+    sql`UPDATE flights SET landings_day=GREATEST(COALESCE(starts,0),0) WHERE landings_day=0 AND landings_night=0 AND COALESCE(starts,0)>0`,
+    sql`UPDATE flights SET engine_type=CASE WHEN UPPER(COALESCE(aircraft_class,''))='MEP' THEN 'ME' ELSE 'SE' END WHERE engine_type IS NULL OR engine_type NOT IN ('SE','ME')`,
+    sql`UPDATE flights SET pic_minutes=CASE WHEN UPPER(COALESCE(role,'')) IN ('PIC','SPIC','PICUS','INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, copilot_minutes=CASE WHEN UPPER(COALESCE(role,''))='CO-PILOT' THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, dual_minutes=CASE WHEN UPPER(COALESCE(role,''))='DUAL' OR NULLIF(TRIM(COALESCE(instructor,'')),'') IS NOT NULL THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, instructor_minutes=CASE WHEN UPPER(COALESCE(role,'')) IN ('INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END WHERE pic_minutes=0 AND copilot_minutes=0 AND dual_minutes=0 AND instructor_minutes=0`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_easa ON flights(user_id,evidence,date DESC)`,
+  ];
+  if(version===6)return[
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS aircraft_make TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS aircraft_model TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS aircraft_variant TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS aircraft_make TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS aircraft_model TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS aircraft_variant TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certified_at TIMESTAMPTZ`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certified_by_user_id BIGINT`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certification_hash TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certification_version INTEGER NOT NULL DEFAULT 1`,
+    sql`UPDATE aircraft SET aircraft_model=COALESCE(NULLIF(TRIM(aircraft_model),''),NULLIF(TRIM(aircraft_type),''),'') WHERE aircraft_model=''`,
+    sql`UPDATE flights f SET aircraft_make=COALESCE(NULLIF(TRIM(f.aircraft_make),''),NULLIF(TRIM(a.aircraft_make),''),''),aircraft_model=COALESCE(NULLIF(TRIM(f.aircraft_model),''),NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(f.aircraft_type),''),''),aircraft_variant=COALESCE(NULLIF(TRIM(f.aircraft_variant),''),NULLIF(TRIM(a.aircraft_variant),''),'') FROM aircraft a WHERE a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration))`,
+    sql`UPDATE flights SET aircraft_model=COALESCE(NULLIF(TRIM(aircraft_model),''),NULLIF(TRIM(aircraft_type),''),'') WHERE aircraft_model=''`,
+    sql`CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $$
+      DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
+      BEGIN
+        IF TG_OP='INSERT' OR NEW.registration IS DISTINCT FROM OLD.registration THEN
+          SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+            INTO v_make,v_model,v_variant FROM aircraft a
+            WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration)) LIMIT 1;
+          NEW.aircraft_make:=COALESCE(v_make,'');
+          NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+          NEW.aircraft_variant:=COALESCE(v_variant,'');
+        ELSE
+          IF COALESCE(TRIM(NEW.aircraft_model),'')='' THEN NEW.aircraft_model:=COALESCE(NULLIF(TRIM(NEW.aircraft_type),''),''); END IF;
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_snapshot_aircraft_identity ON flights`,
+    sql`CREATE TRIGGER trg_logbook_snapshot_aircraft_identity BEFORE INSERT OR UPDATE OF registration ON flights FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity()`,
+    sql`CREATE TABLE IF NOT EXISTS fstd_sessions (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,session_date DATE NOT NULL,device_type TEXT NOT NULL,
+      qualification_number TEXT NOT NULL DEFAULT '',instruction TEXT NOT NULL DEFAULT '',total_minutes INTEGER NOT NULL CHECK(total_minutes>=0 AND total_minutes<=1440),
+      remarks TEXT NOT NULL DEFAULT '',certified_at TIMESTAMPTZ,certified_by_user_id BIGINT,certification_hash TEXT NOT NULL DEFAULT '',certification_version INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_fstd_user_date ON fstd_sessions(user_id,session_date DESC,id DESC)`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_certified_fstd() RETURNS TRIGGER AS $$
+      BEGIN
+        IF OLD.certified_at IS NOT NULL THEN RAISE EXCEPTION 'Certified FSTD session cannot be changed or deleted'; END IF;
+        IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_certified_fstd ON fstd_sessions`,
+    sql`CREATE TRIGGER trg_logbook_protect_certified_fstd BEFORE UPDATE OR DELETE ON fstd_sessions FOR EACH ROW EXECUTE FUNCTION logbook_protect_certified_fstd()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
+      BEGIN
+        IF OLD.certified_at IS NOT NULL THEN RAISE EXCEPTION 'Certified flight cannot be changed or deleted'; END IF;
+        IF TG_OP='DELETE' AND OLD.locked_at IS NOT NULL THEN RAISE EXCEPTION 'Locked flight cannot be deleted'; END IF;
+        IF TG_OP='UPDATE' AND OLD.locked_at IS NOT NULL
+          AND (to_jsonb(OLD)-'locked_at'-'locked_by_user_id') IS DISTINCT FROM (to_jsonb(NEW)-'locked_at'-'locked_by_user_id') THEN
+          RAISE EXCEPTION 'Locked flight cannot be changed';
+        END IF;
+        IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+  ];
+  if(version===7)return[
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS record_revision INTEGER NOT NULL DEFAULT 1`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS correction_reason TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS correction_opened_at TIMESTAMPTZ`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS correction_opened_by_user_id BIGINT`,
+    sql`CREATE TABLE IF NOT EXISTS flight_certified_revisions (
+      id BIGSERIAL PRIMARY KEY,
+      flight_id BIGINT NOT NULL,
+      user_id BIGINT NOT NULL,
+      revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+      snapshot_data JSONB NOT NULL,
+      certification_hash TEXT NOT NULL,
+      certification_version INTEGER NOT NULL DEFAULT 1,
+      certified_at TIMESTAMPTZ NOT NULL,
+      certified_by_user_id BIGINT,
+      superseded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      superseded_by_user_id BIGINT NOT NULL,
+      correction_reason TEXT NOT NULL,
+      UNIQUE(user_id,flight_id,revision_number)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_certified_revisions_user_flight ON flight_certified_revisions(user_id,flight_id,revision_number DESC)`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
+      DECLARE correction_transition BOOLEAN:=FALSE;
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          IF OLD.certified_at IS NOT NULL THEN RAISE EXCEPTION 'Certified flight cannot be deleted'; END IF;
+          IF OLD.locked_at IS NOT NULL THEN RAISE EXCEPTION 'Locked flight cannot be deleted'; END IF;
+          RETURN OLD;
+        END IF;
+
+        IF OLD.certified_at IS NOT NULL THEN
+          correction_transition :=
+            NEW.certified_at IS NULL
+            AND COALESCE(NEW.certification_hash,'')=''
+            AND NEW.locked_at IS NULL
+            AND COALESCE(NEW.record_revision,1)=COALESCE(OLD.record_revision,1)+1
+            AND NULLIF(TRIM(COALESCE(NEW.correction_reason,'')),'') IS NOT NULL
+            AND (to_jsonb(OLD)-'certified_at'-'certified_by_user_id'-'certification_hash'-'locked_at'-'locked_by_user_id'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+                IS NOT DISTINCT FROM
+                (to_jsonb(NEW)-'certified_at'-'certified_by_user_id'-'certification_hash'-'locked_at'-'locked_by_user_id'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+            AND EXISTS(
+              SELECT 1 FROM flight_certified_revisions r
+              WHERE r.user_id=OLD.user_id AND r.flight_id=OLD.id
+                AND r.revision_number=COALESCE(OLD.record_revision,1)
+                AND r.certification_hash=COALESCE(OLD.certification_hash,'')
+            );
+          IF NOT correction_transition THEN RAISE EXCEPTION 'Certified flight is immutable; start a traceable correction instead'; END IF;
+          RETURN NEW;
+        END IF;
+
+        IF OLD.locked_at IS NOT NULL
+          AND (to_jsonb(OLD)-'locked_at'-'locked_by_user_id') IS DISTINCT FROM (to_jsonb(NEW)-'locked_at'-'locked_by_user_id') THEN
+          RAISE EXCEPTION 'Locked flight cannot be changed';
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+  ];
+  if(version===8)return[
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS record_revision INTEGER NOT NULL DEFAULT 1`,
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS correction_reason TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS correction_opened_at TIMESTAMPTZ`,
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS correction_opened_by_user_id BIGINT`,
+    sql`CREATE TABLE IF NOT EXISTS fstd_certified_revisions (
+      id BIGSERIAL PRIMARY KEY,
+      fstd_session_id BIGINT NOT NULL,
+      user_id BIGINT NOT NULL,
+      revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+      snapshot_data JSONB NOT NULL,
+      certification_hash TEXT NOT NULL,
+      certification_version INTEGER NOT NULL DEFAULT 1,
+      certified_at TIMESTAMPTZ NOT NULL,
+      certified_by_user_id BIGINT,
+      superseded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      superseded_by_user_id BIGINT NOT NULL,
+      correction_reason TEXT NOT NULL,
+      UNIQUE(user_id,fstd_session_id,revision_number)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_fstd_revisions_user_session ON fstd_certified_revisions(user_id,fstd_session_id,revision_number DESC)`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_certified_fstd() RETURNS TRIGGER AS $$
+      DECLARE correction_transition BOOLEAN:=FALSE;
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          IF OLD.certified_at IS NOT NULL THEN RAISE EXCEPTION 'Certified FSTD session cannot be deleted'; END IF;
+          RETURN OLD;
+        END IF;
+        IF OLD.certified_at IS NOT NULL THEN
+          correction_transition :=
+            NEW.certified_at IS NULL
+            AND COALESCE(NEW.certification_hash,'')=''
+            AND COALESCE(NEW.record_revision,1)=COALESCE(OLD.record_revision,1)+1
+            AND NULLIF(TRIM(COALESCE(NEW.correction_reason,'')),'') IS NOT NULL
+            AND (to_jsonb(OLD)-'certified_at'-'certified_by_user_id'-'certification_hash'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+                IS NOT DISTINCT FROM
+                (to_jsonb(NEW)-'certified_at'-'certified_by_user_id'-'certification_hash'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+            AND EXISTS(
+              SELECT 1 FROM fstd_certified_revisions r
+              WHERE r.user_id=OLD.user_id AND r.fstd_session_id=OLD.id
+                AND r.revision_number=COALESCE(OLD.record_revision,1)
+                AND r.certification_hash=COALESCE(OLD.certification_hash,'')
+            );
+          IF NOT correction_transition THEN RAISE EXCEPTION 'Certified FSTD session is immutable; start a traceable correction instead'; END IF;
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+  ];
+  if(version===9)return[
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_flytally_users_email_normalized ON users(LOWER(BTRIM(email)))`,
+    sql`CREATE TABLE IF NOT EXISTS auth_identities (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,provider_subject TEXT NOT NULL,provider_email TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),last_login_at TIMESTAMPTZ,
+      UNIQUE(provider,provider_subject),UNIQUE(user_id,provider)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS auth_sessions (
+      id UUID PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),expires_at TIMESTAMPTZ NOT NULL,
+      revoked_at TIMESTAMPTZ,user_agent TEXT NOT NULL DEFAULT '',ip_hash TEXT NOT NULL DEFAULT ''
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_active ON auth_sessions(user_id,expires_at DESC) WHERE revoked_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS auth_invites (
+      id BIGSERIAL PRIMARY KEY,email TEXT NOT NULL,token_hash TEXT NOT NULL UNIQUE,role TEXT NOT NULL DEFAULT 'user',
+      expires_at TIMESTAMPTZ NOT NULL,created_by_user_id BIGINT NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),used_at TIMESTAMPTZ,used_by_user_id BIGINT REFERENCES users(id),revoked_at TIMESTAMPTZ
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_invites_email_active ON auth_invites(LOWER(BTRIM(email)),expires_at DESC) WHERE used_at IS NULL AND revoked_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS auth_password_resets (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,requested_ip_hash TEXT NOT NULL DEFAULT ''
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_password_resets_user_active ON auth_password_resets(user_id,expires_at DESC) WHERE used_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS auth_login_attempts (
+      id BIGSERIAL PRIMARY KEY,email_hash TEXT NOT NULL,ip_hash TEXT NOT NULL,
+      attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),succeeded BOOLEAN NOT NULL DEFAULT FALSE
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_attempts_email_time ON auth_login_attempts(email_hash,attempted_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_attempts_ip_time ON auth_login_attempts(ip_hash,attempted_at DESC)`,
+    sql`CREATE TABLE IF NOT EXISTS auth_events (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,event_type TEXT NOT NULL,
+      event_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ip_hash TEXT NOT NULL DEFAULT '',user_agent TEXT NOT NULL DEFAULT '',details JSONB NOT NULL DEFAULT '{}'::jsonb
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_events_user_time ON auth_events(user_id,event_at DESC)`,
+  ];
+  if(version===10)return[
+    sql`CREATE TABLE IF NOT EXISTS pilot_connections (
+      id BIGSERIAL PRIMARY KEY,
+      requester_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipient_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      relationship TEXT NOT NULL CHECK(relationship IN ('pilot','requester_instructor','recipient_instructor')),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),accepted_at TIMESTAMPTZ,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CHECK(requester_user_id<>recipient_user_id)
+    )`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_pilot_connections_pair ON pilot_connections(LEAST(requester_user_id,recipient_user_id),GREATEST(requester_user_id,recipient_user_id))`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pilot_connections_recipient_status ON pilot_connections(recipient_user_id,status,created_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pilot_connections_requester_status ON pilot_connections(requester_user_id,status,created_at DESC)`,
+  ];
+  if(version===11)return[
+    sql`CREATE TABLE IF NOT EXISTS instructor_flight_approvals (
+      id BIGSERIAL PRIMARY KEY,
+      flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,
+      student_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      instructor_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      record_revision INTEGER NOT NULL,
+      flight_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','declined')),
+      requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),decided_at TIMESTAMPTZ,
+      decision_note TEXT NOT NULL DEFAULT '',
+      CHECK(student_user_id<>instructor_user_id),UNIQUE(flight_id,record_revision)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_instructor_approvals_instructor_status ON instructor_flight_approvals(instructor_user_id,status,requested_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_instructor_approvals_student_flight ON instructor_flight_approvals(student_user_id,flight_id,record_revision DESC)`,
+  ];
+  if(version===12)return[
+    sql`CREATE TABLE IF NOT EXISTS flight_participations (
+      id BIGSERIAL PRIMARY KEY,
+      source_flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,
+      source_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      participant_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      participant_role TEXT NOT NULL CHECK(participant_role IN ('INSTRUCTOR','SAFETY PILOT')),
+      source_revision INTEGER NOT NULL,source_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted','declined')),
+      participant_flight_id BIGINT REFERENCES flights(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),responded_at TIMESTAMPTZ,
+      CHECK(source_user_id<>participant_user_id),
+      UNIQUE(source_flight_id,source_revision,participant_role),UNIQUE(participant_flight_id)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_participations_recipient_status ON flight_participations(participant_user_id,status,created_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_participations_source ON flight_participations(source_user_id,source_flight_id,source_revision DESC)`,
+  ];
+  if(version===13)return[
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS requester_label TEXT NOT NULL DEFAULT 'pilot'`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS recipient_label TEXT NOT NULL DEFAULT 'pilot'`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS requester_shares_logbook BOOLEAN NOT NULL DEFAULT FALSE`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS recipient_shares_logbook BOOLEAN NOT NULL DEFAULT FALSE`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ`,
+    sql`UPDATE pilot_connections SET requester_label='instructor' WHERE relationship='requester_instructor' AND requester_label='pilot'`,
+    sql`UPDATE pilot_connections SET recipient_label='instructor' WHERE relationship='recipient_instructor' AND recipient_label='pilot'`,
+    sql`ALTER TABLE pilot_connections DROP CONSTRAINT IF EXISTS pilot_connections_status_check`,
+    sql`ALTER TABLE pilot_connections ADD CONSTRAINT pilot_connections_status_check CHECK(status IN ('pending','accepted','declined','cancelled'))`,
+    sql`DROP INDEX IF EXISTS idx_pilot_connections_pair`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_pilot_connections_active_pair ON pilot_connections(LEAST(requester_user_id,recipient_user_id),GREATEST(requester_user_id,recipient_user_id)) WHERE status IN ('pending','accepted')`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_participant_role_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_participant_role_check CHECK(participant_role IN ('CO-PILOT','SAFETY PILOT','INSTRUCTOR','EXAMINER','OBSERVER'))`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_status_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_status_check CHECK(status IN ('pending','accepted','declined','superseded','cancelled'))`,
+    sql`DO $$ DECLARE constraint_name text; BEGIN
+      SELECT conname INTO constraint_name FROM pg_constraint WHERE conrelid='flight_participations'::regclass AND contype='u' AND pg_get_constraintdef(oid) LIKE '%source_flight_id, source_revision, participant_role%';
+      IF constraint_name IS NOT NULL THEN EXECUTE format('ALTER TABLE flight_participations DROP CONSTRAINT %I',constraint_name); END IF;
+    END $$`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_flight_participations_revision_member ON flight_participations(source_flight_id,source_revision,participant_user_id)`,
+    sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`,
+    sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS superseded_at TIMESTAMPTZ`,
+    sql`ALTER TABLE instructor_flight_approvals DROP CONSTRAINT IF EXISTS instructor_flight_approvals_status_check`,
+    sql`ALTER TABLE instructor_flight_approvals ADD CONSTRAINT instructor_flight_approvals_status_check CHECK(status IN ('pending','approved','declined','superseded','cancelled','revoked'))`,
+    sql`CREATE TABLE IF NOT EXISTS pilot_licences (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      licence_type TEXT NOT NULL,licence_number TEXT NOT NULL,authority TEXT NOT NULL DEFAULT '',country TEXT NOT NULL DEFAULT '',
+      validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),valid_until DATE,recency_until DATE,
+      active BOOLEAN NOT NULL DEFAULT TRUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id,licence_type,licence_number)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS pilot_qualifications (
+      id BIGSERIAL PRIMARY KEY,licence_id BIGINT NOT NULL REFERENCES pilot_licences(id) ON DELETE CASCADE,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      qualification_type TEXT NOT NULL,certificate_reference TEXT NOT NULL DEFAULT '',
+      validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),valid_until DATE,recency_until DATE,
+      active BOOLEAN NOT NULL DEFAULT TRUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(licence_id,qualification_type,certificate_reference)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pilot_qualifications_user_active ON pilot_qualifications(user_id,active,qualification_type)`,
+    sql`CREATE TABLE IF NOT EXISTS flight_verifications (
+      id BIGSERIAL PRIMARY KEY,flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,
+      flight_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,signer_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      verification_role TEXT NOT NULL CHECK(verification_role IN ('INSTRUCTOR','SUPERVISING PIC','EXAMINER')),
+      record_revision INTEGER NOT NULL,flight_hash TEXT NOT NULL,credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+      payload_hash TEXT NOT NULL DEFAULT '',server_signature TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','signed','declined','superseded','cancelled','revoked')),
+      requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),signed_at TIMESTAMPTZ,declined_at TIMESTAMPTZ,cancelled_at TIMESTAMPTZ,revoked_at TIMESTAMPTZ,
+      decision_note TEXT NOT NULL DEFAULT '',revocation_reason TEXT NOT NULL DEFAULT '',
+      UNIQUE(flight_id,record_revision,signer_user_id,verification_role)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_verifications_signer_status ON flight_verifications(signer_user_id,status,requested_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_verifications_flight_revision ON flight_verifications(flight_user_id,flight_id,record_revision DESC)`,
+    sql`CREATE TABLE IF NOT EXISTS user_notifications (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,title TEXT NOT NULL,body TEXT NOT NULL DEFAULT '',href TEXT NOT NULL DEFAULT '',dedupe_key TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),read_at TIMESTAMPTZ,
+      UNIQUE(user_id,dedupe_key)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_user_notifications_unread ON user_notifications(user_id,created_at DESC) WHERE read_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS connection_audit_log (
+      id BIGSERIAL PRIMARY KEY,actor_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,subject_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      entity_type TEXT NOT NULL,entity_id BIGINT,event_type TEXT NOT NULL,details JSONB NOT NULL DEFAULT '{}'::jsonb,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_connection_audit_subject ON connection_audit_log(subject_user_id,created_at DESC)`,
+    sql`CREATE TABLE IF NOT EXISTS feature_switches (key TEXT PRIMARY KEY,enabled BOOLEAN NOT NULL DEFAULT TRUE,updated_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+    sql`INSERT INTO feature_switches(key,enabled) VALUES('crew_sharing',TRUE),('verified_approvals',TRUE) ON CONFLICT(key) DO NOTHING`,
+  ];
+  if(version===14)return[
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS flights_id_user_owner_uq ON flights(id,user_id)`,
+    sql`CREATE TABLE IF NOT EXISTS flight_expenses (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL,
+      flight_id BIGINT NOT NULL,
+      category TEXT NOT NULL,
+      label TEXT NOT NULL DEFAULT '',
+      amount_minor BIGINT NOT NULL CHECK(amount_minor>0 AND amount_minor<=1000000000),
+      currency TEXT NOT NULL CHECK(currency ~ '^[A-Z]{3}$'),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT flight_expenses_owner_flight_fk FOREIGN KEY(flight_id,user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_expenses_user_flight ON flight_expenses(user_id,flight_id,id)`,
+    sql`ALTER TABLE deleted_flights ADD COLUMN IF NOT EXISTS expenses_data JSONB NOT NULL DEFAULT '[]'::jsonb`,
+  ];
+  if(version===15)return[
+    sql`CREATE TABLE IF NOT EXISTS flight_connected_crew (
+      id BIGSERIAL PRIMARY KEY,
+      source_flight_id BIGINT NOT NULL,
+      source_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      connected_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      intended_role TEXT NOT NULL CHECK(intended_role='PIC'),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT flight_connected_crew_source_owner_fk FOREIGN KEY(source_flight_id,source_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+      CONSTRAINT flight_connected_crew_distinct_users_check CHECK(source_user_id<>connected_user_id),
+      CONSTRAINT flight_connected_crew_flight_role_uq UNIQUE(source_flight_id,intended_role)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_connected_crew_source ON flight_connected_crew(source_user_id,source_flight_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_connected_crew_connected ON flight_connected_crew(connected_user_id,intended_role)`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_participant_role_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_participant_role_check CHECK(participant_role IN ('CO-PILOT','SAFETY PILOT','INSTRUCTOR','EXAMINER','OBSERVER','PIC'))`,
+  ];
+  if(version===16)return[
+    sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS pic_commander_basis TEXT`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_pic_commander_basis_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_pic_commander_basis_check CHECK(
+      pic_commander_basis IS NULL OR (
+        participant_role='PIC' AND pic_commander_basis IN ('CERTIFIED_SOURCE_COMMANDER','RECIPIENT_ACCOUNT')
+      )
+    )`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS flight_participations_one_active_pic_uq
+      ON flight_participations(source_flight_id,source_revision)
+      WHERE participant_role='PIC' AND status IN ('pending','accepted')`,
+  ];
+  if(version===17)return[
+    sql`CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $$
+      DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
+      BEGIN
+        IF TG_OP='INSERT' THEN
+          IF NULLIF(TRIM(COALESCE(NEW.aircraft_make,'')),'') IS NULL
+            AND NULLIF(TRIM(COALESCE(NEW.aircraft_model,'')),'') IS NULL
+            AND NULLIF(TRIM(COALESCE(NEW.aircraft_variant,'')),'') IS NULL THEN
+            SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+                   COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+                   COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+              INTO v_make,v_model,v_variant
+              FROM aircraft a
+              WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+              LIMIT 1;
+            NEW.aircraft_make:=COALESCE(v_make,'');
+            NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+            NEW.aircraft_variant:=COALESCE(v_variant,'');
+          END IF;
+        ELSIF NEW.registration IS DISTINCT FROM OLD.registration THEN
+          SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+                 COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+                 COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+            INTO v_make,v_model,v_variant
+            FROM aircraft a
+            WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+            LIMIT 1;
+          NEW.aircraft_make:=COALESCE(v_make,'');
+          NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+          NEW.aircraft_variant:=COALESCE(v_variant,'');
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_snapshot_aircraft_identity ON flights`,
+    sql`CREATE TRIGGER trg_logbook_snapshot_aircraft_identity
+      BEFORE INSERT OR UPDATE OF registration ON flights
+      FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity()`,
+  ];
+  if(version===18)return[
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS default_operation_type TEXT`,
+    sql`DO $$ BEGIN
+      IF NOT EXISTS(
+        SELECT 1 FROM pg_constraint
+        WHERE conname='ck_aircraft_default_operation_type'
+          AND conrelid='aircraft'::regclass
+      ) THEN
+        ALTER TABLE aircraft
+          ADD CONSTRAINT ck_aircraft_default_operation_type
+          CHECK(default_operation_type IS NULL OR default_operation_type IN ('SP','MP'));
+      END IF;
+    END $$`,
+  ];
+  if(version===19)return[
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS default_engine_type TEXT`,
+    sql`DO $$ BEGIN
+      IF NOT EXISTS(
+        SELECT 1 FROM pg_constraint
+        WHERE conname='ck_aircraft_default_engine_type'
+          AND conrelid='aircraft'::regclass
+      ) THEN
+        ALTER TABLE aircraft
+          ADD CONSTRAINT ck_aircraft_default_engine_type
+          CHECK(default_engine_type IS NULL OR default_engine_type IN ('SE','ME'));
+      END IF;
+    END $$`,
+  ];
+  if(version===20)return[
+    sql`CREATE TABLE IF NOT EXISTS voided_certified_flights (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL,
+      original_flight_id BIGINT NOT NULL,
+      record_revision INTEGER NOT NULL CHECK(record_revision>=1),
+      certification_hash TEXT NOT NULL CHECK(NULLIF(TRIM(certification_hash),'') IS NOT NULL),
+      certification_version INTEGER NOT NULL CHECK(certification_version>=1),
+      certified_at TIMESTAMPTZ NOT NULL,
+      certified_by_user_id BIGINT,
+      flight_snapshot JSONB NOT NULL,
+      flight_snapshot_sha256 TEXT NOT NULL CHECK(flight_snapshot_sha256 ~ '^[a-f0-9]{64}$'),
+      archive_version INTEGER NOT NULL DEFAULT 1 CHECK(archive_version>=1),
+      voided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      voided_by_user_id BIGINT NOT NULL,
+      void_reason TEXT NOT NULL CHECK(char_length(TRIM(void_reason)) BETWEEN 8 AND 1000),
+      operation_token UUID NOT NULL UNIQUE,
+      created_txid BIGINT NOT NULL DEFAULT txid_current(),
+      UNIQUE(user_id,original_flight_id),
+      UNIQUE(user_id,original_flight_id,record_revision,certification_hash)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS voided_flight_certified_revisions (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      source_revision_id BIGINT NOT NULL,
+      revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+      certification_hash TEXT NOT NULL,
+      certification_version INTEGER NOT NULL CHECK(certification_version>=1),
+      certified_at TIMESTAMPTZ NOT NULL,
+      superseded_at TIMESTAMPTZ,
+      correction_reason TEXT NOT NULL DEFAULT '',
+      snapshot_data JSONB NOT NULL,
+      snapshot_sha256 TEXT NOT NULL CHECK(snapshot_sha256 ~ '^[a-f0-9]{64}$'),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,revision_number),
+      UNIQUE(voided_flight_id,source_revision_id)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS voided_flight_verifications (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      source_verification_id BIGINT NOT NULL,
+      record_revision INTEGER NOT NULL CHECK(record_revision>=1),
+      verification_role TEXT NOT NULL,
+      status TEXT NOT NULL,
+      signer_user_id BIGINT,
+      flight_hash TEXT NOT NULL,
+      payload_hash TEXT NOT NULL DEFAULT '',
+      server_signature TEXT NOT NULL DEFAULT '',
+      signed_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ,
+      credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+      source_data JSONB NOT NULL,
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,source_verification_id)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS voided_flight_archive_items (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      item_kind TEXT NOT NULL CHECK(item_kind IN ('INSTRUCTOR_APPROVAL','PARTICIPATION','CONNECTED_CREW','PUBLIC_SHARE','EXPENSE','TRACK','SOURCE_PROVENANCE')),
+      source_key TEXT NOT NULL,
+      source_data JSONB NOT NULL,
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,item_kind,source_key)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS flight_source_provenance (
+      id BIGSERIAL PRIMARY KEY,
+      participant_flight_id BIGINT NOT NULL,
+      participant_user_id BIGINT NOT NULL,
+      source_flight_id BIGINT NOT NULL,
+      source_user_id BIGINT NOT NULL,
+      source_revision INTEGER NOT NULL CHECK(source_revision>=1),
+      source_hash TEXT NOT NULL,
+      participant_role TEXT NOT NULL,
+      pic_commander_basis TEXT,
+      accepted_at TIMESTAMPTZ,
+      source_voided_flight_id BIGINT REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT flight_source_provenance_participant_owner_fk
+        FOREIGN KEY(participant_flight_id,participant_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+      UNIQUE(participant_flight_id,participant_user_id)
+    )`,
+    sql`INSERT INTO flight_source_provenance(
+      participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,
+      participant_role,pic_commander_basis,accepted_at
+    )
+    SELECT p.participant_flight_id,p.participant_user_id,p.source_flight_id,p.source_user_id,
+      GREATEST(COALESCE(p.source_revision,1),1),COALESCE(p.source_hash,''),
+      COALESCE(p.participant_role,''),p.pic_commander_basis,COALESCE(p.responded_at,p.created_at)
+    FROM flight_participations p
+    JOIN flights own ON own.id=p.participant_flight_id AND own.user_id=p.participant_user_id
+    WHERE p.status='accepted' AND p.participant_flight_id IS NOT NULL
+    ON CONFLICT(participant_flight_id,participant_user_id) DO NOTHING`,
+    sql`CREATE INDEX IF NOT EXISTS idx_voided_certified_flights_user_date
+      ON voided_certified_flights(user_id,voided_at DESC,id DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_voided_flight_archive_items_parent_kind
+      ON voided_flight_archive_items(voided_flight_id,item_kind,id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_voided_flight_verifications_parent_revision
+      ON voided_flight_verifications(voided_flight_id,record_revision,id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_source
+      ON flight_source_provenance(source_user_id,source_flight_id,source_revision)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_voided
+      ON flight_source_provenance(source_voided_flight_id) WHERE source_voided_flight_id IS NOT NULL`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_source_provenance() RETURNS TRIGGER AS $provenance$
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          RAISE EXCEPTION 'Flight source provenance is immutable';
+        END IF;
+
+        IF TG_OP='INSERT' THEN
+          IF NEW.source_voided_flight_id IS NOT NULL
+            AND NOT EXISTS(
+              SELECT 1 FROM voided_certified_flights v
+              WHERE v.id=NEW.source_voided_flight_id
+                AND v.user_id=NEW.source_user_id
+                AND v.original_flight_id=NEW.source_flight_id
+                AND v.record_revision=NEW.source_revision
+                AND v.certification_hash=NEW.source_hash
+            )
+          THEN
+            RAISE EXCEPTION 'Flight source provenance does not match its source tombstone';
+          END IF;
+          RETURN NEW;
+        END IF;
+
+        IF OLD.source_voided_flight_id IS NULL
+          AND NEW.source_voided_flight_id IS NOT NULL
+          AND (to_jsonb(OLD)-'source_voided_flight_id'-'updated_at')
+              IS NOT DISTINCT FROM
+              (to_jsonb(NEW)-'source_voided_flight_id'-'updated_at')
+          AND EXISTS(
+            SELECT 1 FROM voided_certified_flights v
+            WHERE v.id=NEW.source_voided_flight_id
+              AND v.user_id=NEW.source_user_id
+              AND v.original_flight_id=NEW.source_flight_id
+              AND v.record_revision=NEW.source_revision
+              AND v.certification_hash=NEW.source_hash
+              AND v.created_txid=txid_current()
+          )
+        THEN
+          RETURN NEW;
+        END IF;
+        IF to_jsonb(OLD) IS DISTINCT FROM to_jsonb(NEW) THEN
+          RAISE EXCEPTION 'Flight source provenance is immutable';
+        END IF;
+        RETURN NEW;
+      END;
+    $provenance$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_source_provenance ON flight_source_provenance`,
+    sql`CREATE TRIGGER trg_logbook_protect_source_provenance
+      BEFORE INSERT OR UPDATE OR DELETE ON flight_source_provenance
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_source_provenance()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_require_void_archive_separation() RETURNS TRIGGER AS $$
+      BEGIN
+        IF EXISTS(
+          SELECT 1 FROM flights f
+          WHERE f.id=NEW.original_flight_id AND f.user_id=NEW.user_id
+        ) THEN
+          RAISE EXCEPTION 'Voided certified flight archive cannot coexist with its active flight';
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_require_void_archive_separation ON voided_certified_flights`,
+    sql`CREATE CONSTRAINT TRIGGER trg_logbook_require_void_archive_separation
+      AFTER INSERT ON voided_certified_flights
+      DEFERRABLE INITIALLY DEFERRED
+      FOR EACH ROW EXECUTE FUNCTION logbook_require_void_archive_separation()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_validate_void_archive_child_insert() RETURNS TRIGGER AS $$
+      BEGIN
+        IF NOT EXISTS(
+          SELECT 1 FROM voided_certified_flights v
+          WHERE v.id=NEW.voided_flight_id AND v.created_txid=txid_current()
+        ) THEN
+          RAISE EXCEPTION 'Void archive evidence must be captured in the tombstone transaction';
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_validate_voided_flight_revisions_insert ON voided_flight_certified_revisions`,
+    sql`CREATE TRIGGER trg_logbook_validate_voided_flight_revisions_insert
+      BEFORE INSERT ON voided_flight_certified_revisions
+      FOR EACH ROW EXECUTE FUNCTION logbook_validate_void_archive_child_insert()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_validate_voided_flight_verifications_insert ON voided_flight_verifications`,
+    sql`CREATE TRIGGER trg_logbook_validate_voided_flight_verifications_insert
+      BEFORE INSERT ON voided_flight_verifications
+      FOR EACH ROW EXECUTE FUNCTION logbook_validate_void_archive_child_insert()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_validate_voided_flight_archive_items_insert ON voided_flight_archive_items`,
+    sql`CREATE TRIGGER trg_logbook_validate_voided_flight_archive_items_insert
+      BEFORE INSERT ON voided_flight_archive_items
+      FOR EACH ROW EXECUTE FUNCTION logbook_validate_void_archive_child_insert()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_void_archive() RETURNS TRIGGER AS $$
+      BEGIN
+        RAISE EXCEPTION 'Certified flight void archive is immutable';
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_certified_flights ON voided_certified_flights`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_certified_flights
+      BEFORE UPDATE OR DELETE ON voided_certified_flights
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_flight_revisions ON voided_flight_certified_revisions`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_flight_revisions
+      BEFORE UPDATE OR DELETE ON voided_flight_certified_revisions
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_flight_verifications ON voided_flight_verifications`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_flight_verifications
+      BEFORE UPDATE OR DELETE ON voided_flight_verifications
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_flight_archive_items ON voided_flight_archive_items`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_flight_archive_items
+      BEFORE UPDATE OR DELETE ON voided_flight_archive_items
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_prevent_voided_flight_id_reuse() RETURNS TRIGGER AS $$
+      BEGIN
+        IF EXISTS(
+          SELECT 1 FROM voided_certified_flights v
+          WHERE v.user_id=NEW.user_id AND v.original_flight_id=NEW.id
+        ) THEN
+          RAISE EXCEPTION 'Voided certified flight identity cannot be recreated as an active flight';
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_prevent_voided_flight_id_reuse ON flights`,
+    sql`CREATE TRIGGER trg_logbook_prevent_voided_flight_id_reuse
+      BEFORE INSERT ON flights FOR EACH ROW EXECUTE FUNCTION logbook_prevent_voided_flight_id_reuse()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $void$
+      DECLARE correction_transition BOOLEAN:=FALSE; certified_void_transition BOOLEAN:=FALSE;
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          IF OLD.certified_at IS NOT NULL THEN
+            certified_void_transition:=EXISTS(
+              SELECT 1 FROM voided_certified_flights v
+              WHERE v.user_id=OLD.user_id
+                AND v.original_flight_id=OLD.id
+                AND v.record_revision=COALESCE(OLD.record_revision,1)
+                AND v.certification_hash=COALESCE(OLD.certification_hash,'')
+                AND v.created_txid=txid_current()
+                AND v.flight_snapshot IS NOT DISTINCT FROM to_jsonb(OLD)
+            );
+            IF NOT certified_void_transition THEN
+              RAISE EXCEPTION 'Certified flight cannot be deleted without a matching same-transaction void archive';
+            END IF;
+            RETURN OLD;
+          END IF;
+          IF OLD.locked_at IS NOT NULL THEN RAISE EXCEPTION 'Locked flight cannot be deleted'; END IF;
+          RETURN OLD;
+        END IF;
+
+        IF OLD.certified_at IS NOT NULL THEN
+          correction_transition :=
+            NEW.certified_at IS NULL
+            AND COALESCE(NEW.certification_hash,'')=''
+            AND NEW.locked_at IS NULL
+            AND COALESCE(NEW.record_revision,1)=COALESCE(OLD.record_revision,1)+1
+            AND NULLIF(TRIM(COALESCE(NEW.correction_reason,'')),'') IS NOT NULL
+            AND (to_jsonb(OLD)-'certified_at'-'certified_by_user_id'-'certification_hash'-'locked_at'-'locked_by_user_id'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+                IS NOT DISTINCT FROM
+                (to_jsonb(NEW)-'certified_at'-'certified_by_user_id'-'certification_hash'-'locked_at'-'locked_by_user_id'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+            AND EXISTS(
+              SELECT 1 FROM flight_certified_revisions r
+              WHERE r.user_id=OLD.user_id AND r.flight_id=OLD.id
+                AND r.revision_number=COALESCE(OLD.record_revision,1)
+                AND r.certification_hash=COALESCE(OLD.certification_hash,'')
+            );
+          IF NOT correction_transition THEN RAISE EXCEPTION 'Certified flight is immutable; start a traceable correction instead'; END IF;
+          RETURN NEW;
+        END IF;
+
+        IF OLD.locked_at IS NOT NULL
+          AND (to_jsonb(OLD)-'locked_at'-'locked_by_user_id') IS DISTINCT FROM (to_jsonb(NEW)-'locked_at'-'locked_by_user_id') THEN
+          RAISE EXCEPTION 'Locked flight cannot be changed';
+        END IF;
+        RETURN NEW;
+      END;
+    $void$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_locked_flight ON flights`,
+    sql`CREATE TRIGGER trg_logbook_protect_locked_flight
+      BEFORE UPDATE OR DELETE ON flights
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight()`,
+  ];
+,
+    sql`ALTER TABLE rates
+      ADD COLUMN IF NOT EXISTS currency_code TEXT,
+      ADD COLUMN IF NOT EXISTS currency_minor_units SMALLINT,
+      ADD COLUMN IF NOT EXISTS price_per_hour_decimal NUMERIC,
+      ADD COLUMN IF NOT EXISTS dry_price_per_hour_decimal NUMERIC;`,
+    sql`ALTER TABLE aircraft
+      ADD COLUMN IF NOT EXISTS default_price_currency_code TEXT,
+      ADD COLUMN IF NOT EXISTS default_price_currency_minor_units SMALLINT,
+      ADD COLUMN IF NOT EXISTS default_price_per_hour_decimal NUMERIC;`,
+    sql`ALTER TABLE flights
+      ADD COLUMN IF NOT EXISTS price_currency_code TEXT,
+      ADD COLUMN IF NOT EXISTS price_currency_minor_units SMALLINT,
+      ADD COLUMN IF NOT EXISTS price_per_hour_decimal NUMERIC;`,
+    sql`ALTER TABLE flight_expenses
+      ADD COLUMN IF NOT EXISTS amount_encoding TEXT,
+      ADD COLUMN IF NOT EXISTS amount_minor_units SMALLINT;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'rates'::regclass AND conname = 'rates_exact_currency_tuple_v21_check'
+      ) THEN
+        ALTER TABLE rates ADD CONSTRAINT rates_exact_currency_tuple_v21_check CHECK (
+          (
+            currency_code IS NULL AND currency_minor_units IS NULL
+            AND price_per_hour_decimal IS NULL AND dry_price_per_hour_decimal IS NULL
+          ) OR (
+            currency_code IS NOT NULL AND currency_code ~ '^[A-Z]{3}
+};
+
+async function migrateDatabase(){
+  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
+    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(704190104)`,
+      ...migrationQueries(version),
+      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
+    ]);
+  }
+}
+
+export function ensureDatabaseOptimizations():Promise<void>{
+  if(!globalThis.__logbookOptimization){
+    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
+      globalThis.__logbookOptimization=undefined;
+      console.error("database-migration-failed",error);
+      throw error;
+    });
+  }
+  return globalThis.__logbookOptimization;
+}
+
+            AND currency_minor_units IS NOT NULL AND currency_minor_units BETWEEN 0 AND 9
+            AND price_per_hour_decimal IS NOT NULL AND price_per_hour_decimal > 0
+            AND price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+            AND (
+              dry_price_per_hour_decimal IS NULL OR (
+                dry_price_per_hour_decimal >= 0
+                AND dry_price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+              )
+            )
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'aircraft'::regclass AND conname = 'aircraft_exact_currency_tuple_v21_check'
+      ) THEN
+        ALTER TABLE aircraft ADD CONSTRAINT aircraft_exact_currency_tuple_v21_check CHECK (
+          (
+            default_price_currency_code IS NULL
+            AND default_price_currency_minor_units IS NULL
+            AND default_price_per_hour_decimal IS NULL
+          ) OR (
+            default_price_currency_code IS NOT NULL AND default_price_currency_code ~ '^[A-Z]{3}
+};
+
+async function migrateDatabase(){
+  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
+    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(704190104)`,
+      ...migrationQueries(version),
+      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
+    ]);
+  }
+}
+
+export function ensureDatabaseOptimizations():Promise<void>{
+  if(!globalThis.__logbookOptimization){
+    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
+      globalThis.__logbookOptimization=undefined;
+      console.error("database-migration-failed",error);
+      throw error;
+    });
+  }
+  return globalThis.__logbookOptimization;
+}
+
+            AND default_price_currency_minor_units IS NOT NULL AND default_price_currency_minor_units BETWEEN 0 AND 9
+            AND default_price_per_hour_decimal IS NOT NULL AND default_price_per_hour_decimal >= 0
+            AND default_price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'flights'::regclass AND conname = 'flights_exact_currency_tuple_v21_check'
+      ) THEN
+        ALTER TABLE flights ADD CONSTRAINT flights_exact_currency_tuple_v21_check CHECK (
+          (
+            price_currency_code IS NULL AND price_currency_minor_units IS NULL
+            AND price_per_hour_decimal IS NULL
+          ) OR (
+            price_currency_code IS NOT NULL AND price_currency_code ~ '^[A-Z]{3}
+};
+
+async function migrateDatabase(){
+  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
+    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(704190104)`,
+      ...migrationQueries(version),
+      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
+    ]);
+  }
+}
+
+export function ensureDatabaseOptimizations():Promise<void>{
+  if(!globalThis.__logbookOptimization){
+    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
+      globalThis.__logbookOptimization=undefined;
+      console.error("database-migration-failed",error);
+      throw error;
+    });
+  }
+  return globalThis.__logbookOptimization;
+}
+
+            AND price_currency_minor_units IS NOT NULL AND price_currency_minor_units BETWEEN 0 AND 9
+            AND price_per_hour_decimal IS NOT NULL AND price_per_hour_decimal >= 0
+            AND price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'flight_expenses'::regclass AND conname = 'expenses_amount_encoding_v21_check'
+      ) THEN
+        ALTER TABLE flight_expenses ADD CONSTRAINT expenses_amount_encoding_v21_check CHECK (
+          COALESCE(
+            (amount_encoding IS NULL AND amount_minor_units IS NULL)
+            OR (amount_encoding = 'legacy_two_decimal' AND amount_minor_units = 2)
+            OR (amount_encoding = 'iso_minor_units' AND amount_minor_units IS NOT NULL AND amount_minor_units BETWEEN 0 AND 9),
+            FALSE
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

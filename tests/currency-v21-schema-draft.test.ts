@@ -11,10 +11,10 @@ const postgresTestSource=readFileSync(new URL("./integration/postgres-currency-v
 // Static checks only. These tests do NOT execute SQL or substitute for PostgreSQL acceptance.
 const statements=draft.split("\n").filter(line=>!line.trim().startsWith("--")).join("\n");
 
-test("candidate SQL is never registered in auto-migration runtime",()=>{
+test("review-only candidate remains unregistered while executable v21 is a separate artifact",()=>{
   assert.match(draft,/REVIEW CANDIDATE ONLY/);
-  assert.match(migrationPlan,/DATABASE_SCHEMA_VERSION=20;/);
-  assert.doesNotMatch(migrationPlan,/version:21/);
+  assert.match(migrationPlan,/DATABASE_SCHEMA_VERSION=21;/);
+  assert.match(migrationPlan,/version:21,name:"source-backed currency exact-money"/);
   assert.doesNotMatch(statements,/\b(?:INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|DROP\s+(?:TABLE|COLUMN|SCHEMA))\b/i);
   assert.doesNotMatch(statements,/\b(?:flytally_schema_migrations|flytally_feature_migrations)\b/);
   assert.match(statements,/^BEGIN;/m);
