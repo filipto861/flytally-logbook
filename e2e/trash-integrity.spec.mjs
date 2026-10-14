@@ -167,6 +167,11 @@ test("Currency 3.8 browser: signed portable v13 restores exact flight and expens
   await page.reload();
   const downloadLink=page.locator(`.stored-backup-list a[href="/api/backups/${backupId}"]`);
   await expect(downloadLink).toBeVisible();
+  const downloadStatus=await page.evaluate(async href=>{
+    const response=await fetch(href,{credentials:"same-origin",cache:"no-store"});
+    return {status:response.status,error:response.ok?"":(await response.text()).slice(0,300)};
+  },await downloadLink.getAttribute("href"));
+  expect(downloadStatus.status,"Signed v13 browser-origin download GET: "+downloadStatus.error).toBe(200);
   const downloadPromise=page.waitForEvent("download",{timeout:15000});
   await downloadLink.click();
   const downloaded=await downloadPromise;
