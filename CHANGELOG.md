@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 14 October 2026 — Currency default-query typing correction (Draft PR #338)
+
+- Corrected two unsupported Neon query type assertions in Aircraft and New Flight pages. Both queries now treat settings rows as untrusted `Record<string,unknown>` before passing the currency through source-backed ISO validation. No runtime DB behavior change.
+- Owner-local consolidated acceptance at `e26812bd` stopped on exactly two TS2352 errors. Disposable PG16 identity verified and cluster stopped; targeted PG test suite, full tests and build were NOT RUN in that attempt. Corrected branch HEAD verification NOT RUN.
+
 ## 14 October 2026 — Currency cross-surface integrity fixes (Draft PR #338)
 
 - Added strict stored rate currency snapshot validation; manual create/edit and GPS import stop on corrupted exact metadata rather than silently replacing a saved rate. Legacy unknown-denomination rates remain unknown.
