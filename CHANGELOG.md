@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 14 October 2026 — v21 temporary-Neon PG18.6 migration rehearsal (unreleased; Draft #338)
+
+- Owner-authorized temporary child of Logbook Shadow production created and verified as nonprimary/nondefault: `ft-380-v21-pg18-rehearsal-20261014` (`br-gentle-glade-b1erhgaj`, parent `br-dark-math-b1snjzub`). Database `neondb`, PostgreSQL **18.6**, initial contiguous migrations v1–v20, no v21 columns/checks.
+- Applied review-only SQL from Draft #338 (four additive ALTER TABLE operations and four conditional CHECK blocks) in one connector transaction with v20 guard. **PASS**: all 12 columns nullable with no default, four CHECKs `convalidated=true`; existing cloned data row counts preserved (rates 33, aircraft 25, flights 315, expenses 0, deleted flights 8, backups 24), new metadata remains NULL. Reapplied same eight SQL statements with no error (**idempotency PASS**). Migration registry unchanged v20.
+- Separate read-only production check: still v20 with no proposed v21 columns/checks; identical counts. The attempted PG18 synthetic temp-row CHECK probe was **BLOCKED by tool safety** and therefore **NOT RUN**; no negative-write PG18 acceptance claim. Local PG16 8/8 tests remain distinct evidence. No real Neon JS SDK application or wide historical signed-v13 restore proof.
+- Deleted the exact temporary branch after confirming its nonprimary/nondefault ID and parent; independent branch listing confirmed absence, original four branches unchanged. **No production DDL/DML, no registered v21, no merge, no release/deploy**. See [detailed report](docs/product/3_8_0_CURRENCY_V21_NEON_PG18_REHEARSAL_2026-10-14.md). New docs-only commit automated tests **NOT RUN**.
+
 ## 14 October 2026 — Currency 3.8.0 local acceptance complete and production read-only preflight (Draft #338)
 
 - Owner Windows combined `tooling/run-currency-380-acceptance.ps1 -WithBrowser` on exact `669708fec856f5e88072a474f2b97b573a7881f6`: TypeScript PASS, draft v21 SQL source **6/6**, native disposable PostgreSQL16 **8/8**, full Node **1533/1533**, optimized local Next.js build PASS, authenticated desktop/mobile Playwright **8/8** including exact KWD/JPY Trash and scoped signed stored-v13 round-trip. Local database identities matched; both test clusters stopped safely. This is **local**, not CI or live release evidence.
