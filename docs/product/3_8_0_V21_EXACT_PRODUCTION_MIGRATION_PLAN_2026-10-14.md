@@ -1,0 +1,61 @@
+# FlyTally Logbook 3.8.0 — exact v21 production migration proposal
+
+**Prepared:** 14 October 2026, after the owner approved retaining the restored Neon branch as canonical production.  
+**Authority:** DESIGN / READ-ONLY PREPARATION ONLY. **NOT** authorization to run live DDL, switch Neon branches, merge, or deploy.  
+**Repo:** `filipto861/flytally-logbook`; Draft PR #338.  
+**Canonical Neon target:** project `muddy-dust-14049657`, branch ID **`br-raspy-fog-b1btvu5t`**, primary/default `production`, database `neondb`.  
+**Vercel target:** project `prj_GYFLbRQjVyjn82Xnre5qZjz8UlAQ` (`logbook`), production `DATABASE_URL` pointing to `ep-proud-bar-b1ts6cq1.c-5.eu-central-1.aws.neon.tech/neondb`. Do not copy credentials into logs or repo.  
+**Approved branch resolution:** retain `br-raspy-fog-b1btvu5t` as canonical; preserve former `br-dark-math-b1snjzub` and `snap-proud-fire-b1bm8oac`, never auto-restore/finalize/switch. Incident: `docs/product/3_8_0_NEON_SNAPSHOT_RESTORE_INCIDENT_2026-10-14.md`.
+
+## A. Exact evidence and boundaries
+
+- GitHub `main` and latest production Vercel READY deployment are **`dcc8ebbfda0eadfa01345cd875ef1db806a19e26`**. Candidate application code passed one consolidated owner-local acceptance on **`0192570a240dc3473b6dea15c7908a15e7ee16d8`**: targeted sharing 6/6, typecheck PASS, static v21 tests 6/6, isolated PG16 9/9, full Node 1544/1544, optimized Next build PASS (41 static pages), authenticated desktop/mobile Playwright 8/8. Later commits are docs-only as verified against the tested SHA. This is local, **not CI or production**.
+- Current Neon PostgreSQL **18.6**, `flytally_schema_migrations` exactly versions **1–20**, proposed v21 fields **0/12**, CHECKs **0/4**. Read-only live catalog and registry query completed on the approved canonical branch.
+- Both old and approved canonical branches were rechecked after the incident using count plus deterministic hash of each row's JSON for every public table: **52/52 equal**, zero mismatches at that moment. No lock or snapshot isolation across the two independently queried branches: subsequent live changes could diverge. Do not assume a zero-downtime proof.
+- Production database counts at recheck: flights 315, rates 33, aircraft 25, `account_backups` 24, `voided_certified_flights` 3, `flight_source_provenance` 12. Existing snapshot `snap-proud-fire-b1bm8oac` was sourced from the **former** primary and predates any new writes; create a *fresh* snapshot of the **current** canonical primary immediately before release.
+- Vercel production error/fatal runtime-log query for preceding four hours returned no records in the accessible window; this is not a comprehensive availability or user-flow test.
+- Existing DDL review source `sql/drafts/3_8_0_currency_v21_additive_candidate.sql`, Git blob `74b482b265cf3085a99ccbf2837614f382b04ed5`, has 12 nullable/nondefaulted columns and four CHECKs, **but explicitly says not to execute remotely and not to register**. Do not rename/reuse it as a production artifact without a separately reviewed implementation.
+
+## B. Concrete release-code preparation — all on Draft PR before any production DDL
+
+1. **Create distinct execution-grade files**, modeled after vetted v19/v20 production tooling: `tooling/v380-v21-preflight.sql`, `tooling/v380-v21-migrate.sql`, `tooling/v380-v21-postflight.sql`. Keep the existing review-only draft intact, and prove the 12-column/four-constraint definitions are semantically/source-identical to the vetted candidate. SQL execution must be explicit and supplied with an exact branch-bound connection; no generic default Neon target. Local PostgreSQL tests should execute the new migration artifact, not only the review draft.
+2. **Register schema version 21 in code** only after its contract is approved: `lib/migration-plan.ts` sets `DATABASE_SCHEMA_VERSION=21` and adds one uniquely named version-21 entry; `lib/db-optimization.ts` adds the same migration name and equivalent additive version-21 `migrationQueries` so a new/disaster-recovered installation can reach 21. Preserve exact existing versions 1–20; no historical data conversion or implicit ISO currency. On production, the **explicit SQL transaction registers version 21 before the new app is deployed**. Thus the v21 runtime must recognize that already-applied registry row and not repeat work. The old v20 runtime ignores version >20, so its existing read path remains viable in the schema-first interval.
+3. **Tests**: replace the test `candidate SQL is never registered in auto-migration runtime` with a new release contract that checks intentionally registered 21, source parity, sequential migration, version-21 fresh-database behavior, absence of default/backfill, legacy v20 schema interval compatibility and fail-closed partial state. Do not silently delete history: retain the earlier isolated-draft test as an explicit staging history contract or clearly supersede it in test/docs. Add native PostgreSQL16 tests for executed production file, its exact pre/postflight and refusal on partial 21, plus source/backup/sharing/Trash/certified protections.
+4. **Re-run owner-local full acceptance on the new exact code SHA** after these meaningful runtime/test changes: TypeScript, entire Node, targeted and full PG as appropriate, Next build, and authenticated currency browser with no retries. Retain original `0192570a` evidence as historical baseline; do **not** transfer its PASS to a changed runtime SHA. Independent architecture/security review recommended before production DDL, particularly partial-schema recovery, exact snapshots, trigger invariants and migration registry ordering.
+
+## C. Approved-but-not-yet-executed production sequence
+
+**C0 — explicit owner GO at operation time**  
+Present reviewed v21 SQL file paths and content digest, code SHA with local acceptance PASS, current Vercel production commit, current snapshot/restore evidence, and exact `muddy-dust-14049657 / br-raspy-fog-b1btvu5t / neondb` target. Ask for separate specific authorization to execute the v21 production DDL. Do not treat today's approval to prepare as migration execution authority.
+
+**C1 — protection + fresh live preflight**  
+Create *new named manual snapshot from the approved current primary*, record snapshot ID and source branch; retain the previous snapshot and both old/restored branches. Verify current restore options without invoking `restore_snapshot` or `finalize_branch_restore` again as a test. Obtain independent recoverability evidence by a separately and safely approved **non-finalizing** isolated clone, read-only inspect its row/attachment/protected-history evidence, and avoid any production branch identity swap. Existing `account_backups` count alone is not a recovery guarantee. Verify current Git SHA/main, Vercel READY SHA/environment hostname/database and Neon actual primary branch ID again; block on drift.
+
+**C2 — SQL preflight: read-only and fail-closed**  
+Execute new `v380-v21-preflight.sql` with `ON_ERROR_STOP` inside `BEGIN TRANSACTION READ ONLY`: output database/user/server identity, require `neondb`, explicit external branch-ID match (SQL cannot reliably prove Neon branch ID by table contents), registry exactly **1..20** with canonical names, expected four source tables and protected v20 triggers/tables, **0 of 12** proposed columns and **0 of 4** proposed constraints (reject *any partial state*). Capture before-state row counts plus hashes of protected-history tables, rate/aircraft/flight original legacy money and expense integer encoding. Do not transform any certified or voided row.
+
+**C3 — exact atomic migration, under existing application code**  
+Run the execution-grade SQL artifact on **only the explicitly verified new production branch**, in one transaction with `SET LOCAL lock_timeout='5s'`, bounded `statement_timeout`, `SET LOCAL search_path=public,pg_catalog`, and `pg_advisory_xact_lock(704190104)` (same migration lock as runtime). Recheck database, registry 1..20, missing columns/constraints and protected dependencies **inside that transaction**. Add the same **12 nullable, no-default** fields on `rates` (4), `aircraft` (3), `flights` (3), `flight_expenses` (2); install the same **4 validated CHECK constraints**. No update/backfill, FX conversion, inferred CZK, DROP, destructive archive/certification modification or trigger disabling. Record one reviewed v21 name in `flytally_schema_migrations` within the **same transaction**, then check complete shape and no historic non-NULL new fields **before COMMIT**. Any precondition/postcondition failure must roll back the entire transaction; stop release on error. Prefer full `ALTER TABLE ADD COLUMN` with precondition guards over blindly repairing partial shapes through `IF NOT EXISTS`.
+
+**C4 — independent postflight while v20 application remains live**  
+Read-only verify 12/12 expected columns with exact TEXT/SMALLINT/NUMERIC types, NULLABLE YES, DEFAULT NULL, CHECKs 4/4 present and `convalidated=true`, registry exactly **1..21** and the approved name. Confirm historical new metadata remains NULL; compare preserved *original* legacy columns (excluding added NULL v21 columns) and protected archive, certification/revision/provenance row counts and content hashes. Ensure no unexpected trigger changes or user/audit/backup changes, and ensure old production app remains operational before any merge. If anything mismatches, **stop before deploy**; do not drop additive columns as an automatic rollback.
+
+**C5 — merge and Vercel deployment only after C4 PASS**  
+Review PR #338 diff against `main`, ensure only intended Logbook files and fresh acceptance SHA, merge by approved workflow. Confirm Vercel `logbook` source SHA and READY state correspond to the reviewed 3.8 candidate; check `DATABASE_URL` still targets the canonical primary and `neondb`. Do not deploy the v21 runtime against v20 physical schema. If Vercel fails, first inspect build/runtime logs; rollback **application code only** to last verified v20-compatible deployment if needed, preserving additive v21 columns and all audit evidence.
+
+**C6 — production smoke and closeout**  
+Non-destructive authenticated read/display smoke for rates/profile/history, JPY (0), EUR (2), KWD (3) handling, legacy unknown denomination, shares, aircraft, flight details, certified read-only and void audit; inspect server logs and schema/row counts. Any write-path tests (new rate, Manual/GPS flight, expense, share conflict, Trash or signed-v13 recovery) require a dedicated authorized test account/fixture and must not mutate actual user records. Establish real-history signed v13 backup/download and recoverability evidence separately without destructive restore into canonical production. Record smoke results, deployment ID, migration exact file/digest, backup ID, known limitations and any deferred items in ROADMAP / FEATURES / CHANGELOG.
+
+**Recovery/abort boundary:** Do not reverse the Neon production branch swap automatically, delete either old/restored branch or snapshot, drop columns, infer currency or rewrite signed certifications. No target drift, partial registry or failed evidence may be waved through. A live migration is not executed merely because this runbook exists.
+
+## D. Remains OPEN before C0
+
+- Execution-grade v21 SQL and runtime migration registry integration: **NOT IMPLEMENTED**.
+- New SHA local acceptance: **NOT RUN**.
+- Dedicated fresh snapshot from new primary and independently validated *non-finalizing* recoverability: **NOT RUN**.
+- Full real-history signed v13 recovery path: **OPEN**; isolated browser 8/8 is not equivalent.
+- Original SIX ISO 4217 file provenance: pinned owner-attested but official original not independently authenticated; must retain truthful source labeling and decide whether this blocks release.
+- Explicit owner migration operation GO: **NOT GIVEN**.
+- Production DB v21 DDL, merge/deploy, smoke: **NOT RUN**.
+
+**Next action:** owner reviews and approves this proposed release contract; then implement small, auditable release-code batch on Draft #338 and request a new complete owner-local acceptance before separately authorizing production DDL.
