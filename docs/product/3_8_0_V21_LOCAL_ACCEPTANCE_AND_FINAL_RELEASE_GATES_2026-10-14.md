@@ -60,3 +60,17 @@ Earlier browser bootstrap had fake migration registry names, partial review DDL 
 5. On runtime failure investigate logs and use an approved application-only rollback after checking schema compatibility; no automatic DROP/DELETE/branch swap or destructive restore.
 
 **Do not classify Currency 3.8.0 as live. All required app-code tests PASS locally; production safeguards remain separate.**
+
+## Frozen executable SQL identifiers (from accepted application SHA)
+
+The following are **Git blob SHA-1 object IDs**, not arbitrary content SHA-256 checksums. Before any release operation, resolve these paths at the approved exact application commit and verify they still match; any change invalidates prior review and may require new tests.
+
+| Review artifact | Exact Git blob SHA-1 |
+| --- | --- |
+| `tooling/v380-v21-preflight.sql` | `a7bb228aa65cbaeb13df0e3c9de4c8f79170d152` |
+| `tooling/v380-v21-migrate.sql` | `4abc32a9430943affaaa836e6737ad7b1c9021f4` |
+| `tooling/v380-v21-postflight.sql` | `57fa4685ac8658bc637bcb5055a46312df9a79d9` |
+
+### SIX source origin check attempted
+
+SIX's official [Financial Data Standards page](https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html) explicitly identifies SIX as the ISO 4217 currency Maintenance Agency and links its current **List One (XML)**. That verifies the **publisher and official entrypoint only**. A direct automated retrieval of the linked XML during this work was unsuccessful (unsupported `application/xml` from browsing, independent downloader also failed); **official original bytes were NOT retrieved or compared**. The source remains *owner-attested*, not independent original-authenticated. Do not update the pinned `2026-09-17` XML from a new publication without explicitly reviewing the revision and effects. The existing offline helper `node tooling/verify-iso4217-origin.mjs --official <operator-verified-six-file>` compares bytes and reports whether the candidate matches, but even a byte match requires separately captured verified origin/date evidence.
