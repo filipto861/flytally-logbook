@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 14 October 2026 — Currency cross-surface integrity fixes (Draft PR #338)
+
+- Added strict stored rate currency snapshot validation; manual create/edit and GPS import stop on corrupted exact metadata rather than silently replacing a saved rate. Legacy unknown-denomination rates remain unknown.
+- Explicit expense encoding is now required in newly posted expense rows; corrected saved flight expenses to load source encoding and exponent, with 0/2/3 minor-unit and bad-metadata regression cases. Known totals show a warning when invalid expense rows cannot be included.
+- Updated legacy Trash restore predicates to allow newly added v21 keys only when their values are null; genuine new-money snapshots still fail closed pending safe restore. Signed backup/restore and production migration NOT RUN.
+- Registered one new shared runtime module (395 total); branch tests/typecheck/build/PG/browser NOT RUN on latest HEAD. PR remains Draft and unmerged.
+
 ## 14 October 2026 — Currency one-command acceptance workflow (Draft PR #338)
 
 - Added Windows PowerShell 5.1-compatible `tooling/run-currency-380-acceptance.ps1` to execute disposable local PostgreSQL 16 M2 tests, complete Node24 test suite, and local production build with immediate failure stop and exact commit guard.
