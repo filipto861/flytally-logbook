@@ -84,7 +84,7 @@ test("share writer and recipient upsert preserve all four exact v21 columns atom
   assert.match(actions,/rateRows\.map\(encodeAircraftShareRate\)/);
   assert.match(actions,/if\(encoded\.some\(value=>value===null\)\)/);
   assert.match(actions,/currency_code,currency_minor_units,price_per_hour_decimal::text/);
-  assert.match(actions,/default_price_currency_code,default_price_currency_minor_units/);
+  assert.match(actions,/a\.default_price_currency_code,a\.default_price_currency_minor_units/);
   assert.match(actions,/currency_code=EXCLUDED\.currency_code,currency_minor_units=EXCLUDED\.currency_minor_units/);
   assert.match(actions,/dry_price_per_hour_decimal=EXCLUDED\.dry_price_per_hour_decimal/);
   assert.match(actions,/WHERE \$\{exact\} OR \(rates\.currency_code IS NULL/);
