@@ -113,7 +113,7 @@ export async function restoreDeletedFlightRecord(userId:number,trashId:number):P
       const iso=supportedIsoCurrency(flight?.price_currency_code),decimal=flight?.price_per_hour_decimal;
       if(!iso||iso.minorUnits!==flight?.price_currency_minor_units
         ||decimal===null||decimal===undefined
-        ||!/^\\d+(?:\\.\\d+)?$/.test(String(decimal))
+        ||!/^\d+(?:\.\d+)?$/.test(String(decimal))
         ||!Number.isFinite(Number(decimal))||Number(decimal)<=0
         ||flight?.price_per_hour===null||flight?.price_per_hour===undefined)
         return{error:"Archived flight currency metadata is incomplete or invalid."};
