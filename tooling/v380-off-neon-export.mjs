@@ -2,7 +2,7 @@ import {spawn,spawnSync} from "node:child_process";
 import {randomBytes} from "node:crypto";
 import {existsSync,promises as fs} from "node:fs";
 import {join,resolve,relative,sep} from "node:path";
-import {encryptArchive} from "./v380-backup-archive.mjs";
+import {encryptArchive,retainChildStdout} from "./v380-backup-archive.mjs";
 
 // Explicit owner-local off-Neon export; no production writes or raw dump files.
 // Only the current canonical direct production endpoint is accepted.
@@ -129,6 +129,9 @@ async function main(){
     dump=spawn(exe("pg_dump"),
       ["-Fc","--no-owner","--no-acl","--serializable-deferrable",
         "--lock-wait-timeout=5000","--dbname="+DB],{env,stdio:["ignore","pipe","pipe"],windowsHide:true});
+    // Connect stdout synchronously: scrypt runs async and a short-lived
+    // pg_dump can exit before encryption starts consuming the readable.
+    const bufferedDump=retainChildStdout(dump);
     let errorText="";
     dump.stderr.on("data",x=>{errorText=(errorText+x.toString("utf8")).slice(-1200);});
     exit=new Promise((resolveExit,reject)=>{
@@ -136,7 +139,7 @@ async function main(){
     });
     let metadata;
     try{
-      metadata=await encryptArchive(dump.stdout,partial,password,{requirePgDumpCustomFormat:true});
+      metadata=await encryptArchive(bufferedDump,partial,password,{requirePgDumpCustomFormat:true});
       const exitCode=await exit;
       must(exitCode===0,"pg_dump exited with nonzero status: "+exitCode+"; "+errorText.slice(-700));
     }catch(error){
