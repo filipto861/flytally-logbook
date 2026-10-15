@@ -54,7 +54,7 @@ function hidden(question){
 function localEnv(port,database){
   return {...process.env,PGHOST:"127.0.0.1",PGPORT:String(port),
     PGUSER:user,PGDATABASE:database,PGPASSWORD:"",PGSSLMODE:"disable",
-    PGOPTIONS:"",PGCONNECT_TIMEOUT:"5"};
+    PGOPTIONS:"-c TimeZone=UTC",PGTZ:"UTC",PGCONNECT_TIMEOUT:"5"};
 }
 async function openPort(){
   const server=createServer();
