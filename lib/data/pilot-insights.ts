@@ -3,13 +3,14 @@ import { sql } from "@/lib/db";
 import { measureServerTask } from "@/lib/performance";
 import { pilotInsightBounds,rollingYearBounds } from "@/lib/pilot-insights";
 import { REGULATORY_AIRCRAFT_CATEGORIES,type RegulatoryAircraftCategory } from "@/lib/aircraft-category";
+import { summarizeRegistrationCosts,type FlightCostSummary } from "@/lib/flight-cost-summary";
 
 export type PilotInsightMonthlyPoint={month:string;flights:number;minutes:number;picMinutes:number;nightMinutes:number;ifrMinutes:number;landings:number};
 export type PilotRoleBreakdown={role:string;flights:number;minutes:number};
 export type PilotAircraftTypeBreakdown={aircraftType:string;registrations:number;flights:number;minutes:number;picMinutes:number;lastDate:string};
 export type PilotAircraftClassBreakdown={aircraftClass:string;flights:number;minutes:number;picMinutes:number;lastDate:string};
 export type PilotCategoryBreakdown={category:RegulatoryAircraftCategory;flights:number;minutes:number;picMinutes:number;lastDate:string};
-export type PilotRegistrationBreakdown={registration:string;flights:number;minutes:number;cost:number;lastDate:string};
+export type PilotRegistrationBreakdown={registration:string;flights:number;minutes:number;cost:number;lastDate:string;costSummary:FlightCostSummary};
 export type PilotAirportBreakdown={airport:string;visits:number;departures:number;arrivals:number;firstDate:string;lastDate:string};
 export type PilotRouteBreakdown={route:string;departure:string;arrival:string;flights:number;minutes:number;firstDate:string;lastDate:string};
 export type PilotInsightsSummary={flights:number;minutes:number;picMinutes:number;copilotMinutes:number;dualMinutes:number;instructorMinutes:number;nightMinutes:number;ifrMinutes:number;dayLandings:number;nightLandings:number;safetyMinutes:number;cost:number;uniqueAircraft:number;uniqueAirports:number;uniqueRoutes:number};
@@ -72,6 +73,10 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
           GREATEST(COALESCE(f.dual_minutes,0),0)::int dual_minutes,
           GREATEST(COALESCE(f.instructor_minutes,0),0)::int instructor_minutes,
           GREATEST(COALESCE(f.price_per_hour,0),0)::double precision hourly,
+          f.price_currency_code,f.price_currency_minor_units,f.price_per_hour_decimal::text price_per_hour_decimal,
+          f.billing_basis monetary_billing_basis,
+          (COALESCE(f.off_block,'')~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND COALESCE(f.on_block,'')~'^([01][0-9]|2[0-3]):[0-5][0-9]$') valid_block_time,
+          (COALESCE(f.takeoff,'')~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND COALESCE(f.landing,'')~'^([01][0-9]|2[0-3]):[0-5][0-9]$') valid_air_time,
           UPPER(COALESCE(f.billing_basis,'BLOCK')) billing_basis,
           CASE WHEN f.off_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$'
                THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440)
@@ -172,7 +177,11 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
           FROM selected WHERE ${section}::text IN ('all','experience') AND NOT auxiliary GROUP BY resolved_category
         )c),'[]'::jsonb) categories,
         COALESCE((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.minutes DESC,a.flights DESC,a.registration) FROM(
-          SELECT registration,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,COALESCE(SUM(cost),0)::double precision cost,COALESCE(MAX(date_key),'') last_date
+          SELECT registration,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,COALESCE(SUM(cost),0)::double precision cost,COALESCE(MAX(date_key),'') last_date,
+             jsonb_agg(jsonb_build_object('billing',monetary_billing_basis,'currency',price_currency_code,
+               'minorUnits',price_currency_minor_units,'rate',price_per_hour_decimal,
+               'blockMinutes',block_minutes,'airMinutes',air_minutes,
+               'validBlock',valid_block_time,'validAir',valid_air_time) ORDER BY date_key,id) cost_rows
           FROM selected WHERE ${section}::text IN ('all','aircraft') AND NOT auxiliary AND registration<>'' GROUP BY registration
         )a),'[]'::jsonb) registrations,
         COALESCE((SELECT jsonb_agg(to_jsonb(ap) ORDER BY ap.visits DESC,ap.last_date DESC,ap.airport) FROM(
@@ -199,7 +208,7 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
     aircraftTypes:jsonObjects(row.aircraft_types).map(item=>({aircraftType:s(item.aircraft_type),registrations:n(item.registrations),flights:n(item.flights),minutes:n(item.minutes),picMinutes:n(item.pic_minutes),lastDate:s(item.last_date)})),
     aircraftClasses:jsonObjects(row.aircraft_classes).map(item=>({aircraftClass:s(item.aircraft_class),flights:n(item.flights),minutes:n(item.minutes),picMinutes:n(item.pic_minutes),lastDate:s(item.last_date)})),
     categories:jsonObjects(row.categories).map(item=>({category:(normalizedCategory(item.category)??"OTHER"),flights:n(item.flights),minutes:n(item.minutes),picMinutes:n(item.pic_minutes),lastDate:s(item.last_date)})),
-    registrations:jsonObjects(row.registrations).map(item=>({registration:s(item.registration),flights:n(item.flights),minutes:n(item.minutes),cost:n(item.cost),lastDate:s(item.last_date)})),
+    registrations:jsonObjects(row.registrations).map(item=>({registration:s(item.registration),flights:n(item.flights),minutes:n(item.minutes),cost:n(item.cost),lastDate:s(item.last_date),costSummary:summarizeRegistrationCosts(item.cost_rows)})),
     airports:jsonObjects(row.airports).map(item=>({airport:s(item.airport),visits:n(item.visits),departures:n(item.departures),arrivals:n(item.arrivals),firstDate:s(item.first_date),lastDate:s(item.last_date)})),
     routes:jsonObjects(row.routes).map(item=>({route:s(item.route),departure:s(item.departure),arrival:s(item.arrival),flights:n(item.flights),minutes:n(item.minutes),firstDate:s(item.first_date),lastDate:s(item.last_date)})),
     current12m:{flights:n(row.current_flights),minutes:n(row.current_minutes),picMinutes:n(row.current_pic_minutes),landings:n(row.current_landings),activeMonths:n(row.current_active_months)},
