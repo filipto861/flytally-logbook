@@ -1,5 +1,6 @@
 import {spawn,spawnSync} from "node:child_process";
 import {createServer} from "node:net";
+import {Writable} from "node:stream";
 import {existsSync,promises as fs} from "node:fs";
 import {tmpdir} from "node:os";
 import {join,resolve,relative,sep,basename} from "node:path";
@@ -52,7 +53,12 @@ function hidden(question){
   });
 }
 function localEnv(port,database){
-  return {...process.env,PGHOST:"127.0.0.1",PGPORT:String(port),
+  // Never inherit libpq service, host-address or SSL overrides from the
+  // operator shell. In particular PGHOSTADDR could bypass PGHOST and send a
+  // RESTORE to an unrelated remote server. Fail-closed local endpoint only.
+  const safeEnv=Object.fromEntries(Object.entries(process.env)
+    .filter(([name])=>!name.toUpperCase().startsWith("PG")&&name.toUpperCase()!=="DATABASE_URL"));
+  return {...safeEnv,PGHOST:"127.0.0.1",PGHOSTADDR:"127.0.0.1",PGPORT:String(port),
     PGUSER:user,PGDATABASE:database,PGPASSWORD:"",PGSSLMODE:"disable",
     PGOPTIONS:"-c TimeZone=UTC",PGTZ:"UTC",PGCONNECT_TIMEOUT:"5"};
 }
@@ -107,7 +113,15 @@ async function main(){
     "Unexpected backup source provenance.");
   must((await fileSha256(archive))===manifest.encrypted_sha256,"Archive checksum mismatch.");
   const pass=await hidden("Archive passphrase (hidden): ");
-  console.log("Archive checksum and source manifest PASS.");
+  // Authenticate the COMPLETE ciphertext before starting PostgreSQL or
+  // piping a single plaintext byte to pg_restore. AES-GCM authenticates at
+  // EOF, so a single-pass stream could otherwise feed invalid data into a
+  // running SQL interpreter before detecting tampering.
+  const discard=new Writable({write(_chunk,_encoding,next){next();}});
+  await decryptArchive(archive,discard,pass);
+  must((await fileSha256(archive))===manifest.encrypted_sha256,
+    "Archive changed between initial checksum and authenticated read.");
+  console.log("Archive checksum, source manifest and complete GCM tag PASS.");
   console.log("CAUTION: isolated local test briefly contains decrypted production data.");
   const accepted=await hidden("Type RESTORE_TEST to confirm isolated local restore only (hidden): ");
   must(accepted==="RESTORE_TEST","Operator did not confirm temporary local restore.");
