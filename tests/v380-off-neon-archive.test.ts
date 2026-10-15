@@ -107,6 +107,10 @@ test("v380 synthetic PG18 diagnostic phases and pg_ctl process containment",asyn
   assert.match(synthetic,/must\(stopped,"Local PG18 test cluster not confirmed stopped and removed\."\)/);
   assert.match(synthetic,/activeChild=dump/);
   assert.match(synthetic,/activeChild=restore/);
+  assert.match(synthetic,/encryptArchive\(dump\.stdout,archive,password,\{requirePgDumpCustomFormat:true\}\)/);
+  assert.match(synthetic,/Synthetic pg_dump\/archive failed/);
+  assert.match(synthetic,/dump\.stderr\.on\("data"/);
+
 });
 
 test("v380 accepts tiny nonempty authenticated payload but refuses empty and non-PGDMP pg_dump output",async()=>{
