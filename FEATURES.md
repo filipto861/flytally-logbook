@@ -1,5 +1,10 @@
 # FlyTally Logbook — FEATURE LIST
 
+## 15 Oct 2026 — Existing historical CZK attribution completed (production data)
+
+3.8.0 historical owner-attested CZK backfill: **25/25 aircraft, 33/33 rate rows and 315/315 active flights** have a validated explicit CZK tuple. The final 112 protected flights (110 certified) were updated only in three financial metadata fields under a bounded production transaction and audit; certifications/revisions remain intact. **Not** new default-CZK behavior, a change to source legacy amounts, or an automated currency inference for other users/history. Four user accounts affected under one product-owner global attestation; original revision/archive/backup snapshots remain untouched. [Execution evidence](docs/operations/2026-10-15-czk-historical-backfill.md). Signed-in post-change UI verification pending.
+
+
 ## 15 Oct 2026 — FlyTally Logbook 3.8.0 RELEASED: Neon v21 migrated, PR #338 merged, Vercel READY
 
 **Owner C0 production GO and risk waiver:** owner explicitly authorized the live v21 migration/deployment after accepting a release without a new independent off-Neon backup. This does NOT provide independent disaster recovery. Preserve historical Neon snapshot, same-project safety checkpoint `br-shiny-bonus-b1gqt9u7` and other original branches. Independent signed historical account-v13 recovery remains unproven; source-provenance independent reviewer verdict remains pending and should not be claimed approved.
