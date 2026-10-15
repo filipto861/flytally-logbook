@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 15 October 2026 — independent backup/recovery security R1 review reconciliation (documentation only)
+
+- Received owner-supplied read-only DeepSeek review and checked findings against current branch. Confirmed B-1 (`initdb -A trust` for real decrypted records) and B-2 (unauthenticated JSON manifest), M-1 (unbound pre/post MVCC snapshots; selected hashes only); captured NTFS ACL and least-privilege concerns.
+- Corrected two reviewer premises: `decryptArchive` already uses Node `pipeline()` with built-in backpressure; `pg_restore --single-transaction --exit-on-error` is intended fail-closed and should not be weakened to partial recovery for convenience. Still require extended payload stress and extension/role object inventory.
+- Added `docs/product/3_8_0_OFF_NEON_SECURITY_R1_DISPOSITION_2026-10-15.md` with explicit B1/B2 patch scopes, immutable manifest MAC domain-separation contract, SCRAM Windows credential/temporary data constraints, independent re-review, and owner GO gates.
+- **NO runtime changes or test PASS caused by R1 documentation itself; R1-B/C/D PENDING.** Production export, actual off-provider backup/restore, historical signed-v13 proof, Neon DDL, merge and deployment NOT RUN. Existing owner-local synthetic PG18 PASS stays scoped to tested `9d26c2cb` code.
+
 ## 15 October 2026 — external backup PG18 synthetic end-to-end ACCEPTANCE PASS (owner-local, unreleased)
 
 - Owner ran on exact SHA `9d26c2cb6d01dcf596f64dd6186fbc300323c8ae`: encrypted archive/security/fast-child test suite **7/7 PASS** (0 fail/skip); separate actual PostgreSQL18 synthetic backup→AES-256-GCM full authenticate→single-transaction restore script **PASS**. PG18 test used fresh random localhost port 62750, two disposable synthetic databases, exit-0 custom `pg_dump` payload 2,806 bytes, record/hash comparisons and verified 10/10 local shutdown/cleanup. No Neon credentials, production flight records or user data involved.
