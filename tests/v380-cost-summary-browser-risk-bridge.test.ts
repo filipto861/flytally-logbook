@@ -36,7 +36,7 @@ test("v21 browser-risk mode refuses any nonloopback database before destructive 
   ]){
     const result=rejected(args,{DATABASE_URL:url});
     assert.equal(result.status,2,url+" "+result.stderr);
-    assert.match(result.stderr,/Currency browser is not the dedicated disposable fixture/);
+    assert.match(result.stderr,/localhost PostgreSQL fixture|Currency browser URL is not the dedicated disposable fixture/);
     assert.doesNotMatch(result.stdout,/Browser smoke database ready/);
   }
 });
