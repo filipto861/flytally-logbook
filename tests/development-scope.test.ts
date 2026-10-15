@@ -195,6 +195,22 @@ test("canonical browser harness changes still require browser acceptance",()=>{
   }
 });
 
+test("currency v21 migration guard is explicitly owned and requires PostgreSQL and browser evidence",()=>{
+  const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
+  const file="lib/currency-v21-migration-safety.ts";
+  const shared=manifest.modules.find((item:{id:string})=>item.id==="shared-runtime");
+  assert.ok(registryEntryMatches(shared,file),"Cross-cutting schema guard must be explicitly owned");
+  const result=classify([file]);
+  assert.match(result.modules,/shared-runtime/);
+  assert.match(result.risks,/persistence-schema/);
+  assert.match(result.risks,/domain-data-integrity/);
+  assert.equal(result.postgres,"true");
+  assert.equal(result.browser,"true");
+  assert.equal(result.full_tests,"true");
+  assert.equal(result.build,"true");
+  assert.match(result.test_groups,/development-pipeline/);
+});
+
 test("stable module ownership covers at least ninety percent of the audited runtime surface",()=>{
   const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
   const runtimeFiles=listRuntimeFiles();

@@ -8,7 +8,11 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("E1.5 runtime migrator ignores registry versions newer than its advertised schema",()=>{
   const db=read("lib/db-optimization.ts");
-  assert.match(db,/SELECT version FROM flytally_schema_migrations WHERE version<=\$\{DATABASE_SCHEMA_VERSION\} ORDER BY version/);
+  // Current versions still filter out newer registry entries; v21 additionally
+  // reads the registry name to fail closed on forged or misnamed version 21.
+  assert.match(db,/SELECT version,name FROM public\.flytally_schema_migrations WHERE version<=\$\{DATABASE_SCHEMA_VERSION\} ORDER BY version/);
+  assert.match(db,/const registeredV21=rows\.find\(row=>Number\(row\.version\)===21\)/);
+  assert.match(db,/assertCurrencyV21SchemaEvidence\(registeredV21\.name,shapeRows\[0\]\)/);
   assert.match(db,/pendingMigrationVersions\(rows\.map\(row=>Number\(row\.version\)\)\)/);
 });
 
