@@ -69,17 +69,32 @@ function preflight(env){
     "('currency_code','currency_minor_units','price_per_hour_decimal','dry_price_per_hour_decimal',"+
     "'default_price_currency_code','default_price_currency_minor_units','default_price_per_hour_decimal',"+
     "'price_currency_code','price_currency_minor_units','amount_encoding','amount_minor_units'))||'|'"+
-    "(SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE')";
+    "(SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE')||'|'"+
+    "(SELECT COUNT(*) FROM public.flights)||'|'"+
+    "(SELECT COUNT(*) FROM public.aircraft)||'|'"+
+    "(SELECT COUNT(*) FROM public.rates)||'|'"+
+    "(SELECT COUNT(*) FROM public.account_backups)||'|'"+
+    "(SELECT COUNT(*) FROM public.voided_certified_flights)||'|'"+
+    "(SELECT COUNT(*) FROM public.flight_source_provenance)||'|'"+
+    "(SELECT md5(COALESCE(string_agg(md5(to_jsonb(x)::text),'' ORDER BY md5(to_jsonb(x)::text)),'')) FROM public.voided_certified_flights x)||'|'"+
+    "(SELECT md5(COALESCE(string_agg(md5(to_jsonb(x)::text),'' ORDER BY md5(to_jsonb(x)::text)),'')) FROM public.flight_source_provenance x)";
   const r=spawnSync(exe("psql"),["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-c",q],
     {env,encoding:"utf8",timeout:45000});
   must(!r.error&&r.status===0,"Source preflight connection/query failed. Nothing exported.");
   const parts=String(r.stdout||"").trim().split("|");
-  must(parts.length===8&&parts[0]===DB&&Number(parts[1])>=180000&&Number(parts[1])<190000&&
+  must(parts.length===16&&parts[0]===DB&&Number(parts[1])>=180000&&Number(parts[1])<190000&&
     parts[2]==="1"&&parts[3]==="20"&&parts[4]==="1"&&parts[5]==="20"&&
     parts[6]==="0"&&Number(parts[7])>=50,
     "Unexpected production schema/SSL/version. Refusing backup.");
+  for(let i=8;i<=13;i++)must(Number.isSafeInteger(Number(parts[i]))&&Number(parts[i])>=0,
+    "Invalid protected data count in backup preflight.");
+  for(const i of [14,15])must(/^[0-9a-f]{32}$/.test(parts[i]),
+    "Missing protected history digest in backup preflight.");
   return {db:DB,pg_version:parts[1],ssl_verified:true,migrations:20,
-    v21_columns:0,public_tables:Number(parts[7])};
+    v21_columns:0,public_tables:Number(parts[7]),flights:Number(parts[8]),
+    aircraft:Number(parts[9]),rates:Number(parts[10]),account_backups:Number(parts[11]),
+    voided:Number(parts[12]),provenance:Number(parts[13]),
+    voided_digest:parts[14],provenance_digest:parts[15]};
 }
 async function main(){
   must(process.platform==="win32"&&process.versions.node.split(".")[0]==="24",
