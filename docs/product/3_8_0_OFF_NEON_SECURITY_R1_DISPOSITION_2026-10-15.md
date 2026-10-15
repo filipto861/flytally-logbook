@@ -1,5 +1,24 @@
 # FlyTally 3.8.0 — independent DeepSeek backup/recovery R1 disposition
 
+## 15 Oct 2026 — R1-B/C + executable R1-D test harness STAGED, not yet run by owner
+
+**Current code implements rather than merely proposes B-1/B-2:**
+- `tooling/v380-backup-manifest.mjs` adds **immutable manifest v2** with per-archive random-salt, separately domain-separated scrypt HMAC-SHA256 over canonical immutable provenance, schema evidence, archive size/hash and timestamp; `verifyManifest` uses constant-time MAC comparison, refuses unsigned v1 and altered metadata. `v380-off-neon-export.mjs` now signs the manifest and restricts its NTFS backup directory ACL. `v380-off-neon-restore-check.mjs` authenticates the manifest BEFORE trusting source identifiers, then authenticates the archive GCM before any PG18 startup, and leaves the manifest immutable; it writes a separate **non-authoritative receipt** only after verification/stop/cleanup.
+- `tooling/v380-windows-private.mjs` uses Windows SID + `icacls` to restrict private temporary restore/backup directories to current owner and SYSTEM; local restoration creates a random one-time SCRAM password, passes it to `initdb -A scram-sha-256` through a private ephemeral `--pwfile` (removed immediately), and uses scoped `PGPASSWORD` only in child environments. Both production-restore verifier and synthetic PG18 runner assert that the right password works and the wrong password is rejected. Owner must explicitly confirm a trusted **encrypted local volume** via `FLYTALLY_CONFIRMED_ENCRYPTED_VOLUME=YES` for a future real-data local restore; setting this flag is an acknowledgment, not verified BitLocker evidence, so volume security remains an operator/reviewer requirement.
+- `tooling/v380-backup-toc.mjs` authenticates and streams `pg_restore --list` without DB access, parses TABLE + EXTENSION inventory; real-data verifier requires at least 50 tables and confirms each cited extension is available in the newly created local PostgreSQL before executing SQL. It retains `pg_restore --single-transaction --exit-on-error`.
+- `tests/v380-off-neon-archive.test.ts` now contains **10** cases, adding manifest substitution, wrong key/modified provenance/unsigned v1, SCRAM/ACL/TOC source contracts, and 12-MiB slow writable-stream backpressure. Synthetic PG18 now exercises signed manifest, SCRAM+invalid-password denial and TOC listing in the same full actual `pg_dump`→AES→`pg_restore` path. Additional Windows symlink-path and source query timeouts fail closed.
+
+**Validation state:** GitHub file readback/JS syntax/static safety markers **PASS**. **No Node unit tests, Windows SCRAM/ACL test, PG18 synthetic integrated test or independent DeepSeek re-review has run since these changes.** The prior owner-local 7/7 + PG18 synthetic PASS remains evidence for *older* `9d26c2cb`, not this SHA. External production backup, actual-data restore, signed-v13 history, v21 DDL/merge/deploy **NOT RUN**. Stage labels: **R1-B/C CODE STAGED; R1-D owner-local and independent-review PENDING**, release NO-GO.
+
+**Immediate nonproduction owner-local verification:**
+```powershell
+git pull --ff-only
+npm run test:target -- tests/v380-off-neon-archive.test.ts
+node tooling/v380-off-neon-export.mjs check
+node tooling/v380-off-neon-pg18-synthetic-test.mjs
+```
+Expect **10/10 target tests and full synthetic PG18 PASS**; stop and send the first actual error otherwise. Synthetic test alone never contacts Neon. Do **NOT** run real `export` or `restore-check verify` with customer data before re-review/decision. Re-submit exact updated commit to DeepSeek for second READ-ONLY verdict and reconcile new findings. C0 production migration/deploy owner GO remains separate.
+
 **Status (15 Oct 2026):** design/reconciliation only; production `export`, real-data local `restore`, v21 DDL and deploy are **NO-GO**. Reviewer is independent and read-only; its findings are input, not automatic authority. Current repository HEAD checked before this document: `e093efa9eb1d6f424336427abb83adf7852f40fe`. Owner-local synthetic PG18 `pg_dump`→AES-256-GCM→`pg_restore` **PASS** at older `9d26c2cb`, archive regressions **7/7 PASS**. Subsequent restore-side pg_ctl hardening has not been owner-run.
 
 **Provenance:** owner-supplied independent DeepSeek review dated 2026-10-15, describing inspected source and no tool executions; reviewer reports "Reviewed HEAD `1dd456320c3e3ea2eb6a95eac40ea6aecd60e9e`", older than currently inspected code. Its contents were compared directly with GitHub's latest branch source before these decisions.
