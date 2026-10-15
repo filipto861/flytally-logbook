@@ -3,6 +3,7 @@ import test,{before} from "node:test";
 import {readFileSync} from "node:fs";
 import {spawnSync} from "node:child_process";
 import {resolve} from "node:path";
+import {assertCurrencyV21SchemaEvidence} from "../../lib/currency-v21-migration-safety.ts";
 
 // Run ONLY after tooling/run-currency-m2a0-local.ps1 has verified its own fresh
 // loopback PostgreSQL16 instance AND set both purpose-bound environment flags.
@@ -16,6 +17,10 @@ const pre=source("tooling/v380-v21-preflight.sql");
 const migrate=source("tooling/v380-v21-migrate.sql");
 const post=source("tooling/v380-v21-postflight.sql");
 const expectedDb="flytally_currency_test";
+const runtime=source("lib/db-optimization.ts");
+const runtimeShapeSql=runtime.match(/const shapeRows=await sql`([\s\S]*?)` as Array<CurrencyV21ShapeEvidence>/)?.[1]??"";
+if(!runtimeShapeSql||runtimeShapeSql.includes("${"))throw new Error("v21 runtime shape SQL contract missing or interpolated");
+
 
 function exec(script:string){
   return spawnSync("psql",["-w","-X","-qAt","-v","ON_ERROR_STOP=1",
@@ -29,6 +34,12 @@ function run(script:string){
   if(r.status!==0)throw new Error(String(r.stderr||r.stdout));
   return String(r.stdout||"").trim();
 }
+function physicalShape(){
+  const values=run(runtimeShapeSql).split("|").map(Number);
+  assert.equal(values.length,2,"Runtime v21 physical metadata query must return exactly two counts");
+  return {columns_count:values[0],checks_count:values[1]};
+}
+
 function reject(script:string,pattern:RegExp){
   const r=exec(script);
   if(r.error)throw r.error;
@@ -88,6 +99,14 @@ test("v21 preflight rejects incomplete schema and aborts migration without a reg
   run(pre);
 });
 
+test("pre-registered v21 with NO physical DDL is rejected by the actual runtime shape query",{skip:!enabled},()=>{
+  run("INSERT INTO flytally_schema_migrations(version,name) VALUES(21,'source-backed currency exact-money')");
+  const state=physicalShape();
+  assert.deepEqual(state,{columns_count:0,checks_count:0});
+  assert.throws(()=>assertCurrencyV21SchemaEvidence("source-backed currency exact-money",state),/physical shape invalid/);
+  run("DELETE FROM flytally_schema_migrations WHERE version=21");
+});
+
 test("v21 production artifact applies atomically and preserves legacy and certified evidence",{skip:!enabled},()=>{
   const beforeSnapshot=run(`SELECT
      (SELECT row_to_json(r)::text FROM (SELECT price_per_hour,dry_price_per_hour FROM rates WHERE id=1) r)||'|'||
@@ -109,7 +128,7 @@ test("v21 production artifact applies atomically and preserves legacy and certif
      (SELECT payload_sha256 FROM account_backups WHERE id=1)`);
   assert.equal(afterSnapshot,beforeSnapshot);
   assert.equal(run("SELECT count(*) FROM flytally_schema_migrations WHERE version=21 AND name='source-backed currency exact-money'"),"1");
-  assert.equal(run("SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND column_name IN ('currency_code','currency_minor_units','price_per_hour_decimal','dry_price_per_hour_decimal','default_price_currency_code','default_price_currency_minor_units','default_price_per_hour_decimal','price_currency_code','price_currency_minor_units','amount_encoding','amount_minor_units')"),"12");
+  assert.deepEqual(physicalShape(),{columns_count:12,checks_count:4});
   reject(migrate,/registry must be exactly 1 through 20/);
 });
 
@@ -120,4 +139,16 @@ test("v21 executable CHECKs reject malformed exact monetary tuples",{skip:!enabl
   reject("UPDATE rates SET price_per_hour_decimal='Infinity'::numeric WHERE id=1",/rates_exact_currency_tuple_v21_check/);
   run("UPDATE flight_expenses SET amount_encoding='iso_minor_units',amount_minor_units=3 WHERE id=1");
   reject("UPDATE flight_expenses SET amount_minor_units=NULL WHERE id=1",/expenses_amount_encoding_v21_check/);
+});
+
+test("pre-registered v21 with missing validated CHECK or missing column refuses runtime shape evidence",{skip:!enabled},()=>{
+  assert.deepEqual(physicalShape(),{columns_count:12,checks_count:4});
+  run("ALTER TABLE rates DROP CONSTRAINT rates_exact_currency_tuple_v21_check");
+  const noCheck=physicalShape();
+  assert.deepEqual(noCheck,{columns_count:12,checks_count:3});
+  assert.throws(()=>assertCurrencyV21SchemaEvidence("source-backed currency exact-money",noCheck),/physical shape invalid/);
+  run("ALTER TABLE rates DROP COLUMN currency_code");
+  const noColumn=physicalShape();
+  assert.deepEqual(noColumn,{columns_count:11,checks_count:3});
+  assert.throws(()=>assertCurrencyV21SchemaEvidence("source-backed currency exact-money",noColumn),/physical shape invalid/);
 });
