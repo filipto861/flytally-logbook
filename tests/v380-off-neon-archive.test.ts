@@ -3,10 +3,12 @@ import {randomBytes} from "node:crypto";
 import {spawn} from "node:child_process";
 import {createReadStream,promises as fs} from "node:fs";
 import {Readable,Writable} from "node:stream";
+import {createHash} from "node:crypto";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import test from "node:test";
 import {encryptArchive,decryptArchive,fileSha256,retainChildStdout} from "../tooling/v380-backup-archive.mjs";
+import {sealManifest,verifyManifest} from "../tooling/v380-backup-manifest.mjs";
 
 async function collect(file,password){
   const parts=[];
@@ -82,9 +84,17 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   // Audit PASS marker must be written after the plaintext PG18 cluster was
   // actually stopped and removed, not merely after row counts matched.
   assert.ok(restore.indexOf("must(stopVerified,") <
-    restore.indexOf("manifest.verified_restore=true"));
+    restore.indexOf("const receipt={receipt_version:1"));
   assert.ok(restore.indexOf("await fs.rm(dir,{recursive:true,force:true})") <
-    restore.indexOf("manifest.verified_restore=true"));
+    restore.indexOf("const receipt={receipt_version:1"));
+  assert.match(restore,/await verifyManifest\(archive,pass,manifest\)/);
+  assert.match(restore,/"-A","scram-sha-256"/);
+  assert.doesNotMatch(restore,/"-A","trust"/);
+  assert.match(restore,/restrictWindowsDirectory\(dir\)/);
+  assert.match(restore,/createEphemeralPwfile\(dir,ephemeralPassword\)/);
+  assert.match(restore,/denied.status!==0/);
+  assert.match(restore,/inspectPgRestoreToc\(archive,pass,exe\("pg_restore"\)\)/);
+  assert.match(restore,/FLYTALLY_CONFIRMED_ENCRYPTED_VOLUME/);
 
 
   assert.doesNotMatch(restore,/restore_snapshot|finalize_branch_restore/);
@@ -176,4 +186,76 @@ test("v380 both pg_dump callers attach fast-exit buffer before asynchronous encr
     assert.ok(attach>0 && encrypt>attach,name+" starts async KDF before connecting stdout");
     assert.ok(source.includes("{requirePgDumpCustomFormat:true}"),name+" must validate PGDMP custom signature");
   }
+});
+
+
+function unsignedFixture(meta){
+  return {manifest_version:2,source_project:"muddy-dust-14049657",
+    source_branch:"br-raspy-fog-b1btvu5t",source_host:"approved.test",
+    source_schema_preflight:{db:"neondb",flights:315,voided:3},
+    created_at:"2026-10-15T12:00:00.000Z",
+    encrypted_sha256:meta.sha256,encrypted_size:meta.sizeBytes};
+}
+test("R1-B signed manifest v2 rejects tampering, swapped archives, wrong passphrase and unsigned legacy",async()=>{
+  const dir=await fs.mkdtemp(join(tmpdir(),"ft380-manifest-auth-"));
+  const pass="manifest-test-passphrase-2026!";
+  try{
+    const one=join(dir,"one.ftbak"),two=join(dir,"two.ftbak");
+    const meta=await encryptArchive(Readable.from([Buffer.from("PGDMP-manifest-data")]),one,pass,
+      {requirePgDumpCustomFormat:true});
+    const manifest=await sealManifest(one,pass,unsignedFixture(meta));
+    const verified=await verifyManifest(one,pass,manifest);
+    assert.equal(verified.encrypted_sha256,meta.sha256);
+    assert.deepEqual(verified.source_schema_preflight,{db:"neondb",flights:315,voided:3});
+    await assert.rejects(()=>verifyManifest(one,"wrong-manifest-passphrase!",manifest),/authentication FAILED/);
+    await assert.rejects(()=>verifyManifest(one,pass,{...unsignedFixture(meta),schema:1}),/authentication/);
+    await assert.rejects(()=>verifyManifest(one,pass,{...manifest,
+      source_schema_preflight:{...manifest.source_schema_preflight,flights:316}}),/authentication FAILED/);
+    await assert.rejects(()=>verifyManifest(one,pass,{...manifest,source_host:"forged.test"}),
+      /authentication FAILED/);
+    await assert.rejects(()=>verifyManifest(one,pass,{...manifest,authentication:{
+      ...manifest.authentication,value:"0".repeat(64)}}),/authentication FAILED/);
+    await encryptArchive(Readable.from([Buffer.from("PGDMP-other-archive")]),two,pass,
+      {requirePgDumpCustomFormat:true});
+    await assert.rejects(()=>verifyManifest(two,pass,manifest),/authentication FAILED/);
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
+test("R1-C synthetic and actual restore share SCRAM, private NTFS directory and pre-SQL archive inventory",async()=>{
+  const synthetic=await fs.readFile(new URL("../tooling/v380-off-neon-pg18-synthetic-test.mjs",import.meta.url),"utf8");
+  const restore=await fs.readFile(new URL("../tooling/v380-off-neon-restore-check.mjs",import.meta.url),"utf8");
+  const helper=await fs.readFile(new URL("../tooling/v380-windows-private.mjs",import.meta.url),"utf8");
+  for(const code of [synthetic,restore]){
+    assert.match(code,/"-A","scram-sha-256"/);
+    assert.doesNotMatch(code,/"-A","trust"/);
+    assert.match(code,/restrictWindowsDirectory\(dir\)/);
+    assert.match(code,/createEphemeralPwfile\(dir,ephemeralPassword\)/);
+    assert.match(code,/denied.status!==0/);
+    assert.match(code,/inspectPgRestoreToc\(archive,/);
+  }
+  assert.match(helper,/icacls.exe/);
+  assert.match(helper,/whoami.exe/);
+  assert.match(helper,/\/inheritance:r/);
+  const toc=await fs.readFile(new URL("../tooling/v380-backup-toc.mjs",import.meta.url),"utf8");
+  assert.match(toc,/\["--list"\]/);
+  assert.match(toc,/decryptArchive\(archive,p.stdin,password\)/);
+  assert.match(restore,/SELECT name FROM pg_available_extensions/);
+  assert.match(restore,/--single-transaction/);
+});
+
+test("R1-D encrypted stream propagates backpressure for multi-megabyte slow consumer",async()=>{
+  const dir=await fs.mkdtemp(join(tmpdir(),"ft380-stream-load-"));
+  const p=join(dir,"load.ftbak"),pass="slow-consumer-test-2026!";
+  const input=randomBytes(12*1024*1024);
+  try{
+    await encryptArchive(Readable.from([input]),p,pass);
+    const digest=createHash("sha256"),lengths={total:0};
+    const slow=new Writable({highWaterMark:4096,write(chunk,enc,done){
+      digest.update(chunk);lengths.total+=chunk.length;
+      setImmediate(done);
+    }});
+    await decryptArchive(p,slow,pass);
+    assert.equal(lengths.total,input.length);
+    assert.equal(digest.digest("hex"),createHash("sha256").update(input).digest("hex"));
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
 });
