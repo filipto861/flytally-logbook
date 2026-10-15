@@ -1,10 +1,13 @@
 import {spawn,spawnSync} from "node:child_process";
+import {randomBytes} from "node:crypto";
 import {createServer} from "node:net";
 import {Writable} from "node:stream";
 import {existsSync,promises as fs} from "node:fs";
 import {tmpdir} from "node:os";
 import {join,resolve,relative,sep,basename} from "node:path";
 import {decryptArchive,fileSha256} from "./v380-backup-archive.mjs";
+import {verifyManifest} from "./v380-backup-manifest.mjs";
+import {restrictWindowsDirectory,createEphemeralPwfile} from "./v380-windows-private.mjs";
 
 // Owner-local only. NEVER connect pg_restore to production, Neon, or any
 // pre-existing database. The archive stays encrypted until piped into the
@@ -60,14 +63,14 @@ function hidden(question){
     process.stdin.on("data",read);
   });
 }
-function localEnv(port,database){
+function localEnv(port,database,password){
   // Never inherit libpq service, host-address or SSL overrides from the
   // operator shell. In particular PGHOSTADDR could bypass PGHOST and send a
   // RESTORE to an unrelated remote server. Fail-closed local endpoint only.
   const safeEnv=Object.fromEntries(Object.entries(process.env)
     .filter(([name])=>!name.toUpperCase().startsWith("PG")&&name.toUpperCase()!=="DATABASE_URL"));
   return {...safeEnv,PGHOST:"127.0.0.1",PGHOSTADDR:"127.0.0.1",PGPORT:String(port),
-    PGUSER:user,PGDATABASE:database,PGPASSWORD:"",PGSSLMODE:"disable",
+    PGUSER:user,PGDATABASE:database,PGPASSWORD:password,PGSSLMODE:"disable",
     PGOPTIONS:"-c TimeZone=UTC",PGTZ:"UTC",PGCONNECT_TIMEOUT:"5"};
 }
 async function openPort(){
@@ -115,12 +118,19 @@ async function main(){
   const archive=resolve(process.argv[3]),rel=relative(home,archive);
   must(rel&&rel!==".."&&!rel.startsWith(".."+sep)&&!rel.startsWith(sep)&&
     basename(archive).endsWith(".ftbak"),"Archive must be inside private off-Neon backup directory.");
-  const manifest=JSON.parse(await fs.readFile(archive+".manifest.json","utf8"));
-  must(manifest.source_branch==="br-raspy-fog-b1btvu5t"&&
-    manifest.source_host==="ep-proud-bar-b1ts6cq1.c-5.eu-central-1.aws.neon.tech",
-    "Unexpected backup source provenance.");
-  must((await fileSha256(archive))===manifest.encrypted_sha256,"Archive checksum mismatch.");
+  const rawManifest=await fs.readFile(archive+".manifest.json","utf8");
+  must(rawManifest.length<1024*1024,"Unexpectedly large manifest.");
+  const manifest=JSON.parse(rawManifest);
   const pass=await hidden("Archive passphrase (hidden): ");
+  // NEVER trust source identity or evidence until the immutable manifest
+  // is authenticated with its separate domain-separated HMAC key.
+  const verifiedManifest=await verifyManifest(archive,pass,manifest);
+  must(verifiedManifest.source_project==="muddy-dust-14049657"&&
+    verifiedManifest.source_branch==="br-raspy-fog-b1btvu5t"&&
+    verifiedManifest.source_host==="ep-proud-bar-b1ts6cq1.c-5.eu-central-1.aws.neon.tech",
+    "Unexpected authenticated source provenance.");
+  must((await fileSha256(archive))===verifiedManifest.encrypted_sha256,
+    "Archive digest mismatches authenticated immutable manifest.");
   // Authenticate the COMPLETE ciphertext before starting PostgreSQL or
   // piping a single plaintext byte to pg_restore. AES-GCM authenticates at
   // EOF, so a single-pass stream could otherwise feed invalid data into a
@@ -133,12 +143,27 @@ async function main(){
   console.log("CAUTION: isolated local test briefly contains decrypted production data.");
   const accepted=await hidden("Type RESTORE_TEST to confirm isolated local restore only (hidden): ");
   must(accepted==="RESTORE_TEST","Operator did not confirm temporary local restore.");
+  // Real decrypted production records may live temporarily on this device.
+  // Fail closed unless the owner confirms a trusted, encrypted local volume.
+  must(process.env.FLYTALLY_CONFIRMED_ENCRYPTED_VOLUME==="YES",
+    "Set FLYTALLY_CONFIRMED_ENCRYPTED_VOLUME=YES only on a trusted encrypted volume.");
   const dir=await fs.mkdtemp(join(tmpdir(),"flytally-380-pg18-restore-"));
   const data=join(dir,"postgres-data"),log=join(dir,"postgres.log");
   let started=false,stopVerified=false,attempted=false,verifiedEvidence=null;
-  const port=await openPort(),env=localEnv(port,name);
+  const port=await openPort();
+  const ephemeralPassword=randomBytes(36).toString("base64url");
+  const env=localEnv(port,name,ephemeralPassword);
+  let pwfile;
   try{
-    run("initdb",["-D",data,"-U",user,"-A","trust","--encoding=UTF8","--no-instructions"],env,120000);
+    restrictWindowsDirectory(dir);
+    pwfile=await createEphemeralPwfile(dir,ephemeralPassword);
+    try{
+      run("initdb",["-D",data,"-U",user,"-A","scram-sha-256",
+        "--pwfile="+pwfile,"--encoding=UTF8","--no-instructions"],env,120000);
+    }finally{
+      await fs.rm(pwfile,{force:true});
+      pwfile=null;
+    }
     attempted=true;
     try {
       run("pg_ctl",["-D",data,"-l",log,"-o","-h 127.0.0.1 -p "+port,
@@ -153,10 +178,15 @@ async function main(){
       if(excerpt)console.error("Isolated restore PostgreSQL startup log: "+excerpt);
       throw error;
     }
-    run("createdb",["-h","127.0.0.1","-p",String(port),"-U",user,name],localEnv(port,"postgres"));
+    run("createdb",["-h","127.0.0.1","-p",String(port),"-U",user,name],localEnv(port,"postgres",ephemeralPassword));
     const id=run("psql",["-X","-w","-qAt","-c",
       "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())"],env);
     must(id===name+"|"+user+"|127.0.0.1","Restoration target identity mismatch.");
+    const invalidEnv={...env,PGPASSWORD:"wrong-ephemeral-password"};
+    const denied=spawnSync(exe("psql"),["-X","-w","-qAt","-c","SELECT 1"],{
+      env:invalidEnv,encoding:"utf8",timeout:15000,windowsHide:true});
+    must(denied.status!==0&&!denied.error,
+      "SCRAM denial test FAILED; local PG18 accepts an invalid password.");
     const child=spawn(exe("pg_restore"),
       ["--single-transaction","--exit-on-error","--no-owner","--no-acl","--dbname="+name],
       {env,stdio:["pipe","ignore","pipe"],windowsHide:true});
@@ -169,7 +199,7 @@ async function main(){
       await decryptArchive(archive,child.stdin,pass);
       must((await exit)===0,"Local pg_restore failed: "+stderr.slice(-1200));
     }catch(error){child.kill();await exit.catch(()=>{});throw error;}
-    const actual=restoredEvidence(env),expected=manifest.source_schema_preflight;
+    const actual=restoredEvidence(env),expected=verifiedManifest.source_schema_preflight;
     must(actual.migrations===20&&actual.first===1&&actual.last===20&&actual.currency_columns===0,
       "Restored schema registry drift.");
     for(const key of ["public_tables","flights","aircraft","rates","account_backups",
@@ -181,6 +211,7 @@ async function main(){
     // the plaintext test cluster is actually removed. Do not mark PASS early.
     verifiedEvidence=actual;
   }finally{
+    if(pwfile)await fs.rm(pwfile,{force:true}).catch(()=>{});
     if(started){
       try{
         run("pg_ctl",["-D",data,"-m","fast","-w","-t","30","stop"],env,90000);
@@ -194,12 +225,16 @@ async function main(){
   }
   must(stopVerified,"Local PG18 test instance was not safely stopped/removed; restore remains unverified.");
   must(verifiedEvidence,"No verified restored-data evidence.");
-  manifest.verified_restore=true;
-  manifest.verified_at=new Date().toISOString();
-  manifest.verify_scope="PG18 disposable full logical restore + selected protected history/count digests";
-  // This local manifest status is an audit marker, not a digital signature.
-  await fs.writeFile(archive+".manifest.json",JSON.stringify(manifest,null,2)+"\n",
-    {encoding:"utf8"});
+  // The v2 manifest remains IMMUTABLE. This separate receipt is an
+  // untrusted local audit marker, never a new source of archive authority.
+  const receipt={receipt_version:1,verified_at:new Date().toISOString(),
+    source_archive_sha256:verifiedManifest.encrypted_sha256,
+    verification_scope:"isolated PG18 logical restore + selected counts/digests",
+    restored_public_tables:verifiedEvidence.public_tables,
+    restored_flights:verifiedEvidence.flights};
+  const receiptPath=archive+".verification-"+Date.now()+".json";
+  await fs.writeFile(receiptPath,JSON.stringify(receipt,null,2)+"\n",
+    {encoding:"utf8",flag:"wx",mode:0o600});
   console.log("OFF-NEON RESTORE CHECK PASS: local PG18 restored "+verifiedEvidence.public_tables+
     " tables, "+verifiedEvidence.flights+" flights; protected history digests match.");
   console.log("Not proof of signed account v13 workflow recovery or live PG18 release.");
