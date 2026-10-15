@@ -4,6 +4,7 @@ import {existsSync,promises as fs} from "node:fs";
 import {join,resolve,relative,sep} from "node:path";
 import {encryptArchive,retainChildStdout} from "./v380-backup-archive.mjs";
 import {sealManifest} from "./v380-backup-manifest.mjs";
+import {restrictWindowsDirectory} from "./v380-windows-private.mjs";
 
 // Explicit owner-local off-Neon export; no production writes or raw dump files.
 // Only the current canonical direct production endpoint is accepted.
@@ -122,6 +123,12 @@ async function main(){
   const relation=relative(process.cwd(),output);
   must(relation===".."||relation.startsWith(".."+sep),"Archive must be outside repo.");
   await fs.mkdir(output,{recursive:true});
+  // Encrypted archive metadata still identifies customer evidence. Enforce
+  // owner-only ACL rather than trusting POSIX mode 0o600 on Windows/NTFS.
+  const outputStat=await fs.lstat(output);
+  must(outputStat.isDirectory()&&!outputStat.isSymbolicLink(),
+    "Backup directory must be a real private local directory, not a link.");
+  restrictWindowsDirectory(output);
   const name="flytally-pre-v21-"+new Date().toISOString().replace(/[:.]/g,"-")+
     "-"+randomBytes(4).toString("hex")+".ftbak";
   const finalPath=join(output,name),partial=finalPath+".partial";
