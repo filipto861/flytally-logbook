@@ -226,6 +226,9 @@ export default {...config,retries:0,webServer:{...config.webServer,reuseExisting
   $legacy = (& $psql -X -w -v ON_ERROR_STOP=1 -qAt -d $env:DATABASE_URL -c "SELECT COUNT(*) FROM flights WHERE user_id=9001 AND price_currency_code IS NOT NULL").Trim()
   Assert-Exit "H4 legacy currency postcheck"
   if ($legacy -ne "0") { throw "Frozen v20 unexpectedly populated exact currency metadata." }
+  $endCommit = (& git rev-parse HEAD).Trim()
+  Assert-Exit "H4 candidate SHA readback"
+  if ($endCommit -cne $commit) { throw "H4 candidate HEAD changed while the gate was running." }
   Write-Host "LOCAL H4 PASS: actual frozen $frozenV20Sha on disposable schema v21 (1 registry / 12 columns / 4 checks), authenticated old browser flows PASS. NOT PRODUCTION OR HISTORIC RESTORE." -ForegroundColor Green
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
