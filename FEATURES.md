@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**15 Oct 2026 — PG18 synthetic stdout-loss root cause reproduced and bounded capture fix staged.** Owner `d1cc5b91` crypto/security **5/5 PASS**, PG18 synthetic stage05 FAILED with `pg_dump exit 0, empty stdout`, no stderr; no production data. Independent Node fast-exit reproducer returned empty stdout when reader delayed by async key derivation, exact `PGDMP` when PassThrough attached synchronously. Added bounded 64KiB backpressure-preserving child stdout buffer used by synthetic and production encrypted export, plus two source/runtime regressions. Syntax/source readback only; Windows/PG18 new code NOT RUN, release remains NO-GO.
+
 **15 Oct 2026 — external backup PG18 tiny/empty archive diagnosis.** Owner `c0d6f2d4` validated 4/4 targeted tests and synthetic PG18 startup/cleanup; end-to-end failed at stage 05 with `Encrypted database archive unexpectedly small`. Root cause ambiguous: old arbitrary 1KiB floor checked before actual `pg_dump` process exit. Changed archive codec to validate nonempty source + optional PGDMP signature and exact size, and capture actual `pg_dump` exit diagnostics; small-archive regression added. Source syntax/readback only, retest PENDING. No real production backup, v21 release remains NO-GO.
 
 ## 15 Oct 2026 — synthetic PG18 local test failure: pg_ctl ETIMEDOUT (investigation)
