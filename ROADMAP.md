@@ -1,5 +1,20 @@
 # FlyTally Logbook — ROADMAP
 
+## 15 Oct 2026 — off-Neon security pre-review fixes and PG18 synthetic end-to-end gate STAGED (NOT RUN)
+
+Owner Windows/Node24 on earlier `4a88bae044dc307ea5f9571e46626cd681f161d5`: encrypted-archive targeted tests **3/3 PASS**, official PostgreSQL18 dump/restore/server binaries `check` **PASS**; **no production backup/export or restore**. On follow-up repository code, security analysis identified and corrected two potential release-critical paths: (1) inherited libpq `PGHOSTADDR`/`PGSERVICE`/other `PG*` could bypass approved endpoint or local restore target; production export and restore now sanitize inherited PG environment, local target additionally explicitly pins `PGHOSTADDR=127.0.0.1`; (2) GCM tag only authenticates at EOF; restore now validates **full ciphertext tag to a discard stream BEFORE any PG18 startup or SQL interpretation**. Additional: manifest `verified_restore=true` only after local decrypted PG instance stops and temporary data is actually removed; export checks protected-history counts/digests and v20 schema pre-and-post dump to fail closed on monitored source drift.
+
+Added `tooling/v380-off-neon-pg18-synthetic-test.mjs`: **zero-Neon** operator-local independent ephemeral PG18 fixture and actual `pg_dump -Fc` → authenticated AES-256-GCM ciphertext → `pg_restore --single-transaction` → SQL data equality, with stop/cleanup; **NOT RUN**. Strengthened `tests/v380-off-neon-archive.test.ts` to assert environment sanitizer, authentication-before-restore, cleanup-before-PASS and dump-drift guards. Independent read-only DeepSeek review brief `docs/product/3_8_0_OFF_NEON_INDEPENDENT_SECURITY_REVIEW_HANDOFF_2026-10-15.md` created; **reviewer verdict PENDING**. Updated operator protocol `docs/product/3_8_0_OFF_NEON_BACKUP_RECOVERY_PROTOCOL_2026-10-15.md`. Static source parse/readback is not runtime PASS. **Code/verification on current HEAD `81fe2df2a35dcb5baefd9f9aa1c0441f0f8ef8f2` remains NOT RUN** after security patches.
+
+Next owner-local commands on clean branch with installed PG18 + Node24:
+```powershell
+git pull --ff-only
+npm run test:target -- tests/v380-off-neon-archive.test.ts
+node tooling/v380-off-neon-export.mjs check
+node tooling/v380-off-neon-pg18-synthetic-test.mjs
+```
+**Do not invoke real production `export` until independent DeepSeek security review is reconciled, synthetic PG18 backup-and-restore PASS, and fresh exact Neon/Vercel identity/backup plan is verified.** Existing local 3.8 acceptance / old runtime H4 PASS unchanged. PR #338 Draft, release NO-GO; no production SQL/Neon mutation/merge/deploy.
+
 **15 Oct 2026 — off-Neon backup prerequisite owner-local result.** On source SHA `08fbe547558016c7807bf0dc5c83a40fc4eea51f`, owner ran `npm run test:target -- tests/v380-off-neon-archive.test.ts`: **3/3 PASS** (AES-GCM roundtrip, tampering/wrong password, fail-closed source/target guards; 0 fail/skip). `node tooling/v380-off-neon-export.mjs check` **BLOCKED** safely before any database connection/export: `PostgreSQL 18 pg_dump not installed` at `C:\Program Files\PostgreSQL\18\bin`. **No production export, no encrypted backup, no restore.** Small follow-on safeguard adds `initdb`, `pg_ctl`, `createdb` to PG18 local prerequisite check and a test assertion, code SHA `74665cc1cc2a9a2acbcbc46331272110bf4aa210`; not yet owner-tested. Next: install official PostgreSQL 18 server and command line tools alongside 16 (separate port, retain 16 service), `git pull --ff-only`, rerun 3 tests and `check`. Do not run `export` before independent security review and confirmed prerequisites. Backup/recovery release gate remains OPEN; production unchanged.
 
 ## 15 Oct 2026 — off-Neon encrypted PG18 backup and isolated recovery tooling STAGED (NOT RUN)
