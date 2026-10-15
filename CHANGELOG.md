@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — Currency v21 browser test build environment ordering (unreleased, NOT TESTED)
+
+- Owner-local candidate `4ea4a38a` targeted 46/46 PASS, TypeScript PASS, isolated PG16 static 6/6 + native schema 9/9 + executable v21 release 5/5 PASS; full Node **1555/1555 PASS**, local optimized Next build PASS (41/41 static pages). Authenticated Playwright **0/8 FAIL**. The Next server rejected guarded v21 DDL (`Currency schema v21 requires approved explicit migration before runtime`); first browser logins remained at `/login`, subsequent fixtures lacked `flights.price_currency_code`; all eight failed in shared environment precondition, not demonstrated separate application regressions.
+- Isolated browser runner compiled Next **before** setting verified ephemeral Postgres URL and all three browser purpose flags, a potential frozen/build-time environment mismatch. `d19995e2106f2492eca23353be95854133765c58` moves `npm.cmd run build` **after** verified disposable database identity, retains build before destructive fixture/bootstrap and Playwright, rejects Vercel-marked environments, and adds regression asserting purpose→DB identity→build→browser order. No production SQL/DB optimizer/guard relaxed or changed. Source-only readback PASS; new runner/test still **NOT RUN**.
+- Release remains **NO-GO** pending successful browser/whole acceptance on exact new SHA, H4 real v20-app-on-v21 and operational/provenance/recovery approval gates. PR Draft; no production SQL, Neon/branch, merge or deploy.
+
 ## 15 October 2026 — v21 H1/H5 repeat local acceptance, remove duplicated hard-coded ownership counts (unreleased)
 
 - Owner tested `7e0a39d8`: focused earlier failing tests 32/32 PASS, TypeScript PASS, isolated native PostgreSQL16 identity validated and stopped; static 6/6, native schema 9/9, full executable release SQL v21 5/5 PASS. Complete Node suite 1553/1555: the remaining 2 FAIL were hard-coded old module inventory counts (`395` vs new audited `396`) in timezone and 3.7 map source-contract tests. Optimized Next build and authenticated browser NOT RUN, full acceptance FAIL.

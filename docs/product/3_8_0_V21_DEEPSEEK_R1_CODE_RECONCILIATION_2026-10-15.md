@@ -1,5 +1,22 @@
 # FlyTally Logbook 3.8 — R1 DeepSeek code-level findings and corrective batch
 
+## 15 October — complete owner-local Node/PG/build PASS, browser gate failure and build-order correction
+
+Exact owner-local SHA `4ea4a38a265161af49927e3d0a24f681a0d151de`: prior two stale source tests fixed, targeted 46/46 PASS, TypeScript PASS; newly created/verified/disposed PG16 static SQL 6/6, native schema 9/9 and executable release 5/5 PASS. Aggregate source/Node 1555/1555 PASS. Optimized Next.js `next build` PASS with 41/41 static pages. Eight authenticated desktop/mobile Playwright scenarios **all FAIL**: production-mode server logged `Currency schema v21 requires approved explicit migration before runtime`; navigation stays at login for first scenarios and currency-specific fixtures later fail because `flights.price_currency_code` is absent. No direct evidence of independent eight UI bugs: common guarded migration prerequisite failed. Browser Gate4 and full acceptance therefore FAIL.
+
+Runner source investigation: `tooling/run-currency-380-browser-local.ps1` built optimized Next before creating/checking isolated `flytally_currency_test` PG16 and before assigning `DATABASE_URL`/three purpose flags; code guard correctly rejects absent purpose flags. Fix `d19995e2106f2492eca23353be95854133765c58` moves build after exact database identity verification, flag assignment and Vercel marker denial. Browser bootstrap still occurs afterward and drops only the runner-created DB schema; no remote resource used. A source-regression test enforces required order and one build. The build-environment mismatch is a **probable cause, not verified resolved** until browser PASS.
+
+Next local sequence on corrected SHA: 
+
+```powershell
+ git pull --ff-only
+ npm run test:target -- tests/v380-currency-signed-backup-schema.test.ts
+ powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-380-browser-local.ps1
+```
+
+If isolated browser PASS, run full `powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-380-acceptance.ps1 -WithBrowser` and bind final evidence to exact new HEAD. If fails, stop and inspect new error without bypassing `allowDisposableLocalV21Migration` or changing production SQL. Production remains v20; no DB/snapshot/deploy/merge mutation. H4, independent reviewer and Neon/recovery/provenance/owner decision blockers remain open.
+
+
 ## 15 October — second owner-local full-suite attempt, residual source tests
 
 On exact `7e0a39d8c32db7e0f040e6bb8643bf9ab00f8c5d`, owner-local targeted previously failing tests **32/32 PASS**; native disposable PG16 identity was verified (`flytally_currency_test|flytally|127.0.0.1|59150`), typecheck PASS; schema static **6/6**, PG schema **9/9** and executable release SQL **5/5** PASS, temporary PG stopped. Full Node suite **1553/1555**; **two remaining failures** were `tests/timezone-semantics-source.test.ts:36` and `tests/v370-map-layers.test.ts:172`, each redundantly asserting 395 versus canonical module registry's validated runtime file count 396. Gate3 Next build and Gate4 browser **NOT RUN**, not PASS.
