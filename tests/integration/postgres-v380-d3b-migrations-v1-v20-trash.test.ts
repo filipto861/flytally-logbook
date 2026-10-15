@@ -17,7 +17,10 @@ const tick=String.fromCharCode(96);
 const template=new RegExp("sql"+tick+"([\\s\\S]*?)"+tick,"g");
 const head=migrationSource.slice(migrationSource.indexOf("const migrationNames:"),migrationSource.indexOf("const migrationQueries="));
 const names=new Map<number,string>([...head.matchAll(/([0-9]+):"([^"]+)"/g)].map((x):[number,string]=>[Number(x[1]),x[2]]));
-assert.equal(names.size,20,"Unexpected migration name registry");
+// This D3b historical fixture deliberately executes v1..v20 only. The
+// runtime registry now also includes v21, which must not be silently run here.
+assert.equal(names.size,21,"Unexpected migration name registry");
+assert.equal(names.get(21),"source-backed currency exact-money","Unexpected v21 identity");
 const migrations=new Map<number,string[]>();
 for(let v=1;v<=20;v++){
   const a=migrationSource.indexOf("if(version==="+v+")return[");
