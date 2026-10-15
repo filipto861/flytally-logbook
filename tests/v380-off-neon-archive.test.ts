@@ -66,6 +66,12 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   assert.match(exportSource,/name\.toUpperCase\(\)\.startsWith\("PG"\)/);
   assert.match(restore,/name\.toUpperCase\(\)\.startsWith\("PG"\)/);
   assert.match(restore,/PGHOSTADDR:"127\.0\.0\.1"/);
+  // Restore-side Windows pg_ctl must not capture handles inherited by
+  // long-lived postgres.exe, and startup failure must remain scoped to its
+  // own unique disposable cluster.
+  assert.match(restore,/stdio:isCtl\?"ignore"/);
+  assert.match(restore,/if\(existsSync\(join\(data,"postmaster\.pid"\)\)\)started=true/);
+  assert.match(restore,/Isolated restore PostgreSQL startup log/);
   // Fail-closed: authenticate GCM before initdb, and only then stream to SQL.
   assert.match(restore,/const discard=new Writable/);
   assert.match(restore,/await decryptArchive\(archive,discard,pass\)/);
