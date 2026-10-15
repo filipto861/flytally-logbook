@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — owner-local R1-D security and full synthetic PG18 PASS; development handoff (unreleased)
+
+- Owner ran exact `a3f2a7b0af13f849d3ff291eb04819f4751f71b1` on Windows: targeted tests **11/11 PASS**, no failures/skips. Synthetic PostgreSQL18 on fresh isolated port 53662 passed valid/invalid SCRAM auth, custom `pg_dump -Fc` **2,806 bytes**, signed immutable v2 manifest, full AES-GCM decryption/authentication, `pg_restore --list` **2 TABLE + 2 TABLE DATA**, atomic restore to second synthetic database, source/target row-digest equality, and owned cluster shutdown/removal: **SYNTHETIC PG18 ENCRYPTED BACKUP/RESTORE PASS**.
+- This supersedes older `NOT RUN`/TOC/parser failure for the **tested synthetic path only**, preserves historical failures. R1-B/C implementation and scoped R1-D owner-local test acceptance complete; user requested stopping repeated acceptance loops to resume new feature development. Closeout: `docs/product/3_8_0_LOCAL_TECHNICAL_CLOSEOUT_AND_FEATURE_HANDOFF_2026-10-15.md`.
+- **No actual Neon production export, independent real-data restore, v21 DDL/merge/deployment or final DeepSeek R1-D verdict.** Draft PR #338 remains unreleased/frozen, current `main`/production data untouched. Independent features can proceed separately from v20 main; no implicit merging of this Draft.
+
 ## 15 October 2026 — TOC parser corrects TABLE versus TABLE DATA (staged, unreleased)
 
 - Owner-local prior checkout f765c438: targeted 10/10 PASS, PG18 binary check PASS; synthetic PostgreSQL18 SCRAM valid/wrong-password behavior, custom pg_dump 2,806 bytes and full AES-GCM authentication PASS. End-to-end test FAIL before SQL restore on TOC count; owned cluster stopped.
