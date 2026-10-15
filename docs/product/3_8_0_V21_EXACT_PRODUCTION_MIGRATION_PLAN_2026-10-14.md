@@ -1,5 +1,11 @@
 # FlyTally Logbook 3.8.0 — exact v21 production migration proposal
 
+## 15 October 2026 — H4 actual frozen v20 application rollback compatibility owner-local PASS (addendum)
+
+Owner executed exact candidate SHA `b23f9b99e4327412204af74d2e42d2d9dbe33bf9`: H4 contract suite **4/4 PASS**, isolated PG16 v20+v21 migration registered 21 with **12 exact monetary columns + 4 CHECK constraints**, frozen Vercel v20 SHA `dcc8ebbfda0eadfa01345cd875ef1db806a19e26` installed and optimized Next-built independently, then actual old application authenticated desktop/mobile browser tests **8/8 PASS in 1.1 min**, posttest v21 shape and legacy-currency checks PASS, temporary test database stopped. This supersedes the previous `H4 NOT RUN` planning statements for **local PG16 synthetic fixture**; **NOT** evidence of current Neon PG18 production historical-data runtime after migration.
+
+C0 release gate status after H4: frozen-v20 app rollback **LOCALLY VERIFIED**, but owner approval for live v21 DDL remains **NOT GIVEN**. Off-Neon backup/verified full restore, genuine historic signed-v13 recoverability, independent code/source review verdict, fresh branch+Vercel target identity and production operator GO still required. Under owner direction `protected:true` is unsupported-plan **N/A**, not a release blocker. Preserved current-primary copy-on-write fork `br-shiny-bonus-b1gqt9u7` is not independent external backup. No live DDL, schema migration, branch switch, merge or deploy occurred.
+
 ## 15 October 2026 — superseding owner decision and recovery route (pre-release addendum)
 
 The 14 October runbook below is **historical and retains its original controls/decisions**. After the 15 October owner-local four-gate acceptance PASS on exact code SHA `42e72909b798b8e71d0d9d3e66f551c14aad5931` (PG tests 6+9+5, Node 1555/1555, optimized Next build, authenticated Playwright 8/8), the owner explicitly directed continuing on the existing Neon plan **without branch protection**. Accordingly, prior text requiring `protected:true` is superseded: classify as **N/A, unsupported and owner-accepted**, not as enabled. No migration/deployment GO was given.
