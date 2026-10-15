@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — v21 release target read-only inspection (no deployment)
+
+- Neon project `muddy-dust-14049657`: default/primary `br-raspy-fog-b1btvu5t` READY; explicit read-only `neondb` query PG18.6, registry versions 1–20 count 20, version21 count 0, currency columns 0/12 and CHECKs 0/4; flights 315, rates 33, aircraft 25, voided certified 3, provenance 12. No SQL mutations.
+- Neon branch currently reports **`protected:false`**. Only inventoried manual snapshot `snap-proud-fire-b1bm8oac` originates from **old** `br-dark-math-b1snjzub`; the current canonical primary has **no fresh manual snapshot recorded**. Recovery and branch protection are **release blockers** pending owner decisions and evidence.
+- Vercel `logbook` latest reported production READY deployment remains from `main` at `dcc8ebbfda0eadfa01345cd875ef1db806a19e26`. Candidate PR #338 not deployed. No snapshots, branch protection, DDL, migrations, merge or Vercel deployments were performed.
+
 ## 15 October 2026 — Currency 3.8.0 complete four-gate owner-local acceptance PASS (not released)
 
 - Owner-local Windows/Node24 `run-currency-380-acceptance.ps1 -WithBrowser` on exact code SHA `42e72909b798b8e71d0d9d3e66f551c14aad5931` emitted **LOCAL ACCEPTANCE PASS**. Gate 1: disposable PostgreSQL16 confirmed, TypeScript PASS, static SQL **6/6**, PG integration **9/9**, executable v21 production SQL **5/5**. Gate 2: **1555/1555** Node/source tests, zero failures or skips. Gate 3: optimized Next.js 16.3.2 build PASS, **41/41** static pages. Gate 4: dedicated new disposable PostgreSQL16, canonical schema-first v20/v21 registry/12 columns/4 constraints PASS, authenticated desktop/mobile Playwright **8/8 PASS (2.1 min)**, postflight shape PASS and PostgreSQL server stopped.
