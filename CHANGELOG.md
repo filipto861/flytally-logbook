@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — R1 H1/H5 local acceptance partial; align development registry and historical E1.5 contract (unreleased)
+
+- Owner-local `e8cf3f1d6f48f9b0b0871399826248c83ad65ffa`: TypeScript PASS, targeted guard/release tests **10/10 PASS**; isolated native PostgreSQL16 identity validated, schema source **6/6 PASS**, native schema **9/9 PASS**, executable v21 release artifact **5/5 PASS**, disposable cluster stopped; full Node suite **1552/1554 PASS**, two legacy infrastructure source assertions failed. Next.js build/Playwright **NOT RUN** because Gate2 stopped.
+- Fixed the development module ownership manifest to count **396** runtime files, explicitly classify new cross-cutting `lib/currency-v21-migration-safety.ts` as shared and require persistence-schema/PG and browser tests when changed; added regression for its risk ownership. Updated E1.5 historic runtime filter test to accept `SELECT version,name FROM public.flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION}` while still requiring version filtering and v21 shape/name checks. Test/registry-only correction `cc6b58a9d062d3a443a96e7ea6ae4eb4788e6577`.
+- **Corrected code tests/full build/authenticated browser NOT RUN**, earlier PG PASS remains bound to old SHA. No production SQL, Neon branch/snapshot/protection, merge or Vercel deploy change. PR #338 Draft, physical production schema v20; H4 and independent review/open release gates remain unresolved.
+
 ## 15 October 2026 — DeepSeek R1 corrective runtime migration hardening (unreleased, NOT TESTED)
 
 - Implemented strict local-only, purpose-bound `allowDisposableLocalV21Migration(env)` using dedicated authenticated browser flags, exact 127.0.0.1 address, `flytally` test role, `flytally_currency_test` DB, explicit allowed protocol/non-standard port, no password, and Vercel marker veto. **Do not** indiscriminately reject `NODE_ENV=production`, because local Playwright tests exercise an optimized production-mode Next build on disposable PG16.

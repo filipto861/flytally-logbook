@@ -1,5 +1,14 @@
 # FlyTally Logbook 3.8 — R1 DeepSeek code-level findings and corrective batch
 
+## 15 October — Owner-local partial acceptance and test-governance reconciliation
+
+On exact `e8cf3f1d6f48f9b0b0871399826248c83ad65ffa`, owner-local TS PASS, targeted currency guard/release contract 10/10 PASS, native disposable PG16 6/6 review source, 9/9 integration and 5/5 release-artifact PG tests PASS; PG identity verified and cluster stopped. Full Node Gate2 was **1552/1554 PASS**; two failures solely in the source/development registry gate: `tests/development-scope.test.ts:212` had 395 vs actual 396 runtime files after adding the new helper, and `tests/v367-flight-entry-e15-closeout.test.ts:11` expected old SELECT-version-only SQL instead of SELECT-version-and-name under the same schema-version filter. No Next build or Playwright ran.
+
+Governance/test-only corrective commit `cc6b58a9d062d3a443a96e7ea6ae4eb4788e6577` registers new migration safety helper in explicit `shared-runtime` and under a strict development special rule requiring PostgreSQL and browser acceptance on future changes; sets audited count 396; updates E1.5 legacy test without weakening version filtering and adds an explicit validation of version21 name and physical shape check. Production SQL/runtime unchanged in this correction. These revised tests are **NOT YET RUN**.
+
+Run targeted `npm run test:target -- tests/development-scope.test.ts tests/v367-flight-entry-e15-closeout.test.ts`; if PASS, full owner-local `run-currency-380-acceptance.ps1 -WithBrowser`. No release GO until all four gates PASS on one code candidate and H4/operator evidence blockers are resolved.
+
+
 **Date:** 15 October 2026. Repo `filipto861/flytally-logbook`, Draft PR #338. Production release **NO-GO**.
 
 ## Independent review basis
