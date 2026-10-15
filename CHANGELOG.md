@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 15 October 2026 — approved cleanup of four unused Neon test branches (verified deletion)
+
+- Owner requested removal of old unused Neon branches. Exact identity, archived/non-primary/non-default/unprotected state, idle September compute, snapshot associations and GitHub/Vercel configuration were evaluated before deletion.
+- Deleted: Logbook `br-shiny-mountain-b1ye1aqc` (general-PIC acceptance); Training Production `br-proud-smoke-b1ajnja6` (M9 real-seed) and `br-flat-meadow-b1csc4ps` (M9 seed); Training Acceptance `br-purple-feather-b1gl5g43` (no-code acceptance).
+- Post-deletion inventories independently confirm **four deleted IDs absent**, 6/10 total org branches remain across projects (4 Logbook, 1 Training Production, 1 Training Acceptance); all three default branches and all Logbook historical recovery points maintained. Kept Logbook SP2 branch because dedicated historical Vercel preview config remains unresolved.
+- **Not a currency release:** branch quota is per project; deleting branches did not free separate manual-snapshot or protected-branch plan quotas. Original Logbook manual snapshot unchanged. No production DB queries that mutate data, no v21 DDL, no deployment, no merge. PR #338 remains Draft, release NO-GO.
+
 ## 15 October 2026 — owner-authorized Neon snapshot and branch protection blocked by account quotas (no state change)
 
 - Owner explicitly authorized current-primary manual snapshot and `protected:true` on project `muddy-dust-14049657` branch `br-raspy-fog-b1btvu5t`; live default-branch and v20 schema identity reverified first. `create_snapshot` returned **HTTP 422 `snapshots limit exceeded`**: no snapshot created. `update_branch(protected:true)` returned **HTTP 422 maximum protected branches for current plan**: protection not enabled.
