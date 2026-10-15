@@ -53,7 +53,13 @@ function sourceEnvironment(raw){
     if(k==="sslmode")must(v==="require"||v==="verify-full","Unsafe SSL mode.");
     if(k==="channel_binding")must(v==="require","Unexpected channel binding.");
   }
-  return {...process.env,
+  // Never inherit libpq connection overrides (especially PGHOSTADDR,
+  // PGSERVICE/PGSERVICEFILE and PGPASSFILE) from the operator's shell.
+  // PGHOSTADDR could silently route the dump to the wrong server even when
+  // the visible PGHOST/URL has the intended hostname.
+  const safeEnv=Object.fromEntries(Object.entries(process.env)
+    .filter(([name])=>!name.toUpperCase().startsWith("PG")&&name.toUpperCase()!=="DATABASE_URL"));
+  return {...safeEnv,
     PGHOST:HOST,PGPORT:"5432",PGDATABASE:DB,PGUSER:decodeURIComponent(u.username),
     PGPASSWORD:decodeURIComponent(u.password),PGSSLMODE:"verify-full",
     PGSSLROOTCERT:"system",PGCHANNELBINDING:"require",
