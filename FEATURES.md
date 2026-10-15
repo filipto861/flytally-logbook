@@ -1,5 +1,10 @@
 # FlyTally Logbook — FEATURE LIST
 
+## 15 Oct 2026 — Exact flight/registration cost summaries staged, deployment pending
+
+The Flights Cost summary feature branch calculates per-flight exact currency costs in PostgreSQL NUMERIC, quantizes each flight at its currency minor-unit boundary, groups by source ISO denomination and shows full filtered totals independent of pagination. Missing/unsupported prices and untracked billing are not silently zeroed. Statistics Aircraft → Registrations derives exact per-flight groups from stored rate snapshots in its selected period/category scope (excluding auxiliary roles per existing Statistics behavior); flight expenses remain separate. PG18 read-only source query + synthetic currency fixture PASS, automated exact-branch build/browser NOT RUN. See ROADMAP and subsequent CHANGELOG. Not production-shipped until explicitly merged and deployment verified.
+
+
 ## 15 Oct 2026 — Existing historical CZK attribution completed (production data)
 
 3.8.0 historical owner-attested CZK backfill: **25/25 aircraft, 33/33 rate rows and 315/315 active flights** have a validated explicit CZK tuple. The final 112 protected flights (110 certified) were updated only in three financial metadata fields under a bounded production transaction and audit; certifications/revisions remain intact. **Not** new default-CZK behavior, a change to source legacy amounts, or an automated currency inference for other users/history. Four user accounts affected under one product-owner global attestation; original revision/archive/backup snapshots remain untouched. [Execution evidence](docs/operations/2026-10-15-czk-historical-backfill.md). Signed-in post-change UI verification pending.
