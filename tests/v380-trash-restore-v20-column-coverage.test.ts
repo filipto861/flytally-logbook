@@ -11,9 +11,10 @@ const schema=readFileSync(path.join(root,"tooling/bootstrap-browser-smoke-db.mjs
 const baseline=schema.match(/CREATE TABLE flights\(([\s\S]*?)\n\);/);
 assert.ok(baseline,"Expected full smoke fixture flights definition");
 const columns=baseline[1].split("\n").map(x=>x.trim()).filter(x=>/^[a-z][a-z0-9_]*\s+(?:BIGSERIAL|BIGINT|TEXT|INTEGER|BOOLEAN|NUMERIC|TIMESTAMPTZ|DATE)\b/i.test(x)).map(x=>x.split(/\s+/)[0]);
-const insert=restore.match(/restored_flight AS \(INSERT INTO flights\(([^)]+)\) SELECT /);
-assert.ok(insert,"Expected canonical restore INSERT declaration");
-const selected=insert[1].split(",").map(x=>x.trim());
+const variants=[...restore.matchAll(/restored_flight AS \(INSERT INTO flights\(([^)]+)\) SELECT /g)];
+assert.equal(variants.length,2,"Expected exactly one currency-aware and one canonical v20 restore INSERT");
+const currencySelected=variants[0][1].split(",").map(x=>x.trim());
+const selected=variants[1][1].split(",").map(x=>x.trim());
 const excluded: readonly string[]=[
   "id","certified_at","certified_by_user_id","certification_hash",
   "certification_version","record_revision","correction_reason",
@@ -24,6 +25,11 @@ test("complete full-v20 column coverage, explicit exclusions only",()=>{
   assert.deepEqual(columns.filter(x=>!selected.includes(x)&&!excluded.includes(x)),[]);
   assert.equal(new Set(selected).size,selected.length,"Duplicate destination column");
   assert.deepEqual(selected.filter(x=>!columns.includes(x)),[]);
+  const exactAdditions=["price_currency_code","price_currency_minor_units","price_per_hour_decimal"];
+  assert.deepEqual(currencySelected.filter(x=>!selected.includes(x)),exactAdditions);
+  assert.deepEqual(selected.filter(x=>!currencySelected.includes(x)),[]);
+  assert.equal(new Set(currencySelected).size,currencySelected.length,"Duplicate monetary destination column");
+  assert.deepEqual(currencySelected.filter(x=>!columns.includes(x)&&!exactAdditions.includes(x)),[]);
 });
 test("historical aircraft identification is read from the archived snapshot",()=>{
   for(const key of ["aircraft_make","aircraft_model","aircraft_variant"]){
@@ -39,8 +45,16 @@ test("protection fields remain excluded from direct historic recertification",()
 });
 
 test("future v21 monetary snapshots cannot silently enter the legacy v20 writer",()=>{
-  assert.match(restore,/NOT \(flight_data \?\| ARRAY\['price_currency_code','price_currency_minor_units','price_per_hour_decimal'\]\)/);
-  assert.match(restore,/e\.value \?\| ARRAY\['amount_encoding','amount_minor_units'\]/);
+  // Added nullable v21 keys appear even on old to_jsonb(f) snapshots. NULL is legacy.
+  // Any non-null new monetary metadata must still be diverted from the v20-only writer.
+  for(const key of ["price_currency_code","price_currency_minor_units","price_per_hour_decimal"]){
+    assert.match(restore,new RegExp("flight_data->>'"+key+"' IS NULL"));
+    assert.match(restore,new RegExp("flight_data->>'"+key+"' IS NOT NULL"));
+  }
+  for(const key of ["amount_encoding","amount_minor_units"]){
+    assert.match(restore,new RegExp("e\\.value->>'"+key+"' IS NOT NULL"));
+  }
+  assert.doesNotMatch(restore,/NOT \(flight_data \?\| ARRAY\['price_currency_code'/);
   assert.match(restore,/needsNewRestore=await sql/);
   assert.match(restore,/requires the newer monetary restore process/);
 });

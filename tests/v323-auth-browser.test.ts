@@ -23,7 +23,13 @@ test("v3.2 U4 local Postgres adapter is explicit and localhost-only",()=>{
 test("v3.2 U4 browser database is isolated and uses production password format",()=>{
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
   assert.match(bootstrap,/DROP SCHEMA public CASCADE/);
-  assert.match(bootstrap,/generate_series\(1,19\)/);
+  // The disposable v1..v19 fixture must use canonical migration names, not
+  // an anonymous generated-series registry that v21 correctly rejects.
+  assert.ok(bootstrap.includes('readFileSync(new URL("../lib/migration-plan.ts"'));
+  assert.ok(bootstrap.includes("preappliedMigrations.length!==19"));
+  assert.ok(bootstrap.includes("preappliedMigrations.some((migration,index)=>migration.version!==index+1)"));
+  assert.ok(bootstrap.includes("preappliedMigrations.map(migration"));
+  assert.doesNotMatch(bootstrap,/browser-smoke-preapplied/);
   assert.match(bootstrap,/pic_commander_basis TEXT CHECK/);
   assert.match(bootstrap,/scrypt\$n=131072,r=8,p=1/);
   assert.match(bootstrap,/browser-auth@example[.]test/);

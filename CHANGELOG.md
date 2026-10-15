@@ -1,5 +1,399 @@
 # FlyTally changelog
 
+## 15 Oct 2026 — owner backup-waived 3.8.0 accelerated release PREPARED; PG18 real-schema rehearsal PASS, live C0 GO NOT YET GIVEN
+
+**Owner decision (2026-10-15):** explicitly accepted accelerated v3.8.0 release **without new independent off-Neon backup**, including the risk of not recovering the most recent production changes after provider/data disaster. This supersedes the *off-provider backup as a mandatory prerequisite* in older planning, but **does not create the backup**, certify its functionality, waive exact production-target checks or itself authorize live production DDL. Retain all existing checkpoints and snapshots without deletion. No paid branch protection requirement (previous owner N/A decision).
+
+**Read-only production verification on 2026-10-15:** Neon project `muddy-dust-14049657`, canonical primary/default `br-raspy-fog-b1btvu5t`, direct compute `ep-proud-bar-b1ts6cq1`, `neondb` PostgreSQL18.6, exact v20 registry 20 rows, v21 monetary columns 0, new CHECKs 0; flights 315, rates 33, aircraft 25, expenses 0, account_backups 24, archived certified voids 3, source provenance 12, existing flight-protection triggers 2. **Vercel production `DATABASE_URL` inspected without disclosing its secret**: production target points to the exact unpooled endpoint `ep-proud-bar-b1ts6cq1.c-5.eu-central-1.aws.neon.tech/neondb`. Vercel live production deployment `dpl_HTHj1v1rq5kojpMafUfEekdgrBwi` READY, source `main@dcc8ebbfda0eadfa01345cd875ef1db806a19e26` and `fly-tally.com` alias confirmed. Draft [PR #338](https://github.com/filipto861/flytally-logbook/pull/338) remains mergeable/unmerged on base `dcc8ebbf`.
+
+**Exact SQL Neon PG18 rehearsal:** created explicitly nondefault/nonprimary **isolated child** of canonical production `br-square-fog-b1lb1igm` named `ft-380-v21-exact-sql-final-rehearsal-20261015` with small 0.25 CU read-write compute `ep-calm-queen-b1s6re03`. Verified clone registry v1..20, v21 cols0, protected/flight/rate counts matching production before any rehearsal DDL. Fetched **`tooling/v380-v21-migrate.sql` from exact PR candidate** and stripped only `psql` metacommands/explicit BEGIN/COMMIT, binding `expected_database=neondb`; its remaining **16 exact SQL statements** (advisory lock, strict registry/source guards, four ADD-column tables, four constraints, registry 21 and postflight DO) ran **atomically in one Neon SQL transaction ON TEST CHILD ONLY — PASS**, no errors. **Read-only postflight on child:** registry exactly 21 with name `source-backed currency exact-money`, 12/12 nullable/no-default correct-type monetary columns, 4/4 validated CHECKs, historical money fields newly added remain NULL (all four tracked tables zero modified rows), flight counts315, aircraft25, rates33, expenses0, account_backups24, protected archived voids3, provenance12, protective flight triggers2. Whole-row SHA-equivalent MD5 aggregate digests of certified-void and provenance records **identical between child and separately queried production** (`35b568...` and `65f93c...`), scope selected protected tables only. This is a real Neon PG18 rehearsal against a production-derived clone, not production v21 deployment; direct `psql -f` execution itself was not performed. **Preserve rehearsal child** pending owner disposition: no branch deletion authorized.
+
+**Other exact-SHA local evidence:** candidate full Node 1555/1555 + desktop/mobile Chromium 8/8 on `42e72909`; actual old v20 app over v21 schema 8/8 on `b23f9b99`; local encrypted synthetic PG18 11/11 and full restore PASS on `a3f2a7b0`. All separately scoped and not universal current-HEAD reexecution. Unverified historical signed-v13 real recovery and independent source provenance still remain risks; do not claim source/backup regulatory approval. Current HEAD since application acceptance contains tooling, tests and documentation; PR has 103 files, requiring diff/merge scope confirmation before deploy.
+
+**NEXT: explicit separate C0 production schema migration GO**, with SQL source and target rechecked just-in-time, then ONE transactional v21 production DDL, read-only postflight/legacy/protected digest validation while v20 app remains live; stop on any drift. Only after C4 PASS merge PR #338 and verify Vercel READY SHA, production route smoke. Recovery remains app-only rollback to v20; never delete audit evidence or reverse additive schema on error. **At this timestamp: NO LIVE DDL, NO MERGE, NO 3.8.0 DEPLOY.**
+
+## 15 October 2026 — owner-local R1-D security and full synthetic PG18 PASS; development handoff (unreleased)
+
+- Owner ran exact `a3f2a7b0af13f849d3ff291eb04819f4751f71b1` on Windows: targeted tests **11/11 PASS**, no failures/skips. Synthetic PostgreSQL18 on fresh isolated port 53662 passed valid/invalid SCRAM auth, custom `pg_dump -Fc` **2,806 bytes**, signed immutable v2 manifest, full AES-GCM decryption/authentication, `pg_restore --list` **2 TABLE + 2 TABLE DATA**, atomic restore to second synthetic database, source/target row-digest equality, and owned cluster shutdown/removal: **SYNTHETIC PG18 ENCRYPTED BACKUP/RESTORE PASS**.
+- This supersedes older `NOT RUN`/TOC/parser failure for the **tested synthetic path only**, preserves historical failures. R1-B/C implementation and scoped R1-D owner-local test acceptance complete; user requested stopping repeated acceptance loops to resume new feature development. Closeout: `docs/product/3_8_0_LOCAL_TECHNICAL_CLOSEOUT_AND_FEATURE_HANDOFF_2026-10-15.md`.
+- **No actual Neon production export, independent real-data restore, v21 DDL/merge/deployment or final DeepSeek R1-D verdict.** Draft PR #338 remains unreleased/frozen, current `main`/production data untouched. Independent features can proceed separately from v20 main; no implicit merging of this Draft.
+
+## 15 October 2026 — TOC parser corrects TABLE versus TABLE DATA (staged, unreleased)
+
+- Owner-local prior checkout f765c438: targeted 10/10 PASS, PG18 binary check PASS; synthetic PostgreSQL18 SCRAM valid/wrong-password behavior, custom pg_dump 2,806 bytes and full AES-GCM authentication PASS. End-to-end test FAIL before SQL restore on TOC count; owned cluster stopped.
+- Replaced overly broad TABLE prefix regex with explicit PostgreSQL custom archive TOC parsing: distinguish TABLE definitions, TABLE DATA row payload, TABLE ATTACH metadata; validate format and extensions and fail closed on malformed entries. Added 11th regression with realistic sample and invalid cases, plus actual count diagnostics. Independent pure JS fixture PASS. Owner 11-test suite and end-to-end PG18 retest NOT RUN after changes.
+- No Neon production export, encrypted production backup, actual-data restore, v21 migration, merge or deployment. Draft PR #338 stays NO-GO.
+
+## 15 October 2026 — Off-Neon backup R1-B/C remediation implemented, unreleased and UNTESTED on Windows
+
+- Added `tooling/v380-backup-manifest.mjs`: immutable manifest schema v2, per-archive salt and domain-separated HMAC-SHA256 distinct from AES-GCM, constant-time verified MAC, deterministic nested JSON representation and refusal of unsigned legacy/forged metadata. Production export now signs immutable source identity/data evidence/cipher digest; restore verifies manifest before trusting it, authenticates full GCM tag before SQL, and stores a separate non-authoritative `.verification-*.json` receipt only after actual-data clean shutdown.
+- Added `tooling/v380-windows-private.mjs`: SID-based NTFS directory restriction before any sensitive write, private short-lived bootstrap password file, real-data `initdb -A scram-sha-256` with random per-run password, mandatory wrong-password refusal, random loopback only, encrypted-volume operator acknowledgment; backup export directory ACL secured.
+- Added `tooling/v380-backup-toc.mjs`: authenticated custom-format `pg_restore --list` inventory over stdin without DB connection, fail-closed physical table/extension checks in actual restoration. Kept atomic `pg_restore --single-transaction --exit-on-error`, Node `pipeline()` backpressure and original source pre/post monitoring limitations.
+- Updated synthetic PG18 end-to-end test to exercise private Windows ACL + SCRAM positive/negative auth, HMAC-signed manifest and TOC, with same existing full AES-GCM and DB content validation. Archive unit suite expanded from 7 to 10 tests incl wrong key/tampering/swapped archive/legacy v1 refusal and 12-MiB slow writer stress. Added real-data SIGINT fail-closed handling and refusal of symlink archive paths.
+- **Only source syntax/readback verified for current batch. Actual Node targeted 10-test suite, Windows PG18 SCRAM/ACL end-to-end, independent DeepSeek R1-D exact SHA review and real production backup/restore NOT RUN.** Previous 7/7 + synthetic PG18 PASS belongs to `9d26c2cb` only. PR #338 Draft; no production DDL/merge/deploy.
+
+## 15 October 2026 — independent backup/recovery security R1 review reconciliation (documentation only)
+
+- Received owner-supplied read-only DeepSeek review and checked findings against current branch. Confirmed B-1 (`initdb -A trust` for real decrypted records) and B-2 (unauthenticated JSON manifest), M-1 (unbound pre/post MVCC snapshots; selected hashes only); captured NTFS ACL and least-privilege concerns.
+- Corrected two reviewer premises: `decryptArchive` already uses Node `pipeline()` with built-in backpressure; `pg_restore --single-transaction --exit-on-error` is intended fail-closed and should not be weakened to partial recovery for convenience. Still require extended payload stress and extension/role object inventory.
+- Added `docs/product/3_8_0_OFF_NEON_SECURITY_R1_DISPOSITION_2026-10-15.md` with explicit B1/B2 patch scopes, immutable manifest MAC domain-separation contract, SCRAM Windows credential/temporary data constraints, independent re-review, and owner GO gates.
+- **NO runtime changes or test PASS caused by R1 documentation itself; R1-B/C/D PENDING.** Production export, actual off-provider backup/restore, historical signed-v13 proof, Neon DDL, merge and deployment NOT RUN. Existing owner-local synthetic PG18 PASS stays scoped to tested `9d26c2cb` code.
+
+## 15 October 2026 — external backup PG18 synthetic end-to-end ACCEPTANCE PASS (owner-local, unreleased)
+
+- Owner ran on exact SHA `9d26c2cb6d01dcf596f64dd6186fbc300323c8ae`: encrypted archive/security/fast-child test suite **7/7 PASS** (0 fail/skip); separate actual PostgreSQL18 synthetic backup→AES-256-GCM full authenticate→single-transaction restore script **PASS**. PG18 test used fresh random localhost port 62750, two disposable synthetic databases, exit-0 custom `pg_dump` payload 2,806 bytes, record/hash comparisons and verified 10/10 local shutdown/cleanup. No Neon credentials, production flight records or user data involved.
+- Root cause of previous `pg_dump exit 0, empty stdout` addressed by connecting bounded `PassThrough` immediately after child spawn; success now verified by both targeted runtime regression and real owner-local PG18 fixture.
+- Subsequent read-only production-restore source inspection found `pg_ctl` stdout/stderr captured on Windows, retaining old inherited-pipe hang risk outside synthetic runner. Adjusted `tooling/v380-off-neon-restore-check.mjs` to use `stdio:"ignore"` for `pg_ctl`, handle its unique private PID on failed startup and report own PG log. Added static source regression; **these follow-up changes NOT YET OWNER TESTED**.
+- **No production export, real external encrypted backup, historical production PostgreSQL18 data restore, account signed-v13 recovery, Neon DDL, PR merge or deployment.** Draft PR #338 and release NO-GO until independent security R1 and subsequent recovery evidence.
+
+## 15 October 2026 — pg_dump exit=0/empty stdout race reproduced and fixed in staged encrypted backup code (NOT YET RUN)
+
+- Owner `d1cc5b91` tests: AES-GCM/format/security **5/5 PASS**, actual isolated PG18 synthetic test **FAIL** at stage 05, `pg_dump exit 0` yet streamed **0 bytes**, stderr empty. Test-only PG18 stage10 stop/cleanup reported; no live backup/export.
+- Independently reproduced short-lived child stdout loss in Node (no database): delayed stdout consumption during async key derivation yields empty data, synchronous `PassThrough` attachment before waiting preserves `PGDMP`.
+- Added `retainChildStdout(child)` in `tooling/v380-backup-archive.mjs`: bounded 64KiB in-memory PassThrough with source-error forwarding/backpressure, connected immediately after pg_dump spawn and before asynchronous `scrypt` in both actual production export and synthetic runner. Binary source still never written as an unencrypted dump file; PGDMP magic, exit status, AES-GCM tag and restoration evidence remain mandatory.
+- Added regression for fast exiting child and order invariants in both callers; updated existing safety assertions to use `bufferedDump`. V8 syntax/GitHub source readback PASS; actual owner-local Node tests/PG18 Windows synthetic end-to-end **NOT RUN after patch**. Off-Neon production export and full signed v13 historical restore remain blocked; no production SQL/Neon/branch/merge/deploy. Draft PR #338 remains NO-GO.
+
+## 15 October 2026 — synthetic PG18 encrypted backup stage-05 failure triaged (fix NOT YET EXECUTED)
+
+- Owner cleanly removed three abandoned synthetic PG18 folders after stopping verified test-only PostgreSQL. On code `c0d6f2d4`, 4/4 crypto/source regression tests PASS; isolated synthetic PG18 reached stage 05/10 then **FAIL** `Encrypted database archive unexpectedly small`. Logged stage 10 owned PG18 shutdown/cleanup without warning; no PASS for PostgreSQL dump→restore.
+- Analysis: `v380-backup-archive.mjs` imposed arbitrary ciphertext minimum (header+GCM tag+1024) before callers could read `pg_dump` process exit/stderr. Either an unusually short valid compressed test dump or a failed/empty child could trigger it; original error does not distinguish them. 
+- Replaced 1024-byte threshold with streaming **nonempty plaintext and optional PGDMP signature** validation (chunk-safe); AES-GCM authentication and exact ciphertext size retained. Both production export and synthetic driver now require exact PostgreSQL custom-format signature; actual child exit/stderr surfaced on error and archive never marked complete on failure. Added tests for tiny signed payload, zero payload and invalid signature plus source diagnostic guards. **New tests/PG18 rehearsal NOT RUN**; only source syntax readback verified.
+- No production Neon DB access/export/restore, v21 DDL, merge or deploy. PR #338 remains Draft, release NO-GO until synthetic runtime test & independent reviewer and recoverability gates.
+
+## 15 Oct 2026 — synthetic PG18 local test failure: pg_ctl ETIMEDOUT (investigation)
+
+Owner reported last PG18 synthetic test **FAIL**, exact console `SYNTHETIC PG18 CHECK NOT PASS: pg_ctl failed: spawnSync C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe ETIMEDOUT`. Concurrent targeted encrypted-archive tests **3/3 PASS** and PostgreSQL18 binaries `check` PASS, but **actual pg_dump→restore integrated synthetic gate remains FAIL/NOT VERIFIED**; no production connection/export/migration. That run's console had **no** newly staged `[PG18 synthetic] 00/10...` progress labels, indicating it ran an older script revision (or at least not the GitHub code with those labels); successful `git pull --ff-only` had reported `Already up to date` before later GitHub source changes appeared.
+
+**Likely Windows issue, not yet confirmed:** old synchronous `pg_ctl start` captured stdout/stderr pipes while the child `postgres.exe` inherited open handles; `spawnSync` may wait on them despite `pg_ctl` exiting, then report ETIMEDOUT. Current script sets `stdio:"ignore"` specifically for `pg_ctl`, has 00–10 progress markers and bounded timeout. Follow-up hardening adds test-folder path printing; if `pg_ctl` fails but this *exact test folder's* `postmaster.pid` exists, `finally` attempts to stop **only the owned test server**; reads only that folder's `postgres.log` for diagnostic evidence; on uncertain startup leaves path explicit for manual investigation rather than deleting unknown running data. Added source regressions. These fixes are **GitHub source-only; NOT owner-tested yet**. No production DB actions performed.
+
+**Owner next (no deletion or new test until read-only orphan check):**
+```powershell
+git pull --ff-only
+git rev-parse --short HEAD
+Get-ChildItem -Path $env:TEMP -Directory -Filter 'flytally-380-pg18-synthetic-*' | Select-Object FullName,LastWriteTime
+Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" | Where-Object { $_.CommandLine -match 'flytally-380-pg18-synthetic-' } | Select-Object ProcessId,CommandLine
+```
+If a matching PostgreSQL process is running or the temp directories remain, inspect source logs and safe shutdown before rerun; do not `Stop-Process` indiscriminately or remove potentially live PGDATA. If no remnants, rerun `node tooling/v380-off-neon-pg18-synthetic-test.mjs` on pulled HEAD and report stage/error. This is synthetic-only. Release still NO-GO, independent security review & historic signed backup recovery OPEN, live backup remains NOT RUN.
+
+## 15 October 2026 — backup security pre-review hardening and synthetic PG18 full restore test (NOT YET RUN)
+
+- Owner-local evidence at `4a88bae0`: archive roundtrip/tampering/source guards **3/3 PASS**; all PG18 client and restore/server tools `check` **PASS**. No production dump/restore yet.
+- Hardened off-Neon export and isolated restore to scrub inherited libpq `PG*` and `DATABASE_URL` (including `PGHOSTADDR`/service overrides); local restore pins `127.0.0.1` host+host address explicitly. Separate **full AES-GCM tag pre-authentication** before any decrypted archive bytes are passed to an SQL interpreter. Verified restore manifest now finalized only **after** local PG18 stop/removal. Export now detects monitored schema/count/protected row-hash drift before/after pg_dump.
+- New `tooling/v380-off-neon-pg18-synthetic-test.mjs` builds disposable synthetic PG18 data on random loopback port, exercises actual custom `pg_dump -Fc`→AES-GCM→authenticated preflight→`pg_restore --single-transaction`, compares synthetic data, and cleans owned test resources. Added contract assertions for those guards. Wrote read-only DeepSeek security handoff and updated off-provider backup operating protocol.
+- **No post-fix owner runtime tests yet; synthetic PG18 end-to-end NOT RUN; independent security review PENDING.** No production export, snapshot change, DDL, merge, deployment or data migration; PR remains Draft/NO-GO.
+
+**15 Oct 2026 — off-Neon backup prerequisite owner-local result.** On source SHA `08fbe547558016c7807bf0dc5c83a40fc4eea51f`, owner ran `npm run test:target -- tests/v380-off-neon-archive.test.ts`: **3/3 PASS** (AES-GCM roundtrip, tampering/wrong password, fail-closed source/target guards; 0 fail/skip). `node tooling/v380-off-neon-export.mjs check` **BLOCKED** safely before any database connection/export: `PostgreSQL 18 pg_dump not installed` at `C:\Program Files\PostgreSQL\18\bin`. **No production export, no encrypted backup, no restore.** Small follow-on safeguard adds `initdb`, `pg_ctl`, `createdb` to PG18 local prerequisite check and a test assertion, code SHA `74665cc1cc2a9a2acbcbc46331272110bf4aa210`; not yet owner-tested. Next: install official PostgreSQL 18 server and command line tools alongside 16 (separate port, retain 16 service), `git pull --ff-only`, rerun 3 tests and `check`. Do not run `export` before independent security review and confirmed prerequisites. Backup/recovery release gate remains OPEN; production unchanged.
+
+## 15 October 2026 — staged encrypted off-Neon v20 backup/PG18 restore tooling (NOT executed against production)
+
+- Added `tooling/v380-backup-archive.mjs` for streaming AES-256-GCM + scrypt encrypted custom-format `pg_dump` data, unique salt/nonce and authenticated tag, no plaintext archive materialization.
+- Added `tooling/v380-off-neon-export.mjs` requiring operator-local Node24 + official PG18 binaries, masked exact unpooled Neon production URL, TLS `verify-full`/system CA/channel binding, production read-only v20 schema proof, unique non-overwriting encrypted backup under `%LOCALAPPDATA%\FlyTally\PrivateProductionBackups`, SHA256+nonsecret provenance/selected count/history hash manifest.
+- Added `tooling/v380-off-neon-restore-check.mjs` requiring masked passphrase and named local-restore confirmation; it validates ciphertext integrity, starts **its own** ephemeral localhost PG18 and restores archive into an isolated database via binary stdin with atomic `pg_restore`, verifies v20 registry/table/row/count/certified-void/source provenance digests in UTC, and stops/removes its own test cluster when safely stopped. No Neon restore actions.
+- Added `tests/v380-off-neon-archive.test.ts` for binary AES roundtrip, wrong-key/cipher tampering and source/target fail-closed guards; new operational recovery protocol and independent review handoff `docs/product/3_8_0_OFF_NEON_BACKUP_RECOVERY_PROTOCOL_2026-10-15.md`.
+- **Only source/readback syntax checks PASS; no runtime crypto unit tests, PG18 tooling checks, production pg_dump, real backup archive, isolated PG18 pg_restore or historical signed-v13 proof run yet**. Any pass is future owner evidence, not inferred. Current Neon primary/app/main untouched; PR Draft, release NO-GO. Earlier H4 8/8 locally PASS separately.
+
+## 15 October 2026 — frozen production v20-on-v21 H4 acceptance PASS (owner-local, unreleased)
+
+- Exact SHA `b23f9b99e4327412204af74d2e42d2d9dbe33bf9` tested on owner Windows host. H4 static source gates **4/4 PASS**; fresh isolated PostgreSQL16 exact loopback identity verified; canonical schema-first v20/v21 applied with registry version 21, twelve new currency fields and four CHECK constraints.
+- Detached actual Vercel production application `dcc8ebbfda0eadfa01345cd875ef1db806a19e26` built successfully with Next.js 16.3.2 (41/41 static pages; TypeScript PASS); authenticated desktop/mobile **8/8 Playwright PASS (1.1 minutes)** including frozen old-route read/write and Trash scenarios. Native runner's post-check completed before `LOCAL H4 PASS`; temporary PostgreSQL server stopped.
+- npm reported a retried `@img/colour` tarball integrity warning but `npm ci` completed successfully; **not an H4 failure**. Earlier H4 NOT RUN status is historical and now superseded for this exact SHA.
+- **Scope limitation:** disposable PG16 fixture and synthetic data, not Neon PG18/production restore; no historical signed-v13 genuine backup recovery, independent off-provider disaster recovery or final third-party source review performed. No production SQL/DDL, application deployment, migration, GitHub merge or production data mutation. PR #338 Draft; release NO-GO.
+
+## 15 October 2026 — H4 frozen production v20 rollback test infrastructure (unreleased; NOT RUN)
+
+- New `tooling/run-currency-380-h4-v20-rollback-local.ps1`: creates/validates and later removes an exclusively owned disposable localhost PostgreSQL16, applies exact v20+v21 canonical SQL with v21 registry and shape checks, checks out immutable Vercel-production `dcc8ebbfda0eadfa01345cd875ef1db806a19e26` application into a temp detached worktree, installs its dependencies and compiles actual old Next code, and exercises the old worktree's own browser Trash-integrity test together with targeted authenticated H4 reads on desktop/mobile. The extra test-only v20 aircraft/rate workspace fixture columns make the existing narrow browser seed compatible with the frozen v20 database-workspace queries. No old tracked app source is changed.
+- Added `e2e/v380-h4-frozen-v20.spec.mjs` for authenticated flight/database reads, synthetic certified record preservation and NULL v21 metadata, plus `tests/v380-h4-rollback-contract.test.ts` for source fail-closed orchestration/frozen-SHA/cleanup checks. Browser retries and server reuse are zero for H4, no production environment allowed.
+- **Source-level GitHub readback only PASS; actual Node tests, PG16 fixture, optimized v20 build and Playwright NOT RUN** at code SHA `66e1d7683f1f409a9ac6cc0581586bd3b8124ec2`. Last complete owner-local v3.8 acceptance was on older code SHA `42e72909`. No Neon, production database or deployment touched. Draft PR #338 remains release NO-GO pending executable H4 evidence and independent backups/review.
+
+## 15 October 2026 — owner-approved checkpoint proof branch cleanup
+
+- Deleted **only** PG18 read-proof child `br-lucky-shape-b16omzi4` after owner authorization. Preflight verified exact child-parent relationship, no default/primary/protection, descendants or snapshot dependencies. Neon API deletion succeeded and independent branch inventory confirmed target absent.
+- Logbook project now has **5 branches**. Production primary `br-raspy-fog-b1btvu5t` remains READY, current-primary point-in-time safety fork `br-shiny-bonus-b1gqt9u7` remains READY with original parent, and old manual snapshot `snap-proud-fire-b1bm8oac` is retained. No data restore, production schema change, SQL DDL, merge or deploy.
+- Earlier scoped PG18 child read/record-count/hash evidence retained in history; functional H4 and off-Neon backup/restore remain release NO-GO gates.
+
+## 15 October 2026 — PostgreSQL 18.6 checkpoint materialization/read verification (local to Neon branch, no restore)
+
+- New **non-production test child** `br-lucky-shape-b16omzi4` created from safety checkpoint `br-shiny-bonus-b1gqt9u7` at matching parent LSN `0/10E02258` with 0.25 CU compute; child READY. Custom suspend-time request was rejected by plan before child creation; retry omitted unsupported override.
+- Branch-id-bound **read-only SQL** on test child: v20 migration registry 20, v21 absent, PG18.6, public tables **52**, flights **315**, rates **33**, aircraft **25**, account backups **24**, voided certified **3**, flight-source provenance **12**. Independent current-primary read-only query matched all these counts and whole-row MD5 aggregates for voided-certified and provenance tables. Queries not atomically cross-branch: limited corroboration, not full-database parity proof.
+- Safety checkpoint untouched with no compute. **Probe child still exists and should be deleted only with explicit owner approval**; off-Neon portable backup restore and H4 old-app-v21 compatibility NOT RUN, release NO-GO. No production SQL writes, currency DDL, restore/finalize, merge/deploy.
+
+## 15 October 2026 — current-primary no-compute safety fork, branch protection excluded by owner decision
+
+- Owner elected to proceed within existing Neon plan without treating unsupported `protected:true` as release precondition. Missing feature recorded as owner-accepted N/A, **not** protected. Snapshot quota still blocked; existing old-branch manual snapshot retained.
+- Live preflight explicitly checked Neon Logbook project `muddy-dust-14049657` primary/default `br-raspy-fog-b1btvu5t`, database `neondb`, v20 registry 20, v21 0 and counts flights 315/voided 3/provenance 12. Created additive **no-compute** checkpoint `br-shiny-bonus-b1gqt9u7`, `ft-380-current-primary-pre-v21-safety-copy-20261015`, from exact current primary at `2026-10-15T08:11:43Z` (parent LSN `0/10E02258`). Read-back verifies `READY`, parent id correct, 0 compute, primary remains unchanged; Logbook 5/10 branches. **No production writes or currency DDL**.
+- Recovery contents and realistic restore **NOT VERIFIED**; checkpoint is not a separate external `pg_dump` backup. Frozen production app SHA `dcc8ebbf` source only verified `DATABASE_SCHEMA_VERSION=20` and `version<=` registry filtering; actual H4 v20 app against physical v21 database **NOT RUN**. Keep schema-first release blocked until these controls, reviewer/source disposition and explicit owner GO are satisfied. PR Draft; no merge/deploy.
+
+## 15 October 2026 — approved cleanup of four unused Neon test branches (verified deletion)
+
+- Owner requested removal of old unused Neon branches. Exact identity, archived/non-primary/non-default/unprotected state, idle September compute, snapshot associations and GitHub/Vercel configuration were evaluated before deletion.
+- Deleted: Logbook `br-shiny-mountain-b1ye1aqc` (general-PIC acceptance); Training Production `br-proud-smoke-b1ajnja6` (M9 real-seed) and `br-flat-meadow-b1csc4ps` (M9 seed); Training Acceptance `br-purple-feather-b1gl5g43` (no-code acceptance).
+- Post-deletion inventories independently confirm **four deleted IDs absent**, 6/10 total org branches remain across projects (4 Logbook, 1 Training Production, 1 Training Acceptance); all three default branches and all Logbook historical recovery points maintained. Kept Logbook SP2 branch because dedicated historical Vercel preview config remains unresolved.
+- **Not a currency release:** branch quota is per project; deleting branches did not free separate manual-snapshot or protected-branch plan quotas. Original Logbook manual snapshot unchanged. No production DB queries that mutate data, no v21 DDL, no deployment, no merge. PR #338 remains Draft, release NO-GO.
+
+## 15 October 2026 — owner-authorized Neon snapshot and branch protection blocked by account quotas (no state change)
+
+- Owner explicitly authorized current-primary manual snapshot and `protected:true` on project `muddy-dust-14049657` branch `br-raspy-fog-b1btvu5t`; live default-branch and v20 schema identity reverified first. `create_snapshot` returned **HTTP 422 `snapshots limit exceeded`**: no snapshot created. `update_branch(protected:true)` returned **HTTP 422 maximum protected branches for current plan**: protection not enabled.
+- Independent postcheck: Neon production branch READY but **`protected:false`**, sole manual snapshot `snap-proud-fire-b1bm8oac` still from former branch `br-dark-math-b1snjzub`. No snapshot deletion, branch change, live database DDL, restore, merge, Vercel deployment, or production data modification.
+- **Release NO-GO** until fresh/current-primary recoverability, protection decision and all remaining operator/historic recovery gates are satisfied. Existing full local four-gate PASS remains valid for unchanged code.
+
+## 15 October 2026 — v21 release target read-only inspection (no deployment)
+
+- Neon project `muddy-dust-14049657`: default/primary `br-raspy-fog-b1btvu5t` READY; explicit read-only `neondb` query PG18.6, registry versions 1–20 count 20, version21 count 0, currency columns 0/12 and CHECKs 0/4; flights 315, rates 33, aircraft 25, voided certified 3, provenance 12. No SQL mutations.
+- Neon branch currently reports **`protected:false`**. Only inventoried manual snapshot `snap-proud-fire-b1bm8oac` originates from **old** `br-dark-math-b1snjzub`; the current canonical primary has **no fresh manual snapshot recorded**. Recovery and branch protection are **release blockers** pending owner decisions and evidence.
+- Vercel `logbook` latest reported production READY deployment remains from `main` at `dcc8ebbfda0eadfa01345cd875ef1db806a19e26`. Candidate PR #338 not deployed. No snapshots, branch protection, DDL, migrations, merge or Vercel deployments were performed.
+
+## 15 October 2026 — Currency 3.8.0 complete four-gate owner-local acceptance PASS (not released)
+
+- Owner-local Windows/Node24 `run-currency-380-acceptance.ps1 -WithBrowser` on exact code SHA `42e72909b798b8e71d0d9d3e66f551c14aad5931` emitted **LOCAL ACCEPTANCE PASS**. Gate 1: disposable PostgreSQL16 confirmed, TypeScript PASS, static SQL **6/6**, PG integration **9/9**, executable v21 production SQL **5/5**. Gate 2: **1555/1555** Node/source tests, zero failures or skips. Gate 3: optimized Next.js 16.3.2 build PASS, **41/41** static pages. Gate 4: dedicated new disposable PostgreSQL16, canonical schema-first v20/v21 registry/12 columns/4 constraints PASS, authenticated desktop/mobile Playwright **8/8 PASS (2.1 min)**, postflight shape PASS and PostgreSQL server stopped.
+- This is **local executable evidence** on the exact application code, **not CI or a production result**. No full real-history signed portable v13 recovery, protected v20 runtime-on-v21 H4 or fresh production Neon backup/restore was established by this run. Draft #338 stays unreleased, no production DDL/merge/deploy or original data changes. Release NO-GO pending independent validation and explicit owner authorization.
+
+## 15 October 2026 — Currency v21 isolated authenticated browser accepted on `694b0793` (local only)
+
+- Owner report from Windows/Node24 exact `694b079384cbadc39aab4c4c0a71effa090e3c9f`: targeted source/guard/signed-backup tests **19/19 PASS**; unique disposable PostgreSQL16 identity confirmed; Next 16.3.2 optimized build PASS (41/41 static); dedicated schema-first fixture prepared canonical v20→v21 with registry count 1, twelve monetary columns and four CHECK constraints.
+- **Eight authenticated desktop/mobile Playwright scenarios PASS (2.0 min).** Independent postflight v21 registry/columns/CHECKs PASS, temporary local PostgreSQL server stopped. No current browser regression demonstrated; earlier 0/8 test-environment failure is now superseded for this code SHA.
+- **Not yet done:** combined four-gate acceptance (full Node suite), H4 running old v20 app on migrated v21, real-history portable signed v13 recovery, PG18/Neon branch/protection/production snapshot verification, CI, production v21 DDL, merge, release approval or deploy. PR #338 Draft; production unchanged.
+
+## 15 October 2026 — Currency schema-first browser SQL separator repair (unreleased; new SHA NOT TESTED)
+
+- Owner-local `68947b34`: targeted tests **19/19 PASS**; isolated PG16 identity/cleanup, PowerShell-to-Node, harness bootstrap checks and Next optimized build **PASS**; schema-first staging **FAILED** with `syntax error at or near CREATE` before any Playwright test. Previously separate `sql` blocks were concatenated with newlines but without SQL statement terminators.
+- Fixed disposable-only `tooling/apply-currency-v21-disposable.mjs` to ensure one trailing semicolon per extracted canonical v20/v21 block; added source regression for this exact failure mode. No application code, production DDL, live DB or deployed services changed. New SHA targeted/browser tests **NOT RUN**. PR #338 remains Draft, release NO-GO.
+
+## 15 October 2026 — Currency browser schema-first fixture correction (unreleased, NOT TESTED)
+
+- Replaced the fragile expectation that the optimized Next server automatically applies v21 in Playwright. Currency-only browser harness now prepares the **verified new disposable localhost PG16 fixture** with the canonical runtime v20/v21 SQL and exact migration registry entries in a single transaction **before starting Next**. It fails closed on purpose/URL/identity mismatch, unexpected v1–v19 history, source SQL drift/interpolation, or an invalid v21 physical postcheck (registry 1, columns 12, validated checks 4). No second approximation of monetary DDL; scripts read `lib/db-optimization.ts`.
+- For this dedicated Currency run only, Playwright's `reuseExistingServer` is disabled. Source regression updated to assert protected ordering and explicit preconditions. General authenticated browser harness retains legacy behavior without Currency intent.
+- **Not run on new candidate:** targeted source tests, PG16 execution, optimized build, authenticated Playwright, full suite. Previous `40104b91` browser 0/8 remains historic FAIL; earlier PG/Node/build PASS results are tied to their specific SHAs. Application runtime guard, migration SQL, Neon production schema, deployment and user data **not modified**. PR #338 remains Draft and release **NO-GO**.
+
+## 15 October 2026 — v21 browser compiler environment compatibility (unreleased; tests pending)
+
+- Owner-local `40104b9158f4d39b47fd21a468825822b67f3f36`: signed-backup/fixture source **9/9 PASS**, verified ephemeral PostgreSQL16 identity/clean stop; both native Node and currency harness purpose/URL preflight **PASS**, optimized Next 16.3.2 build PASS (41 static pages), authenticated desktop+mobile Playwright **0/8 FAIL**. Same runtime fail-closed error prevents migration and subsequent fixture rows; local acceptance NOT PASS.
+- Changed only `lib/db-optimization.ts` runtime v21 authorization call to pass an explicit six-field object built from `process.env.KEY` property access, instead of the whole `process.env` object (possible Next/Turbopack environment-object transform issue). No gate rule, database DDL or runtime migration algorithm weakened. Added source regression ensuring all three allow flags, two Vercel deny markers and exact DATABASE_URL are supplied once. Root cause is still **unconfirmed** until E2E retest; independent reviewer/production GO not completed.
+- Prior runtime code SHA test results do not automatically carry forward. Production Neon remains physical v20. No schema, branch/snapshot/protection, merge or deploy changes.
+
+## 15 October 2026 — Currency browser environment fail-closed diagnosis (unreleased, NOT TESTED)
+
+- On owner-local `2dd3a182d84a87ee80c0235a52af1196476852cd`, targeted `v380-currency-signed-backup-schema.test.ts` **9/9 PASS**, disposable PG16 identity verified, optimized Next production build PASS, but authenticated Playwright **0/8 FAIL** again from the same `Currency schema v21 requires approved explicit migration before runtime` error. Moving build after DB/flag setup did **not** resolve failure. Missing explicit `Disposable Currency browser fixture is ready...` line in harness output is evidence that currency-specific opt-in may be missing in the harness, not yet confirmed as root cause.
+- Added explicit `--currency-v21` purpose token to the dedicated runner, and native Node environment-inheritance check before build. `tooling/run-auth-browser.mjs` now requires the correct named fixture and purpose flags **before** calling destructive browser bootstrap and strips the dedicated switch before invoking Playwright. Generic D3b browser calls without currency intent remain supported. Added source regression to enforce explicit opt-in, native Node check, correct argument routing and pre-bootstrap fail closed.
+- **New diagnostic SHA tests/browser NOT RUN.** Did not modify lib/database runtime guard, released v21 SQL, Neon, or production. Existing Node 1555/1555 and PG 20/20 PASS remain evidence only for previous `4ea4a38a` SHA; no claim of complete new acceptance. Release NO-GO, PR #338 Draft.
+
+## 15 October 2026 — Currency v21 browser test build environment ordering (unreleased, NOT TESTED)
+
+- Owner-local candidate `4ea4a38a` targeted 46/46 PASS, TypeScript PASS, isolated PG16 static 6/6 + native schema 9/9 + executable v21 release 5/5 PASS; full Node **1555/1555 PASS**, local optimized Next build PASS (41/41 static pages). Authenticated Playwright **0/8 FAIL**. The Next server rejected guarded v21 DDL (`Currency schema v21 requires approved explicit migration before runtime`); first browser logins remained at `/login`, subsequent fixtures lacked `flights.price_currency_code`; all eight failed in shared environment precondition, not demonstrated separate application regressions.
+- Isolated browser runner compiled Next **before** setting verified ephemeral Postgres URL and all three browser purpose flags, a potential frozen/build-time environment mismatch. `d19995e2106f2492eca23353be95854133765c58` moves `npm.cmd run build` **after** verified disposable database identity, retains build before destructive fixture/bootstrap and Playwright, rejects Vercel-marked environments, and adds regression asserting purpose→DB identity→build→browser order. No production SQL/DB optimizer/guard relaxed or changed. Source-only readback PASS; new runner/test still **NOT RUN**.
+- Release remains **NO-GO** pending successful browser/whole acceptance on exact new SHA, H4 real v20-app-on-v21 and operational/provenance/recovery approval gates. PR Draft; no production SQL, Neon/branch, merge or deploy.
+
+## 15 October 2026 — v21 H1/H5 repeat local acceptance, remove duplicated hard-coded ownership counts (unreleased)
+
+- Owner tested `7e0a39d8`: focused earlier failing tests 32/32 PASS, TypeScript PASS, isolated native PostgreSQL16 identity validated and stopped; static 6/6, native schema 9/9, full executable release SQL v21 5/5 PASS. Complete Node suite 1553/1555: the remaining 2 FAIL were hard-coded old module inventory counts (`395` vs new audited `396`) in timezone and 3.7 map source-contract tests. Optimized Next build and authenticated browser NOT RUN, full acceptance FAIL.
+- `efcda5dc` removes **only** redundant historic numeric assertions in `tests/timezone-semantics-source.test.ts` and `tests/v370-map-layers.test.ts`; timezone/mapping and satellite-to-browser-risk checks remain intact. Canonical independent full runtime-file audit remains in `tests/development-scope.test.ts`, so module coverage is not weakened. No app runtime or v21 SQL modified. New head tests NOT RUN.
+- PR #338 stays Draft. No production database/Neon/branch/backup, merge or deployment changes. H4 real v20-app-on-v21 rollback, independent review and operator/recovery/source release gates remain OPEN.
+
+## 15 October 2026 — R1 H1/H5 local acceptance partial; align development registry and historical E1.5 contract (unreleased)
+
+- Owner-local `e8cf3f1d6f48f9b0b0871399826248c83ad65ffa`: TypeScript PASS, targeted guard/release tests **10/10 PASS**; isolated native PostgreSQL16 identity validated, schema source **6/6 PASS**, native schema **9/9 PASS**, executable v21 release artifact **5/5 PASS**, disposable cluster stopped; full Node suite **1552/1554 PASS**, two legacy infrastructure source assertions failed. Next.js build/Playwright **NOT RUN** because Gate2 stopped.
+- Fixed the development module ownership manifest to count **396** runtime files, explicitly classify new cross-cutting `lib/currency-v21-migration-safety.ts` as shared and require persistence-schema/PG and browser tests when changed; added regression for its risk ownership. Updated E1.5 historic runtime filter test to accept `SELECT version,name FROM public.flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION}` while still requiring version filtering and v21 shape/name checks. Test/registry-only correction `cc6b58a9d062d3a443a96e7ea6ae4eb4788e6577`.
+- **Corrected code tests/full build/authenticated browser NOT RUN**, earlier PG PASS remains bound to old SHA. No production SQL, Neon branch/snapshot/protection, merge or Vercel deploy change. PR #338 Draft, physical production schema v20; H4 and independent review/open release gates remain unresolved.
+
+## 15 October 2026 — DeepSeek R1 corrective runtime migration hardening (unreleased, NOT TESTED)
+
+- Implemented strict local-only, purpose-bound `allowDisposableLocalV21Migration(env)` using dedicated authenticated browser flags, exact 127.0.0.1 address, `flytally` test role, `flytally_currency_test` DB, explicit allowed protocol/non-standard port, no password, and Vercel marker veto. **Do not** indiscriminately reject `NODE_ENV=production`, because local Playwright tests exercise an optimized production-mode Next build on disposable PG16.
+- `lib/db-optimization.ts` checks physical v21 against registry21 at boot: exact version21 registry name, 12 correctly typed nullable no-default columns and 4 validated table-specific CHECK constraints; mismatch throws fail-closed. Strengthened complete eight-block draft/release/runtime parity tests, isolated unit denial tests, and actual PG16 runtime-shape SQL probes for registry-only/11-column/3-CHECK drift.
+- Production release SQL and historical review draft **unchanged**. Independent reviewer H2 dismissed; H3 unqualified DDL under explicit search path is LOW and deferred rather than widening release SQL surface. H4 old app runtime/schema v21 actual compatibility test still required; no claim of rollback proof. N3 repeated startup failure LOW deferred.
+- **New SHA tests/typecheck/build/browser NOT RUN**. Previous local complete PASS belongs only to `4f816527`. Neon canonical production still v20; no live SQL, protection mutation, merge or Vercel deploy. R1 re-review and release safeguards remain open.
+
+## 15 October 2026 — Independent v21 release review intake and accepted-source code packet (documentation only)
+
+- Received DeepSeek's first independent **documentation-only** review of Currency 3.8 R1; reviewer declared no repository/code/cloud access, no exact `path:line` verification and no executed tests. Findings B1-B5/H1-H5 are advisory until source-level reconciliation.
+- Read actual accepted `4f816527` code and confirmed procedural current-primary branch-protection/branch-identity risk and code improvements: H1 generic loopback-only v21 runtime opt-in, H3 path hardening, H5 missing schema validation when registry21 already exists; historical v20 migrator filters version21 but runtime rollback remains untested. Noted that an in-DB branch-ID sentinel is cloned with the DB and cannot independently prove Neon identity.
+- Added `docs/product/3_8_0_V21_DEEPSEEK_R1_SOURCE_REVIEW_PACKET_2026-10-15.md`: source snapshot from exact accepted SHA with original line numbers, three complete v21 SQL artifacts, migration plan, new tests and relevant runtime/Playwright excerpts for independent code review. **No runtime/SQL/test modifications, no new acceptance run.** Pending independent source review and next approved corrective small batch; PR #338 Draft; production unchanged v20.
+
+## 14 October 2026 — Currency 3.8.0 complete local implementation acceptance PASS (NOT RELEASED)
+
+- Exact owner-local code SHA `4f8165272ff5dc33facdc60af1931f37b97c0303`: targeted 38/38 PASS; TypeScript PASS; native disposable PostgreSQL16 tests **6/6 static**, **9/9 integration**, **3/3 executed v21 release SQL**; full Node **1549/1549 PASS**; Next.js 16.3.2 optimized build **PASS 41/41** in both standard and browser phases; isolated authenticated desktop/mobile Playwright **8/8 PASS**; browser PostgreSQL schema evidence verified exactly one registry21 row, 12 columns, 4 CHECKs. Both localhost PG clusters identity-checked and stopped. **Owner-local, not CI or production**.
+- Post-acceptance READ ONLY GitHub/Vercel/Neon identity verified: PR #338 still Draft, `main` and Vercel latest READY `dcc8ebbf`; Vercel production `DATABASE_URL` points to canonical restored Neon `br-raspy-fog-b1btvu5t`/PG18.6/`neondb`, registry v20, 0/12 v21 columns, 0/4 v21 checks, live counts `33/25/315/0/3/12/24` (rates/aircraft/flights/expenses/voids/provenance/backups). Current canonical Neon primary `protected:false`; old snapshot is from the former primary.
+- Added `docs/product/3_8_0_V21_LOCAL_ACCEPTANCE_AND_FINAL_RELEASE_GATES_2026-10-14.md` to separate completed local implementation from **pending** independent reviewer, ISO provenance, actual signed-v13 real-history recovery, fresh approved backup, PG18 compatibility and separate owner production DDL GO. No source/runtime/SQL changes, no production schema mutation, merge or deployment. All prior failing test runs remain preserved in history.
+
+## 14 October 2026 — Align legacy browser source-contract assertions with canonical Currency fixture (unreleased)
+
+- On exact `aac5222f7b7757298dd7b9028d465c43d5cbba49`, owner-local fixture test **9/9 PASS**, Gate1 TypeScript and isolated PostgreSQL **6/6 + 9/9 + 3/3 PASS**; full Node **1546/1549 PASS**, three FAIL from obsolete `generate_series(1,19)` assertions in `safety-pilot-pic-sp2`, `v323-auth-browser`, `v340-flight-entry-phase1`. No build/browser gate executed in this rerun.
+- Updated those three historical fixture contract assertions, not their aviation/financial behavior, to require canonical v1..19 migration names and ordered registry with no test-only placeholder. No application runtime, SQL migration or production fixture altered. Test-only commits `7c1b7820f690c44cc07b13fe5d9da549606aed75`, `8052f2d427b2d5f73a7f9f766b4bc4aa0722f023`. Source inspection confirmed new assertion strings match fixture; **local targeted/full test, build and browser still NOT RUN on corrected commit**.
+- PR #338 stays **Draft**; Neon canonical remains physical v20, no merge/migration/deploy, independent review and owner authorization remain open.
+
+## 14 October 2026 — Repair disposable Currency v21 browser migration fixture (unreleased; retest pending)
+
+- Owner-local full acceptance at exact `d671707d9de30d1710ad7a9944461b4b5e2a3731`: isolated PG16 migration gates PASS (6/6 static, 9/9 integration, 3/3 execution SQL); TypeScript PASS; full Node **1549/1549 PASS**; Next.js build PASS in both standard and browser steps. Authenticated browser tests **0/8 FAIL** (desktop/mobile) at startup with `v21: registry name drift at version 1`; login redirects were only symptoms. Browser database was a separately verified, disposable PG16 instance; shutdown succeeded.
+- Root cause: browser bootstrap registered versions 1..19 under generic `browser-smoke-preapplied` names; new v21 runtime correctly validates canonical migration names. A second latent issue: harness applied v21 review-only ALTER/CHECK blocks without atomic version21 registration, creating a partial schema state rejected by strict runtime.
+- Replaced the disposable fixture's name placeholders with exact canonical values derived from `lib/migration-plan.ts`, fail-closed on missing/duplicate/out-of-order versions. Currency-specific browser harness now does **not** preapply partial review-only SQL and instead exercises guarded localhost-only runtime v20/v21 migration, followed by independent read-only `1|12|4` registry/columns/CHECK count verification after browser PASS. Added/updated static browser contract tests for all 21 name agreements and no partial draft preapply. Runtime migration, production SQL and v21 protection logic unchanged.
+- Source commits `8f23ba24dfa3e033c335d389f6f498ba0ff4ec0c` and `7fe305a4ff53df0d386e1f2ce786f78b9a5c14e9`. **Fixed browser contract and acceptance NOT RUN on new SHA.** PR stays Draft; production Neon canonical branch remains untouched v20. Full acceptance plus independent review/production authority remain open.
+
+## 14 October 2026 — Update historical schema tests for v21 while preserving v20 invariants (unreleased)
+
+- Exact owner-local acceptance candidate `14773c538327c278c9f8ec06047945e636114218`: targeted v21 static source contracts **5/5 PASS**; isolated local PostgreSQL16 typecheck **PASS**, v21 draft static **6/6 PASS**, schema integration **9/9 PASS**, executable release SQL integration **3/3 PASS**. Test cluster confirmed expected ID and stopped. Full Node tests **1546/1549 PASS**: two assertions still expected migration list to end at v20 and one historical v20 certified flight contract incorrectly required `DATABASE_SCHEMA_VERSION=20`. Next build and Playwright **NOT RUN**.
+- Minimal **test-only** correction `97a0aebe0099467a0af107adce844f94eb04900c`: migration plan tests now assert preserved v1..20 + explicit v21, partial, pending v21 and fully applied cases; v20 certified voiding contract checks v20 registration and archive guards independent of current highest schema version. No production SQL/runtime changes.
+- New SHA source/unit targeted and complete acceptance **NOT RETESTED**. PR Draft; Neon canonical production stays schema v20, no migration/merge/deploy.
+
+## 14 October 2026 — Fix Windows CRLF parsing in v21 static SQL source contract (unreleased)
+
+- Owner-local `npm run typecheck` on `3cb1eeb74d6f99f40e18d3e871c5b11b377bd7c4`: **PASS**. Targeted v21 release contract: **4/5 PASS**, first check failed `0 !== 4` because regex expected exactly LF (`\n`) in an ALTER TABLE block but SQL has Windows CRLF (`\r\n`) on checkout.
+- Test-only commit `3f7b685bb6dad158b5f71f6d922b20360c110510` changes the parser to accept `\r?\n`, preserving all eight draft/executable/runtime SQL parity assertions. Source comparison on repository LF and simulated Windows CRLF found 4 ALTER and 4 CHECK definitions; all eight matched both release SQL and runtime. **Corrected local test and full acceptance NOT RUN**.
+- No migration SQL/runtime functionality change, no Neon SQL, PR merge or Vercel deploy. Next owner reruns targeted static then consolidated local acceptance.
+
+## 14 October 2026 — Block unsanctioned runtime v21 migration on real databases (unreleased, untested)
+
+- Applied fail-closed guard in `lib/db-optimization.ts` before any version-21 DDL transaction: if version21 is pending, runtime throws unless the environment explicitly marks disposable local PostgreSQL and `DATABASE_URL` hostname is loopback. The normal production path requires a separately approved schema-first SQL migration that has **already written registry version 21** before v21 app code is deployed. No remote schema upgrade may silently originate from application startup.
+- Added static source contract for the guard. Neither this code SHA nor the earlier v21 release SQL candidate has passed local TypeScript/Node/PG/build/browser acceptance yet. No production SQL, deployment or merge.
+
+## 14 October 2026 — Stage guarded Currency v21 release tooling and new integration tests (unreleased, unverified)
+
+- Added explicit SQL `tooling/v380-v21-preflight.sql`, `v380-v21-migrate.sql`, `v380-v21-postflight.sql`. The migration copies exactly the established 12 nullable/non-defaulted columns and four CHECKs, guards exact v20 registry/protection, rejects any partial v21, uses bounded statement/lock timeout and advisory transaction lock, inserts v21 registry in the same transaction, and validates the result before commit. Expected DB passed explicitly; Neon branch must be separately verified.
+- Registered version 21 `source-backed currency exact-money` in `lib/migration-plan.ts` and `lib/db-optimization.ts`, including exact additive runtime DDL and fail-closed precheck. Corrected a generated source-insertion defect in a follow-up commit before acceptance. Historical version 1–20 untouched. Kept review-only `sql/drafts/3_8_0_currency_v21_additive_candidate.sql` unchanged.
+- Added four static source/parity tests plus three native disposable PostgreSQL16 release artifact integration scenarios; updated `tooling/run-currency-m2a0-local.ps1` to run them after its existing fixture test with an isolated-loopback-only environment flag. Static read-only comparison found source parity 4 ALTER + 4 CHECK and one runtime registration. **TypeScript, Node, PostgreSQL, build, browser on NEW SHA NOT RUN.**
+- No production DDL, Neon branch operation, merge or deploy. Draft PR #338. Owner's approved canonical Neon production remains `br-raspy-fog-b1btvu5t`; separate migration execution GO required.
+
+## 14 October 2026 — Owner retains restored production branch; prepare reviewed v21 migration sequence (docs only)
+
+- Owner explicitly accepted Neon branch `br-raspy-fog-b1btvu5t` as canonical production. Former `br-dark-math-b1snjzub` and snapshot `snap-proud-fire-b1bm8oac` retained; no reverse branch swap. Fresh read-only current primary and Vercel DB hostname/database checks agree.
+- Two-branch repeat inventory: identical row counts/content hashes on **52/52** public tables at the measurement moment. Production schema still registered v1–v20, with 0 of 12 target currency columns and 0 of 4 v21 CHECKs. Existing main/production Vercel app remains `dcc8ebbf`; no v21 SQL, merge or deploy.
+- Added `docs/product/3_8_0_V21_EXACT_PRODUCTION_MIGRATION_PLAN_2026-10-14.md`: targeted preflight, new snapshot on current primary, no finalizing restore test, separate reviewed explicit SQL/registry + v21 runtime support, atomic DDL before deployment, postflight content checks, smoke, stop/rollback. **DESIGN ONLY**, execution artifact/runtime code not yet implemented and not approved. Existing local acceptance `0192570a` remains source baseline but will need rerun after migration code changes.
+
+## 14 October 2026 — Controlled-release snapshot verification caused unexpected Neon production branch swap (OPEN incident)
+
+- Pre-migration manual snapshot `snap-proud-fire-b1bm8oac` created from Neon original `production` primary `br-dark-math-b1snjzub`. A `restore_snapshot` attempt with `finalize:true` unexpectedly reassigned production primary/default branch and its original compute to restored `br-raspy-fog-b1btvu5t`; former branch remains preserved, no data deletion executed. This was **not** an intended or separately approved topology change. Release immediately **STOPPED**.
+- Live read-only post-incident verification: Vercel prod database hostname is the Neon endpoint now serving the restored branch; the former branch has a distinct compute. Row counts and deterministic content hashes for **52/52 tables match** on both branches at the time of testing; no observed content drift. This does not establish zero service interruption or future equality.
+- Incident documented in `docs/product/3_8_0_NEON_SNAPSHOT_RESTORE_INCIDENT_2026-10-14.md`. **No v21 migration, application deploy, PR merge or further production writes performed**. Local full acceptance on prior `0192570a` remains valid for unchanged application code. Require explicit owner approval of retained new primary vs separately managed restoration before continuing.
+
+## 14 October 2026 — Currency 3.8.0 owner-local acceptance PASS; controlled release outstanding
+
+- On exact SHA `0192570a240dc3473b6dea15c7908a15e7ee16d8`: targeted share 6/6; TypeScript PASS; static SQL 6/6; disposable PG16 9/9; full Node 1544/1544; Next build PASS with 41/41 static pages; authenticated desktop/mobile Playwright 8/8. Both temporary local PG servers stopped. Local-only evidence, no CI or production test.
+- Read-only production preflight: Vercel READY/main `dcc8ebbf`; Neon PG18.6 registry versions 1–20 contiguous, no v21 fields/constraints. Counts rates/aircraft/flights/expenses/deleted/backups 33/25/315/0/8/24.
+- No release authority provided, v21 remains unregistered REVIEW candidate, no production DB/deploy/merge. Protect verified backup and historical evidence, approve migration and registry sequencing before deployment.
+
+## 14 October 2026 — Align aircraft sharing source-contract test with SQL aliases (unreleased)
+
+- Owner-local complete Currency 3.8.0 acceptance ran on exact `f1a3b63ab533d7521c64319e50058d8ec0f4edf6`. TypeScript **PASS**, static v21 schema checks **6/6 PASS**, native disposable PG16 **9/9 PASS**, full Node source/unit **1543/1544 PASS**; one failing source-contract regex at `tests/v380-currency-share-integrity.test.ts:87`. PostgreSQL cluster on `127.0.0.1:56397` stopped cleanly. Because Gate 2 failed, Next.js build and authenticated desktop/mobile browser gates **NOT RUN**.
+- The test expected contiguous unqualified default rate columns although the original sender query correctly selects `a.default_price_currency_code,a.default_price_currency_minor_units`. Source assertion fixed in **test-only** commit `82c3efeabff9c4a52937e939eaf2214f0aa2f283`; all remaining assertions of the same test were checked against the live PR source as a read-only text match. **Full Node and combined acceptance have NOT been rerun** on corrected SHA.
+- No implementation, production schema, migration registry, deployment or merge change; PR #338 Draft. Next owner-local targeted test followed by combined full acceptance.
+
+## 14 October 2026 — Correct PostgreSQL test harness for exact-recipient sharing conflict (unreleased)
+
+- On exact `dc9b217477d4bd2b213c553656a270cffc7ad810`, user-local `npm run typecheck` **PASS**. Combined local acceptance Gate 1: temporary PostgreSQL16 `127.0.0.1:62277` identity verified; v21 static tests **6/6 PASS**, native integration **8/9 PASS**. The ninth new sharing-conflict test failed with PostgreSQL syntax error at `INSERT INTO`, because the test's `rows()` helper embeds its input in `FROM (...) t` and is designed for SELECT, not a standalone INSERT. Temporary server stopped. Later full Node, production build and authenticated browser **NOT RUN**.
+- Minimal test-only fix at `2709b47f2648fb1977cd2a9dd1339ee0bc74dea5`: use existing `run()` to execute top-level `INSERT ... RETURNING id` and assert no returned ID, then retain exact-recipient immutability and KWD exact-upsert assertions. GitHub diff: test file only, 2 lines replaced. **Corrected integration test NOT YET RETESTED**, no feature/SQL/runtime changes.
+- ROADMAP/CHANGELOG evidence updated; PR #338 Draft, v21 remains unregistered, no production Neon/Vercel changes. Next gate: repeat combined local acceptance on exact new HEAD.
+
+## 14 October 2026 — Preserve strict type narrowing for exact shared dry rates (unreleased)
+
+- Owner-local standalone `npm run typecheck` at `340ab061dc1375ef1d436086025b20c45fb810f9` failed TS2322 on `lib/aircraft-sharing.ts:71`; TypeScript could not prove that `dryDecimal` obtained from a generic object was `string|null`.
+- Minimal source guard in `31960d5794ba368524ac6a2990aa1bb107bc734d` rejects any non-null nonstring before returning typed payload; malformed values do **not** silently become null. Matching isolated `tsc --strict --noEmit --lib es2022` typecheck PASS; repository-wide `npm run typecheck`, other tests/build/browser **NOT RUN** on corrected source.
+- No production DB mutation, migration registration, merge or deploy. PR #338 Draft; next standalone local typecheck followed by consolidated acceptance.
+
+## 14 October 2026 — Correct failed acceptance at TypeScript `TS2552` (unreleased)
+
+- User ran owner-local `run-currency-380-acceptance.ps1 -WithBrowser` at exact `3f9efa0accc68492d9ba45fb2022f67b104dfbee`: disposable PostgreSQL16 identity on port `49235` verified; `npm run typecheck` **FAIL** `TS2552` line 71 of `lib/aircraft-sharing.ts`. Isolated cluster shut down correctly, no later acceptance stages ran.
+- Root cause: `dryPriceDecimal` returned as an undeclared shorthand although `dryDecimal` is the validated local variable. Minimal one-line fix `dryPriceDecimal:dryDecimal` in source SHA `5705254cae1d1b952a4dcee8cd389adcffb54214`. GitHub compare from failing SHA reports one line added/removed in that file only.
+- Corrected source **NOT YET TYPECHECKED / ACCEPTED**. Next check `npm run typecheck` first in owner-local environment, then entire combined acceptance on a known current SHA. No production migration, merge or deploy.
+
+## 14 October 2026 — Fix TypeScript parser stop discovered by owner-local Currency acceptance
+
+- Owner-local exact `4093fd34` combined acceptance started a verified disposable PostgreSQL16 on `127.0.0.1:64768` and stopped at **typecheck TS1128**, `lib/aircraft-sharing.ts:137`; all later stages **NOT RUN**. Database identity matched; isolated server shut down cleanly.
+- Corrected an extra `}` closing `parsed.defaults` on source line 118, one-line syntax patch in commit `965c8988dd3ea1d2556cd2b0a4d756d080ae6bde`; no behavior or database change intended. A direct GitHub compare to previous HEAD confirmed **only** `lib/aircraft-sharing.ts` changed (1 addition/1 deletion).
+- New commit local/CI typecheck, tests, build and browser **NOT RUN**; PR #338 stays Draft, v21 unregistered, no Neon/Vercel production mutations. Complete owner-local acceptance must be rerun on corrected HEAD.
+
+## 14 October 2026 — Currency sharing and signed recovery hardening candidate (PR #338; NOT YET VERIFIED)
+
+- Owner froze one coherent implementation block, one full acceptance and one controlled release. Source edits staged through application-code SHA `ff22625b40f06faeb32b574d17cec14bb9bafaa6` on Draft PR #338; no new branch/production change.
+- Added versioned v2 exact aircraft-rate sharing and explicit legacy-unknown v1 compatibility in `lib/aircraft-sharing.ts` and `app/(protected)/connections/aircraft-share-actions.ts`. Sender includes actual source money tuple; receiver writes all fields together and conditional legacy conflict cannot mutate a recipient's existing exact metadata. UI displays exact currency or 'currency unknown' and reports skipped conflicting legacy rates, no invented CZK.
+- Validates derived DOUBLE cache against decimal source in `lib/currency-rate-snapshot.ts`; no unapproved epsilon/guess-based conversion.
+- Added signed-v13 backup semantic monetary preflight in `lib/portable-backup.ts` before preview and execution in `lib/account-restore-v6.ts`, preserving all-null legacy unknowns and distinguishing JSONB numeric archive tokens from NUMERIC string values; fail-closed on partial/wrong scale/currency/contradiction.
+- Added `tests/v380-currency-share-integrity.test.ts`, `tests/v380-currency-backup-evidence.test.ts` and an isolated PostgreSQL import conflict case. These are **IMPLEMENTED, NOT RUN**. Prior 1533/1533 acceptance belongs only to older `669708fe` SHA. Current code typecheck, tests, build, Playwright, production smoke **NOT RUN**.
+- v21 SQL remains unregistered; PR Draft; no Neon production DDL/DML, GitHub merge or Vercel production deploy. Next: one full `tooling/run-currency-380-acceptance.ps1 -WithBrowser` at exact HEAD, fix any proved regressions, then owner-controlled migration/release gate.
+
+## 14 October 2026 — Currency source-level pre-release review and independent AI handoff (Draft #338)
+
+- READ-ONLY inspected exact `ab4aff5a` source: identified that aircraft sharing sends legacy Number-only rates and recipient ON CONFLICT updates legacy price fields without exact monetary metadata; confirmed stored dual-amount validator checks each field's validity but not legacy-vs-exact amount consistency. Runtime new SQL needs physical v21 ahead of deployment while migration registry remains v20. These are unshipped **release blockers** and require independent validation/targeted tests.
+- Created [review + independent DeepSeek handoff](docs/product/3_8_0_CURRENCY_PRE_RELEASE_INDEPENDENT_REVIEW_HANDOFF_2026-10-14.md) with source paths, frozen D1–D4, minimal M3/M4 milestone design, acceptance matrix and distinctions between source facts and NOT RUN checks. DeepSeek review **NOT YET RECEIVED**.
+- No runtime/test/SQL modifications, no new tests run, no Neon branch/DDL/DML, no merge/deploy. PR remains Draft; earlier `669708fe` application acceptance and isolated PG18 rehearsal remain scoped historic evidence.
+
+## 14 October 2026 — v21 temporary-Neon PG18.6 migration rehearsal (unreleased; Draft #338)
+
+- Owner-authorized temporary child of Logbook Shadow production created and verified as nonprimary/nondefault: `ft-380-v21-pg18-rehearsal-20261014` (`br-gentle-glade-b1erhgaj`, parent `br-dark-math-b1snjzub`). Database `neondb`, PostgreSQL **18.6**, initial contiguous migrations v1–v20, no v21 columns/checks.
+- Applied review-only SQL from Draft #338 (four additive ALTER TABLE operations and four conditional CHECK blocks) in one connector transaction with v20 guard. **PASS**: all 12 columns nullable with no default, four CHECKs `convalidated=true`; existing cloned data row counts preserved (rates 33, aircraft 25, flights 315, expenses 0, deleted flights 8, backups 24), new metadata remains NULL. Reapplied same eight SQL statements with no error (**idempotency PASS**). Migration registry unchanged v20.
+- Separate read-only production check: still v20 with no proposed v21 columns/checks; identical counts. The attempted PG18 synthetic temp-row CHECK probe was **BLOCKED by tool safety** and therefore **NOT RUN**; no negative-write PG18 acceptance claim. Local PG16 8/8 tests remain distinct evidence. No real Neon JS SDK application or wide historical signed-v13 restore proof.
+- Deleted the exact temporary branch after confirming its nonprimary/nondefault ID and parent; independent branch listing confirmed absence, original four branches unchanged. **No production DDL/DML, no registered v21, no merge, no release/deploy**. See [detailed report](docs/product/3_8_0_CURRENCY_V21_NEON_PG18_REHEARSAL_2026-10-14.md). New docs-only commit automated tests **NOT RUN**.
+
+## 14 October 2026 — Currency 3.8.0 local acceptance complete and production read-only preflight (Draft #338)
+
+- Owner Windows combined `tooling/run-currency-380-acceptance.ps1 -WithBrowser` on exact `669708fec856f5e88072a474f2b97b573a7881f6`: TypeScript PASS, draft v21 SQL source **6/6**, native disposable PostgreSQL16 **8/8**, full Node **1533/1533**, optimized local Next.js build PASS, authenticated desktop/mobile Playwright **8/8** including exact KWD/JPY Trash and scoped signed stored-v13 round-trip. Local database identities matched; both test clusters stopped safely. This is **local**, not CI or live release evidence.
+- Separate assistant **read-only** Neon production catalog/config preflight: `Logbook Shadow` project `muddy-dust-14049657`, branch `production`/`br-dark-math-b1snjzub`, database `neondb`, PostgreSQL **18.6**. Registry v1–v20 contiguous; 12 draft v21 monetary columns and four constraints not present. Vercel `logbook` production `DATABASE_URL` endpoint host/database compared in memory to the matching Neon production compute `neondb`: MATCH, with no credential disclosed or settings changed.
+- No changes to runtime, SQL registration, user data, remote DDL/DML or deployment. Migration rehearsal/PG18 production applicability, broad historical certified/void/share/backup coverage, ISO provenance caveat, owner go/no-go, merge and deploy remain open. PR stays Draft. This **documentation-only** follow-up does not change the tested code tree; new docs HEAD full acceptance **NOT RUN**.
+
+## 14 October 2026 — Currency combined acceptance SQL test reconciliation (Draft #338)
+
+- Owner-local `a9c01c1c` combined acceptance: TypeScript PASS; static schema 6/6 PASS; verified isolated PostgreSQL16 8/8 PASS; full Node source/unit suite **1532/1533** (one stale `tests/flight-expenses.test.ts` assertion); build/browser not reached in this fail-fast invocation. The independent browser 8/8 PASS remained verified on that exact previous SHA.
+- Updated the source regression to require the exact `to_jsonb(e)->>'amount_encoding'` and typed `amount_minor_units` projection with original expense identity, owner scope and date fields, rather than rejecting a v20-compatible SQL query. No runtime or DB change.
+- Current new HEAD targeted/full tests/build/browser **NOT RUN**; production v21 SQL remains an unapplied/unregistered candidate. Draft PR, Neon and release untouched.
+
+
+## 14 October 2026 — signed v13 desktop restore browser completion diagnostics (Draft #338)
+
+- Owner-local `afe862a6`: isolated PG16 identity verified, local optimized Next build PASS, authenticated Playwright **7/8 PASS**. D3b/GPS and KWD/JPY Trash desktop/mobile PASS; signed v13 mobile PASS. Desktop signed-v13 exhausted overall 30s test timeout while SQL polling returned no flight row; no application error/success was captured, so persistence outcome remains unknown.
+- Limited whole-test timeout extension to **90s for signed v13 workflow only** (includes download, Trash, protection backup and atomic restore). Test now waits up to 45s for explicit Server Action success or diagnostic error *before* querying exact restored KWD and expense values, and bounds final DB verification at 10s. Added source regression guard. No application, auth, database schema or monetary runtime changes.
+- Latest HEAD unit, PG, browser and build **NOT RUN**. Production migration v21 unregistered; PR stays Draft.
+
+
+## 14 October 2026 — Signed-v13 preflight fixture and protected GPS deletion browser follow-up (Draft #338)
+
+- Owner browser on exact `4e0975f5`: optimized Next build PASS; isolated PG16/browser **5/8 PASS**. Signed v13 HTTP 401 fixed: real browser downloaded backup and proceeded to restore preview; desktop/mobile preview failed because browser fixture `fstd_sessions` lacked `record_revision` (not an established production schema defect).
+- Updated disposable FSTD table to mirror the canonical certified-correction optimizer columns `record_revision`, `correction_reason`, `correction_opened_at`, `correction_opened_by_user_id`; added source contract regression.
+- One desktop D3b GPS track deletion timed out after 5 seconds with DOM row still visible. Updated its browser test to separately wait for persisted deletion and refreshed UI, retaining the signed pre-restore backup/remaining-track checks. No claim that the previous deletion persisted or failed; next run must determine this.
+- New HEAD TypeScript, unit, PostgreSQL, browser and build **NOT RUN**. No migration v21 registration, production DB action, merge or deployment.
+
+
+## 14 October 2026 — Signed v13 authenticated download test fix (Draft #338)
+
+- Owner-local Playwright on `a3f0d809`: **6/8 PASS**; both desktop/mobile failures were the signed v13 `page.request` download GET returning HTTP 401. Existing D3b and monetary Trash UI flows passed, no runtime or PostgreSQL failure reported.
+- Changed signed backup scenario to use the application **Download** link in the real authenticated browser and parse the browser-downloaded JSON byte stream, with a same-origin GET diagnostic. Preserved real session checks and guest HTTP 401 in `app/api/backups/[id]/route.ts`; no auth relaxation.
+- Added source guard for the protected download endpoint and UI coverage. Latest exact HEAD unit/browser/full acceptance **NOT RUN**; no schema registration/migration/merge/deploy.
+
+
+## 14 October 2026 — Currency acceptance browser failure triage (Draft PR #338)
+
+- Owner-local acceptance of `5957261f`: PostgreSQL16 schema 8/8, complete Node tests 1528/1528, TypeScript/Next builds PASS; authenticated Playwright 3/8 PASS, 5/8 FAIL. Combined gate correctly failed.
+- Fixed direct `flight_expenses.amount_encoding` / `.amount_minor_units` SELECT on v20 flight detail using optional `to_jsonb` metadata extraction.
+- Opt-in 3.8 browser runner now installs the standalone v21 review DDL **once after disposable PostgreSQL bootstrap**, before Playwright. Existing D3b/legacy cases continue with NULL metadata; no change to production auto-migrations.
+- Split KWD/JPY and signed v13 test registrations/IDs by desktop/mobile to prevent real duplicate-flight guards being triggered by prior project, and wait for a strictly newer manual backup ID.
+- Added diagnostic errors for signed v13 backup HTTP download and recovery preflight/action failure; root cause of previous v13 HTTP failure remains **UNVERIFIED** until rerun.
+- Current branch-head tests/build/browser **NOT RUN**. Production Neon, migration and deployment untouched; v21 remains unregistered. A passing browser suite is still required.
+
+
+## 14 October 2026 — Currency v13 recovery schema guard and browser acceptance (Draft #338)
+
+- Added explicit v21 compatibility preflight before both signed v13 exact restore preview and execution; detects exact monetary metadata in ordinary and archived records and refuses recovery when any required target schema column is missing. All-NULL legacy metadata is not converted to a guessed currency.
+- Corrected double-escaped rate-decimal regex in currency-bearing Trash runtime that would reject valid values such as `1234.125`. Added unit/source regression cases.
+- Added 3.8.0 authenticated desktop/mobile browser scenarios to verify exact KWD/JPY Trash restoration and signed stored v13 backup download/restore. Preserved the 55 original browser contracts and their frozen historical run evidence; registered four new canonical browser targets.
+- Added `tooling/run-currency-380-browser-local.ps1` creating and shutting down a dedicated local PG16 cluster; consolidated acceptance now supports optional `-WithBrowser`.
+- All tests/build/browser on latest HEAD **NOT RUN**. Earlier owner-local PASS at `46d8b184` only. Production v21 migration **NOT REGISTERED**, no remote DB changes, no merge/deploy.
+
+
+## 14 October 2026 — Currency-aware atomic Trash restore (Draft #338)
+
+- Added a v21 archive restore path within the existing one-transaction flight, GPS track, expense and archive-mark CTE. Restore preserves precise source rate decimal/currency/exponent and per-expense encoding/minor units; existing v20 legacy statement remains intact.
+- Read-only preflight validates available v21 columns and ISO currency precision, and the SQL candidate matches preflight archive digest to reject concurrent archive changes.
+- Added source contract guards and two new disposable-PG test cases for exact restoration and full rollback on malformed expense metadata. New code/test HEAD NOT RUN; signed portable v13 end-to-end, authenticated browser and production preflight NOT RUN. v21 unregistered, no merge/deployment.
+
+
+## 14 October 2026 — Disposable PostgreSQL monetary restore contract tests
+
+- Added v21 exact JSON flight/expense restore round-trip and atomic rollback-on-invalid-expense integration tests in the existing isolated PostgreSQL harness.
+- Current exact commit tests NOT RUN; runtime Trash does not yet restore currency-bearing records and remains fail-closed. No registered v21 migration or production change.
+
+
+## 14 October 2026 — Currency exact account restore expense identity (Draft PR #338)
+
+- Recorded local PASS at previous `59a8f861` (typecheck, PostgreSQL16 6/6, static SQL 6/6, full 1518/1518 tests, Next build).
+- Changed exact restore expense matching to compare raw persisted minor integer text with explicit encoding/scale, rather than Number coercion; reads metadata via to_jsonb for pre-v21 compatibility. Added source contract regression tests.
+- New HEAD tests, end-to-end signed v13 restore, browser, production DB and deploy NOT RUN. v21 unregistered.
+
+
 This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 - `ROADMAP.md` is forward-looking and may contain planned work.
@@ -7,6 +401,47 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - This file records merged/product changes and must not describe planned work as completed.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
+
+## 14 October 2026 — Currency acceptance regression reconciliation (Draft PR #338)
+
+- Owner-local at `83e7c54d`: typecheck PASS; disposable PostgreSQL16 6/6, static M2 checks 6/6 PASS; full suite 1511/1518 PASS (7 FAIL); build NOT RUN. Ephemeral database stopped; no production DB accessed.
+- Preserved canonical `FlightForm` prop order with new explicit currency preference; reconciled historical source tests with registered unexecuted `sql/drafts` path, extended flight expense insert/price snapshot tuple, and nullable-v21-aware legacy Trash checks. Genuine non-null currency-bearing snapshots remain excluded from v20 restore writer.
+- Latest HEAD tests/typecheck/build/browser NOT RUN; PR #338 still Draft, no v21 registration/merge/deploy.
+
+## 14 October 2026 — Currency default-query typing correction (Draft PR #338)
+
+- Corrected two unsupported Neon query type assertions in Aircraft and New Flight pages. Both queries now treat settings rows as untrusted `Record<string,unknown>` before passing the currency through source-backed ISO validation. No runtime DB behavior change.
+- Owner-local consolidated acceptance at `e26812bd` stopped on exactly two TS2352 errors. Disposable PG16 identity verified and cluster stopped; targeted PG test suite, full tests and build were NOT RUN in that attempt. Corrected branch HEAD verification NOT RUN.
+
+## 14 October 2026 — Currency cross-surface integrity fixes (Draft PR #338)
+
+- Added strict stored rate currency snapshot validation; manual create/edit and GPS import stop on corrupted exact metadata rather than silently replacing a saved rate. Legacy unknown-denomination rates remain unknown.
+- Explicit expense encoding is now required in newly posted expense rows; corrected saved flight expenses to load source encoding and exponent, with 0/2/3 minor-unit and bad-metadata regression cases. Known totals show a warning when invalid expense rows cannot be included.
+- Updated legacy Trash restore predicates to allow newly added v21 keys only when their values are null; genuine new-money snapshots still fail closed pending safe restore. Signed backup/restore and production migration NOT RUN.
+- Registered one new shared runtime module (395 total); branch tests/typecheck/build/PG/browser NOT RUN on latest HEAD. PR remains Draft and unmerged.
+
+## 14 October 2026 — Currency one-command acceptance workflow (Draft PR #338)
+
+- Added Windows PowerShell 5.1-compatible `tooling/run-currency-380-acceptance.ps1` to execute disposable local PostgreSQL 16 M2 tests, complete Node24 test suite, and local production build with immediate failure stop and exact commit guard.
+- Tool only: does not register or execute v21 on remote DB, merge, or deploy. New runner and current implementation branch are NOT RUN; authenticated browser and complete signed v13 restore remain separate release gates.
+
+## 13 October 2026 — Currency consolidated implementation batch (Draft PR #338)
+
+- Implemented source-backed all-monetary ISO currency dropdown in Settings, enforced validated code in both account-setting mutations, and displayed explicit invalid configuration errors; no account preference silently converts stored amounts.
+- Removed unsafe global highest-cost sorting and hardcoded CZK claims on legacy-rate flight/aircraft/stats/dashboard/share UI; older cost-sort URLs fall back to newest. Legacy aircraft cost is no longer added to CZK expense totals.
+- Added source-contract tests for the ISO selector/server checks and unknown-denomination financial presentation; corrected historic rate-label test and expense test expectation.
+- Does not yet persist new currency-bearing rates/flight snapshots or ISO minor-unit expenses. No registered v21 migration, production DB changes, deploy or merge; current exact HEAD tests/typecheck/build/browser NOT RUN. Owner approved fewer integration batches, not relaxing historical, certificate or backup safety.
+
+## 13 October 2026 — Currency M2-A-1 source compatibility audit
+
+- Recorded owner-local PostgreSQL 16 and static M2 test results, each 6/6 PASS at `8a9e03e0`; TypeScript PASS. No full PG regression or signed v13 end-to-end verified.
+- Audited `lib/portable-backup.ts`, `lib/aircraft-sharing.ts`, `lib/billing.ts`, isolated v21 draft and PG tests. Identified legacy `numberOrZero`/floating-number rate sharing and billing paths as blockers for future exact currency writes, not a reason to change current legacy behavior.
+- Added M2-A-1 review document; no code, SQL registration, DB mutation or deployment.
+
+## 13 October 2026 — Currency M2-A-0 clean-main schema review candidate
+
+- Carried 5 isolated draft/test/harness artifacts from old PR #322 to current main and updated both test-runner branch guards. Candidate SQL remains unregistered, and no new currency UI, migration, SQL execution, data rewrite or deployment was performed.
+- Exact-new-branch Node24, disposable PostgreSQL and full suite **NOT RUN**; old source static tests do not constitute real DB acceptance.
 
 ## 13 October 2026 — Currency ISO List One owner-attested XML evidence
 

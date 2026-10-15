@@ -55,7 +55,9 @@
     "GPS import review retains its map pane across theme changes",
     "map tile endpoint rejects unsupported and duplicate styles before upstream fetch",
     "D3b-1 browser: deleting one GPS track preserves the other, then Trash atomically archives expenses and retained GPS",
-    "D3b-1 browser: pending collaboration refuses ordinary Trash with no archive or evidence deletion"
+    "D3b-1 browser: pending collaboration refuses ordinary Trash with no archive or evidence deletion",
+    "Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",
+    "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs"

@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { DATABASE_SCHEMA_VERSION,pendingMigrationVersions } from "@/lib/migration-plan";
+import {allowDisposableLocalV21Migration,assertCurrencyV21SchemaEvidence,type CurrencyV21ShapeEvidence} from "@/lib/currency-v21-migration-safety";
 
 declare global{
   // eslint-disable-next-line no-var
@@ -28,6 +29,7 @@ const migrationNames:Record<number,string>={
   18:"aircraft default operation type",
   19:"aircraft default engine type",
   20:"certified flight void archive and provenance",
+  21:"source-backed currency exact-money",
 };
 
 const migrationQueries=(version:number)=>{
@@ -844,6 +846,195 @@ const migrationQueries=(version:number)=>{
       BEFORE UPDATE OR DELETE ON flights
       FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight()`,
   ];
+  if(version===21)return[
+    sql`DO $v380$
+    DECLARE
+      expected_names text[] := ARRAY[
+        'flight audit and locking',
+        'backups and recoverable trash',
+        'core query indexes',
+        'restore and route performance indexes',
+        'EASA FCL.050 flight logbook fields',
+        'FCL.050 structured aircraft, FSTD and certification',
+        'certified flight correction revisions',
+        'certified FSTD correction revisions',
+        'private beta authentication foundation',
+        'private pilot connections',
+        'instructor flight approvals',
+        'shared flight participation',
+        'crew connections and verified approvals',
+        'user-owned structured flight expenses',
+        'Safety Pilot connected PIC collaboration',
+        'general PIC invitation provenance',
+        'historical flight aircraft identity preservation',
+        'aircraft default operation type',
+        'aircraft default engine type',
+        'certified flight void archive and provenance'
+      ];
+      actual_name text;
+      v integer;
+    BEGIN
+      IF pg_is_in_recovery() THEN
+        RAISE EXCEPTION 'v21: cannot migrate a recovery replica';
+      END IF;
+      IF to_regclass('public.flytally_schema_migrations') IS NULL THEN
+        RAISE EXCEPTION 'v21: migration registry absent';
+      END IF;
+      FOR v IN 1..20 LOOP
+        SELECT name INTO actual_name FROM public.flytally_schema_migrations WHERE version=v;
+        IF actual_name IS DISTINCT FROM expected_names[v] THEN
+          RAISE EXCEPTION 'v21: registry name drift at version %',v;
+        END IF;
+      END LOOP;
+      IF (SELECT COUNT(*) FROM public.flytally_schema_migrations)<>20
+        OR EXISTS(SELECT 1 FROM public.flytally_schema_migrations WHERE version<1 OR version>20) THEN
+        RAISE EXCEPTION 'v21: registry must be exactly 1 through 20';
+      END IF;
+      IF NOT (to_regclass('public.rates') IS NOT NULL AND
+          to_regclass('public.aircraft') IS NOT NULL AND
+          to_regclass('public.flights') IS NOT NULL AND
+          to_regclass('public.flight_expenses') IS NOT NULL) THEN
+        RAISE EXCEPTION 'v21: required monetary table missing';
+      END IF;
+      IF to_regclass('public.voided_certified_flights') IS NULL
+        OR to_regclass('public.flight_source_provenance') IS NULL
+        OR to_regprocedure('public.logbook_protect_locked_flight()') IS NULL
+        OR to_regprocedure('public.logbook_protect_source_provenance()') IS NULL
+        OR NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.flights'::regclass
+          AND tgname='trg_logbook_protect_locked_flight' AND NOT tgisinternal)
+        OR NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.flights'::regclass
+          AND tgname='trg_logbook_prevent_voided_flight_id_reuse' AND NOT tgisinternal) THEN
+        RAISE EXCEPTION 'v21: required v20 protected history or triggers missing';
+      END IF;
+      IF EXISTS(
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='public' AND (
+          (table_name='rates' AND column_name='currency_code')
+          OR (table_name='rates' AND column_name='currency_minor_units')
+          OR (table_name='rates' AND column_name='price_per_hour_decimal')
+          OR (table_name='rates' AND column_name='dry_price_per_hour_decimal')
+          OR (table_name='aircraft' AND column_name='default_price_currency_code')
+          OR (table_name='aircraft' AND column_name='default_price_currency_minor_units')
+          OR (table_name='aircraft' AND column_name='default_price_per_hour_decimal')
+          OR (table_name='flights' AND column_name='price_currency_code')
+          OR (table_name='flights' AND column_name='price_currency_minor_units')
+          OR (table_name='flights' AND column_name='price_per_hour_decimal')
+          OR (table_name='flight_expenses' AND column_name='amount_encoding')
+          OR (table_name='flight_expenses' AND column_name='amount_minor_units')
+        )
+      ) THEN
+        RAISE EXCEPTION 'v21: partial or existing monetary columns - fail closed';
+      END IF;
+      IF EXISTS(
+        SELECT 1 FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
+        JOIN pg_namespace n ON n.oid=t.relnamespace
+        WHERE n.nspname='public' AND c.conname IN ('rates_exact_currency_tuple_v21_check','aircraft_exact_currency_tuple_v21_check','flights_exact_currency_tuple_v21_check','expenses_amount_encoding_v21_check')
+      ) THEN
+        RAISE EXCEPTION 'v21: partial or existing CHECK constraints - fail closed';
+      END IF;
+    END;
+    $v380$`,
+    sql`ALTER TABLE rates
+      ADD COLUMN IF NOT EXISTS currency_code TEXT,
+      ADD COLUMN IF NOT EXISTS currency_minor_units SMALLINT,
+      ADD COLUMN IF NOT EXISTS price_per_hour_decimal NUMERIC,
+      ADD COLUMN IF NOT EXISTS dry_price_per_hour_decimal NUMERIC;`,
+    sql`ALTER TABLE aircraft
+      ADD COLUMN IF NOT EXISTS default_price_currency_code TEXT,
+      ADD COLUMN IF NOT EXISTS default_price_currency_minor_units SMALLINT,
+      ADD COLUMN IF NOT EXISTS default_price_per_hour_decimal NUMERIC;`,
+    sql`ALTER TABLE flights
+      ADD COLUMN IF NOT EXISTS price_currency_code TEXT,
+      ADD COLUMN IF NOT EXISTS price_currency_minor_units SMALLINT,
+      ADD COLUMN IF NOT EXISTS price_per_hour_decimal NUMERIC;`,
+    sql`ALTER TABLE flight_expenses
+      ADD COLUMN IF NOT EXISTS amount_encoding TEXT,
+      ADD COLUMN IF NOT EXISTS amount_minor_units SMALLINT;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'rates'::regclass AND conname = 'rates_exact_currency_tuple_v21_check'
+      ) THEN
+        ALTER TABLE rates ADD CONSTRAINT rates_exact_currency_tuple_v21_check CHECK (
+          (
+            currency_code IS NULL AND currency_minor_units IS NULL
+            AND price_per_hour_decimal IS NULL AND dry_price_per_hour_decimal IS NULL
+          ) OR (
+            currency_code IS NOT NULL AND currency_code ~ '^[A-Z]{3}$'
+            AND currency_minor_units IS NOT NULL AND currency_minor_units BETWEEN 0 AND 9
+            AND price_per_hour_decimal IS NOT NULL AND price_per_hour_decimal > 0
+            AND price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+            AND (
+              dry_price_per_hour_decimal IS NULL OR (
+                dry_price_per_hour_decimal >= 0
+                AND dry_price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+              )
+            )
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'aircraft'::regclass AND conname = 'aircraft_exact_currency_tuple_v21_check'
+      ) THEN
+        ALTER TABLE aircraft ADD CONSTRAINT aircraft_exact_currency_tuple_v21_check CHECK (
+          (
+            default_price_currency_code IS NULL
+            AND default_price_currency_minor_units IS NULL
+            AND default_price_per_hour_decimal IS NULL
+          ) OR (
+            default_price_currency_code IS NOT NULL AND default_price_currency_code ~ '^[A-Z]{3}$'
+            AND default_price_currency_minor_units IS NOT NULL AND default_price_currency_minor_units BETWEEN 0 AND 9
+            AND default_price_per_hour_decimal IS NOT NULL AND default_price_per_hour_decimal >= 0
+            AND default_price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'flights'::regclass AND conname = 'flights_exact_currency_tuple_v21_check'
+      ) THEN
+        ALTER TABLE flights ADD CONSTRAINT flights_exact_currency_tuple_v21_check CHECK (
+          (
+            price_currency_code IS NULL AND price_currency_minor_units IS NULL
+            AND price_per_hour_decimal IS NULL
+          ) OR (
+            price_currency_code IS NOT NULL AND price_currency_code ~ '^[A-Z]{3}$'
+            AND price_currency_minor_units IS NOT NULL AND price_currency_minor_units BETWEEN 0 AND 9
+            AND price_per_hour_decimal IS NOT NULL AND price_per_hour_decimal >= 0
+            AND price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
+    sql`DO $currency$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'flight_expenses'::regclass AND conname = 'expenses_amount_encoding_v21_check'
+      ) THEN
+        ALTER TABLE flight_expenses ADD CONSTRAINT expenses_amount_encoding_v21_check CHECK (
+          COALESCE(
+            (amount_encoding IS NULL AND amount_minor_units IS NULL)
+            OR (amount_encoding = 'legacy_two_decimal' AND amount_minor_units = 2)
+            OR (amount_encoding = 'iso_minor_units' AND amount_minor_units IS NOT NULL AND amount_minor_units BETWEEN 0 AND 9),
+            FALSE
+          )
+        );
+      END IF;
+    END;
+    $currency$;`,
+  ];
   throw new Error(`Unknown database migration ${version}`);
 };
 
@@ -851,8 +1042,54 @@ async function migrateDatabase(){
   await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
     version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
-  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  const rows=await sql`SELECT version,name FROM public.flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string;name:string}>;
+  const registeredV21=rows.find(row=>Number(row.version)===21);
+  if(registeredV21){
+    // A migration registry row alone is not evidence of a complete physical
+    // schema. Fail closed on wrong table/type/default/nullability or missing
+    // and nonvalidated CHECK constraints before serving currency data.
+    const shapeRows=await sql`SELECT
+      (SELECT COUNT(*)::int FROM information_schema.columns
+        WHERE table_schema='public' AND is_nullable='YES' AND column_default IS NULL AND (
+          (table_name='rates' AND column_name='currency_code' AND data_type='text')
+          OR (table_name='rates' AND column_name='currency_minor_units' AND data_type='smallint')
+          OR (table_name='rates' AND column_name='price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='rates' AND column_name='dry_price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='aircraft' AND column_name='default_price_currency_code' AND data_type='text')
+          OR (table_name='aircraft' AND column_name='default_price_currency_minor_units' AND data_type='smallint')
+          OR (table_name='aircraft' AND column_name='default_price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='flights' AND column_name='price_currency_code' AND data_type='text')
+          OR (table_name='flights' AND column_name='price_currency_minor_units' AND data_type='smallint')
+          OR (table_name='flights' AND column_name='price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='flight_expenses' AND column_name='amount_encoding' AND data_type='text')
+          OR (table_name='flight_expenses' AND column_name='amount_minor_units' AND data_type='smallint')
+        )) AS columns_count,
+      (SELECT COUNT(*)::int FROM pg_constraint c
+        JOIN pg_class t ON t.oid=c.conrelid
+        JOIN pg_namespace n ON n.oid=t.relnamespace
+        WHERE n.nspname='public' AND c.contype='c' AND c.convalidated AND (
+          (t.relname='rates' AND c.conname='rates_exact_currency_tuple_v21_check')
+          OR (t.relname='aircraft' AND c.conname='aircraft_exact_currency_tuple_v21_check')
+          OR (t.relname='flights' AND c.conname='flights_exact_currency_tuple_v21_check')
+          OR (t.relname='flight_expenses' AND c.conname='expenses_amount_encoding_v21_check')
+        )) AS checks_count` as Array<CurrencyV21ShapeEvidence>;
+    assertCurrencyV21SchemaEvidence(registeredV21.name,shapeRows[0]);
+  }
   for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    // Schema-first production migration must have already committed version 21.
+    // Only an explicit, verified disposable browser fixture may create v21.
+    // Next/Turbopack may not preserve arbitrary process.env object passing.
+    // Read every opt-in and deployment marker directly; no condition is relaxed.
+    if(version===21&&!allowDisposableLocalV21Migration({
+      FLYTALLY_LOCAL_POSTGRES:process.env.FLYTALLY_LOCAL_POSTGRES,
+      FLYTALLY_AUTH_BROWSER:process.env.FLYTALLY_AUTH_BROWSER,
+      FLYTALLY_CURRENCY_V21_BROWSER:process.env.FLYTALLY_CURRENCY_V21_BROWSER,
+      VERCEL:process.env.VERCEL,
+      VERCEL_ENV:process.env.VERCEL_ENV,
+      DATABASE_URL:process.env.DATABASE_URL,
+    })){
+      throw new Error("Currency schema v21 requires approved explicit migration before runtime.");
+    }
     await sql.transaction([
       sql`SELECT pg_advisory_xact_lock(704190104)`,
       ...migrationQueries(version),

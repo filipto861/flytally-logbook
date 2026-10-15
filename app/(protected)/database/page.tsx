@@ -11,20 +11,22 @@ import { saveAircraftPhoto,removeAircraftPhoto } from "./aircraft-photo-actions"
 import { shareAircraftProfile } from "../connections/aircraft-share-actions";
 import { PendingActionButton } from "@/components/pending-action-button";
 import { getUserSaveableCalendarDefault } from "@/lib/data/user-calendar";
+import { supportedIsoCurrency } from "@/lib/iso4217-currency-registry";
 
 export const metadata={title:"Aircraft & airports | FlyTally"};
 
 const t=(value:unknown)=>String(value??"");
-type Params={view?:string;airportSearch?:string;airportPage?:string;imported?:string};
+type Params={view?:string;airportSearch?:string;airportPage?:string;imported?:string;ratesSkipped?:string};
 const resolveView=(value:unknown):DatabaseWorkspaceView=>value==="airports"||value==="health"?value:"aircraft";
 const airportHref=(query:string,page:number)=>`/database?${new URLSearchParams({view:"airports",airportSearch:query,airportPage:String(page)})}`;
 
 export default async function DatabasePage({searchParams}:{searchParams:Promise<Params>}){
   const{userId}=await requireUser(),params=await searchParams,view=resolveView(params.view),airportSearch=String(params.airportSearch||"").trim();
-  const[data,connections,calendarDefault]=await Promise.all([
+  const[data,connections,calendarDefault,currencyRows]=await Promise.all([
     getDatabaseData(userId),
     view==="aircraft"?sql`SELECT u.id,u.display_name,COALESCE(s.home_airport,'') home_airport FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END LEFT JOIN user_settings s ON s.user_id=u.id WHERE c.status='accepted' AND (c.requester_user_id=${userId} OR c.recipient_user_id=${userId}) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>:Promise.resolve([] as Array<Record<string,unknown>>),
     getUserSaveableCalendarDefault(userId),
+    view==="aircraft"?sql`SELECT currency FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>:Promise.resolve([] as Array<{currency:string}>),
   ]);
   const catalog=view==="airports"&&airportSearch?searchAirportCatalog(airportSearch,Number(params.airportPage||1),50):null;
   const activeAircraft=data.aircraft.filter(item=>Boolean(Number(item.active))).length,inactiveAircraft=data.aircraft.length-activeAircraft;
@@ -36,8 +38,9 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
 
     {view==="aircraft"?<main className="u31-workspace">
       {params.imported?<p className="form-success aircraft-import-success" role="status">{params.imported} was added to your aircraft. You can edit every imported value independently.</p>:null}
+      {params.ratesSkipped==="1"?<p className="form-error" role="alert">Some legacy shared rates were skipped because you already have exact currency rates at the same dates. Your existing precise amounts were preserved.</p>:null}
       <section className="u31-workspace-heading"><div><p className="eyebrow">AIRCRAFT</p><h2>Your aircraft</h2><p className="muted">Pick an aircraft to manage its profile or rates. Technical defaults stay inside the aircraft editor instead of filling this page.</p></div><div className="u31-counts"><span><b>{activeAircraft}</b> active</span>{inactiveAircraft?<span><b>{inactiveAircraft}</b> inactive</span>:null}</div></section>
-      <AircraftManager aircraft={data.aircraft} rates={data.rates} connections={connections} calendarDefault={calendarDefault} saveAction={saveAircraftWithResult} toggleAction={toggleAircraft} saveRateAction={saveRate} deleteRateAction={deleteRate} deleteAction={deleteAircraftWithResult} savePhotoAction={saveAircraftPhoto} removePhotoAction={removeAircraftPhoto} shareAction={shareAircraftProfile}/>
+      <AircraftManager defaultCurrency={supportedIsoCurrency(currencyRows[0]?.currency)?.code??""} aircraft={data.aircraft} rates={data.rates} connections={connections} calendarDefault={calendarDefault} saveAction={saveAircraftWithResult} toggleAction={toggleAircraft} saveRateAction={saveRate} deleteRateAction={deleteRate} deleteAction={deleteAircraftWithResult} savePhotoAction={saveAircraftPhoto} removePhotoAction={removeAircraftPhoto} shareAction={shareAircraftProfile}/>
     </main>:null}
 
     {view==="airports"?<main className="u31-workspace">

@@ -201,7 +201,13 @@ test("3.4.0 browser fixture includes credential and recency dependencies used by
   for(const column of ["qualification_type","qualification_family","regulatory_category","qualification_scope","privilege_role","classification_source","validity_mode","valid_until","recency_until"]){
     assert.match(bootstrap,new RegExp(`\\b${column}\\b`));
   }
-  assert.match(bootstrap,/generate_series\(1,19\)/);
+  // The disposable v1..v19 fixture must use canonical migration names, not
+  // an anonymous generated-series registry that v21 correctly rejects.
+  assert.ok(bootstrap.includes('readFileSync(new URL("../lib/migration-plan.ts"'));
+  assert.ok(bootstrap.includes("preappliedMigrations.length!==19"));
+  assert.ok(bootstrap.includes("preappliedMigrations.some((migration,index)=>migration.version!==index+1)"));
+  assert.ok(bootstrap.includes("preappliedMigrations.map(migration"));
+  assert.doesNotMatch(bootstrap,/browser-smoke-preapplied/);
   assert.match(bootstrap,/default_operation_type TEXT CHECK\(default_operation_type IS NULL OR default_operation_type IN \('SP','MP'\)\)/);
   assert.match(bootstrap,/default_engine_type TEXT CHECK\(default_engine_type IS NULL OR default_engine_type IN \('SE','ME'\)\)/);
   assert.match(bootstrap,/CREATE TRIGGER trg_logbook_snapshot_aircraft_identity/);

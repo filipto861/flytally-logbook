@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { validateBackupCertificationHistory,type BackupCertificationSummary } from "@/lib/backup-certification";
-import { flightRestoreKey,validateVoidHistoryRelationships,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { backupContainsExactMonetaryData,validateBackupMonetaryEvidence,flightRestoreKey,validateVoidHistoryRelationships,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
@@ -32,7 +32,8 @@ const flightRevisionKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${Number(
 const fstdRevisionKey=(row:BackupRow)=>`${String(row.fstd_session_id??"")}|${Number(row.revision_number||0)}`;
 const auditKey=(row:BackupRow)=>id(row);
 const deletedKey=(row:BackupRow)=>text(row.delete_token);
-const expenseKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${upper(row.category)}|${upper(row.label)}|${Number(row.amount_minor||0)}|${upper(row.currency)}`;
+// Compare exact integer text and preserve explicit monetary storage semantics.
+const expenseKey=(row:BackupRow)=>JSON.stringify([text(row.flight_id),upper(row.category),upper(row.label),text(row.amount_minor),upper(row.currency),text(row.amount_encoding),text(row.amount_minor_units)]);
 const splEvidenceKey=(row:BackupRow)=>`${upper(row.aircraft_context)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer??row.signer_name)}|${upper(row.reference)}`;
 const helicopterEvidenceKey=(row:BackupRow)=>`${upper(row.helicopter_type)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
 const bplEvidenceKey=(row:BackupRow)=>`${upper(row.balloon_class)}|${upper(row.balloon_group)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
@@ -84,8 +85,40 @@ function classifyProtected(source:BackupRow[],current:BackupRow[],key:(row:Backu
   return{add,skip};
 }
 
+
+// A signed v13 backup can contain currency v21 fields even when its format
+// version remains 13. PostgreSQL json_populate_record silently ignores keys
+// absent from a target table; never allow that to discard money provenance.
+async function requireMonetaryRestoreSchema(backup:PortableBackup):Promise<void>{
+  if(!backupContainsExactMonetaryData(backup))return;
+  const invalid=validateBackupMonetaryEvidence(backup);
+  if(invalid)throw new AccountRestoreConflictError(protectedHistoryConflict(
+    "Invalid exact currency evidence",
+    "Portable backup monetary evidence",
+    invalid+" Restore was blocked before any data changes."
+  ));
+  const required:Record<string,readonly string[]>={
+    rates:["currency_code","currency_minor_units","price_per_hour_decimal","dry_price_per_hour_decimal"],
+    aircraft:["default_price_currency_code","default_price_currency_minor_units","default_price_per_hour_decimal"],
+    flights:["price_currency_code","price_currency_minor_units","price_per_hour_decimal"],
+    flight_expenses:["amount_encoding","amount_minor_units"],
+  };
+  const rows=await sql`SELECT table_name,column_name FROM information_schema.columns
+    WHERE table_schema=current_schema()
+      AND table_name IN ('rates','aircraft','flights','flight_expenses')` as Array<{table_name:string;column_name:string}>;
+  const available=new Set(rows.map(row=>row.table_name+"."+row.column_name));
+  const missing=Object.entries(required).flatMap(([table,columns])=>
+    columns.filter(column=>!available.has(table+"."+column)));
+  if(missing.length)throw new AccountRestoreConflictError(protectedHistoryConflict(
+    "Currency recovery requires schema v21",
+    "Portable backup monetary evidence",
+    "The target database is missing currency columns. Recovery is blocked before any data changes."
+  ));
+}
+
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string,options:ExactRestoreOptions={}):Promise<ExactRestorePlan>{
   await Promise.all([ensureDatabaseOptimizations(),ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
+  await requireMonetaryRestoreSchema(backup);
   if(Number(backup.version)>=13&&!options.trustedSharedState&&options.authenticity!=="verified")throw new AccountRestoreConflictError(protectedHistoryConflict("Protected backup authenticity required","Portable backup v13","Version 13 protected history requires a verified server signature."));
   const certification=validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
   const externalVoidIds=[...new Set((backup.flight_source_provenance??[]).filter(row=>Number(row.source_user_id||0)!==userId&&Number(row.source_voided_flight_id||0)>0).map(row=>String(row.source_voided_flight_id)))];
@@ -101,7 +134,7 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     sql`SELECT id,fstd_session_id,revision_number,certification_hash FROM fstd_certified_revisions WHERE user_id=${userId}`,
     sql`SELECT id FROM flight_audit_log WHERE user_id=${userId}`,
     sql`SELECT id,delete_token FROM deleted_flights WHERE user_id=${userId}`,
-    sql`SELECT id,flight_id,category,label,amount_minor,currency FROM flight_expenses WHERE user_id=${userId}`,
+    sql`SELECT e.id,e.flight_id,e.category,e.label,e.amount_minor,e.currency,to_jsonb(e)->>'amount_encoding' amount_encoding,to_jsonb(e)->>'amount_minor_units' amount_minor_units FROM flight_expenses e WHERE e.user_id=${userId}`,
     sql`SELECT id,aircraft_context,evidence_date::text evidence_date,signer,reference FROM spl_recency_evidence WHERE user_id=${userId}`,
     sql`SELECT id,helicopter_type,evidence_date::text evidence_date,signer,reference FROM helicopter_recency_evidence WHERE user_id=${userId}`,
     sql`SELECT id,balloon_class,balloon_group,evidence_date::text evidence_date,signer,reference FROM bpl_recency_evidence WHERE user_id=${userId}`,
@@ -186,6 +219,7 @@ function stageFstd(row:BackupRow):BackupRow{return{...row,certified_at:null,cert
 
 export async function executeExactAccountRestore(userId:number,backup:PortableBackup,plan:ExactRestorePlan){
   await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
+  await requireMonetaryRestoreSchema(backup);
   validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
   const maxAudit=await sql`SELECT COALESCE(MAX(id),0)::bigint id FROM flight_audit_log` as Array<{id:number|string}>;const auditFloor=Number(maxAudit[0]?.id||0);
   const queries:any[]=[];

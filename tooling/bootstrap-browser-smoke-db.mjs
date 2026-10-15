@@ -1,5 +1,6 @@
 import { randomBytes,scrypt as nodeScrypt } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { promisify } from "node:util";
 
 const databaseUrl=process.env.DATABASE_URL?.trim();
@@ -13,6 +14,18 @@ const salt=randomBytes(16);
 const digest=await scrypt(password,salt,32,{N:131072,r:8,p:1,maxmem:256*1024*1024});
 const passwordHash=`scrypt$n=131072,r=8,p=1$${salt.toString("base64url")}$${Buffer.from(digest).toString("base64url")}`;
 const quote=value=>`'${String(value).replaceAll("'","''")}'`;
+
+// This disposable fixture models a database with migrations 1..19 already
+// registered. Use the canonical registry names instead of fake placeholders:
+// v21 runtime correctly rejects a name mismatch, including in test fixtures.
+const migrationPlan=readFileSync(new URL("../lib/migration-plan.ts",import.meta.url),"utf8");
+const preappliedMigrations=[...migrationPlan.matchAll(/\{version:(\d+),name:"([^"]+)"\}/g)]
+  .map(match=>({version:Number(match[1]),name:match[2]}))
+  .filter(migration=>migration.version<=19);
+if(preappliedMigrations.length!==19||
+  preappliedMigrations.some((migration,index)=>migration.version!==index+1)){
+  throw new Error("Browser pre-applied schema registry must contain canonical migrations 1..19.");
+}
 
 const featureKeys=[
   "v1.32-integrity-foundation",
@@ -37,8 +50,8 @@ DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
 
 CREATE TABLE flytally_schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
-INSERT INTO flytally_schema_migrations(version,name)
-SELECT value,'browser-smoke-preapplied' FROM generate_series(1,19) value;
+INSERT INTO flytally_schema_migrations(version,name) VALUES
+${preappliedMigrations.map(migration=>`(${migration.version},${quote(migration.name)})`).join(",\n")};
 
 CREATE TABLE flytally_feature_migrations(migration_key TEXT PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_feature_migrations(migration_key) VALUES
@@ -216,9 +229,10 @@ CREATE TABLE deleted_flights (
   restored_at TIMESTAMPTZ,
   restored_flight_id BIGINT
 );
--- The browser fixture pre-applies schema v1..v19. Keep the two FSTD
--- tables expected by v13 full-account pre-track-delete signed backups;
--- these definitions mirror the original optimizer migration shape.
+-- This disposable browser fixture pre-applies schema v1..v19 plus the
+-- certified-correction optimizer changes. Both FSTD tables must expose the
+-- exact columns used by v13 recovery preview/execution, including v1.3x
+-- record_revision and correction evidence, without changing production SQL.
 CREATE TABLE fstd_sessions (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
@@ -232,6 +246,10 @@ CREATE TABLE fstd_sessions (
   certified_by_user_id BIGINT,
   certification_hash TEXT NOT NULL DEFAULT '',
   certification_version INTEGER NOT NULL DEFAULT 1,
+  record_revision INTEGER NOT NULL DEFAULT 1,
+  correction_reason TEXT NOT NULL DEFAULT '',
+  correction_opened_at TIMESTAMPTZ,
+  correction_opened_by_user_id BIGINT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

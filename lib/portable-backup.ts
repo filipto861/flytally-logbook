@@ -1,4 +1,5 @@
 import { canonicalEvidenceJson } from "./canonical-evidence.ts";
+import { supportedIsoCurrency } from "./iso4217-currency-registry.ts";
 
 export type BackupRow=Record<string,unknown>;
 export type PortableBackup={
@@ -10,6 +11,115 @@ export type PortableBackup={
   voided_certified_flights?:BackupRow[];voided_flight_certified_revisions?:BackupRow[];voided_flight_verifications?:BackupRow[];voided_flight_archive_items?:BackupRow[];flight_source_provenance?:BackupRow[];
   integrity:{algorithm:string;payload_sha256:string;signature_version?:number;server_signature?:string};
 };
+
+/**
+ * v13 format stays unchanged; inspect records rather than trusting schema_version.
+ * An upgraded database can export all-null v21 fields for legacy records.
+ * Such NULLs do NOT prove a historical denomination.
+ */
+export function backupContainsExactMonetaryData(backup:PortableBackup):boolean{
+  const present=(value:unknown)=>value!==null&&value!==undefined;
+  const asRow=(value:unknown):BackupRow|null=>
+    value!==null&&typeof value==="object"&&!Array.isArray(value)?value as BackupRow:null;
+  const has=(value:unknown,keys:readonly string[])=>{
+    const row=asRow(value);
+    return !!row&&keys.some(key=>present(row[key]));
+  };
+  const rate=["currency_code","currency_minor_units","price_per_hour_decimal","dry_price_per_hour_decimal"];
+  const aircraft=["default_price_currency_code","default_price_currency_minor_units","default_price_per_hour_decimal"];
+  const flight=["price_currency_code","price_currency_minor_units","price_per_hour_decimal"];
+  const expense=["amount_encoding","amount_minor_units"];
+  const any=(rows:readonly BackupRow[]|undefined,keys:readonly string[])=>
+    (rows??[]).some(row=>has(row,keys));
+  const archived=(row:BackupRow)=>has(row.flight_data,flight)
+    ||(Array.isArray(row.expenses_data)&&row.expenses_data.some(item=>has(item,expense)));
+  return any(backup.rates,rate)||any(backup.aircraft,aircraft)
+    ||any(backup.flights,flight)||any(backup.flight_expenses,expense)
+    ||(backup.deleted_flights??[]).some(archived)
+    ||(backup.voided_certified_flights??[]).some(row=>has(row.flight_snapshot,flight))
+    ||(backup.voided_flight_archive_items??[]).some(row=>
+      has(row.source_data,flight)||has(row.source_data,expense));
+}
+
+/**
+ * Source-backed monetary evidence validation for signed-v13 restores. This does
+ * not re-denominate legacy records or rewrite a signed/voided snapshot.
+ * Return a stable reason instead of allowing a partial monetary tuple to pass.
+ */
+export function validateBackupMonetaryEvidence(backup:PortableBackup):string|null{
+  if(!backupContainsExactMonetaryData(backup))return null;
+  const present=(value:unknown)=>value!==null&&value!==undefined;
+  const obj=(value:unknown):BackupRow|null=>
+    value!==null&&typeof value==="object"&&!Array.isArray(value)?value as BackupRow:null;
+  // Live NUMERIC columns are strings, but snapshots embedded in JSONB can be
+  // JSON numeric tokens. Accept only finite plain-decimal tokens without
+  // reconstructing or guessing lost precision.
+  const plainDecimal=(value:unknown):string|null=>{
+    const valueText=typeof value==="string"?value:typeof value==="number"&&Number.isFinite(value)?String(value):null;
+    return valueText!==null&&/^(?:0|[1-9]\d{0,14})(?:\.\d{1,12})?$/.test(valueText)?valueText:null;
+  };
+  const invalidTuple=(row:BackupRow,codeKey:string,minorKey:string,decimalKey:string,legacyKey:string,
+    positive:boolean,dryKey?:string,dryLegacyKey?:string):boolean=>{
+    const keys=[codeKey,minorKey,decimalKey,...(dryKey?[dryKey]:[])];
+    if(!keys.some(key=>present(row[key])))return false; // legacy: denomination unknown
+    const currency=supportedIsoCurrency(row[codeKey]),decimal=plainDecimal(row[decimalKey]);
+    if(!currency||row[codeKey]!==currency.code||row[minorKey]!==currency.minorUnits
+      ||decimal===null
+      ||(positive?Number(decimal)<=0:Number(decimal)<0)
+      ||typeof row[legacyKey]!=="number"||!Number.isFinite(row[legacyKey])
+      ||Number(decimal)!==row[legacyKey])return true;
+    if(dryKey){
+      const dry=row[dryKey],oldDry=row[dryLegacyKey??""];
+      if(present(dry)!==present(oldDry))return true;
+      if(present(dry)&&(plainDecimal(dry)===null
+        ||typeof oldDry!=="number"||!Number.isFinite(oldDry)
+        ||Number(dry)!==oldDry))return true;
+    }
+    return false;
+  };
+  const invalidExpense=(row:BackupRow):boolean=>{
+    const encoding=row.amount_encoding,minor=row.amount_minor_units;
+    if(!present(encoding)&&!present(minor))return false; // legacy two-decimal storage
+    if(encoding==="legacy_two_decimal"&&minor===2)return false;
+    if(encoding!=="iso_minor_units")return true;
+    const iso=supportedIsoCurrency(row.currency);
+    return !iso||minor!==iso.minorUnits
+      ||!/^\d+$/.test(String(row.amount_minor??""))
+      ||Number(row.amount_minor)<=0||Number(row.amount_minor)>1_000_000_000;
+  };
+  const flight=(row:BackupRow)=>invalidTuple(row,"price_currency_code","price_currency_minor_units",
+    "price_per_hour_decimal","price_per_hour",false);
+  const expense=(row:BackupRow)=>invalidExpense(row);
+  for(const item of backup.rates??[])if(invalidTuple(item,"currency_code","currency_minor_units",
+    "price_per_hour_decimal","price_per_hour",true,"dry_price_per_hour_decimal","dry_price_per_hour"))
+    return "A saved hourly rate has inconsistent or unsupported currency evidence.";
+  for(const item of backup.aircraft??[])if(invalidTuple(item,"default_price_currency_code",
+    "default_price_currency_minor_units","default_price_per_hour_decimal","default_price_per_hour",false))
+    return "An aircraft default rate has inconsistent or unsupported currency evidence.";
+  for(const item of backup.flights??[])if(flight(item))
+    return "A flight contains inconsistent or unsupported currency evidence.";
+  for(const item of backup.flight_expenses??[])if(expense(item))
+    return "An expense contains invalid currency precision or encoding.";
+  for(const item of backup.deleted_flights??[]){
+    const archived=obj(item.flight_data);
+    if(archived&&flight(archived))return "An archived flight contains invalid currency evidence.";
+    if(Array.isArray(item.expenses_data)){
+      for(const value of item.expenses_data){
+        const oldExpense=obj(value);
+        if(oldExpense&&expense(oldExpense))return "An archived expense contains invalid currency evidence.";
+      }
+    }
+  }
+  for(const item of backup.voided_certified_flights??[]){
+    const snapshot=obj(item.flight_snapshot);
+    if(snapshot&&flight(snapshot))return "A voided certified flight contains invalid currency evidence.";
+  }
+  for(const item of backup.voided_flight_archive_items??[]){
+    const value=obj(item.source_data);
+    if(value&&(flight(value)||expense(value)))return "A protected archived item contains invalid currency evidence.";
+  }
+  return null;
+}
 
 const legacyArrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks","track_points"] as const;
 const currentCoreArrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks"] as const;
