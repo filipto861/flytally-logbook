@@ -136,6 +136,12 @@ async function main(){
     });
     const metadata=await encryptArchive(dump.stdout,partial,password);
     must((await exit)===0,"pg_dump failed: "+errorText.slice(-700));
+    // The manifest records a separate pre-dump SELECT, while pg_dump uses
+    // its own MVCC snapshot. Refuse to claim parity if any monitored counts,
+    // protected row digests or schema identity changed during acquisition.
+    const after=preflight(env);
+    must(JSON.stringify(after)===JSON.stringify(schema),
+      "Production schema/record evidence changed during export; discard and retry in a quiet window.");
     // Exclusive hard-link creation is atomic and will never overwrite an
     // existing archive even under a random-name collision.
     await fs.link(partial,finalPath);
