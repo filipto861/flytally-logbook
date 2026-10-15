@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**15 Oct 2026 — external backup PG18 tiny/empty archive diagnosis.** Owner `c0d6f2d4` validated 4/4 targeted tests and synthetic PG18 startup/cleanup; end-to-end failed at stage 05 with `Encrypted database archive unexpectedly small`. Root cause ambiguous: old arbitrary 1KiB floor checked before actual `pg_dump` process exit. Changed archive codec to validate nonempty source + optional PGDMP signature and exact size, and capture actual `pg_dump` exit diagnostics; small-archive regression added. Source syntax/readback only, retest PENDING. No real production backup, v21 release remains NO-GO.
+
 ## 15 Oct 2026 — synthetic PG18 local test failure: pg_ctl ETIMEDOUT (investigation)
 
 Owner reported last PG18 synthetic test **FAIL**, exact console `SYNTHETIC PG18 CHECK NOT PASS: pg_ctl failed: spawnSync C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe ETIMEDOUT`. Concurrent targeted encrypted-archive tests **3/3 PASS** and PostgreSQL18 binaries `check` PASS, but **actual pg_dump→restore integrated synthetic gate remains FAIL/NOT VERIFIED**; no production connection/export/migration. That run's console had **no** newly staged `[PG18 synthetic] 00/10...` progress labels, indicating it ran an older script revision (or at least not the GitHub code with those labels); successful `git pull --ff-only` had reported `Already up to date` before later GitHub source changes appeared.
