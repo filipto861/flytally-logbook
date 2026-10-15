@@ -1,5 +1,22 @@
 # FlyTally Logbook 3.8.0 — off-Neon v20 archival/recovery gate (15 October 2026)
 
+## 15 October 2026 — R1-B/C security implementation staged; R1-D actual owner tests PENDING
+
+This addendum supersedes older run instructions that mention manifest `schema:1`/`verified_restore` or `initdb -A trust`. No real archive should exist yet; unsigned v1 manifests are now **explicitly refused** and must never be silently trusted/migrated.
+
+**Updated architecture:** `tooling/v380-backup-manifest.mjs` signs the **immutable v2 JSON** with per-archive random-salt domain-separated HMAC-SHA256; AES-GCM ciphertext is independently authenticated; original backup SHA256 and selected schema/count/provenance facts are MAC-bound. The audit `.verification-<timestamp>.json` is a separate non-authoritative local receipt and can NEVER replace manifest verification. `tooling/v380-windows-private.mjs` restricts the source backup directory and temporary local real-data PG18 directory with SID-based NTFS ACLs before sensitive writes. `initdb` uses SCRAM with a random per-run 36-byte bootstrap secret through an ACL-protected short-lived `--pwfile`, never `trust` for actual customer flight records; a wrong-password connection must be denied. `pg_restore --list` reads only authenticated decrypted metadata via stdin before any local PG18 SQL; full archive inventory and extension availability checked; atomic `pg_restore --single-transaction` retained, must fail closed on mismatch.
+
+**Real-data restrictions (DO NOT run yet):** trusted physically controlled Windows host with encrypted volume required, no live untrusted users, secure custody of archive password in a distinct location, no connection URL/key/archive data in chat/repo. The `FLYTALLY_CONFIRMED_ENCRYPTED_VOLUME=YES` variable on a future approved *real-data restore* is only an explicit operator acknowledgment, not cryptographic verification of BitLocker. The new manifest is signed only when an archive is actually exported, not in the `check` command. The backup recovery proof remains weaker than a complete signed portable account-v13 historical recovery and cannot be cited as such. Archive/source snapshot is PG-consistent through `pg_dump`, but pre/post `psql` evidence remains distinct MVCC snapshots; matching selected counts/digests cannot prove all rows were identical to the external SELECT evidence.
+
+**Next safe non-production tests only:**
+```powershell
+git pull --ff-only
+npm run test:target -- tests/v380-off-neon-archive.test.ts
+node tooling/v380-off-neon-export.mjs check
+node tooling/v380-off-neon-pg18-synthetic-test.mjs
+```
+Expected **10/10** archive regressions and a complete fresh disposable PG18 synthetic PASS including real SCRAM/wrong-password refusal, authenticated manifest, TOC, AES-GCM, single-transaction restore, source/target data equality, and owned PG18 cleanup. These tests have **NOT RUN on the R1 patch**. Failures must be reconciled before export. Follow with exact-commit independent DeepSeek read-only re-review of `docs/product/3_8_0_OFF_NEON_SECURITY_R1_DISPOSITION_2026-10-15.md` + code, then separate approval of any use of real production data.
+
 ## 15 October 2026 — actual synthetic PostgreSQL18 encrypted backup/restore locally PASS (not real production)
 
 Owner verified candidate SHA `9d26c2cb6d01dcf596f64dd6186fbc300323c8ae`: archive crypto/security/fast-exit tests **7/7 PASS** and synthetic PG18 integration script **PASS** through all 10 stages, including isolated PG18 new DBs on random loopback port `62750`, custom-format **2,806-byte pg_dump**, AES-256-GCM streaming encryption, complete authenticated ciphertext validation before restore, `pg_restore --single-transaction`, synthetic data/hash parity and removal of its owned local PG18 instance. Prior failed test reports are historical and superseded **for the synthetic gate only**. **No current Neon production export, encrypted production archive, external recovery copy, production-data restore, signed portable account v13 recovery or independent reviewer verdict exists yet.**
