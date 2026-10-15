@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — Currency browser environment fail-closed diagnosis (unreleased, NOT TESTED)
+
+- On owner-local `2dd3a182d84a87ee80c0235a52af1196476852cd`, targeted `v380-currency-signed-backup-schema.test.ts` **9/9 PASS**, disposable PG16 identity verified, optimized Next production build PASS, but authenticated Playwright **0/8 FAIL** again from the same `Currency schema v21 requires approved explicit migration before runtime` error. Moving build after DB/flag setup did **not** resolve failure. Missing explicit `Disposable Currency browser fixture is ready...` line in harness output is evidence that currency-specific opt-in may be missing in the harness, not yet confirmed as root cause.
+- Added explicit `--currency-v21` purpose token to the dedicated runner, and native Node environment-inheritance check before build. `tooling/run-auth-browser.mjs` now requires the correct named fixture and purpose flags **before** calling destructive browser bootstrap and strips the dedicated switch before invoking Playwright. Generic D3b browser calls without currency intent remain supported. Added source regression to enforce explicit opt-in, native Node check, correct argument routing and pre-bootstrap fail closed.
+- **New diagnostic SHA tests/browser NOT RUN.** Did not modify lib/database runtime guard, released v21 SQL, Neon, or production. Existing Node 1555/1555 and PG 20/20 PASS remain evidence only for previous `4ea4a38a` SHA; no claim of complete new acceptance. Release NO-GO, PR #338 Draft.
+
 ## 15 October 2026 — Currency v21 browser test build environment ordering (unreleased, NOT TESTED)
 
 - Owner-local candidate `4ea4a38a` targeted 46/46 PASS, TypeScript PASS, isolated PG16 static 6/6 + native schema 9/9 + executable v21 release 5/5 PASS; full Node **1555/1555 PASS**, local optimized Next build PASS (41/41 static pages). Authenticated Playwright **0/8 FAIL**. The Next server rejected guarded v21 DDL (`Currency schema v21 requires approved explicit migration before runtime`); first browser logins remained at `/login`, subsequent fixtures lacked `flights.price_currency_code`; all eight failed in shared environment precondition, not demonstrated separate application regressions.

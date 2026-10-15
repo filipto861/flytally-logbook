@@ -1,5 +1,22 @@
 # FlyTally Logbook 3.8 — R1 DeepSeek code-level findings and corrective batch
 
+## 15 October — currency browser 0/8 repeats after isolated pre-build ordering; explicit intent diagnostic
+
+Owner tested `2dd3a182d84a87ee80c0235a52af1196476852cd`: focused signed backup/source **9/9 PASS**, unique disposable Postgres16 `flytally_currency_test|flytally|127.0.0.1|49350` verified, Next optimized build PASS, authenticated desktop+mobile browser **0/8 FAIL**. The server still refuses guarded v21 with `Currency schema v21 requires approved explicit migration before runtime`, first logins stay at `/login`, other fixture writes fail because `flights.price_currency_code` is absent. Therefore prior build-before-env causal hypothesis **not proven and correction was insufficient**.
+
+The normal harness `run-auth-browser.mjs` should print `Disposable Currency browser fixture is ready for guarded runtime v20/v21 migration.` after bootstrap if `FLYTALLY_CURRENCY_V21_BROWSER==='1'`. This exact line is absent from both owner logs even though the generic `Browser smoke database ready.` line is present. This raises a concrete environment-inheritance/purpose-flag hypothesis; cannot conclude root cause yet.
+
+Diagnostic code commit `80ad184b91ea63ca76f80d0a522f47e2a6de2641` adds explicit `--currency-v21` CLI opt-in to dedicated currency PowerShell runner; native Node child environment probe validates all three flags before build; harness checks explicit CLI intent, purpose flags, absent Vercel markers, protocol/host/port/user/database identity **before** dropping public fixture schema, then strips dedicated CLI token before invoking Playwright. Legacy D3b usage without `--currency-v21` remains valid. Source regression added. Application runtime and released migration SQL unchanged. **No new local execution performed.**
+
+Next:
+```powershell
+git pull --ff-only
+npm run test:target -- tests/v380-currency-signed-backup-schema.test.ts
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-380-browser-local.ps1
+```
+Inspect explicit PowerShell->Node and harness pre-bootstrap PASS messages. If either check fails, stop early and reconcile env inheritance without browser cascade. If both PASS but Next denies version21, next investigation must focus on server-bundled `process.env` access or a different denied predicate; do not weaken production guard or guess an unconditional local exception. Gate4 and full acceptance remain **FAILED** until actual 8/8, H4 and all operational release gates OPEN.
+
+
 ## 15 October — complete owner-local Node/PG/build PASS, browser gate failure and build-order correction
 
 Exact owner-local SHA `4ea4a38a265161af49927e3d0a24f681a0d151de`: prior two stale source tests fixed, targeted 46/46 PASS, TypeScript PASS; newly created/verified/disposed PG16 static SQL 6/6, native schema 9/9 and executable release 5/5 PASS. Aggregate source/Node 1555/1555 PASS. Optimized Next.js `next build` PASS with 41/41 static pages. Eight authenticated desktop/mobile Playwright scenarios **all FAIL**: production-mode server logged `Currency schema v21 requires approved explicit migration before runtime`; navigation stays at login for first scenarios and currency-specific fixtures later fail because `flights.price_currency_code` is absent. No direct evidence of independent eight UI bugs: common guarded migration prerequisite failed. Browser Gate4 and full acceptance therefore FAIL.

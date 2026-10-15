@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**15 Oct 2026 — Currency v21 authenticated E2E still FAIL (not live).** Owner-local test on `2dd3a182` passed isolated source 9/9, verified disposable PG16 and optimized build, but browser 0/8: runtime rejected v21 auto-migration and currency columns remained absent. Browser-purpose confirmation line was missing. Diagnostic candidate adds explicit currency CLI intent and two safe environment preflight checks before schema bootstrap; no runtime/production SQL changes. New tests/browser NOT RUN. See ROADMAP and R1 reconciliation.
+
 **15 Oct 2026 — v21 currency acceptance partial only.** Exact `4ea4a38a` owner-local Gate1–3 PASS (native PG16 20/20; Node 1555/1555; optimized Next build PASS), Gate4 isolated authenticated browser 0/8 due v21 migration fail-closed at app bootstrap. Correction `d19995e2` compiles browser build after verified disposable DB and purpose flags; includes Vercel-marker veto and source regression; **new SHA NOT TESTED**. All live schema/release guards unchanged; v21 NOT LIVE.
 
 **15 Oct 2026 — R1 v21 correction still not released.** Owner-local acceptance on `7e0a39d8` confirmed PG16 schema and executable SQL safety (6/6+9/9+5/5), but Node suite 1553/1555 stopped on two historic duplicated `auditedTotal=395` checks. Removed those duplicates only in tests, preserving central exact module audit and all domain assertions. New commit `efcda5dc` **NOT TESTED**; optimized build, Playwright and production migration NOT RUN. See ROADMAP and R1 reconciliation.
