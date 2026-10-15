@@ -108,7 +108,7 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
   seed(flightId);
   runBrowserSql(`
     BEGIN;
-    UPDATE flights SET registration='${registration}',price_per_hour=1234.125,
+    UPDATE flights SET registration='${registration}',billing_basis='BLOCK',price_per_hour=1234.125,
       price_currency_code='KWD',price_currency_minor_units=3,price_per_hour_decimal=1234.125
       WHERE id=${flightId} AND user_id=9001;
     UPDATE flight_expenses SET amount_minor=12345,currency='KWD',
@@ -146,6 +146,19 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
   expect(scalar(`SELECT amount_minor||':'||currency||':'||amount_encoding||':'||amount_minor_units
     FROM flight_expenses WHERE flight_id=${restoredId} AND user_id=9001 AND currency='JPY'`)).toBe("250:JPY:iso_minor_units:0");
   expect(scalar(`SELECT COUNT(*) FROM flight_tracks WHERE flight_id=${restoredId} AND user_id=9001`)).toBe("2");
+  // Real post-v21 authenticated UI acceptance for PR #340:
+  // the source billing/ISO tuple must be reflected by both aggregate surfaces.
+  // 1234.125 KWD/hour × 55 BLOCK minutes / 60 = 1131.28125,
+  // half-up at 3 fractional units => exactly 1,131.281 KWD.
+  const expectedCost="1,131.281 KWD";
+  await page.goto(`/flights?registration=${encodeURIComponent(registration)}`);
+  await expect(page.locator(".flight-summary")).toContainText(expectedCost);
+  await expect(page.locator(".flight-summary")).not.toContainText("Currency unknown");
+  await page.goto("/statistics?period=all&section=aircraft");
+  const registrationRow=page.locator(".numeric-table tbody tr").filter({hasText:registration});
+  await expect(registrationRow).toHaveCount(1);
+  await expect(registrationRow).toContainText(expectedCost);
+
 });
 
 
