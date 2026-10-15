@@ -149,6 +149,28 @@ try {
   # Source fixture is intentionally the same as the accepted Currency browser gate.
   & node (Join-Path $repoPath "tooling\bootstrap-browser-smoke-db.mjs")
   Assert-Exit "H4 disposable v19 bootstrap"
+  # The shared 3.8 browser seed models only the surfaces its tests use.
+  # Add the FROZEN v20 database-workspace projection fields absent in that
+  # seed so H4 does not mistake a test-fixture omission for a v21 regression.
+  # This SQL is on the owned disposable loopback database only; real v20 app
+  # queries were inventoried from frozen lib/data/database.ts before addition.
+  $v20WorkspaceFixture = @'
+ALTER TABLE rates ADD COLUMN aircraft_type TEXT NOT NULL DEFAULT '';
+ALTER TABLE rates ADD COLUMN dry_price_per_hour NUMERIC;
+ALTER TABLE rates ADD COLUMN source TEXT NOT NULL DEFAULT '';
+ALTER TABLE airports ADD COLUMN municipality TEXT NOT NULL DEFAULT '';
+ALTER TABLE airports ADD COLUMN iso_country TEXT NOT NULL DEFAULT '';
+CREATE TABLE aircraft_photos(
+  aircraft_id BIGINT NOT NULL, user_id BIGINT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY(aircraft_id,user_id)
+);
+INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source)
+VALUES(9001,'OK-E2E','B23','2026-01-01',1320.50,1150.25,'manual');
+'@
+  & $psql -X -w -v ON_ERROR_STOP=1 -d $env:DATABASE_URL -c $v20WorkspaceFixture
+  Assert-Exit "H4 frozen v20 workspace baseline fixture"
+
   & node (Join-Path $repoPath "tooling\apply-currency-v21-disposable.mjs")
   Assert-Exit "H4 canonical schema-first v20/v21 staging"
 
