@@ -7,6 +7,7 @@ import {tmpdir} from "node:os";
 import {join,resolve,relative,sep,basename} from "node:path";
 import {decryptArchive,fileSha256} from "./v380-backup-archive.mjs";
 import {verifyManifest} from "./v380-backup-manifest.mjs";
+import {inspectPgRestoreToc} from "./v380-backup-toc.mjs";
 import {restrictWindowsDirectory,createEphemeralPwfile} from "./v380-windows-private.mjs";
 
 // Owner-local only. NEVER connect pg_restore to production, Neon, or any
@@ -143,6 +144,10 @@ async function main(){
   console.log("CAUTION: isolated local test briefly contains decrypted production data.");
   const accepted=await hidden("Type RESTORE_TEST to confirm isolated local restore only (hidden): ");
   must(accepted==="RESTORE_TEST","Operator did not confirm temporary local restore.");
+  const toc=await inspectPgRestoreToc(archive,pass,exe("pg_restore"));
+  must(toc.tableCount>=50,"Authenticated archive TOC has fewer than 50 TABLE objects.");
+  console.log("Authenticated PG18 archive TOC: "+toc.tableCount+
+    " tables; "+toc.extensions.length+" extensions. No database connection used.");
   // Real decrypted production records may live temporarily on this device.
   // Fail closed unless the owner confirms a trusted, encrypted local volume.
   must(process.env.FLYTALLY_CONFIRMED_ENCRYPTED_VOLUME==="YES",
@@ -187,6 +192,13 @@ async function main(){
       env:invalidEnv,encoding:"utf8",timeout:15000,windowsHide:true});
     must(denied.status!==0&&!denied.error,
       "SCRAM denial test FAILED; local PG18 accepts an invalid password.");
+    // The fresh local PG18 must actually ship every extension referenced by
+    // the immutable, authenticated source archive before any SQL is executed.
+    const available=run("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1",
+      "-c","SELECT name FROM pg_available_extensions"],env);
+    const installed=new Set(available.split(/\r?\n/).filter(Boolean));
+    for(const ext of toc.extensions)
+      must(installed.has(ext),"Restored archive references missing local PostgreSQL extension: "+ext);
     const child=spawn(exe("pg_restore"),
       ["--single-transaction","--exit-on-error","--no-owner","--no-acl","--dbname="+name],
       {env,stdio:["pipe","ignore","pipe"],windowsHide:true});
