@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 15 October 2026 — synthetic PG18 encrypted backup stage-05 failure triaged (fix NOT YET EXECUTED)
+
+- Owner cleanly removed three abandoned synthetic PG18 folders after stopping verified test-only PostgreSQL. On code `c0d6f2d4`, 4/4 crypto/source regression tests PASS; isolated synthetic PG18 reached stage 05/10 then **FAIL** `Encrypted database archive unexpectedly small`. Logged stage 10 owned PG18 shutdown/cleanup without warning; no PASS for PostgreSQL dump→restore.
+- Analysis: `v380-backup-archive.mjs` imposed arbitrary ciphertext minimum (header+GCM tag+1024) before callers could read `pg_dump` process exit/stderr. Either an unusually short valid compressed test dump or a failed/empty child could trigger it; original error does not distinguish them. 
+- Replaced 1024-byte threshold with streaming **nonempty plaintext and optional PGDMP signature** validation (chunk-safe); AES-GCM authentication and exact ciphertext size retained. Both production export and synthetic driver now require exact PostgreSQL custom-format signature; actual child exit/stderr surfaced on error and archive never marked complete on failure. Added tests for tiny signed payload, zero payload and invalid signature plus source diagnostic guards. **New tests/PG18 rehearsal NOT RUN**; only source syntax readback verified.
+- No production Neon DB access/export/restore, v21 DDL, merge or deploy. PR #338 remains Draft, release NO-GO until synthetic runtime test & independent reviewer and recoverability gates.
+
 ## 15 Oct 2026 — synthetic PG18 local test failure: pg_ctl ETIMEDOUT (investigation)
 
 Owner reported last PG18 synthetic test **FAIL**, exact console `SYNTHETIC PG18 CHECK NOT PASS: pg_ctl failed: spawnSync C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe ETIMEDOUT`. Concurrent targeted encrypted-archive tests **3/3 PASS** and PostgreSQL18 binaries `check` PASS, but **actual pg_dump→restore integrated synthetic gate remains FAIL/NOT VERIFIED**; no production connection/export/migration. That run's console had **no** newly staged `[PG18 synthetic] 00/10...` progress labels, indicating it ran an older script revision (or at least not the GitHub code with those labels); successful `git pull --ff-only` had reported `Already up to date` before later GitHub source changes appeared.
