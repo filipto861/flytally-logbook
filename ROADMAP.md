@@ -1,5 +1,22 @@
 # FlyTally Logbook — ROADMAP
 
+## 15 Oct 2026 — H4 actual old-v20 application on v21: isolated runnable gate STAGED (not yet executed)
+
+**Specific next required gate:** functional proof that frozen last Vercel production code `dcc8ebbfda0eadfa01345cd875ef1db806a19e26` (schema version 20) can still read/write safely when canonical v21 DDL is applied *before* new application deployment, so application-only rollback remains viable. New code SHA `66e1d7683f1f409a9ac6cc0581586bd3b8124ec2` contains **test infrastructure only**, not production money/business code:
+- `tooling/run-currency-380-h4-v20-rollback-local.ps1` copies the accepted localhost PG16 safety harness into a *separate* H4 script, creates its own random nondefault-loopback-port `flytally_currency_test` with fresh test-only secrets, validates actual DB identity and build purpose, uses known browser fixture v1–v19, adds only explicitly documented missing **frozen-v20 database workspace test projection** columns, stages exact v20 and v21 runtime SQL and both registry rows on the disposable DB, verifies **1 v21 row / 12 columns / 4 validated CHECKs**, then checks out immutable **actual production v20 SHA** via detached temporary `git worktree`, `npm ci` and `npm run build`. It launches the **old worktree's own Next application and original `e2e/trash-integrity.spec.mjs`**, plus one new targeted H4 browser spec copied into that temporary checkout, on desktop/mobile Chromium with **0 retries and server reuse disabled**. Its old runtime has no Currency test-only auto-DDL flag. After tests, it checks v21 schema remains intact and no legacy flight silently acquires v21 money metadata; stops only its own cluster and removes only its own worktree.
+- `e2e/v380-h4-frozen-v20.spec.mjs`: login, old authenticated flights/flight details and aircraft/rate workspace, test-only synthetic certified flight remains certified/read-only and retains NULL new exact-money fields. Separate synthetic IDs per Playwright project.
+- `tests/v380-h4-rollback-contract.test.ts`: static source-level safety, frozen SHA, orchestration order, test-only scope and cleanup regressions. **GitHub readback of source anchors succeeded, NOT Node execution**.
+
+**Acceptance evidence:** code source verification only, Windows PowerShell, npm, Next.js build, PG schema setup and authenticated old-v20 Playwright **NOT RUN** at the new SHA. Prior four-gate 1555/1555 PASS applies exclusively to application code `42e72909`; newly added tests require their own run, do not transfer test count. No production/Neon/branch/backup/schema/merge/deploy mutation performed.
+
+**Owner Windows command**, on clean `feat/3.8.0-m2a0-schema-review-main` with Node24/PostgreSQL16 and old commit available locally:
+```powershell
+git pull --ff-only
+npm run test:target -- tests/v380-h4-rollback-contract.test.ts
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-380-h4-v20-rollback-local.ps1
+```
+If the original v20 browser spec or new H4 browser spec fails, **H4 remains FAIL**; diagnose first genuine old-runtime/database-fixture error, and do not silently weaken or omit tests. Even an H4 PASS does NOT establish historic production signed-v13 restore/off-provider backup; source review and explicit separate owner GO remain required. PR #338 Draft, release NO-GO.
+
 ## 15 Oct 2026 — temporary checkpoint proof branch DELETED (owner approved, verified)
 
 Owner explicitly authorized disposal of **only** the completed PG18 checkpoint-read test child `br-lucky-shape-b16omzi4` (`ft-380-checkpoint-readonly-restore-proof-20261015`). Pre-delete identity and exact parent `br-shiny-bonus-b1gqt9u7` confirmed; branch was non-primary/non-default/unprotected and had no child branches or dependent snapshots. Neon deletion succeeded. Independent post-delete `list_branches` confirmed target **ABSENT**, Logbook now **5 branches**, current production/default `br-raspy-fog-b1btvu5t` still READY, immutable-intended no-compute safety checkpoint `br-shiny-bonus-b1gqt9u7` still READY with correct production parent, and historical manual snapshot `snap-proud-fire-b1bm8oac` still present. The preceding PG18 read-only recovery materialization proof remains historical evidence; the test child no longer exists. No additional deletions, production DDL, application changes, merges or deploy. Next release gates unchanged: off-project recoverable backup, functional H4 old-v20 app over v21, real-history signed v13 restore and independent review/owner explicit GO. Branch protection N/A by owner decision.
