@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — TOC parser corrects TABLE versus TABLE DATA (staged, unreleased)
+
+- Owner-local prior checkout f765c438: targeted 10/10 PASS, PG18 binary check PASS; synthetic PostgreSQL18 SCRAM valid/wrong-password behavior, custom pg_dump 2,806 bytes and full AES-GCM authentication PASS. End-to-end test FAIL before SQL restore on TOC count; owned cluster stopped.
+- Replaced overly broad TABLE prefix regex with explicit PostgreSQL custom archive TOC parsing: distinguish TABLE definitions, TABLE DATA row payload, TABLE ATTACH metadata; validate format and extensions and fail closed on malformed entries. Added 11th regression with realistic sample and invalid cases, plus actual count diagnostics. Independent pure JS fixture PASS. Owner 11-test suite and end-to-end PG18 retest NOT RUN after changes.
+- No Neon production export, encrypted production backup, actual-data restore, v21 migration, merge or deployment. Draft PR #338 stays NO-GO.
+
 ## 15 October 2026 — Off-Neon backup R1-B/C remediation implemented, unreleased and UNTESTED on Windows
 
 - Added `tooling/v380-backup-manifest.mjs`: immutable manifest schema v2, per-archive salt and domain-separated HMAC-SHA256 distinct from AES-GCM, constant-time verified MAC, deterministic nested JSON representation and refusal of unsigned legacy/forged metadata. Production export now signs immutable source identity/data evidence/cipher digest; restore verifies manifest before trusting it, authenticates full GCM tag before SQL, and stores a separate non-authoritative `.verification-*.json` receipt only after actual-data clean shutdown.
