@@ -9,6 +9,7 @@ import {join} from "node:path";
 import test from "node:test";
 import {encryptArchive,decryptArchive,fileSha256,retainChildStdout} from "../tooling/v380-backup-archive.mjs";
 import {sealManifest,verifyManifest} from "../tooling/v380-backup-manifest.mjs";
+import {parsePgRestoreTocOutput} from "../tooling/v380-backup-toc.mjs";
 
 async function collect(file,password){
   const parts=[];
@@ -264,4 +265,42 @@ test("R1-D encrypted stream propagates backpressure for multi-megabyte slow cons
     assert.equal(lengths.total,input.length);
     assert.equal(digest.digest("hex"),createHash("sha256").update(input).digest("hex"));
   }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
+
+test("R1-D PG18 TOC counts TABLE definitions, never TABLE DATA or TABLE ATTACH",()=>{
+  // Realistic pg_restore --list record shape. A two-table archive also
+  // contains two TABLE DATA entries; the previous prefix regex counted 4.
+  const toc=[
+    ";",
+    "; Archive created at 2026-10-15",
+    ";     Format: CUSTOM",
+    ";     TOC Entries: 12",
+    "211; 2615 2200 SCHEMA - public ft380_synthetic",
+    "214; 1259 16427 TABLE public flight_sample ft380_synthetic",
+    "215; 1259 16432 TABLE public archive_sample ft380_synthetic",
+    "216; 0 16427 TABLE DATA public flight_sample ft380_synthetic",
+    "217; 0 16432 TABLE DATA public archive_sample ft380_synthetic",
+    "218; 0 0 TABLE ATTACH public partition_table ft380_synthetic",
+    "219; 3079 16509 EXTENSION - pgcrypto ft380_synthetic",
+    "220; 2606 16433 CONSTRAINT public archive_sample archive_sample_pkey ft380_synthetic"
+  ].join("\r\n");
+  assert.deepEqual(parsePgRestoreTocOutput(toc),{
+    tableCount:2,tableDataCount:2,extensions:["pgcrypto"]
+  });
+  const dataOnly=[
+    ";     Format: CUSTOM",
+    "217; 0 16432 TABLE DATA public archive_sample ft380_synthetic"
+  ].join("\n");
+  assert.throws(()=>parsePgRestoreTocOutput(dataOnly),/did not identify any TABLE definitions/);
+  assert.throws(()=>parsePgRestoreTocOutput(toc.replace("Format: CUSTOM","Format: TAR")),
+    /CUSTOM format archive/);
+  assert.throws(()=>parsePgRestoreTocOutput(toc.replace(
+    "215; 1259 16432 TABLE public archive_sample ft380_synthetic",
+    "215; 1259 16432 TABLE malformed"
+  )),/Malformed TABLE entry/);
+  assert.throws(()=>parsePgRestoreTocOutput(toc.replace(
+    "219; 3079 16509 EXTENSION - pgcrypto ft380_synthetic",
+    "219; 3079 16509 EXTENSION invalid"
+  )),/Malformed EXTENSION entry/);
 });
