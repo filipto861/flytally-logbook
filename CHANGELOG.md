@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+## 15 October 2026 — staged encrypted off-Neon v20 backup/PG18 restore tooling (NOT executed against production)
+
+- Added `tooling/v380-backup-archive.mjs` for streaming AES-256-GCM + scrypt encrypted custom-format `pg_dump` data, unique salt/nonce and authenticated tag, no plaintext archive materialization.
+- Added `tooling/v380-off-neon-export.mjs` requiring operator-local Node24 + official PG18 binaries, masked exact unpooled Neon production URL, TLS `verify-full`/system CA/channel binding, production read-only v20 schema proof, unique non-overwriting encrypted backup under `%LOCALAPPDATA%\FlyTally\PrivateProductionBackups`, SHA256+nonsecret provenance/selected count/history hash manifest.
+- Added `tooling/v380-off-neon-restore-check.mjs` requiring masked passphrase and named local-restore confirmation; it validates ciphertext integrity, starts **its own** ephemeral localhost PG18 and restores archive into an isolated database via binary stdin with atomic `pg_restore`, verifies v20 registry/table/row/count/certified-void/source provenance digests in UTC, and stops/removes its own test cluster when safely stopped. No Neon restore actions.
+- Added `tests/v380-off-neon-archive.test.ts` for binary AES roundtrip, wrong-key/cipher tampering and source/target fail-closed guards; new operational recovery protocol and independent review handoff `docs/product/3_8_0_OFF_NEON_BACKUP_RECOVERY_PROTOCOL_2026-10-15.md`.
+- **Only source/readback syntax checks PASS; no runtime crypto unit tests, PG18 tooling checks, production pg_dump, real backup archive, isolated PG18 pg_restore or historical signed-v13 proof run yet**. Any pass is future owner evidence, not inferred. Current Neon primary/app/main untouched; PR Draft, release NO-GO. Earlier H4 8/8 locally PASS separately.
+
 ## 15 October 2026 — frozen production v20-on-v21 H4 acceptance PASS (owner-local, unreleased)
 
 - Exact SHA `b23f9b99e4327412204af74d2e42d2d9dbe33bf9` tested on owner Windows host. H4 static source gates **4/4 PASS**; fresh isolated PostgreSQL16 exact loopback identity verified; canonical schema-first v20/v21 applied with registry version 21, twelve new currency fields and four CHECK constraints.
