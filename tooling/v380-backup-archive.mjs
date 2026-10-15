@@ -22,23 +22,47 @@ async function keyFor(passphrase,salt){
 
 // AES-256-GCM, scrypt, unique authenticated header, streaming binary output.
 // No plaintext temporary pg_dump archive is created.
-export async function encryptArchive(readable,outputFile,passphrase){
+export async function encryptArchive(readable,outputFile,passphrase,{requirePgDumpCustomFormat=false}={}){
   const salt=randomBytes(SALT_BYTES),iv=randomBytes(IV_BYTES);
   const header=Buffer.concat([MAGIC,salt,iv]);
   const key=await keyFor(passphrase,salt);
   const cipher=createCipheriv("aes-256-gcm",key,iv);
   key.fill(0);
   cipher.setAAD(header);
+  // Validate the streamed plaintext while it is being encrypted. A fixed
+  // 1-KiB ciphertext minimum wrongly rejects small legitimate custom dumps
+  // and, worse, masks a pg_dump process failure with an unrelated size error.
+  // The format validator is optional because this codec also supports
+  // non-PostgreSQL synthetic binary round-trip tests.
+  let plaintextBytes=0;
+  let signature=Buffer.alloc(0);
+  const pgMagic=Buffer.from("PGDMP","ascii");
+  const validatePlaintext=new Transform({
+    transform(chunk,encoding,callback){
+      plaintextBytes+=chunk.length;
+      if(requirePgDumpCustomFormat&&signature.length<pgMagic.length){
+        signature=Buffer.concat([signature,chunk.subarray(0,pgMagic.length-signature.length)]);
+      }
+      callback(null,chunk);
+    },
+    flush(callback){
+      if(plaintextBytes===0)return callback(new Error("Empty archive source stream; check pg_dump exit status/stderr."));
+      if(requirePgDumpCustomFormat&&!signature.equals(pgMagic)){
+        return callback(new Error("pg_dump output missing PGDMP custom-format signature; check pg_dump exit status/stderr."));
+      }
+      callback();
+    }
+  });
   const trailer=new Transform({
     transform(chunk,encoding,callback){callback(null,chunk);},
     flush(callback){this.push(cipher.getAuthTag());callback();}
   });
   const writer=createWriteStream(outputFile,{flags:"wx",mode:0o600});
   writer.write(header);
-  await pipeline(readable,cipher,trailer,writer);
+  await pipeline(readable,validatePlaintext,cipher,trailer,writer);
   const stat=await fs.stat(outputFile);
-  if(stat.size<=HEADER_BYTES+TAG_BYTES+1024)throw new Error("Encrypted database archive unexpectedly small.");
-  return {sizeBytes:stat.size,sha256:await fileSha256(outputFile)};
+  if(stat.size!==HEADER_BYTES+TAG_BYTES+plaintextBytes)throw new Error("Unexpected encrypted payload byte count.");
+  return {sizeBytes:stat.size,plaintextBytes,sha256:await fileSha256(outputFile)};
 }
 
 // Authenticated decryption stream. Caller may only send decrypted bytes to a
@@ -48,7 +72,7 @@ export async function decryptArchive(inputFile,writable,passphrase){
   let header,tag,total;
   try{
     const stat=await file.stat();total=stat.size;
-    if(total<=HEADER_BYTES+TAG_BYTES+1024)throw new Error("Invalid archive size.");
+    if(total<=HEADER_BYTES+TAG_BYTES)throw new Error("Invalid/empty archive size.");
     header=Buffer.alloc(HEADER_BYTES);tag=Buffer.alloc(TAG_BYTES);
     if((await file.read(header,0,HEADER_BYTES,0)).bytesRead!==HEADER_BYTES)throw new Error("Truncated archive header.");
     if((await file.read(tag,0,TAG_BYTES,total-TAG_BYTES)).bytesRead!==TAG_BYTES)throw new Error("Truncated archive tag.");
