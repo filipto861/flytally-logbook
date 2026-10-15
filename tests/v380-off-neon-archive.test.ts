@@ -52,7 +52,7 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   assert.match(exportSource,/default_transaction_read_only=on/);
   assert.match(exportSource,/--serializable-deferrable/);
   assert.match(exportSource,/source_branch:"br-raspy-fog-b1btvu5t"/);
-  assert.match(exportSource,/encryptArchive\(dump\.stdout,partial,password\)/);
+  assert.match(exportSource,/encryptArchive\(dump\.stdout,partial,password,\{requirePgDumpCustomFormat:true\}\)/);
   assert.match(exportSource,/const after=preflight\(env\)/);
   assert.match(exportSource,/JSON\.stringify\(after\)===JSON\.stringify\(schema\)/);
 
@@ -107,4 +107,29 @@ test("v380 synthetic PG18 diagnostic phases and pg_ctl process containment",asyn
   assert.match(synthetic,/must\(stopped,"Local PG18 test cluster not confirmed stopped and removed\."\)/);
   assert.match(synthetic,/activeChild=dump/);
   assert.match(synthetic,/activeChild=restore/);
+});
+
+test("v380 accepts tiny nonempty authenticated payload but refuses empty and non-PGDMP pg_dump output",async()=>{
+  const dir=await fs.mkdtemp(join(tmpdir(),"ft380-small-archive-"));
+  const pass="test-small-payload-2026!";
+  try{
+    // The format codec permits small bytes, while the pg_dump caller must
+    // explicitly require the PostgreSQL custom-format PGDMP signature.
+    const tiny=join(dir,"tiny.ftbak");
+    const bytes=Buffer.from("PGDMP-small-synthetic-check","utf8");
+    const meta=await encryptArchive(Readable.from([bytes.subarray(0,2),bytes.subarray(2,5),bytes.subarray(5)]),
+      tiny,pass,{requirePgDumpCustomFormat:true});
+    assert.equal(meta.plaintextBytes,bytes.length);
+    assert.ok(meta.sizeBytes<1100,"Reintroducing the arbitrary old 1KiB floor");
+    assert.deepEqual(await collect(tiny,pass),bytes);
+    await assert.rejects(
+      ()=>encryptArchive(Readable.from([]),join(dir,"empty.ftbak"),pass,{requirePgDumpCustomFormat:true}),
+      /Empty archive source stream/
+    );
+    await assert.rejects(
+      ()=>encryptArchive(Readable.from([Buffer.from("NOTPGDMP")]),
+        join(dir,"invalid.ftbak"),pass,{requirePgDumpCustomFormat:true}),
+      /missing PGDMP/
+    );
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
 });
