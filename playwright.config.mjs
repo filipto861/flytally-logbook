@@ -6,6 +6,8 @@ const evidenceReporter=process.env.FLYTALLY_BROWSER_EVIDENCE_FILE
 
 export default defineConfig({
   testDir:"./e2e",
+  // H4 belongs exclusively to the detached frozen-v20 runner with its own config.
+  testIgnore:["**/v380-h4-frozen-v20.spec.mjs"],
   timeout:30_000,
   expect:{timeout:5_000},
   fullyParallel:false,
