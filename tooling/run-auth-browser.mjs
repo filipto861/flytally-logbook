@@ -86,9 +86,14 @@ if(currencyIntent){
      process.env.FLYTALLY_LOCAL_POSTGRES!=="1"){
     throw new Error("Currency v21 browser SQL requires the named disposable localhost fixture.");
   }
-  // Do not pre-apply review-only DDL without its registry row. The running app
-  // will apply v20 then v21 atomically using its localhost-only guarded path.
-  console.log("Disposable Currency browser fixture is ready for guarded runtime v20/v21 migration.");
+  // Rehearse the production schema-first sequence on this disposable DB only.
+  // Apply exact canonical v20 and v21 SQL plus their registry rows atomically,
+  // before Next starts. The application runtime must validate, not authorize DDL.
+  const schemaFirst=fileURLToPath(new URL("./apply-currency-v21-disposable.mjs",import.meta.url));
+  const schemaResult=spawnSync(process.execPath,[schemaFirst],{stdio:"inherit",env:browserEnv});
+  if(schemaResult.error)throw schemaResult.error;
+  if(schemaResult.status!==0)process.exit(schemaResult.status??1);
+  console.log("Disposable Currency browser fixture passed schema-first v20/v21 migration.");
 }
 
 const require=createRequire(import.meta.url);
@@ -116,8 +121,8 @@ if(browserResult.status===0&&currencyIntent){
   });
   if(observed.error)throw observed.error;
   if(observed.status!==0||String(observed.stdout).trim()!=="1|12|4"){
-    throw new Error("Currency browser runtime v21 registry/column/constraint postcheck failed.");
+    throw new Error("Currency browser schema-first v21 registry/column/constraint postcheck failed.");
   }
-  console.log("Verified disposable currency browser runtime v21: 1 registry, 12 columns, 4 CHECKs.");
+  console.log("Verified disposable currency browser schema-first v21: 1 registry, 12 columns, 4 CHECKs.");
 }
 process.exit(browserResult.status??1);
