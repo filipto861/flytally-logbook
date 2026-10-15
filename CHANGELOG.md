@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+## 15 October 2026 — Off-Neon backup R1-B/C remediation implemented, unreleased and UNTESTED on Windows
+
+- Added `tooling/v380-backup-manifest.mjs`: immutable manifest schema v2, per-archive salt and domain-separated HMAC-SHA256 distinct from AES-GCM, constant-time verified MAC, deterministic nested JSON representation and refusal of unsigned legacy/forged metadata. Production export now signs immutable source identity/data evidence/cipher digest; restore verifies manifest before trusting it, authenticates full GCM tag before SQL, and stores a separate non-authoritative `.verification-*.json` receipt only after actual-data clean shutdown.
+- Added `tooling/v380-windows-private.mjs`: SID-based NTFS directory restriction before any sensitive write, private short-lived bootstrap password file, real-data `initdb -A scram-sha-256` with random per-run password, mandatory wrong-password refusal, random loopback only, encrypted-volume operator acknowledgment; backup export directory ACL secured.
+- Added `tooling/v380-backup-toc.mjs`: authenticated custom-format `pg_restore --list` inventory over stdin without DB connection, fail-closed physical table/extension checks in actual restoration. Kept atomic `pg_restore --single-transaction --exit-on-error`, Node `pipeline()` backpressure and original source pre/post monitoring limitations.
+- Updated synthetic PG18 end-to-end test to exercise private Windows ACL + SCRAM positive/negative auth, HMAC-signed manifest and TOC, with same existing full AES-GCM and DB content validation. Archive unit suite expanded from 7 to 10 tests incl wrong key/tampering/swapped archive/legacy v1 refusal and 12-MiB slow writer stress. Added real-data SIGINT fail-closed handling and refusal of symlink archive paths.
+- **Only source syntax/readback verified for current batch. Actual Node targeted 10-test suite, Windows PG18 SCRAM/ACL end-to-end, independent DeepSeek R1-D exact SHA review and real production backup/restore NOT RUN.** Previous 7/7 + synthetic PG18 PASS belongs to `9d26c2cb` only. PR #338 Draft; no production DDL/merge/deploy.
+
 ## 15 October 2026 — independent backup/recovery security R1 review reconciliation (documentation only)
 
 - Received owner-supplied read-only DeepSeek review and checked findings against current branch. Confirmed B-1 (`initdb -A trust` for real decrypted records) and B-2 (unauthenticated JSON manifest), M-1 (unbound pre/post MVCC snapshots; selected hashes only); captured NTFS ACL and least-privilege concerns.
