@@ -1,5 +1,20 @@
 # FlyTally 3.8.0 — Independent backup/recovery SECURITY review request (15 Oct 2026)
 
+## 15 Oct 2026 — additional verified acceptance and priority reviewer questions (supersedes earlier NOT RUN stage)
+
+**Owner-local execution on exact SHA `9d26c2cb6d01dcf596f64dd6186fbc300323c8ae`:** `npm run test:target -- tests/v380-off-neon-archive.test.ts` **7/7 PASS**. Real PostgreSQL18 isolated synthetic run **PASS**: initialized new localhost PG18 on random port 62750, created two test-only databases, custom-format `pg_dump -Fc` exit 0 **2,806 bytes**, bounded PassThrough consumed child stdout immediately before scrypt, AES-256-GCM encrypted + authenticated, `pg_restore --single-transaction` into separate synthetic DB, compared synthetic protected rows/prices/row hash, safely stopped and removed isolated cluster (stages 00–10). **No Neon credentials, real production dump, plaintext production restore or historically signed portable v13 recovery used.** The previous PG18 synthetic status **NOT RUN/FAIL** below is retained only as historical stage record.
+
+Following the owner PASS, the **actual production-data restore verifier** `tooling/v380-off-neon-restore-check.mjs` (which had **not** been exercised by the synthetic runner) was corrected to avoid captured Windows `pg_ctl` stdout/stderr inherited-handle hangs and to attempt stop of its *own* cluster on uncertain startup. Added a static regression. **This new follow-up code has not been run by the owner**, so distinguish tested SHA from current branch HEAD.
+
+**Priority independent security concerns to decide before authorizing any live export:**
+- Actual production-data restore verifier currently calls `initdb ... -A trust` even though restored PostgreSQL will contain **decrypted real personal/flight records** on localhost for the duration of the test. Treat exposure to other local machine users/processes, Windows firewall/port visibility, and whether to require SCRAM authentication as a **potential blocker**; propose the least risky testable mitigation. Trusted/encrypted Windows volume required.
+- Restoring full Neon PG18 database under fresh local Windows PG18 may require roles/extensions not exercised by the two-table synthetic fixture. Inspect actual source schema and `pg_dump/pg_restore` flags; propose non-destructive preflight without requiring credentials.
+- The export manifest is grounded in SELECT pre/post distinct from `pg_dump` MVCC snapshot; equal selected counts and certified/provenance digests do not establish **all-row equivalence**. Determine whether a stronger proof is necessary before release, and articulate exactly what scope can be claimed.
+- Current manifest is editable JSON, not authenticated separately from archive. Examine tampering/stale-manifest detection, archive file replace races and best solution without exposing private data.
+- Export and restore operator error handling: no silent data loss/PG process orphan, no secrets in subprocess diagnostic stderr, No Neon admin/migration branch writes. Keep fail-closed and minimal blast radius.
+
+**Requested response:** independent **BLOCKER / MAJOR / MINOR** review, code references and minimum changes/tests, explicit **GO/NO-GO for first production read-only export** separately from **GO/NO-GO for local restore of actual data** and **GO/NO-GO for v21 live migration**. Do not assume any of those operations have occurred. All production changes remain forbidden without separate owner authorization.
+
 **To: DeepSeek (independent read-only reviewer)**. This is a release-critical audit request, **not** implementation authorization or a request to access production credentials. Work exclusively from repository source; never read/print production secret DB URLs, passwords or archived user data.
 
 ## Evidence and scope
