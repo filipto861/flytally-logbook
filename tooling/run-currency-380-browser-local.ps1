@@ -1,4 +1,4 @@
-# Currency 3.8.0 authenticated browser Trash v20/v21 acceptance on disposable localhost PostgreSQL16.
+# Currency 3.8.0 schema-first authenticated browser acceptance on disposable localhost PostgreSQL16.
 # DESTRUCTIVE FIXTURE: run-auth-browser bootstrap DROPS public schema.
 # Never point this runner at any existing local service/database or production/Neon.
 # This runner exclusively creates, verifies, and destroys its OWN localhost cluster.
@@ -66,8 +66,8 @@ try {
   Write-Host "Candidate: $commit"
 
   # Refuse a pre-existing web server: Playwright must start our own Next process.
-  # IMPORTANT: Next/Turbopack must compile the optimized browser build using
-  # the verified disposable database and purpose flags, NOT the owner's .env.local.
+  # Next/Turbopack builds against the verified disposable environment, not the
+  # owner's .env.local. The harness applies v20/v21 before starting Next.
   $webProbe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse("127.0.0.1"), 3000)
   try { $webProbe.Start() } catch { throw "Local port 3000 is already occupied. Browser test NOT RUN; stop the other server first." } finally { $webProbe.Stop() }
   if ($env:CI) { throw "CI env must be unset for this local browser gate: retries must stay zero." }
@@ -139,8 +139,8 @@ try {
   # Fail closed rather than weakening the v21 migration guard for this test.
   if (Test-Path Env:VERCEL) { throw "VERCEL marker is present; local browser build refused." }
   if (Test-Path Env:VERCEL_ENV) { throw "VERCEL_ENV marker is present; local browser build refused." }
-  # Compile AFTER the isolated DB identity and purpose flags are set. The Next
-  # server uses this build with exactly the same process environment.
+  # Build AFTER the isolated database identity and purpose flags are established.
+  # The browser harness then applies canonical v20/v21 schema-first, before Next starts.
   npm.cmd run build
   Assert-Exit "Exact candidate Next.js build"
 
