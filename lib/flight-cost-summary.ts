@@ -16,7 +16,7 @@ export type FlightCostSummary = Readonly<{
 
 type RawBucket = { currency?: unknown; minorUnits?: unknown; minor?: unknown; flights?: unknown };
 const count = (value: unknown): number | null => {
-  if (typeof value !== "number" && (typeof value !== "string" || !/^\\d+$/.test(value))) return null;
+  if (typeof value !== "number" && (typeof value !== "string" || !/^\d+$/.test(value))) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 };
