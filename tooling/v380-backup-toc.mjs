@@ -1,6 +1,45 @@
 import {spawn} from "node:child_process";
 import {decryptArchive} from "./v380-backup-archive.mjs";
 
+// Pure parser for PostgreSQL 18 pg_restore --list output. IMPORTANT:
+// "TABLE" is a schema object, "TABLE DATA" is its row payload, and
+// "TABLE ATTACH" is partition attachment metadata. Counting entries with a
+// prefix-only /TABLE\\s/ regex double-counts ordinary tables and creates
+// false preflight failures. Fail closed for malformed TABLE entries.
+export function parsePgRestoreTocOutput(output){
+  if(typeof output!=="string"||
+     !/^;\\s+Format:\\s+CUSTOM\\s*$/m.test(output)){
+    throw new Error("pg_restore --list did not identify a CUSTOM format archive.");
+  }
+  let tableCount=0,tableDataCount=0;
+  const extensions=new Set();
+  for(const line of output.split(/\\r?\\n/)){
+    const match=line.match(/^\\s*\\d+;\\s+\\d+\\s+\\d+\\s+(.+?)\\s*$/);
+    if(!match)continue; // comments, archive header and other diagnostics
+    const entry=match[1];
+    if(/^TABLE DATA(?:\\s|$)/.test(entry)){
+      tableDataCount++;
+      continue;
+    }
+    if(/^TABLE ATTACH(?:\\s|$)/.test(entry))continue;
+    if(/^TABLE(?:\\s|$)/.test(entry)){
+      // At least schema, table name and owner must be present. Names may
+      // contain spaces, so do not split solely by a fixed token count.
+      if(!/^TABLE\\s+\\S+\\s+.+\\s+\\S+$/.test(entry))
+        throw new Error("Malformed TABLE entry in authenticated archive TOC.");
+      tableCount++;
+      continue;
+    }
+    if(/^EXTENSION(?:\\s|$)/.test(entry)){
+      const ext=entry.match(/^EXTENSION\\s+-\\s+(\\S+)\\s+\\S+$/);
+      if(!ext)throw new Error("Malformed EXTENSION entry in authenticated archive TOC.");
+      extensions.add(ext[1]);
+    }
+  }
+  if(tableCount===0)throw new Error("pg_restore --list did not identify any TABLE definitions.");
+  return {tableCount,tableDataCount,extensions:[...extensions].sort()};
+}
+
 // TOC inspection executes pg_restore --list WITHOUT a database connection.
 // The authenticated archive is streamed into stdin; never written unencrypted
 // to disk. This does not guarantee source DB/extension parity by itself.
@@ -31,13 +70,5 @@ export async function inspectPgRestoreToc(archive,password,pgRestorePath){
     await exit.catch(()=>{});
     throw error;
   }
-  const lines=output.split(/\r?\n/);
-  const tableCount=lines.filter(line=>/^\s*\d+;\s+\d+\s+\d+\s+TABLE\s+\S+\s+\S+\s+\S+/.test(line)).length;
-  const extensions=lines.flatMap(line=>{
-    const x=line.match(/^\s*\d+;\s+\d+\s+\d+\s+EXTENSION\s+-\s+(\S+)\s+\S+\s*$/);
-    return x?[x[1]]:[];
-  });
-  if(!output.includes("Format: CUSTOM")||tableCount===0)
-    throw new Error("pg_restore --list did not identify PostgreSQL custom-format tables.");
-  return {tableCount,extensions:[...new Set(extensions)].sort()};
+  return parsePgRestoreTocOutput(output);
 }
