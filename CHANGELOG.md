@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — owner-approved checkpoint proof branch cleanup
+
+- Deleted **only** PG18 read-proof child `br-lucky-shape-b16omzi4` after owner authorization. Preflight verified exact child-parent relationship, no default/primary/protection, descendants or snapshot dependencies. Neon API deletion succeeded and independent branch inventory confirmed target absent.
+- Logbook project now has **5 branches**. Production primary `br-raspy-fog-b1btvu5t` remains READY, current-primary point-in-time safety fork `br-shiny-bonus-b1gqt9u7` remains READY with original parent, and old manual snapshot `snap-proud-fire-b1bm8oac` is retained. No data restore, production schema change, SQL DDL, merge or deploy.
+- Earlier scoped PG18 child read/record-count/hash evidence retained in history; functional H4 and off-Neon backup/restore remain release NO-GO gates.
+
 ## 15 October 2026 — PostgreSQL 18.6 checkpoint materialization/read verification (local to Neon branch, no restore)
 
 - New **non-production test child** `br-lucky-shape-b16omzi4` created from safety checkpoint `br-shiny-bonus-b1gqt9u7` at matching parent LSN `0/10E02258` with 0.25 CU compute; child READY. Custom suspend-time request was rejected by plan before child creation; retry omitted unsupported override.
