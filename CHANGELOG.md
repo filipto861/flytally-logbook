@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — v21 browser compiler environment compatibility (unreleased; tests pending)
+
+- Owner-local `40104b9158f4d39b47fd21a468825822b67f3f36`: signed-backup/fixture source **9/9 PASS**, verified ephemeral PostgreSQL16 identity/clean stop; both native Node and currency harness purpose/URL preflight **PASS**, optimized Next 16.3.2 build PASS (41 static pages), authenticated desktop+mobile Playwright **0/8 FAIL**. Same runtime fail-closed error prevents migration and subsequent fixture rows; local acceptance NOT PASS.
+- Changed only `lib/db-optimization.ts` runtime v21 authorization call to pass an explicit six-field object built from `process.env.KEY` property access, instead of the whole `process.env` object (possible Next/Turbopack environment-object transform issue). No gate rule, database DDL or runtime migration algorithm weakened. Added source regression ensuring all three allow flags, two Vercel deny markers and exact DATABASE_URL are supplied once. Root cause is still **unconfirmed** until E2E retest; independent reviewer/production GO not completed.
+- Prior runtime code SHA test results do not automatically carry forward. Production Neon remains physical v20. No schema, branch/snapshot/protection, merge or deploy changes.
+
 ## 15 October 2026 — Currency browser environment fail-closed diagnosis (unreleased, NOT TESTED)
 
 - On owner-local `2dd3a182d84a87ee80c0235a52af1196476852cd`, targeted `v380-currency-signed-backup-schema.test.ts` **9/9 PASS**, disposable PG16 identity verified, optimized Next production build PASS, but authenticated Playwright **0/8 FAIL** again from the same `Currency schema v21 requires approved explicit migration before runtime` error. Moving build after DB/flag setup did **not** resolve failure. Missing explicit `Disposable Currency browser fixture is ready...` line in harness output is evidence that currency-specific opt-in may be missing in the harness, not yet confirmed as root cause.
