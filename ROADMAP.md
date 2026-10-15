@@ -1,5 +1,21 @@
 # FlyTally Logbook — ROADMAP
 
+## 15 Oct 2026 — synthetic PG18 stage 05 archive-size gate FAIL; narrowed validation staged, re-test PENDING
+
+Owner ran checkout `c0d6f2d497b28cb773c0acb48984f27d184ca074` after cleaning three abandoned PG18 synthetic test folders (no synthetic `postgres.exe` remaining). Encrypted archive regressions **4/4 PASS**. The updated synthetic PostgreSQL18 integration reached **00–05/10**: tools, isolated PG18 init/start on loopback port 50207, creation of two fresh DBs, synthetic rows, then failed at cipher stream with `Encrypted database archive unexpectedly small.`. `10/10` stop/cleanup ran without a reported error; **synthetic end-to-end restore NOT PASS**. Never inferred production database involvement, as no Neon URL or prod data is used. All historical H4 and v3.8 local results unaffected.
+
+**Root-cause constraint:** prior AES archive codec rejected all ciphertext <= header (36 bytes) + tag (16 bytes) + arbitrary 1024 payload bytes, **before** the caller checked the `pg_dump` exit status/stderr. Thus error may signify either a legitimate tiny compressed PG custom-format dump **or** an empty/failed `pg_dump`; no evidence yet to decide between them. Do not silently assume a valid dump or weaken integrity acceptance.
+
+**Staged test-only/backup-tool minimal fix:** `v380-backup-archive.mjs` now validates a **nonempty plaintext stream** and optionally exact `PGDMP` first-five-byte signature across chunk boundaries while encrypting. It verifies cipher length equals authenticated header+tag+plaintext count instead of imposing arbitrary 1024 payload floor. Decrypt refuses zero-payload envelopes; AES-GCM tag validation remains mandatory, and only a successful actual PG18 `pg_restore` of the full archive will confirm dump validity. Both the production export caller and synthetic PG18 caller require `{requirePgDumpCustomFormat:true}`. Synthetic caller now captures actual `pg_dump` stderr/exit code and reports count of source bytes; production caller prioritizes real `pg_dump` failure diagnostics before finalizing any manifest. Added regression for tiny signed streams, empty/non-PGDMP rejection and diagnostic contract. **No new local runtime test yet**; GitHub source syntax readback PARSED. No production export/restore/DDL/merge/deploy.
+
+**Next owner-local:**
+```powershell
+git pull --ff-only
+npm run test:target -- tests/v380-off-neon-archive.test.ts
+node tooling/v380-off-neon-pg18-synthetic-test.mjs
+```
+If fails, keep original error/stderr and stage label; do not attempt real production `export`. Independent DeepSeek security review & signed v13 historical recovery still OPEN. Release NO-GO.
+
 ## 15 Oct 2026 — synthetic PG18 local test failure: pg_ctl ETIMEDOUT (investigation)
 
 Owner reported last PG18 synthetic test **FAIL**, exact console `SYNTHETIC PG18 CHECK NOT PASS: pg_ctl failed: spawnSync C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe ETIMEDOUT`. Concurrent targeted encrypted-archive tests **3/3 PASS** and PostgreSQL18 binaries `check` PASS, but **actual pg_dump→restore integrated synthetic gate remains FAIL/NOT VERIFIED**; no production connection/export/migration. That run's console had **no** newly staged `[PG18 synthetic] 00/10...` progress labels, indicating it ran an older script revision (or at least not the GitHub code with those labels); successful `git pull --ff-only` had reported `Already up to date` before later GitHub source changes appeared.
