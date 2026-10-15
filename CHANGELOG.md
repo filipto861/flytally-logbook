@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 15 October 2026 — Currency schema-first browser SQL separator repair (unreleased; new SHA NOT TESTED)
+
+- Owner-local `68947b34`: targeted tests **19/19 PASS**; isolated PG16 identity/cleanup, PowerShell-to-Node, harness bootstrap checks and Next optimized build **PASS**; schema-first staging **FAILED** with `syntax error at or near CREATE` before any Playwright test. Previously separate `sql` blocks were concatenated with newlines but without SQL statement terminators.
+- Fixed disposable-only `tooling/apply-currency-v21-disposable.mjs` to ensure one trailing semicolon per extracted canonical v20/v21 block; added source regression for this exact failure mode. No application code, production DDL, live DB or deployed services changed. New SHA targeted/browser tests **NOT RUN**. PR #338 remains Draft, release NO-GO.
+
 ## 15 October 2026 — Currency browser schema-first fixture correction (unreleased, NOT TESTED)
 
 - Replaced the fragile expectation that the optimized Next server automatically applies v21 in Playwright. Currency-only browser harness now prepares the **verified new disposable localhost PG16 fixture** with the canonical runtime v20/v21 SQL and exact migration registry entries in a single transaction **before starting Next**. It fails closed on purpose/URL/identity mismatch, unexpected v1–v19 history, source SQL drift/interpolation, or an invalid v21 physical postcheck (registry 1, columns 12, validated checks 4). No second approximation of monetary DDL; scripts read `lib/db-optimization.ts`.
