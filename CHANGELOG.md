@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 15 October 2026 — DeepSeek R1 corrective runtime migration hardening (unreleased, NOT TESTED)
+
+- Implemented strict local-only, purpose-bound `allowDisposableLocalV21Migration(env)` using dedicated authenticated browser flags, exact 127.0.0.1 address, `flytally` test role, `flytally_currency_test` DB, explicit allowed protocol/non-standard port, no password, and Vercel marker veto. **Do not** indiscriminately reject `NODE_ENV=production`, because local Playwright tests exercise an optimized production-mode Next build on disposable PG16.
+- `lib/db-optimization.ts` checks physical v21 against registry21 at boot: exact version21 registry name, 12 correctly typed nullable no-default columns and 4 validated table-specific CHECK constraints; mismatch throws fail-closed. Strengthened complete eight-block draft/release/runtime parity tests, isolated unit denial tests, and actual PG16 runtime-shape SQL probes for registry-only/11-column/3-CHECK drift.
+- Production release SQL and historical review draft **unchanged**. Independent reviewer H2 dismissed; H3 unqualified DDL under explicit search path is LOW and deferred rather than widening release SQL surface. H4 old app runtime/schema v21 actual compatibility test still required; no claim of rollback proof. N3 repeated startup failure LOW deferred.
+- **New SHA tests/typecheck/build/browser NOT RUN**. Previous local complete PASS belongs only to `4f816527`. Neon canonical production still v20; no live SQL, protection mutation, merge or Vercel deploy. R1 re-review and release safeguards remain open.
+
 ## 15 October 2026 — Independent v21 release review intake and accepted-source code packet (documentation only)
 
 - Received DeepSeek's first independent **documentation-only** review of Currency 3.8 R1; reviewer declared no repository/code/cloud access, no exact `path:line` verification and no executed tests. Findings B1-B5/H1-H5 are advisory until source-level reconciliation.
