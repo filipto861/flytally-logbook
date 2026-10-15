@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 15 October 2026 — frozen production v20-on-v21 H4 acceptance PASS (owner-local, unreleased)
+
+- Exact SHA `b23f9b99e4327412204af74d2e42d2d9dbe33bf9` tested on owner Windows host. H4 static source gates **4/4 PASS**; fresh isolated PostgreSQL16 exact loopback identity verified; canonical schema-first v20/v21 applied with registry version 21, twelve new currency fields and four CHECK constraints.
+- Detached actual Vercel production application `dcc8ebbfda0eadfa01345cd875ef1db806a19e26` built successfully with Next.js 16.3.2 (41/41 static pages; TypeScript PASS); authenticated desktop/mobile **8/8 Playwright PASS (1.1 minutes)** including frozen old-route read/write and Trash scenarios. Native runner's post-check completed before `LOCAL H4 PASS`; temporary PostgreSQL server stopped.
+- npm reported a retried `@img/colour` tarball integrity warning but `npm ci` completed successfully; **not an H4 failure**. Earlier H4 NOT RUN status is historical and now superseded for this exact SHA.
+- **Scope limitation:** disposable PG16 fixture and synthetic data, not Neon PG18/production restore; no historical signed-v13 genuine backup recovery, independent off-provider disaster recovery or final third-party source review performed. No production SQL/DDL, application deployment, migration, GitHub merge or production data mutation. PR #338 Draft; release NO-GO.
+
 ## 15 October 2026 — H4 frozen production v20 rollback test infrastructure (unreleased; NOT RUN)
 
 - New `tooling/run-currency-380-h4-v20-rollback-local.ps1`: creates/validates and later removes an exclusively owned disposable localhost PostgreSQL16, applies exact v20+v21 canonical SQL with v21 registry and shape checks, checks out immutable Vercel-production `dcc8ebbfda0eadfa01345cd875ef1db806a19e26` application into a temp detached worktree, installs its dependencies and compiles actual old Next code, and exercises the old worktree's own browser Trash-integrity test together with targeted authenticated H4 reads on desktop/mobile. The extra test-only v20 aircraft/rate workspace fixture columns make the existing narrow browser seed compatible with the frozen v20 database-workspace queries. No old tracked app source is changed.
