@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — PostgreSQL 18.6 checkpoint materialization/read verification (local to Neon branch, no restore)
+
+- New **non-production test child** `br-lucky-shape-b16omzi4` created from safety checkpoint `br-shiny-bonus-b1gqt9u7` at matching parent LSN `0/10E02258` with 0.25 CU compute; child READY. Custom suspend-time request was rejected by plan before child creation; retry omitted unsupported override.
+- Branch-id-bound **read-only SQL** on test child: v20 migration registry 20, v21 absent, PG18.6, public tables **52**, flights **315**, rates **33**, aircraft **25**, account backups **24**, voided certified **3**, flight-source provenance **12**. Independent current-primary read-only query matched all these counts and whole-row MD5 aggregates for voided-certified and provenance tables. Queries not atomically cross-branch: limited corroboration, not full-database parity proof.
+- Safety checkpoint untouched with no compute. **Probe child still exists and should be deleted only with explicit owner approval**; off-Neon portable backup restore and H4 old-app-v21 compatibility NOT RUN, release NO-GO. No production SQL writes, currency DDL, restore/finalize, merge/deploy.
+
 ## 15 October 2026 — current-primary no-compute safety fork, branch protection excluded by owner decision
 
 - Owner elected to proceed within existing Neon plan without treating unsupported `protected:true` as release precondition. Missing feature recorded as owner-accepted N/A, **not** protected. Snapshot quota still blocked; existing old-branch manual snapshot retained.
