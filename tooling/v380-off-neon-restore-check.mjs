@@ -1,0 +1,169 @@
+import {spawn,spawnSync} from "node:child_process";
+import {createServer} from "node:net";
+import {existsSync,promises as fs} from "node:fs";
+import {tmpdir} from "node:os";
+import {join,resolve,relative,sep,basename} from "node:path";
+import {decryptArchive,fileSha256} from "./v380-backup-archive.mjs";
+
+// Owner-local only. NEVER connect pg_restore to production, Neon, or any
+// pre-existing database. The archive stays encrypted until piped into the
+// disposable local PG18 server's stdin. Local PG data is transient plaintext.
+const name="flytally_restore_test",user="flytally_restore";
+const bin=join(process.env.ProgramFiles||"C:\\Program Files","PostgreSQL","18","bin");
+const exe=tool=>join(bin,tool+".exe");
+const must=(ok,msg)=>{if(!ok)throw new Error(msg);};
+const command=process.argv[2];
+
+function tools(){
+  must(process.platform==="win32"&&process.versions.node.split(".")[0]==="24",
+    "Windows and Node 24 required.");
+  for(const n of ["initdb","pg_ctl","createdb","psql","pg_restore"]){
+    must(existsSync(exe(n)),"Missing PostgreSQL 18 binary: "+exe(n));
+    const v=spawnSync(exe(n),["--version"],{encoding:"utf8",timeout:10000});
+    must(!v.error&&v.status===0&&/\b18\.\d+\b/.test(String(v.stdout||"")),
+      "PostgreSQL 18 required: "+n);
+  }
+}
+function run(binName,args,env,timeout=90000){
+  const r=spawnSync(exe(binName),args,{env,encoding:"utf8",timeout,maxBuffer:1024*1024});
+  must(!r.error&&r.status===0,binName+" failed: "+String(r.stderr||r.error?.message||"").slice(-1200));
+  return String(r.stdout||"").trim();
+}
+function hidden(question){
+  must(process.stdin.isTTY&&typeof process.stdin.setRawMode==="function","Interactive terminal required.");
+  return new Promise((resolveValue,reject)=>{
+    let value="";process.stdout.write(question);
+    process.stdin.setRawMode(true);process.stdin.resume();
+    const finish=err=>{
+      process.stdin.off("data",read);process.stdin.setRawMode(false);
+      process.stdin.pause();process.stdout.write("\n");
+      if(err)reject(err);else resolveValue(value);
+    };
+    const read=buf=>{
+      for(const ch of buf.toString("utf8")){
+        if(ch==="\r"||ch==="\n"){finish();return;}
+        if(ch==="\u0003"){finish(new Error("Cancelled."));return;}
+        if(ch==="\b"||ch==="\u007f"){value=value.slice(0,-1);continue;}
+        if(ch>=" ")value+=ch;
+        if(value.length>10000){finish(new Error("Unexpected long input."));return;}
+      }
+    };
+    process.stdin.on("data",read);
+  });
+}
+function localEnv(port,database){
+  return {...process.env,PGHOST:"127.0.0.1",PGPORT:String(port),
+    PGUSER:user,PGDATABASE:database,PGPASSWORD:"",PGSSLMODE:"disable",
+    PGOPTIONS:"",PGCONNECT_TIMEOUT:"5"};
+}
+async function openPort(){
+  const server=createServer();
+  await new Promise((resolveValue,reject)=>{
+    server.once("error",reject);server.listen(0,"127.0.0.1",resolveValue);
+  });
+  const p=server.address().port;
+  await new Promise(resolveValue=>server.close(resolveValue));
+  must(p!==5432&&p!==55432,"Refusing reserved PostgreSQL port.");
+  return p;
+}
+function restoredEvidence(env){
+  const q="SELECT "+
+    "(SELECT COUNT(*) FROM public.flytally_schema_migrations)||'|'"+
+    "(SELECT MIN(version) FROM public.flytally_schema_migrations)||'|'"+
+    "(SELECT MAX(version) FROM public.flytally_schema_migrations)||'|'"+
+    "(SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND column_name IN "+
+    "('currency_code','currency_minor_units','price_per_hour_decimal','dry_price_per_hour_decimal',"+
+    "'default_price_currency_code','default_price_currency_minor_units','default_price_per_hour_decimal',"+
+    "'price_currency_code','price_currency_minor_units','amount_encoding','amount_minor_units'))||'|'"+
+    "(SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE')||'|'"+
+    "(SELECT COUNT(*) FROM public.flights)||'|'"+
+    "(SELECT COUNT(*) FROM public.aircraft)||'|'"+
+    "(SELECT COUNT(*) FROM public.rates)||'|'"+
+    "(SELECT COUNT(*) FROM public.account_backups)||'|'"+
+    "(SELECT COUNT(*) FROM public.voided_certified_flights)||'|'"+
+    "(SELECT COUNT(*) FROM public.flight_source_provenance)||'|'"+
+    "(SELECT md5(COALESCE(string_agg(md5(to_jsonb(x)::text),'' ORDER BY md5(to_jsonb(x)::text)),'')) FROM public.voided_certified_flights x)||'|'"+
+    "(SELECT md5(COALESCE(string_agg(md5(to_jsonb(x)::text),'' ORDER BY md5(to_jsonb(x)::text)),'')) FROM public.flight_source_provenance x)";
+  const rows=run("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-c",q],env).split("|");
+  must(rows.length===13,"Restore database response incomplete.");
+  return {migrations:Number(rows[0]),first:Number(rows[1]),last:Number(rows[2]),
+    currency_columns:Number(rows[3]),public_tables:Number(rows[4]),flights:Number(rows[5]),
+    aircraft:Number(rows[6]),rates:Number(rows[7]),account_backups:Number(rows[8]),
+    voided:Number(rows[9]),provenance:Number(rows[10]),voided_digest:rows[11],
+    provenance_digest:rows[12]};
+}
+async function main(){
+  must(command==="verify"&&process.argv.length===4,
+    "Usage: node tooling/v380-off-neon-restore-check.mjs verify <archive.ftbak>");
+  tools();
+  must(process.env.LOCALAPPDATA,"LOCALAPPDATA required.");
+  const home=resolve(process.env.LOCALAPPDATA,"FlyTally","PrivateProductionBackups");
+  const archive=resolve(process.argv[3]),rel=relative(home,archive);
+  must(rel&&rel!==".."&&!rel.startsWith(".."+sep)&&!rel.startsWith(sep)&&
+    basename(archive).endsWith(".ftbak"),"Archive must be inside private off-Neon backup directory.");
+  const manifest=JSON.parse(await fs.readFile(archive+".manifest.json","utf8"));
+  must(manifest.source_branch==="br-raspy-fog-b1btvu5t"&&
+    manifest.source_host==="ep-proud-bar-b1ts6cq1.c-5.eu-central-1.aws.neon.tech",
+    "Unexpected backup source provenance.");
+  must((await fileSha256(archive))===manifest.encrypted_sha256,"Archive checksum mismatch.");
+  const pass=await hidden("Archive passphrase (hidden): ");
+  console.log("Archive checksum and source manifest PASS.");
+  console.log("CAUTION: isolated local test briefly contains decrypted production data.");
+  const accepted=await hidden("Type RESTORE_TEST to confirm isolated local restore only (hidden): ");
+  must(accepted==="RESTORE_TEST","Operator did not confirm temporary local restore.");
+  const dir=await fs.mkdtemp(join(tmpdir(),"flytally-380-pg18-restore-"));
+  const data=join(dir,"postgres-data"),log=join(dir,"postgres.log");
+  let started=false,stopVerified=false,attempted=false;
+  const port=await openPort(),env=localEnv(port,name);
+  try{
+    run("initdb",["-D",data,"-U",user,"-A","trust","--encoding=UTF8","--no-instructions"],env,120000);
+    attempted=true;
+    run("pg_ctl",["-D",data,"-l",log,"-o","-h 127.0.0.1 -p "+port,
+      "-w","-t","30","start"],env,90000);
+    started=true;
+    run("createdb",["-h","127.0.0.1","-p",String(port),"-U",user,name],localEnv(port,"postgres"));
+    const id=run("psql",["-X","-w","-qAt","-c",
+      "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())"],env);
+    must(id===name+"|"+user+"|127.0.0.1","Restoration target identity mismatch.");
+    const child=spawn(exe("pg_restore"),
+      ["--single-transaction","--exit-on-error","--no-owner","--no-acl","--dbname="+name],
+      {env,stdio:["pipe","ignore","pipe"],windowsHide:true});
+    let stderr="";
+    child.stderr.on("data",chunk=>{stderr=(stderr+chunk.toString("utf8")).slice(-1800);});
+    const exit=new Promise((resolveValue,reject)=>{
+      child.once("error",reject);child.once("close",resolveValue);
+    });
+    try{
+      await decryptArchive(archive,child.stdin,pass);
+      must((await exit)===0,"Local pg_restore failed: "+stderr.slice(-1200));
+    }catch(error){child.kill();await exit.catch(()=>{});throw error;}
+    const actual=restoredEvidence(env),expected=manifest.source_schema_preflight;
+    must(actual.migrations===20&&actual.first===1&&actual.last===20&&actual.currency_columns===0,
+      "Restored schema registry drift.");
+    for(const key of ["public_tables","flights","aircraft","rates","account_backups",
+      "voided","provenance","voided_digest","provenance_digest"]){
+      must(String(actual[key])===String(expected[key]),
+        "Restore integrity mismatch: "+key+". No release approval.");
+    }
+    manifest.verified_restore=true;
+    manifest.verified_at=new Date().toISOString();
+    manifest.verify_scope="PG18 disposable full logical restore + selected protected history/count digests";
+    await fs.writeFile(archive+".manifest.json",JSON.stringify(manifest,null,2)+"\n",
+      {encoding:"utf8"});
+    console.log("OFF-NEON RESTORE CHECK PASS: local PG18 restored "+actual.public_tables+
+      " tables, "+actual.flights+" flights; protected history digests match.");
+    console.log("Not proof of signed account v13 workflow recovery or live PG18 release.");
+  }finally{
+    if(started){
+      try{
+        run("pg_ctl",["-D",data,"-m","fast","-w","-t","30","stop"],env,90000);
+        stopVerified=true;
+      }catch{console.warn("Local PG18 stop failed; preserve directory for manual inspection: "+dir);}
+    }else if(!attempted||!existsSync(join(data,"postmaster.pid")))stopVerified=true;
+    if(stopVerified)await fs.rm(dir,{recursive:true,force:true}).catch(()=>{});
+  }
+}
+main().catch(error=>{
+  console.error("RESTORE CHECK NOT PASS: "+String(error.message||error).slice(0,1400));
+  process.exitCode=1;
+});
