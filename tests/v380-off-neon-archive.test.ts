@@ -58,5 +58,17 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   assert.match(restore,/--exit-on-error/);
   assert.match(restore,/decryptArchive\(archive,child\.stdin,pass\)/);
   assert.match(restore,/voided_digest/);
+  // A preset PGHOSTADDR/PGSERVICE must never override the approved target.
+  assert.match(exportSource,/name\.toUpperCase\(\)\.startsWith\("PG"\)/);
+  assert.match(restore,/name\.toUpperCase\(\)\.startsWith\("PG"\)/);
+  assert.match(restore,/PGHOSTADDR:"127\.0\.0\.1"/);
+  // Fail-closed: authenticate GCM before initdb, and only then stream to SQL.
+  assert.match(restore,/const discard=new Writable/);
+  assert.match(restore,/await decryptArchive\(archive,discard,pass\)/);
+  assert.ok(restore.indexOf("await decryptArchive(archive,discard,pass)") <
+    restore.indexOf('run("initdb"'),"Unverified ciphertext reached an SQL interpreter");
+  assert.ok(restore.indexOf("await decryptArchive(archive,discard,pass)") <
+    restore.indexOf("decryptArchive(archive,child.stdin,pass)"));
+
   assert.doesNotMatch(restore,/restore_snapshot|finalize_branch_restore/);
 });
