@@ -57,7 +57,7 @@ function sourceEnvironment(raw){
     PGHOST:HOST,PGPORT:"5432",PGDATABASE:DB,PGUSER:decodeURIComponent(u.username),
     PGPASSWORD:decodeURIComponent(u.password),PGSSLMODE:"verify-full",
     PGSSLROOTCERT:"system",PGCHANNELBINDING:"require",
-    PGCONNECT_TIMEOUT:"10",PGOPTIONS:"-c default_transaction_read_only=on"};
+    PGCONNECT_TIMEOUT:"10",PGTZ:"UTC",PGOPTIONS:"-c TimeZone=UTC -c default_transaction_read_only=on"};
 }
 function preflight(env){
   const q="SELECT current_database()||'|'||current_setting('server_version_num')||'|'"+
