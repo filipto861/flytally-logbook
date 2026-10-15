@@ -1,5 +1,14 @@
 # FlyTally Logbook 3.8 — R1 DeepSeek code-level findings and corrective batch
 
+## 15 October — second owner-local full-suite attempt, residual source tests
+
+On exact `7e0a39d8c32db7e0f040e6bb8643bf9ab00f8c5d`, owner-local targeted previously failing tests **32/32 PASS**; native disposable PG16 identity was verified (`flytally_currency_test|flytally|127.0.0.1|59150`), typecheck PASS; schema static **6/6**, PG schema **9/9** and executable release SQL **5/5** PASS, temporary PG stopped. Full Node suite **1553/1555**; **two remaining failures** were `tests/timezone-semantics-source.test.ts:36` and `tests/v370-map-layers.test.ts:172`, each redundantly asserting 395 versus canonical module registry's validated runtime file count 396. Gate3 Next build and Gate4 browser **NOT RUN**, not PASS.
+
+Minimal test-only correction `efcda5dc9526090c6af61aec6c8bad6bc76adcac` removes only those redundant `auditedTotal=395` assertions, retaining relevant strict timezone mapping and GPS/satellite-browser selection checks. The **central** `tests/development-scope.test.ts` remains authoritative and independently verifies actual runtime-file count, baseline stable ownership and >=90% coverage. Unmodified runtime and production SQL. New head remains **UNTESTED**.
+
+Owner must run targeted timezone+map+development ownership tests, then full four-gate script on the same SHA. H4 independent application rollback proof and production safety gates remain OPEN.
+
+
 ## 15 October — Owner-local partial acceptance and test-governance reconciliation
 
 On exact `e8cf3f1d6f48f9b0b0871399826248c83ad65ffa`, owner-local TS PASS, targeted currency guard/release contract 10/10 PASS, native disposable PG16 6/6 review source, 9/9 integration and 5/5 release-artifact PG tests PASS; PG identity verified and cluster stopped. Full Node Gate2 was **1552/1554 PASS**; two failures solely in the source/development registry gate: `tests/development-scope.test.ts:212` had 395 vs actual 396 runtime files after adding the new helper, and `tests/v367-flight-entry-e15-closeout.test.ts:11` expected old SELECT-version-only SQL instead of SELECT-version-and-name under the same schema-version filter. No Next build or Playwright ran.

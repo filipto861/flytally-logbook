@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — v21 H1/H5 repeat local acceptance, remove duplicated hard-coded ownership counts (unreleased)
+
+- Owner tested `7e0a39d8`: focused earlier failing tests 32/32 PASS, TypeScript PASS, isolated native PostgreSQL16 identity validated and stopped; static 6/6, native schema 9/9, full executable release SQL v21 5/5 PASS. Complete Node suite 1553/1555: the remaining 2 FAIL were hard-coded old module inventory counts (`395` vs new audited `396`) in timezone and 3.7 map source-contract tests. Optimized Next build and authenticated browser NOT RUN, full acceptance FAIL.
+- `efcda5dc` removes **only** redundant historic numeric assertions in `tests/timezone-semantics-source.test.ts` and `tests/v370-map-layers.test.ts`; timezone/mapping and satellite-to-browser-risk checks remain intact. Canonical independent full runtime-file audit remains in `tests/development-scope.test.ts`, so module coverage is not weakened. No app runtime or v21 SQL modified. New head tests NOT RUN.
+- PR #338 stays Draft. No production database/Neon/branch/backup, merge or deployment changes. H4 real v20-app-on-v21 rollback, independent review and operator/recovery/source release gates remain OPEN.
+
 ## 15 October 2026 — R1 H1/H5 local acceptance partial; align development registry and historical E1.5 contract (unreleased)
 
 - Owner-local `e8cf3f1d6f48f9b0b0871399826248c83ad65ffa`: TypeScript PASS, targeted guard/release tests **10/10 PASS**; isolated native PostgreSQL16 identity validated, schema source **6/6 PASS**, native schema **9/9 PASS**, executable v21 release artifact **5/5 PASS**, disposable cluster stopped; full Node suite **1552/1554 PASS**, two legacy infrastructure source assertions failed. Next.js build/Playwright **NOT RUN** because Gate2 stopped.
