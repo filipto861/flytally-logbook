@@ -11,11 +11,16 @@ const restoreSource=readFileSync(path.join(root,"lib/flight-trash.ts"),"utf8");
 const start=restoreSource.indexOf("export async function restoreDeletedFlightRecord");
 assert.ok(start>=0,"Restore function not found");
 const restoreBlock=restoreSource.slice(start);
-const lockFound=restoreBlock.match(/const tx=await sql\.transaction\(\[\s*sql\x60([\s\S]*?)\x60,\s*sql\x60WITH candidate AS MATERIALIZED/);
-const found=restoreBlock.match(/sql\x60(WITH candidate AS MATERIALIZED[\s\S]*?)\x60\],\{isolationLevel:'ReadCommitted'\}\);const rows=tx\[1\] as Array<\{restored_flight_id:number\|string\}>/);
-assert.ok(lockFound,"Transaction-scoped natural-identity lock is missing");
-assert.ok(found,"Exact SQL restore query in transaction is missing");
-const advisory=lockFound[1],tagged=found[1];
+// Parse both canonical branches, then execute ONLY the historical v20 SQL
+// from the explicit currencyRestore=false branch in the isolated v20 fixture.
+// Runtime transaction now passes the selected restoreQuery as its second query.
+const branches=restoreBlock.match(/const restoreQuery=currencyRestore \? sql`(WITH candidate AS MATERIALIZED[\\s\\S]*?)`\s*:\s*sql`(WITH candidate AS MATERIALIZED[\\s\\S]*?)`;\s*const tx=await sql\\.transaction\\(\\[\\s*sql`([\\s\\S]*?)`,\\s*restoreQuery\\],\\{isolationLevel:'ReadCommitted'\\}\\);const rows=tx\\[1\\] as Array<\\{restored_flight_id:number\\|string\\}>/);
+assert.ok(branches,"Both guarded currency and legacy restore SQL and their atomic advisory-lock transaction must exist");
+const [,currencyTagged,tagged,advisory]=branches;
+assert.match(currencyTagged,/price_currency_code,price_currency_minor_units,price_per_hour_decimal/);
+assert.match(currencyTagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
+assert.match(tagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
+assert.match(advisory,/pg_advisory_xact_lock\\(hashtextextended\\(concat_ws/);
 const asked=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1"||process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1"&&process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
 const url=process.env.DATABASE_URL||"";
