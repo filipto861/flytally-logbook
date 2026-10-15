@@ -99,7 +99,8 @@ function preflight(env){
 async function main(){
   must(process.platform==="win32"&&process.versions.node.split(".")[0]==="24",
     "Windows PowerShell and Node 24 are required.");
-  tool("pg_dump");tool("psql");tool("pg_restore");
+  // Prerequisite gate covers both export AND later isolated PG18 restore.
+  for(const name of ["pg_dump","psql","pg_restore","initdb","pg_ctl","createdb"])tool(name);
   if(process.argv[2]==="check"){console.log("PG18 clients found. Backup NOT RUN.");return;}
   must(process.argv[2]==="export"&&process.argv.length===3,
     "Usage: node tooling/v380-off-neon-export.mjs check|export");
