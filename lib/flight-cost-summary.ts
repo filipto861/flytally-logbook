@@ -1,5 +1,5 @@
-import { supportedIsoCurrency } from "./iso4217-currency-registry";
-import { formatMoneyAmount, type Money } from "./monetary-amount";
+import { supportedIsoCurrency } from "./iso4217-currency-registry.ts";
+import { formatMoneyAmount, type Money } from "./monetary-amount.ts";
 
 /** Summary is derived from every flight in the server-side filter scope, never the page slice. */
 export type FlightCostSummary = Readonly<{
@@ -14,6 +14,7 @@ export type FlightCostSummary = Readonly<{
 
 type RawBucket = { currency?: unknown; minorUnits?: unknown; minor?: unknown; flights?: unknown };
 const count = (value: unknown): number | null => {
+  if (typeof value !== "number" && (typeof value !== "string" || !/^\\d+$/.test(value))) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 };
