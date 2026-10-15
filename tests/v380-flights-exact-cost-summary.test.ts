@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { presentFlightCostSummary } from "../lib/flight-cost-summary.ts";
+import { presentFlightCostSummary,summarizeRegistrationCosts } from "../lib/flight-cost-summary.ts";
 
 const source=readFileSync(new URL("../lib/data/flights-fast.ts",import.meta.url),"utf8");
 const page=readFileSync(new URL("../app/(protected)/flights/page.tsx",import.meta.url),"utf8");
@@ -58,4 +58,42 @@ test("flight list money aggregator uses entire selected SQL scope, not paginated
   assert.match(source,/cost_state='invalid'/);
   assert.match(page,/presentFlightCostSummary\(result.costSummarySource.buckets,result.summary.flights/);
   assert.doesNotMatch(page,/<strong>Unverified<\/strong><small>Legacy rates have no recorded currency/);
+});
+
+test("Statistics groups flight costs after individual per-flight rounding and split, not before",()=>{
+  const row=(overrides:Record<string,unknown>={})=>({
+    billing:"BLOCK",currency:"CZK",minorUnits:2,rate:"100.01",
+    blockMinutes:30,airMinutes:20,validBlock:true,validAir:true,...overrides
+  });
+  const s=summarizeRegistrationCosts([
+    row(), // 50.005 -> 50.01 CZK
+    row({billing:"AIR/2",airMinutes:30}), // 25.0025 -> 25.00 CZK
+    row({currency:"JPY",minorUnits:0,rate:"1001"}), // 500.5 -> 501 JPY
+    row({currency:"KWD",minorUnits:3,rate:"1.001"}), // .5005 -> .501 KWD
+  ]);
+  assert.deepEqual(s.breakdown,["75.01 CZK","501 JPY","0.501 KWD"]);
+  assert.equal(s.headline,"Multiple currencies");
+  assert.equal(s.pricedFlights,4);
+  assert.equal(s.complete,true);
+});
+test("Statistics never assigns currency or zero costs to invalid and untracked sources",()=>{
+  const s=summarizeRegistrationCosts([
+    {billing:"BLOCK",currency:null,minorUnits:null,rate:null,blockMinutes:30,airMinutes:20,validBlock:true,validAir:true},
+    {billing:"BLOCK",currency:"CZK",minorUnits:2,rate:"100",blockMinutes:0,airMinutes:20,validBlock:false,validAir:true},
+    {billing:"AIR/0",currency:"CZK",minorUnits:2,rate:"100",blockMinutes:30,airMinutes:20,validBlock:true,validAir:true},
+    {billing:"",currency:"CZK",minorUnits:2,rate:"100",blockMinutes:30,airMinutes:20,validBlock:true,validAir:true},
+  ]);
+  assert.equal(s.headline,"Unavailable");
+  assert.equal(s.excludedFlights,3);
+  assert.equal(s.notTrackedFlights,1);
+  assert.equal(s.complete,false);
+});
+test("Statistics registration source preserves the selected category/period/auxiliary scope",()=>{
+  const stats=readFileSync(new URL("../lib/data/pilot-insights.ts",import.meta.url),"utf8");
+  const statPage=readFileSync(new URL("../app/(protected)/statistics/page.tsx",import.meta.url),"utf8");
+  assert.match(stats,/FROM selected WHERE \$\{section\}::text IN \('all','aircraft'\) AND NOT auxiliary AND registration<>'' GROUP BY registration/);
+  assert.match(stats,/price_per_hour_decimal::text price_per_hour_decimal/);
+  assert.match(stats,/jsonb_agg\(jsonb_build_object\('billing',monetary_billing_basis/);
+  assert.match(stats,/costSummary:summarizeRegistrationCosts\(item.cost_rows\)/);
+  assert.match(statPage,/row.costSummary.headline/);
 });
