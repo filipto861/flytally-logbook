@@ -8,6 +8,32 @@ import { probePostgresConnection } from "./postgres-cli.mjs";
 // Never infer permission for currency v21 DDL from a generic browser test.
 const playwrightArgs=process.argv.slice(2);
 const currencyIntent=playwrightArgs[0]==="--currency-v21";
+const riskCurrencyIntent=playwrightArgs[0]==="--currency-v21-risk";
+const schemaFirstIntent=currencyIntent||riskCurrencyIntent;
+if(riskCurrencyIntent){
+  const specs=playwrightArgs.slice(1).filter(value=>!value.startsWith("--"));
+  const argumentsAllowed=playwrightArgs.slice(1).every(value=>
+    /^e2e\/[a-z0-9._-]+\.spec\.mjs$/i.test(value)
+    || /^--project=(desktop-chromium|mobile-chromium)$/.test(value)
+    || value.startsWith("--grep=")
+    || value==="--retries=0"
+    || value==="--workers=1");
+  if(process.env.FLYTALLY_V21_RISK_BROWSER!=="1"
+    || !process.env.FLYTALLY_BROWSER_EVIDENCE_FILE
+    || specs.length===0
+    || !specs.every(value=>/^e2e\/[a-z0-9._-]+\.spec\.mjs$/i.test(value))
+    || !playwrightArgs.some(value=>/^--project=(desktop-chromium|mobile-chromium)$/.test(value))
+    || !playwrightArgs.some(value=>value.startsWith("--grep="))
+    || !playwrightArgs.includes("--retries=0")
+    || !playwrightArgs.includes("--workers=1")
+    || !argumentsAllowed){
+    console.error("Currency v21 risk browser requires bounded Playwright targets and isolated purpose flags. No bootstrap.");
+    process.exit(2);
+  }
+}else if(process.env.FLYTALLY_V21_RISK_BROWSER==="1"){
+  console.error("Currency v21 risk purpose requires explicit --currency-v21-risk intent. No bootstrap.");
+  process.exit(2);
+}
 if(currencyIntent){
   if(playwrightArgs.length!==2||playwrightArgs[1]!=="e2e/trash-integrity.spec.mjs"){
     console.error("Currency browser needs exactly its dedicated E2E spec.");process.exit(2);
@@ -46,7 +72,7 @@ if(!new Set(["127.0.0.1","localhost","::1","[::1]"]).has(parsedDatabaseUrl.hostn
   process.exit(2);
 }
 
-if(currencyIntent){
+if(schemaFirstIntent){
   if(parsedDatabaseUrl.protocol!=="postgresql:"
     ||parsedDatabaseUrl.hostname!=="127.0.0.1"
     ||parsedDatabaseUrl.pathname!=="/flytally_currency_test"
@@ -79,7 +105,7 @@ if(bootstrapResult.status!==0)process.exit(bootstrapResult.status??1);
 
 // Only explicitly opted-in Currency browser acceptance may use the verified
 // disposable localhost fixture for runtime v20/v21 schema initialization.
-if(currencyIntent){
+if(schemaFirstIntent){
   if(parsedDatabaseUrl.hostname!=="127.0.0.1" ||
      parsedDatabaseUrl.pathname!=="/flytally_currency_test" ||
      process.env.FLYTALLY_AUTH_BROWSER!=="1" ||
@@ -99,9 +125,9 @@ if(currencyIntent){
 const require=createRequire(import.meta.url);
 const playwrightPackage=require.resolve("@playwright/test/package.json");
 const playwrightCli=join(dirname(playwrightPackage),"cli.js");
-const browserResult=spawnSync(process.execPath,[playwrightCli,"test","--config=playwright.config.mjs",...(currencyIntent?playwrightArgs.slice(1):playwrightArgs)],{stdio:"inherit",env:browserEnv});
+const browserResult=spawnSync(process.execPath,[playwrightCli,"test","--config=playwright.config.mjs",...(schemaFirstIntent?playwrightArgs.slice(1):playwrightArgs)],{stdio:"inherit",env:browserEnv});
 if(browserResult.error)throw browserResult.error;
-if(browserResult.status===0&&currencyIntent){
+if(browserResult.status===0&&schemaFirstIntent){
   // Browser actions exercised the application against a disposable localhost DB.
   // Independently verify that the runtime finished the complete v21 migration.
   const evidenceQuery=`SELECT (SELECT COUNT(*) FROM public.flytally_schema_migrations
