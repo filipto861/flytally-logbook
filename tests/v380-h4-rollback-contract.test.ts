@@ -26,10 +26,14 @@ test("H4 preparation stages canonical v21 on a fresh verified disposable local D
     'if (Test-Path Env:VERCEL_ENV)',
   ])assert.ok(runner.includes(marker),`Missing H4 safety marker: ${marker}`);
   const bootstrap=runner.indexOf('tooling\\bootstrap-browser-smoke-db.mjs');
+  const fixture=runner.indexOf('H4 frozen v20 workspace baseline fixture');
+  assert.ok(runner.includes('ALTER TABLE rates ADD COLUMN dry_price_per_hour NUMERIC;'));
+  assert.ok(runner.includes('CREATE TABLE aircraft_photos('));
+  assert.ok(runner.includes("ALTER TABLE airports ADD COLUMN municipality TEXT NOT NULL DEFAULT '';"));
   const v21=runner.indexOf('tooling\\apply-currency-v21-disposable.mjs');
   const build=runner.indexOf("npm.cmd run build");
   const browser=runner.indexOf('test --config=playwright.h4.config.mjs');
-  assert.ok(bootstrap<v21&&v21<build&&build<browser,"H4 staging/build/browser ordering changed");
+  assert.ok(bootstrap<fixture&&fixture<v21&&v21<build&&build<browser,"H4 staging/build/browser ordering changed");
   assert.ok(runner.includes("reuseExistingServer:false"));
   assert.ok(runner.includes("retries:0"));
 });
@@ -41,6 +45,7 @@ test("H4 frozen browser exercises real authenticated reads, certified evidence a
   assert.ok(spec.includes('await page.goto("/database")'));
   assert.ok(spec.includes("certified_at IS NOT NULL"));
   assert.ok(spec.includes("price_currency_code IS NULL"));
+  assert.ok(spec.includes('testInfo.project.name==="mobile-chromium"?9984:9983'));
   assert.ok(spec.includes("FLYTALLY_CURRENCY_V21_BROWSER===undefined"));
 });
 
