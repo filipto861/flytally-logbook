@@ -127,7 +127,7 @@ async function main(){
   must(accepted==="RESTORE_TEST","Operator did not confirm temporary local restore.");
   const dir=await fs.mkdtemp(join(tmpdir(),"flytally-380-pg18-restore-"));
   const data=join(dir,"postgres-data"),log=join(dir,"postgres.log");
-  let started=false,stopVerified=false,attempted=false;
+  let started=false,stopVerified=false,attempted=false,verifiedEvidence=null;
   const port=await openPort(),env=localEnv(port,name);
   try{
     run("initdb",["-D",data,"-U",user,"-A","trust","--encoding=UTF8","--no-instructions"],env,120000);
@@ -159,14 +159,9 @@ async function main(){
       must(String(actual[key])===String(expected[key]),
         "Restore integrity mismatch: "+key+". No release approval.");
     }
-    manifest.verified_restore=true;
-    manifest.verified_at=new Date().toISOString();
-    manifest.verify_scope="PG18 disposable full logical restore + selected protected history/count digests";
-    await fs.writeFile(archive+".manifest.json",JSON.stringify(manifest,null,2)+"\n",
-      {encoding:"utf8"});
-    console.log("OFF-NEON RESTORE CHECK PASS: local PG18 restored "+actual.public_tables+
-      " tables, "+actual.flights+" flights; protected history digests match.");
-    console.log("Not proof of signed account v13 workflow recovery or live PG18 release.");
+    // Hold success evidence in memory until PostgreSQL is stopped and
+    // the plaintext test cluster is actually removed. Do not mark PASS early.
+    verifiedEvidence=actual;
   }finally{
     if(started){
       try{
@@ -174,8 +169,22 @@ async function main(){
         stopVerified=true;
       }catch{console.warn("Local PG18 stop failed; preserve directory for manual inspection: "+dir);}
     }else if(!attempted||!existsSync(join(data,"postmaster.pid")))stopVerified=true;
-    if(stopVerified)await fs.rm(dir,{recursive:true,force:true}).catch(()=>{});
+    if(stopVerified){
+      try{await fs.rm(dir,{recursive:true,force:true});}
+      catch{stopVerified=false;console.warn("Private restored cluster could not be removed: "+dir);}
+    }
   }
+  must(stopVerified,"Local PG18 test instance was not safely stopped/removed; restore remains unverified.");
+  must(verifiedEvidence,"No verified restored-data evidence.");
+  manifest.verified_restore=true;
+  manifest.verified_at=new Date().toISOString();
+  manifest.verify_scope="PG18 disposable full logical restore + selected protected history/count digests";
+  // This local manifest status is an audit marker, not a digital signature.
+  await fs.writeFile(archive+".manifest.json",JSON.stringify(manifest,null,2)+"\n",
+    {encoding:"utf8"});
+  console.log("OFF-NEON RESTORE CHECK PASS: local PG18 restored "+verifiedEvidence.public_tables+
+    " tables, "+verifiedEvidence.flights+" flights; protected history digests match.");
+  console.log("Not proof of signed account v13 workflow recovery or live PG18 release.");
 }
 main().catch(error=>{
   console.error("RESTORE CHECK NOT PASS: "+String(error.message||error).slice(0,1400));
