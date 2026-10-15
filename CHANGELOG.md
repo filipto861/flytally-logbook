@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 15 October 2026 — Currency 3.8.0 complete four-gate owner-local acceptance PASS (not released)
+
+- Owner-local Windows/Node24 `run-currency-380-acceptance.ps1 -WithBrowser` on exact code SHA `42e72909b798b8e71d0d9d3e66f551c14aad5931` emitted **LOCAL ACCEPTANCE PASS**. Gate 1: disposable PostgreSQL16 confirmed, TypeScript PASS, static SQL **6/6**, PG integration **9/9**, executable v21 production SQL **5/5**. Gate 2: **1555/1555** Node/source tests, zero failures or skips. Gate 3: optimized Next.js 16.3.2 build PASS, **41/41** static pages. Gate 4: dedicated new disposable PostgreSQL16, canonical schema-first v20/v21 registry/12 columns/4 constraints PASS, authenticated desktop/mobile Playwright **8/8 PASS (2.1 min)**, postflight shape PASS and PostgreSQL server stopped.
+- This is **local executable evidence** on the exact application code, **not CI or a production result**. No full real-history signed portable v13 recovery, protected v20 runtime-on-v21 H4 or fresh production Neon backup/restore was established by this run. Draft #338 stays unreleased, no production DDL/merge/deploy or original data changes. Release NO-GO pending independent validation and explicit owner authorization.
+
 ## 15 October 2026 — Currency v21 isolated authenticated browser accepted on `694b0793` (local only)
 
 - Owner report from Windows/Node24 exact `694b079384cbadc39aab4c4c0a71effa090e3c9f`: targeted source/guard/signed-backup tests **19/19 PASS**; unique disposable PostgreSQL16 identity confirmed; Next 16.3.2 optimized build PASS (41/41 static); dedicated schema-first fixture prepared canonical v20→v21 with registry count 1, twelve monetary columns and four CHECK constraints.
