@@ -117,7 +117,7 @@ async function main(){
   const name="flytally-pre-v21-"+new Date().toISOString().replace(/[:.]/g,"-")+
     "-"+randomBytes(4).toString("hex")+".ftbak";
   const finalPath=join(output,name),partial=finalPath+".partial";
-  let dump,exit,done=false;
+  let dump,exit,done=false,finalCreated=false;
   try{
     dump=spawn(exe("pg_dump"),
       ["-Fc","--no-owner","--no-acl","--serializable-deferrable",
@@ -129,7 +129,11 @@ async function main(){
     });
     const metadata=await encryptArchive(dump.stdout,partial,password);
     must((await exit)===0,"pg_dump failed: "+errorText.slice(-700));
-    await fs.rename(partial,finalPath);
+    // Exclusive hard-link creation is atomic and will never overwrite an
+    // existing archive even under a random-name collision.
+    await fs.link(partial,finalPath);
+    finalCreated=true;
+    await fs.unlink(partial);
     const manifest={schema:1,source_project:"muddy-dust-14049657",
       source_branch:"br-raspy-fog-b1btvu5t",source_host:HOST,
       source_schema_preflight:schema,created_at:new Date().toISOString(),
@@ -145,7 +149,7 @@ async function main(){
   }finally{
     if(dump&&!done)dump.kill();
     await fs.rm(partial,{force:true}).catch(()=>{});
-    if(!done)await fs.rm(finalPath,{force:true}).catch(()=>{});
+    if(!done&&finalCreated)await fs.rm(finalPath,{force:true}).catch(()=>{});
   }
 }
 main().catch(e=>{console.error("BACKUP NOT COMPLETE: "+String(e.message||e).slice(0,1000));process.exitCode=1;});
