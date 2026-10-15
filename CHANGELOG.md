@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — current-primary no-compute safety fork, branch protection excluded by owner decision
+
+- Owner elected to proceed within existing Neon plan without treating unsupported `protected:true` as release precondition. Missing feature recorded as owner-accepted N/A, **not** protected. Snapshot quota still blocked; existing old-branch manual snapshot retained.
+- Live preflight explicitly checked Neon Logbook project `muddy-dust-14049657` primary/default `br-raspy-fog-b1btvu5t`, database `neondb`, v20 registry 20, v21 0 and counts flights 315/voided 3/provenance 12. Created additive **no-compute** checkpoint `br-shiny-bonus-b1gqt9u7`, `ft-380-current-primary-pre-v21-safety-copy-20261015`, from exact current primary at `2026-10-15T08:11:43Z` (parent LSN `0/10E02258`). Read-back verifies `READY`, parent id correct, 0 compute, primary remains unchanged; Logbook 5/10 branches. **No production writes or currency DDL**.
+- Recovery contents and realistic restore **NOT VERIFIED**; checkpoint is not a separate external `pg_dump` backup. Frozen production app SHA `dcc8ebbf` source only verified `DATABASE_SCHEMA_VERSION=20` and `version<=` registry filtering; actual H4 v20 app against physical v21 database **NOT RUN**. Keep schema-first release blocked until these controls, reviewer/source disposition and explicit owner GO are satisfied. PR Draft; no merge/deploy.
+
 ## 15 October 2026 — approved cleanup of four unused Neon test branches (verified deletion)
 
 - Owner requested removal of old unused Neon branches. Exact identity, archived/non-primary/non-default/unprotected state, idle September compute, snapshot associations and GitHub/Vercel configuration were evaluated before deletion.
