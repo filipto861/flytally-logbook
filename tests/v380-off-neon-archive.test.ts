@@ -99,6 +99,8 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   assert.match(restore,/denied.status!==0/);
   assert.match(restore,/inspectPgRestoreToc\(archive,pass,exe\("pg_restore"\)\)/);
   assert.match(restore,/FLYTALLY_CONFIRMED_ENCRYPTED_VOLUME/);
+  assert.match(restore,/process\.on\("SIGINT"/);
+  assert.match(restore,/notInterrupted\(\)/);
 
 
   assert.doesNotMatch(restore,/restore_snapshot|finalize_branch_restore/);
