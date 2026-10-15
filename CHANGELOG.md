@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**15 Oct 2026 — PR #340 release-gate discovery and design (STAGED, not deployed):** Added `docs/product/3_8_0_PR340_POSTGRES_EVIDENCE_PARTITION_REVIEW_2026-10-15.md`; added source-only `tests/v380-pr340-postgres-partition-inventory.test.ts` and registered it in `tooling/development-modules.json`. Independently inspected actual suites and recovered 32 opt-in tests (5+19+6+1+1); canonical raw skips remain PARTIAL. Proposed fresh-DB per-partition execution and actual v20 public catalog authority for external DeepSeek review. Code/source inspection PASS only; new Node, PostgreSQL, scale, browser and build **NOT RUN** on updated PR head. No changes to application runtime, schema, certified flight data or production deployment.
+
+
 **15 Oct 2026 — PR #340 PostgreSQL full-v20 fixture fix, not released:** Owner-local exact candidate `d01f1ba0`: 3/3 new runner guards, source 234/234, domain 26/26, typecheck, full Node and build PASS; PostgreSQL 123 PASS / 8 FAIL / 32 SKIP, all eight fail before SQL on duplicate `deleted_flights.expenses_data` column creation. Removed redundant `ALTER TABLE` from `tests/integration/postgres-v380-full-v20-restore.test.ts` and replaced with strict existing-column shape assertion. Added dedicated fixture-drift regression to `tests/v380-pr340-disposable-gate-flag.test.ts`. Source inspection PASS; updated local PG/Playwright verification NOT RUN. Remaining raw skipped dedicated PG scenarios require explicit acceptance evidence; PR still Draft, no merge or deployment.
 
 
