@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — owner-authorized Neon snapshot and branch protection blocked by account quotas (no state change)
+
+- Owner explicitly authorized current-primary manual snapshot and `protected:true` on project `muddy-dust-14049657` branch `br-raspy-fog-b1btvu5t`; live default-branch and v20 schema identity reverified first. `create_snapshot` returned **HTTP 422 `snapshots limit exceeded`**: no snapshot created. `update_branch(protected:true)` returned **HTTP 422 maximum protected branches for current plan**: protection not enabled.
+- Independent postcheck: Neon production branch READY but **`protected:false`**, sole manual snapshot `snap-proud-fire-b1bm8oac` still from former branch `br-dark-math-b1snjzub`. No snapshot deletion, branch change, live database DDL, restore, merge, Vercel deployment, or production data modification.
+- **Release NO-GO** until fresh/current-primary recoverability, protection decision and all remaining operator/historic recovery gates are satisfied. Existing full local four-gate PASS remains valid for unchanged code.
+
 ## 15 October 2026 — v21 release target read-only inspection (no deployment)
 
 - Neon project `muddy-dust-14049657`: default/primary `br-raspy-fog-b1btvu5t` READY; explicit read-only `neondb` query PG18.6, registry versions 1–20 count 20, version21 count 0, currency columns 0/12 and CHECKs 0/4; flights 315, rates 33, aircraft 25, voided certified 3, provenance 12. No SQL mutations.
