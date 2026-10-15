@@ -1,5 +1,7 @@
 # FlyTally Logbook — ROADMAP
 
+**15 Oct 2026 — currency schema-first browser separator fix (NEW SHA NOT TESTED).** Owner-local `68947b344abf3f9f69bf4a46d257a419b835383c` focused tests **19/19 PASS**, disposable PostgreSQL16 identity/cleanup **PASS**, Next production build **PASS**. Currency harness/bootstrap preflights **PASS**; explicit v20/v21 schema-first staging **FAILED before Playwright**: concatenated standalone runtime SQL blocks had no statement-ending semicolons, so PostgreSQL rejected the second `CREATE TABLE`. Corrected `tooling/apply-currency-v21-disposable.mjs` to terminate each extracted block exactly once; added a narrowly scoped source regression. No runtime application/production migration changes. Current new SHA targeted tests, PG staging, browser 8/8 **NOT RUN**. Next: pull, run targeted source tests, then isolated browser gate ONLY; full acceptance only after browser PASS. PR #338 Draft, production release NO-GO.
+
 ## 15 Oct 2026 — Currency authenticated browser: schema-first fixture correction STAGED (NOT TESTED)
 
 **Motivation/evidence:** Owner-local `40104b91` had targeted 9/9, disposable PG16 identity, PowerShell→Node→harness preflight and optimized build PASS, but authenticated Playwright 0/8 because optimized Next rejected *automatic* v21 DDL. Passing flags in the harness is not proof of an identical optimized Next runtime environment.
