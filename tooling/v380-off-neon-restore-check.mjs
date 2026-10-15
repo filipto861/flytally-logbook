@@ -26,7 +26,15 @@ function tools(){
   }
 }
 function run(binName,args,env,timeout=90000){
-  const r=spawnSync(exe(binName),args,{env,encoding:"utf8",timeout,maxBuffer:1024*1024});
+  // On Windows pg_ctl starts a long-lived postgres.exe process. The
+  // child server can inherit captured stdout/stderr handles and keep
+  // spawnSync waiting despite pg_ctl having exited. Use log-file output
+  // through pg_ctl -l and no captured pipes for start/stop.
+  const isCtl=binName==="pg_ctl";
+  const r=spawnSync(exe(binName),args,{
+    env,encoding:"utf8",timeout,maxBuffer:1024*1024,windowsHide:true,
+    stdio:isCtl?"ignore":["ignore","pipe","pipe"]
+  });
   must(!r.error&&r.status===0,binName+" failed: "+String(r.stderr||r.error?.message||"").slice(-1200));
   return String(r.stdout||"").trim();
 }
@@ -132,9 +140,19 @@ async function main(){
   try{
     run("initdb",["-D",data,"-U",user,"-A","trust","--encoding=UTF8","--no-instructions"],env,120000);
     attempted=true;
-    run("pg_ctl",["-D",data,"-l",log,"-o","-h 127.0.0.1 -p "+port,
-      "-w","-t","30","start"],env,90000);
-    started=true;
+    try {
+      run("pg_ctl",["-D",data,"-l",log,"-o","-h 127.0.0.1 -p "+port,
+        "-w","-t","30","start"],env,90000);
+      started=true;
+    } catch(error) {
+      // A failed pg_ctl can leave a running server. Only inspect/stop the
+      // unique cluster created by THIS invocation, never unrelated services.
+      if(existsSync(join(data,"postmaster.pid")))started=true;
+      let excerpt="";
+      try{excerpt=(await fs.readFile(log,"utf8")).slice(-1400);}catch{}
+      if(excerpt)console.error("Isolated restore PostgreSQL startup log: "+excerpt);
+      throw error;
+    }
     run("createdb",["-h","127.0.0.1","-p",String(port),"-U",user,name],localEnv(port,"postgres"));
     const id=run("psql",["-X","-w","-qAt","-c",
       "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())"],env);
