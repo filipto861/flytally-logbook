@@ -8,6 +8,7 @@ import {join} from "node:path";
 import {encryptArchive,decryptArchive,retainChildStdout} from "./v380-backup-archive.mjs";
 import {restrictWindowsDirectory,createEphemeralPwfile} from "./v380-windows-private.mjs";
 import {inspectPgRestoreToc} from "./v380-backup-toc.mjs";
+import {sealManifest,verifyManifest} from "./v380-backup-manifest.mjs";
 
 // No Neon URL or production data; a disposable local PostgreSQL 18 only.
 const pgBin=join(process.env.ProgramFiles||"C:\\Program Files","PostgreSQL","18","bin");
@@ -144,8 +145,10 @@ async function main(){
     let dumpError="";
     dump.stderr.on("data",chunk=>{dumpError=(dumpError+chunk.toString("utf8")).slice(-2000);});
     const dumped=exitOf(dump);
+    let archiveMeta;
     try{
-      const meta=await encryptArchive(bufferedDump,archive,password,{requirePgDumpCustomFormat:true});
+      archiveMeta=await encryptArchive(bufferedDump,archive,password,{requirePgDumpCustomFormat:true});
+      const meta=archiveMeta;
       const exit=await dumped;
       must(exit===0,"Synthetic pg_dump exited with code "+exit+": "+dumpError);
       activeChild=null;
@@ -157,6 +160,18 @@ async function main(){
       throw new Error("Synthetic pg_dump/archive failed (exit "+exit+"): "+
         String(error.message||error)+"; stderr: "+(dumpError||"(empty)"));
     }
+    // Exercise immutable authenticated production-style manifest as well as
+    // AES-GCM before any restore. Synthetic provenance cannot be mistaken for
+    // real Neon evidence because its branch and host are explicit.
+    const syntheticManifest=await sealManifest(archive,password,{
+      manifest_version:2,source_project:"muddy-dust-14049657",
+      source_branch:"synthetic-only",source_host:"synthetic.local",
+      source_schema_preflight:{kind:"test-only",rows:2},
+      created_at:new Date().toISOString(),
+      encrypted_sha256:archiveMeta.sha256,encrypted_size:archiveMeta.sizeBytes
+    });
+    const signed=await verifyManifest(archive,password,syntheticManifest);
+    must(signed.source_branch==="synthetic-only","Synthetic manifest HMAC mismatch.");
     // Complete authenticated preflight BEFORE starting pg_restore.
     report("06/10 Authenticating complete encrypted archive before restore.");
     notInterrupted();
