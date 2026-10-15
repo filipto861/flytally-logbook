@@ -56,6 +56,10 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   assert.match(exportSource,/--serializable-deferrable/);
   assert.match(exportSource,/source_branch:"br-raspy-fog-b1btvu5t"/);
   assert.match(exportSource,/encryptArchive\(bufferedDump,partial,password,\{requirePgDumpCustomFormat:true\}\)/);
+  assert.match(exportSource,/sealManifest\(finalPath,password,immutable\)/);
+  assert.match(exportSource,/manifest_version:2/);
+  assert.match(exportSource,/restrictWindowsDirectory\(output\)/);
+  assert.doesNotMatch(exportSource,/verified_restore:false/);
   assert.match(exportSource,/const after=preflight\(env\)/);
   assert.match(exportSource,/JSON\.stringify\(after\)===JSON\.stringify\(schema\)/);
 
