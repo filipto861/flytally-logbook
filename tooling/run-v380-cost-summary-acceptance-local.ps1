@@ -14,6 +14,7 @@ $expectedBranch = "fix/3.8.0-flights-exact-cost-summary"
 $oldPath = $env:Path
 $oldDatabaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
 $oldPgIntegration = [Environment]::GetEnvironmentVariable("FLYTALLY_POSTGRES_INTEGRATION", "Process")
+$oldD2FullV20 = [Environment]::GetEnvironmentVariable("FLYTALLY_D2_FULL_V20_DISPOSABLE", "Process")
 $oldD3bTargetedPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE", "Process")
 $oldD3bMigrationsPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE", "Process")
 $oldPgPassword = [Environment]::GetEnvironmentVariable("PGPASSWORD", "Process")
@@ -139,10 +140,14 @@ try {
     throw "Test database identity mismatch. PostgreSQL tests NOT RUN. No existing database was changed."
   }
   Write-Host "Verified disposable DB identity."
+  # The full PG16 gate includes the historical v20 restore integration. Its
+  # fixture resets public, so activate ONLY after fresh-cluster identity PASS.
+  # Never promote this opt-in to the generic PostgreSQL runner.
+  $env:FLYTALLY_D2_FULL_V20_DISPOSABLE = "1"
 
   # Confirm actual native Node child process inherited purpose flags before
   # Next build, npm, Playwright, or any destructive fixture bootstrap.
-  & node -e "const e=process.env; if(e.FLYTALLY_AUTH_BROWSER!=='1'||e.FLYTALLY_LOCAL_POSTGRES!=='1'||e.FLYTALLY_CURRENCY_V21_BROWSER!=='1'||e.FLYTALLY_V21_RISK_BROWSER!=='1'||e.VERCEL!==undefined||e.VERCEL_ENV!==undefined){console.error('PR340 purpose flags did not reach Node.'); process.exit(3);} console.log('PR340 PowerShell-to-Node purpose preflight PASS.')"
+  & node -e "const e=process.env; if(e.FLYTALLY_AUTH_BROWSER!=='1'||e.FLYTALLY_LOCAL_POSTGRES!=='1'||e.FLYTALLY_CURRENCY_V21_BROWSER!=='1'||e.FLYTALLY_V21_RISK_BROWSER!=='1'||e.FLYTALLY_D2_FULL_V20_DISPOSABLE!=='1'||e.VERCEL!==undefined||e.VERCEL_ENV!==undefined){console.error('PR340 purpose flags did not reach Node.'); process.exit(3);} console.log('PR340 PowerShell-to-Node purpose preflight PASS.')"
   Assert-Exit "Currency purpose environment preflight"
   # Production deployment markers are never valid in the disposable acceptance.
   # Fail closed rather than weakening the v21 migration guard for this test.
@@ -162,6 +167,7 @@ try {
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
   Restore-Env "FLYTALLY_POSTGRES_INTEGRATION" $oldPgIntegration
+  Restore-Env "FLYTALLY_D2_FULL_V20_DISPOSABLE" $oldD2FullV20
   Restore-Env "FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE" $oldD3bTargetedPg16
   Restore-Env "FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE" $oldD3bMigrationsPg16
   Restore-Env "PGPASSWORD" $oldPgPassword
