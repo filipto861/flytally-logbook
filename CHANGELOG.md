@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 15 Oct 2026 — 3.8.0 production hotfix (data only): CZK for all historic rates and active flights
+
+Product owner explicitly confirmed historical denominations as CZK and authorized completion on 25 aircraft, 33 rates and 315 active flights. First updated 25 aircraft, 33 rate rows and 203 unlocked flight rows; then safely completed 112 protected rows (110 certified plus 2 locked-only). Full transactional PostgreSQL18 rehearsal on isolated production-derived Neon child; production prechange checkpoint retained; only three exact currency fields amended per protected flight with complete row audit and 112 explicit owner-attributed maintenance events. **Postflight PASS**: 25/25 aircraft CZK, 33/33 rates CZK, 315/315 flights CZK; guard re-enabled; 110/110 certified + 112/112 locked preserved, hashes/revisions and all other columns unchanged in 112/112 audited comparisons. No new certification revision or app deploy. Narrow explicitly authorized maintenance exception to D2; future unknown currency still fails closed. Four user accounts covered by global product-owner attestation, not four independent account-owner attestations. Signed-in page refresh pending. [Detailed report](docs/operations/2026-10-15-czk-historical-backfill.md).
+
+
 ## 15 Oct 2026 — FlyTally Logbook 3.8.0 RELEASED: Neon v21 migrated, PR #338 merged, Vercel READY
 
 **Owner C0 production GO and risk waiver:** owner explicitly authorized the live v21 migration/deployment after accepting a release without a new independent off-Neon backup. This does NOT provide independent disaster recovery. Preserve historical Neon snapshot, same-project safety checkpoint `br-shiny-bonus-b1gqt9u7` and other original branches. Independent signed historical account-v13 recovery remains unproven; source-provenance independent reviewer verdict remains pending and should not be claimed approved.
