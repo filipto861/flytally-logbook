@@ -1,5 +1,26 @@
 # FlyTally Logbook 3.8.0 — off-Neon v20 archival/recovery gate (15 October 2026)
 
+## 15 October 2026 — owner PG18 gate PASS; hardening and synthetic restore PENDING
+
+Owner tested exact prior code SHA `4a88bae044dc307ea5f9571e46626cd681f161d5` from Windows/Node24: `tests/v380-off-neon-archive.test.ts` **3/3 PASS**, and `node tooling/v380-off-neon-export.mjs check` **PASS** (`PG18 clients found. Backup NOT RUN.`). No Neon production `pg_dump`/backup/restore performed.
+
+Subsequent independent security pre-review found two meaningful deficiencies in unrun code and **patched them before first live export**:
+- Inherited `PGHOSTADDR`/`PGSERVICE`/`PGSERVICEFILE`/other `PG*` environment could override `PGHOST`. Both source and restore tools now strip inherited `PG*` and `DATABASE_URL`; local restore pins **both** `PGHOST` and `PGHOSTADDR` to `127.0.0.1`.
+- GCM tag validation occurs at end of streamed decryption; one-pass restore could feed as-yet-unauthenticated plaintext into `pg_restore`. Verification now decrypts **the whole archive to a discard sink before starting any local PostgreSQL instance** and rechecks ciphertext SHA256. Only after full authentication does it start local PG18 and stream again into `pg_restore`; no new plaintext dump file is created.
+- No restore PASS manifest is written until the plaintext test PostgreSQL is **stopped and its private directory actually removed**.
+- Export preflight metadata (schema/count/protected evidence digest) is queried again after dump, and the archive is refused/discarded if monitored values changed before/after, preventing false manifest parity during active writes. `pg_dump` itself has independent transaction-consistent snapshot; these are different guarantees.
+- Added `tooling/v380-off-neon-pg18-synthetic-test.mjs`: owner-local full disposable **synthetic** PostgreSQL18 `pg_dump -Fc` → encryption → full tag validation → `pg_restore --single-transaction` → data digest parity. No production data/URL is used. This is the next gate.
+
+**Next safe operator commands** after `git pull --ff-only`:
+
+```powershell
+npm run test:target -- tests/v380-off-neon-archive.test.ts
+node tooling/v380-off-neon-export.mjs check
+node tooling/v380-off-neon-pg18-synthetic-test.mjs
+```
+
+**Do not run the interactive production `export` yet.** First require synthetic PG18 PASS, independent reviewer disposition of `docs/product/3_8_0_OFF_NEON_INDEPENDENT_SECURITY_REVIEW_HANDOFF_2026-10-15.md`, and any minimal patches/regressions. This addendum supersedes the older, less stringent stage instructions below while preserving their history.
+
 **Status:** tooling staged in Draft PR #338. **Production export NOT RUN; local PG18 restore NOT RUN; NO-GO for live v21 DDL.** No backup file has been created by the assistant.
 
 ## Purpose and frozen state
