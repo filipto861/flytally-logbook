@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 verification evidence (15 Oct 2026, `d01f1ba0` owner-local):** source 234/234, domain 26/26, typecheck, full Node suite and Next build PASS; full PostgreSQL 123 PASS, 8 FAIL (all one pre-existing fixture column re-added), 32 SKIP; browser NOT RUN; release FAIL. Added test-only correction asserts canonical `deleted_flights.expenses_data` exact JSONB/NOT NULL/default shape instead of duplicating DDL, plus prevention regression. New commit's end-to-end PostgreSQL execution NOT RUN. Independently gated historic migration/race tests remain 32 raw SKIP in the current shared full mode; explicit source-backed disposition required to satisfy fail-closed acceptance. No shipped code or production DB change.
+
+
 **3.8.0 PR #340 exact-cost verification update (15 Oct 2026):** Historical v20 Trash/Restore remains part of release acceptance and must execute only on a separately provisioned, identity-verified disposable local PG16 database. The PR340 local gate now supplies the explicit `FLYTALLY_D2_FULL_V20_DISPOSABLE=1` opt-in after verifying its own cluster, preserves the standard generic gate fail-closed policy, and restores inherited flags. Latest **observed** PG16 run on earlier candidate `14e32e26`: 123 PASS, 8 blocked by missing opt-in, 32 SKIP; 10k/50k/100k SQL performance scenarios executed within limits, release overall FAIL, Playwright NOT RUN. New opt-in/guard-test commit **not yet executed by owner**; no shipped application/DB behavior change.
 
 
