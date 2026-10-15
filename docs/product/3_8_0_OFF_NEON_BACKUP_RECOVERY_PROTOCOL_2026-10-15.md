@@ -1,5 +1,9 @@
 # FlyTally Logbook 3.8.0 — off-Neon v20 archival/recovery gate (15 October 2026)
 
+## 15 October 2026 — R1-D PG18 synthetic stopped at TOC; patch awaiting retest
+
+Owner on f765c438: 10/10 crypto/security tests PASS; PG18 synthetic successfully used SCRAM and denied incorrect credential, dumped 2,806 custom bytes, authenticated the full encrypted archive, then FAILED before pg_restore with TOC table count mismatch. Stage10 isolated server shutdown/cleanup logged. Root cause was a regex matching TABLE DATA as TABLE. New source parser excludes TABLE DATA and TABLE ATTACH from definition count, still parses extension inventory, and fails closed on malformed entries; added 11th targeted test. Pure parser sample PASS, Windows tests on patch NOT RUN. Next run only git pull --ff-only, npm run test:target -- tests/v380-off-neon-archive.test.ts, and node tooling/v380-off-neon-pg18-synthetic-test.mjs. Never run production export or real-data restore before successful integrated verification and independent R1-D re-review.
+
 ## 15 October 2026 — R1-B/C security implementation staged; R1-D actual owner tests PENDING
 
 This addendum supersedes older run instructions that mention manifest `schema:1`/`verified_restore` or `initdb -A trust`. No real archive should exist yet; unsigned v1 manifests are now **explicitly refused** and must never be silently trusted/migrated.
