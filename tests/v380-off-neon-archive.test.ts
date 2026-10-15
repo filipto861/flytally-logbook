@@ -53,6 +53,9 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   assert.match(exportSource,/--serializable-deferrable/);
   assert.match(exportSource,/source_branch:"br-raspy-fog-b1btvu5t"/);
   assert.match(exportSource,/encryptArchive\(dump\.stdout,partial,password\)/);
+  assert.match(exportSource,/const after=preflight\(env\)/);
+  assert.match(exportSource,/JSON\.stringify\(after\)===JSON\.stringify\(schema\)/);
+
   assert.match(restore,/PGHOST:"127\.0\.0\.1"/);
   assert.match(restore,/--single-transaction/);
   assert.match(restore,/--exit-on-error/);
