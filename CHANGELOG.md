@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — H4 frozen production v20 rollback test infrastructure (unreleased; NOT RUN)
+
+- New `tooling/run-currency-380-h4-v20-rollback-local.ps1`: creates/validates and later removes an exclusively owned disposable localhost PostgreSQL16, applies exact v20+v21 canonical SQL with v21 registry and shape checks, checks out immutable Vercel-production `dcc8ebbfda0eadfa01345cd875ef1db806a19e26` application into a temp detached worktree, installs its dependencies and compiles actual old Next code, and exercises the old worktree's own browser Trash-integrity test together with targeted authenticated H4 reads on desktop/mobile. The extra test-only v20 aircraft/rate workspace fixture columns make the existing narrow browser seed compatible with the frozen v20 database-workspace queries. No old tracked app source is changed.
+- Added `e2e/v380-h4-frozen-v20.spec.mjs` for authenticated flight/database reads, synthetic certified record preservation and NULL v21 metadata, plus `tests/v380-h4-rollback-contract.test.ts` for source fail-closed orchestration/frozen-SHA/cleanup checks. Browser retries and server reuse are zero for H4, no production environment allowed.
+- **Source-level GitHub readback only PASS; actual Node tests, PG16 fixture, optimized v20 build and Playwright NOT RUN** at code SHA `66e1d7683f1f409a9ac6cc0581586bd3b8124ec2`. Last complete owner-local v3.8 acceptance was on older code SHA `42e72909`. No Neon, production database or deployment touched. Draft PR #338 remains release NO-GO pending executable H4 evidence and independent backups/review.
+
 ## 15 October 2026 — owner-approved checkpoint proof branch cleanup
 
 - Deleted **only** PG18 read-proof child `br-lucky-shape-b16omzi4` after owner authorization. Preflight verified exact child-parent relationship, no default/primary/protection, descendants or snapshot dependencies. Neon API deletion succeeded and independent branch inventory confirmed target absent.
