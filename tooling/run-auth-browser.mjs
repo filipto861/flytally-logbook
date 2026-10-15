@@ -34,8 +34,8 @@ if(riskCurrencyIntent){
   console.error("Currency v21 risk purpose requires explicit --currency-v21-risk intent. No bootstrap.");
   process.exit(2);
 }
-if(currencyIntent){
-  if(playwrightArgs.length!==2||playwrightArgs[1]!=="e2e/trash-integrity.spec.mjs"){
+if(schemaFirstIntent){
+  if(currencyIntent&&(playwrightArgs.length!==2||playwrightArgs[1]!=="e2e/trash-integrity.spec.mjs")){
     console.error("Currency browser needs exactly its dedicated E2E spec.");process.exit(2);
   }
   if(process.env.FLYTALLY_CURRENCY_V21_BROWSER!=="1"
