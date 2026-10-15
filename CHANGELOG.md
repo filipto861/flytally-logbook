@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 15 October 2026 — external backup PG18 synthetic end-to-end ACCEPTANCE PASS (owner-local, unreleased)
+
+- Owner ran on exact SHA `9d26c2cb6d01dcf596f64dd6186fbc300323c8ae`: encrypted archive/security/fast-child test suite **7/7 PASS** (0 fail/skip); separate actual PostgreSQL18 synthetic backup→AES-256-GCM full authenticate→single-transaction restore script **PASS**. PG18 test used fresh random localhost port 62750, two disposable synthetic databases, exit-0 custom `pg_dump` payload 2,806 bytes, record/hash comparisons and verified 10/10 local shutdown/cleanup. No Neon credentials, production flight records or user data involved.
+- Root cause of previous `pg_dump exit 0, empty stdout` addressed by connecting bounded `PassThrough` immediately after child spawn; success now verified by both targeted runtime regression and real owner-local PG18 fixture.
+- Subsequent read-only production-restore source inspection found `pg_ctl` stdout/stderr captured on Windows, retaining old inherited-pipe hang risk outside synthetic runner. Adjusted `tooling/v380-off-neon-restore-check.mjs` to use `stdio:"ignore"` for `pg_ctl`, handle its unique private PID on failed startup and report own PG log. Added static source regression; **these follow-up changes NOT YET OWNER TESTED**.
+- **No production export, real external encrypted backup, historical production PostgreSQL18 data restore, account signed-v13 recovery, Neon DDL, PR merge or deployment.** Draft PR #338 and release NO-GO until independent security R1 and subsequent recovery evidence.
+
 ## 15 October 2026 — pg_dump exit=0/empty stdout race reproduced and fixed in staged encrypted backup code (NOT YET RUN)
 
 - Owner `d1cc5b91` tests: AES-GCM/format/security **5/5 PASS**, actual isolated PG18 synthetic test **FAIL** at stage 05, `pg_dump exit 0` yet streamed **0 bytes**, stderr empty. Test-only PG18 stage10 stop/cleanup reported; no live backup/export.
