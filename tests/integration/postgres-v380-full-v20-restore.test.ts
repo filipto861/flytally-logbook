@@ -76,9 +76,9 @@ before(()=>{
   });
   if(full.error)throw full.error;
   assert.equal(full.status,0,"Full-v20 schema bootstrap failed: "+String(full.stderr).slice(0,450));
-  // The browser fixture includes all 61 flight columns but predates v14 trash expenses.
-  // Add the source-backed v20 archive column only inside this newly verified disposable DB.
-  sql("ALTER TABLE deleted_flights ADD COLUMN expenses_data JSONB NOT NULL DEFAULT '[]'::jsonb");
+  // The canonical bootstrap already creates the v14+ expense archive column.
+  // Assert its exact shape; never repair an incompatible fixture with ALTER.
+  assert.equal(sql("SELECT data_type||'|'||is_nullable||'|'||COALESCE(column_default,'') FROM information_schema.columns WHERE table_schema='public' AND table_name='deleted_flights' AND column_name='expenses_data'"),"jsonb|NO|'[]'::jsonb");
   assert.equal(sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='flights'"),"61");
 });
 test("actual runtime SQL is source-backed and locks archived rows",{skip:false},()=>{
