@@ -82,3 +82,24 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
 
   assert.doesNotMatch(restore,/restore_snapshot|finalize_branch_restore/);
 });
+
+
+test("v380 synthetic PG18 diagnostic phases and pg_ctl process containment",async()=>{
+  const synthetic=await fs.readFile(new URL("../tooling/v380-off-neon-pg18-synthetic-test.mjs",import.meta.url),"utf8");
+  assert.match(synthetic,/stdio:isCtl\?"ignore"/);
+  assert.match(synthetic,/timeout:isCtl\?60000:120000/);
+  assert.match(synthetic,/process\.on\("SIGINT"/);
+  assert.match(synthetic,/notInterrupted\(\)/);
+  assert.match(synthetic,/PGHOSTADDR:"127\.0\.0\.1"/);
+  assert.match(synthetic,/\[PG18 synthetic\]/);
+  for(const stage of ["00/10","01/10","02/10","03/10","04/10","05/10","06/10",
+    "07/10","08/10","09/10","10/10"]){
+    assert.ok(synthetic.includes(stage),"Missing progress stage "+stage);
+  }
+  const cleanup=synthetic.indexOf("if(stopped){");
+  const pass=synthetic.indexOf('console.log("SYNTHETIC PG18 ENCRYPTED BACKUP/RESTORE PASS.")');
+  assert.ok(cleanup>0&&cleanup<pass,"Do not report success before disposable server cleanup");
+  assert.match(synthetic,/must\(stopped,"Local PG18 test cluster not confirmed stopped and removed\."\)/);
+  assert.match(synthetic,/activeChild=dump/);
+  assert.match(synthetic,/activeChild=restore/);
+});
