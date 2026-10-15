@@ -15,7 +15,13 @@ test("historical flight list and profile screens do not assign CZK to unknown-de
     const content=source(path);
     assert.doesNotMatch(content,/CZK\/h|toLocaleString\("en-GB"\)\}\s*CZK/i,path);
   }
-  assert.match(source("app/(protected)/flights/page.tsx"),/Legacy rates have no recorded currency/);
+  const list=source("app/(protected)/flights/page.tsx");
+  assert.match(list,/presentFlightCostSummary\(result\.costSummarySource\.buckets/);
+  assert.doesNotMatch(list,/<strong>Unverified<\/strong>/);
+  const aggregate=source("lib/flight-cost-summary.ts");
+  assert.match(aggregate,/supportedIsoCurrency\(raw\.currency\)/);
+  assert.match(aggregate,/unsupported \+= flights/);
+  assert.match(aggregate,/excluded \(unavailable\/unknown\)/);
   assert.match(source("app/(protected)/flights/[id]/page.tsx"),/currency unknown/);
 });
 
