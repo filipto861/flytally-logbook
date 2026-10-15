@@ -18,6 +18,15 @@ const bin=join(process.env.ProgramFiles||"C:\\Program Files","PostgreSQL","18","
 const exe=tool=>join(bin,tool+".exe");
 const must=(ok,msg)=>{if(!ok)throw new Error(msg);};
 const command=process.argv[2];
+let interrupted=false,activeChild=null;
+process.on("SIGINT",()=>{
+  interrupted=true;
+  if(activeChild)activeChild.kill();
+  console.error("Operator interrupted real-data restore; cleaning ONLY the owned local cluster.");
+});
+function notInterrupted(){
+  must(!interrupted,"Operator interrupted; verified-restore PASS refused.");
+}
 
 function tools(){
   must(process.platform==="win32"&&process.versions.node.split(".")[0]==="24",
@@ -149,6 +158,7 @@ async function main(){
   const accepted=await hidden("Type RESTORE_TEST to confirm isolated local restore only (hidden): ");
   must(accepted==="RESTORE_TEST","Operator did not confirm temporary local restore.");
   const toc=await inspectPgRestoreToc(archive,pass,exe("pg_restore"));
+  notInterrupted();
   must(toc.tableCount>=50,"Authenticated archive TOC has fewer than 50 TABLE objects.");
   console.log("Authenticated PG18 archive TOC: "+toc.tableCount+
     " tables; "+toc.extensions.length+" extensions. No database connection used.");
@@ -203,9 +213,11 @@ async function main(){
     const installed=new Set(available.split(/\r?\n/).filter(Boolean));
     for(const ext of toc.extensions)
       must(installed.has(ext),"Restored archive references missing local PostgreSQL extension: "+ext);
+    notInterrupted();
     const child=spawn(exe("pg_restore"),
       ["--single-transaction","--exit-on-error","--no-owner","--no-acl","--dbname="+name],
       {env,stdio:["pipe","ignore","pipe"],windowsHide:true});
+    activeChild=child;
     let stderr="";
     child.stderr.on("data",chunk=>{stderr=(stderr+chunk.toString("utf8")).slice(-1800);});
     const exit=new Promise((resolveValue,reject)=>{
@@ -214,7 +226,9 @@ async function main(){
     try{
       await decryptArchive(archive,child.stdin,pass);
       must((await exit)===0,"Local pg_restore failed: "+stderr.slice(-1200));
-    }catch(error){child.kill();await exit.catch(()=>{});throw error;}
+      activeChild=null;
+    }catch(error){child.kill();await exit.catch(()=>{});activeChild=null;throw error;}
+    notInterrupted();
     const actual=restoredEvidence(env),expected=verifiedManifest.source_schema_preflight;
     must(actual.migrations===20&&actual.first===1&&actual.last===20&&actual.currency_columns===0,
       "Restored schema registry drift.");
@@ -227,6 +241,7 @@ async function main(){
     // the plaintext test cluster is actually removed. Do not mark PASS early.
     verifiedEvidence=actual;
   }finally{
+    activeChild=null;
     if(pwfile)await fs.rm(pwfile,{force:true}).catch(()=>{});
     if(started){
       try{
@@ -240,6 +255,7 @@ async function main(){
     }
   }
   must(stopVerified,"Local PG18 test instance was not safely stopped/removed; restore remains unverified.");
+  notInterrupted();
   must(verifiedEvidence,"No verified restored-data evidence.");
   // The v2 manifest remains IMMUTABLE. This separate receipt is an
   // untrusted local audit marker, never a new source of archive authority.
