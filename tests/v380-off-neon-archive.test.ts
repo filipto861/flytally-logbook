@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import {randomBytes} from "node:crypto";
+import {spawn} from "node:child_process";
 import {createReadStream,promises as fs} from "node:fs";
 import {Readable,Writable} from "node:stream";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import test from "node:test";
-import {encryptArchive,decryptArchive,fileSha256} from "../tooling/v380-backup-archive.mjs";
+import {encryptArchive,decryptArchive,fileSha256,retainChildStdout} from "../tooling/v380-backup-archive.mjs";
 
 async function collect(file,password){
   const parts=[];
@@ -52,7 +53,7 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   assert.match(exportSource,/default_transaction_read_only=on/);
   assert.match(exportSource,/--serializable-deferrable/);
   assert.match(exportSource,/source_branch:"br-raspy-fog-b1btvu5t"/);
-  assert.match(exportSource,/encryptArchive\(dump\.stdout,partial,password,\{requirePgDumpCustomFormat:true\}\)/);
+  assert.match(exportSource,/encryptArchive\(bufferedDump,partial,password,\{requirePgDumpCustomFormat:true\}\)/);
   assert.match(exportSource,/const after=preflight\(env\)/);
   assert.match(exportSource,/JSON\.stringify\(after\)===JSON\.stringify\(schema\)/);
 
@@ -107,7 +108,7 @@ test("v380 synthetic PG18 diagnostic phases and pg_ctl process containment",asyn
   assert.match(synthetic,/must\(stopped,"Local PG18 test cluster not confirmed stopped and removed\."\)/);
   assert.match(synthetic,/activeChild=dump/);
   assert.match(synthetic,/activeChild=restore/);
-  assert.match(synthetic,/encryptArchive\(dump\.stdout,archive,password,\{requirePgDumpCustomFormat:true\}\)/);
+  assert.match(synthetic,/encryptArchive\(bufferedDump,archive,password,\{requirePgDumpCustomFormat:true\}\)/);
   assert.match(synthetic,/Synthetic pg_dump\/archive failed/);
   assert.match(synthetic,/dump\.stderr\.on\("data"/);
 
@@ -136,4 +137,37 @@ test("v380 accepts tiny nonempty authenticated payload but refuses empty and non
       /missing PGDMP/
     );
   }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
+test("v380 preserves fast-exit subprocess PGDMP stdout during asynchronous scrypt",async()=>{
+  const dir=await fs.mkdtemp(join(tmpdir(),"ft380-fast-child-"));
+  const payload=Buffer.from("PGDMP-fast-child-test-data");
+  try{
+    const filename=join(dir,"fast-child.ftbak");
+    // Must attach before awaiting scrypt; Node may drain unconsumed pipes after
+    // a short child has exited, otherwise falsely returning empty source data.
+    const child=spawn(process.execPath,["-e",
+      'process.stdout.write(Buffer.from("PGDMP-fast-child-test-data"));'],
+      {stdio:["ignore","pipe","pipe"]});
+    const buffered=retainChildStdout(child);
+    const exited=new Promise((resolve,reject)=>{
+      child.once("error",reject);child.once("close",resolve);
+    });
+    const encrypted=await encryptArchive(buffered,filename,"test-only-fast-child-2026!",
+      {requirePgDumpCustomFormat:true});
+    assert.equal(await exited,0);
+    assert.equal(encrypted.plaintextBytes,payload.length);
+    assert.deepEqual(await collect(filename,"test-only-fast-child-2026!"),payload);
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
+test("v380 both pg_dump callers attach fast-exit buffer before asynchronous encryption",async()=>{
+  const exportSource=await fs.readFile(new URL("../tooling/v380-off-neon-export.mjs",import.meta.url),"utf8");
+  const synthetic=await fs.readFile(new URL("../tooling/v380-off-neon-pg18-synthetic-test.mjs",import.meta.url),"utf8");
+  for(const [name,source] of [["production export",exportSource],["synthetic fixture",synthetic]]){
+    const attach=source.indexOf("const bufferedDump=retainChildStdout(dump)");
+    const encrypt=source.indexOf("encryptArchive(bufferedDump,");
+    assert.ok(attach>0 && encrypt>attach,name+" starts async KDF before connecting stdout");
+    assert.ok(source.includes("{requirePgDumpCustomFormat:true}"),name+" must validate PGDMP custom signature");
+  }
 });
