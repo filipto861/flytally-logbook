@@ -99,6 +99,18 @@ test("Currency browser v21 setup only runs inside a dedicated disposable localho
   assert.ok(harness.includes('String(observed.stdout).trim()!=="1|12|4"'));
   assert.match(runner,/\$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"/);
   assert.match(runner,/Restore-Env "FLYTALLY_CURRENCY_V21_BROWSER"/);
+  // Next's optimized server bundle must be built against the verified fixture
+  // environment; building first can freeze the deny-by-default v21 gate.
+  const checked=runner.indexOf('Write-Host "Verified disposable DB identity."');
+  const purpose=runner.indexOf('$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"');
+  const build=runner.indexOf("npm.cmd run build");
+  const browser=runner.indexOf("npm.cmd run test:browser");
+  assert.ok(checked>=0&&purpose>=0&&build>=0&&browser>=0);
+  assert.ok(purpose<checked&&checked<build&&build<browser,
+    "Fixture purpose + verified database must precede optimized browser build");
+  assert.equal((runner.match(/npm\.cmd run build/g)||[]).length,1);
+  assert.match(runner,/if \(Test-Path Env:VERCEL\)/);
+  assert.match(runner,/if \(Test-Path Env:VERCEL_ENV\)/);
 });
 
 test("signed v13 browser download retains the protected endpoint and clicks actual Download UI",()=>{

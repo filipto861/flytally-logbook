@@ -65,8 +65,9 @@ try {
   if (-not ((& node --version) -match '^v24\.')) { throw "Node 24.x required." }
   Write-Host "Candidate: $commit"
 
-  # Build for exactly this candidate before starting destructive browser fixture.
   # Refuse a pre-existing web server: Playwright must start our own Next process.
+  # IMPORTANT: Next/Turbopack must compile the optimized browser build using
+  # the verified disposable database and purpose flags, NOT the owner's .env.local.
   $webProbe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse("127.0.0.1"), 3000)
   try { $webProbe.Start() } catch { throw "Local port 3000 is already occupied. Browser test NOT RUN; stop the other server first." } finally { $webProbe.Stop() }
   if ($env:CI) { throw "CI env must be unset for this local browser gate: retries must stay zero." }
@@ -74,9 +75,6 @@ try {
   # Process environment overrides .env.local; restore it in finally.
   $env:SESSION_SECRET = ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N"))
   $env:SIGNING_SECRET = ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N"))
-  npm.cmd run build
-  Assert-Exit "Exact candidate Next.js build"
-
   $pgBin = Join-Path $env:ProgramFiles "PostgreSQL\16\bin"
   foreach ($program in @("initdb.exe","pg_ctl.exe","createdb.exe","psql.exe")) {
     if (-not (Test-Path (Join-Path $pgBin $program))) {
@@ -132,6 +130,15 @@ try {
     throw "Test database identity mismatch. PostgreSQL tests NOT RUN. No existing database was changed."
   }
   Write-Host "Verified disposable DB identity."
+
+  # Production deployment markers are never valid in the disposable acceptance.
+  # Fail closed rather than weakening the v21 migration guard for this test.
+  if (Test-Path Env:VERCEL) { throw "VERCEL marker is present; local browser build refused." }
+  if (Test-Path Env:VERCEL_ENV) { throw "VERCEL_ENV marker is present; local browser build refused." }
+  # Compile AFTER the isolated DB identity and purpose flags are set. The Next
+  # server uses this build with exactly the same process environment.
+  npm.cmd run build
+  Assert-Exit "Exact candidate Next.js build"
 
   # The browser harness invokes a fixture bootstrap that drops schema public;
   # DATABASE_URL above points exclusively to the newly created verified cluster.
