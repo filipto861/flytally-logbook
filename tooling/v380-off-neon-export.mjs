@@ -3,6 +3,7 @@ import {randomBytes} from "node:crypto";
 import {existsSync,promises as fs} from "node:fs";
 import {join,resolve,relative,sep} from "node:path";
 import {encryptArchive,retainChildStdout} from "./v380-backup-archive.mjs";
+import {sealManifest} from "./v380-backup-manifest.mjs";
 
 // Explicit owner-local off-Neon export; no production writes or raw dump files.
 // Only the current canonical direct production endpoint is accepted.
@@ -63,7 +64,7 @@ function sourceEnvironment(raw){
     PGHOST:HOST,PGPORT:"5432",PGDATABASE:DB,PGUSER:decodeURIComponent(u.username),
     PGPASSWORD:decodeURIComponent(u.password),PGSSLMODE:"verify-full",
     PGSSLROOTCERT:"system",PGCHANNELBINDING:"require",
-    PGCONNECT_TIMEOUT:"10",PGTZ:"UTC",PGOPTIONS:"-c TimeZone=UTC -c default_transaction_read_only=on"};
+    PGCONNECT_TIMEOUT:"10",PGTZ:"UTC",PGOPTIONS:"-c TimeZone=UTC -c default_transaction_read_only=on -c statement_timeout=30000 -c lock_timeout=5000"};
 }
 function preflight(env){
   const q="SELECT current_database()||'|'||current_setting('server_version_num')||'|'"+
@@ -124,7 +125,7 @@ async function main(){
   const name="flytally-pre-v21-"+new Date().toISOString().replace(/[:.]/g,"-")+
     "-"+randomBytes(4).toString("hex")+".ftbak";
   const finalPath=join(output,name),partial=finalPath+".partial";
-  let dump,exit,done=false,finalCreated=false;
+  let dump,exit,done=false,finalCreated=false,manifestCreated=false;
   try{
     dump=spawn(exe("pg_dump"),
       ["-Fc","--no-owner","--no-acl","--serializable-deferrable",
@@ -160,13 +161,15 @@ async function main(){
     await fs.link(partial,finalPath);
     finalCreated=true;
     await fs.unlink(partial);
-    const manifest={schema:1,source_project:"muddy-dust-14049657",
+    const immutable={manifest_version:2,source_project:"muddy-dust-14049657",
       source_branch:"br-raspy-fog-b1btvu5t",source_host:HOST,
       source_schema_preflight:schema,created_at:new Date().toISOString(),
-      encrypted_sha256:metadata.sha256,encrypted_size:metadata.sizeBytes,
-      verified_restore:false};
+      encrypted_sha256:metadata.sha256,encrypted_size:metadata.sizeBytes};
+    // Authenticated immutable evidence; no mutable verified_restore in MAC.
+    const manifest=await sealManifest(finalPath,password,immutable);
     await fs.writeFile(finalPath+".manifest.json",JSON.stringify(manifest,null,2)+"\n",
       {encoding:"utf8",flag:"wx",mode:0o600});
+    manifestCreated=true;
     done=true;
     console.log("ENCRYPTED OFF-NEON EXPORT CREATED. RESTORE NOT YET VERIFIED.");
     console.log("Archive: "+finalPath);
@@ -175,6 +178,7 @@ async function main(){
   }finally{
     if(dump&&!done)dump.kill();
     await fs.rm(partial,{force:true}).catch(()=>{});
+    if(!done&&manifestCreated)await fs.rm(finalPath+".manifest.json",{force:true}).catch(()=>{});
     if(!done&&finalCreated)await fs.rm(finalPath,{force:true}).catch(()=>{});
   }
 }
