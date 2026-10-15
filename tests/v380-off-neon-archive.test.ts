@@ -69,6 +69,13 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
     restore.indexOf('run("initdb"'),"Unverified ciphertext reached an SQL interpreter");
   assert.ok(restore.indexOf("await decryptArchive(archive,discard,pass)") <
     restore.indexOf("decryptArchive(archive,child.stdin,pass)"));
+  // Audit PASS marker must be written after the plaintext PG18 cluster was
+  // actually stopped and removed, not merely after row counts matched.
+  assert.ok(restore.indexOf("must(stopVerified,") <
+    restore.indexOf("manifest.verified_restore=true"));
+  assert.ok(restore.indexOf("await fs.rm(dir,{recursive:true,force:true})") <
+    restore.indexOf("manifest.verified_restore=true"));
+
 
   assert.doesNotMatch(restore,/restore_snapshot|finalize_branch_restore/);
 });
