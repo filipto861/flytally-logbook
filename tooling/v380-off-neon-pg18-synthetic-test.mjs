@@ -177,8 +177,11 @@ async function main(){
     notInterrupted();
     await decryptArchive(archive,new Writable({write(_chunk,_enc,cb){cb();}}),password);
     const toc=await inspectPgRestoreToc(archive,password,exe("pg_restore"));
-    must(toc.tableCount===2,"Synthetic archive TOC table inventory mismatch.");
-    report("Synthetic authenticated PG18 TOC: "+toc.tableCount+" tables.");
+    must(toc.tableCount===2,
+      "Synthetic archive TOC expected 2 TABLE definitions, found "+
+      toc.tableCount+"; TABLE DATA entries "+toc.tableDataCount+".");
+    report("Synthetic authenticated PG18 TOC: "+toc.tableCount+
+      " TABLE definitions, "+toc.tableDataCount+" TABLE DATA entries.");
     report("07/10 Restoring verified ciphertext into separate local PG18 database.");
     notInterrupted();
     const restore=spawn(exe("pg_restore"),
