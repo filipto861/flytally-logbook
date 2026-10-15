@@ -87,6 +87,11 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
 test("v380 synthetic PG18 diagnostic phases and pg_ctl process containment",async()=>{
   const synthetic=await fs.readFile(new URL("../tooling/v380-off-neon-pg18-synthetic-test.mjs",import.meta.url),"utf8");
   assert.match(synthetic,/stdio:isCtl\?"ignore"/);
+  assert.match(synthetic,/Owned temp cluster/);
+  assert.match(synthetic,/postmaster\.pid/);
+  assert.match(synthetic,/PostgreSQL startup log \(synthetic-only\)/);
+  assert.match(synthetic,/attempting owned-cluster shutdown/);
+
   assert.match(synthetic,/timeout:isCtl\?60000:120000/);
   assert.match(synthetic,/process\.on\("SIGINT"/);
   assert.match(synthetic,/notInterrupted\(\)/);
