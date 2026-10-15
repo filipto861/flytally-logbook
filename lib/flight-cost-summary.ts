@@ -1,5 +1,7 @@
 import { supportedIsoCurrency } from "./iso4217-currency-registry.ts";
 import { formatMoneyAmount, type Money } from "./monetary-amount.ts";
+import { parseOptionalBilling } from "./billing.ts";
+import { calculateSupportedCurrencyFlightCost } from "./iso4217-currency-registry.ts";
 
 /** Summary is derived from every flight in the server-side filter scope, never the page slice. */
 export type FlightCostSummary = Readonly<{
@@ -78,4 +80,39 @@ export function presentFlightCostSummary(
     breakdown, pricedFlights: validPriced, notTrackedFlights: notTracked,
     excludedFlights: excluded, complete,
   };
+}
+
+/** Reuses the per-flight exact money domain calculation for Statistics registration scopes. */
+export function summarizeRegistrationCosts(rawRows: unknown): FlightCostSummary {
+  const rows: unknown = typeof rawRows === "string" ? (() => {
+    try { return JSON.parse(rawRows); } catch { return null; }
+  })() : rawRows;
+  if (!Array.isArray(rows)) return invalid(0);
+  let notTracked = 0, unknown = 0, invalidCount = 0;
+  const totals = new Map<string, { currency: string; minorUnits: number; minor: bigint; flights: number }>();
+  for (const raw of rows) {
+    if (!raw || typeof raw !== "object") { invalidCount++; continue; }
+    const row = raw as Record<string, unknown>;
+    const billing = parseOptionalBilling(row.billing);
+    if (billing.error) { invalidCount++; continue; }
+    if (!billing.settings) { notTracked++; continue; }
+    if (row.currency == null && row.minorUnits == null && row.rate == null) { unknown++; continue; }
+    const supported = supportedIsoCurrency(row.currency);
+    if (!supported || row.minorUnits !== supported.minorUnits || typeof row.rate !== "string") {
+      invalidCount++; continue;
+    }
+    const minutes = billing.settings.basis === "AIR" ? row.airMinutes : row.blockMinutes;
+    const validTime = billing.settings.basis === "AIR" ? row.validAir === true : row.validBlock === true;
+    if (!validTime || typeof minutes !== "number" || !Number.isSafeInteger(minutes) || minutes < 0) {
+      invalidCount++; continue;
+    }
+    const calculated = calculateSupportedCurrencyFlightCost(row.rate,minutes,billing.settings.share,supported.code);
+    if (!calculated.ok) { invalidCount++; continue; }
+    const key = `${supported.code}:${supported.minorUnits}`,previous=totals.get(key);
+    totals.set(key,{currency:supported.code,minorUnits:supported.minorUnits,
+      minor:(previous?.minor??0n)+calculated.money.minor,flights:(previous?.flights??0)+1});
+  }
+  const buckets=[...totals.values()].sort((a,b)=>a.currency.localeCompare(b.currency))
+    .map(item=>({currency:item.currency,minorUnits:item.minorUnits,minor:item.minor.toString(),flights:item.flights}));
+  return presentFlightCostSummary(buckets,rows.length,notTracked,unknown,invalidCount);
 }
