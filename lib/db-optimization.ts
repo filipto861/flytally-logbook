@@ -1078,7 +1078,16 @@ async function migrateDatabase(){
   for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
     // Schema-first production migration must have already committed version 21.
     // Only an explicit, verified disposable browser fixture may create v21.
-    if(version===21&&!allowDisposableLocalV21Migration(process.env)){
+    // Next/Turbopack may not preserve arbitrary process.env object passing.
+    // Read every opt-in and deployment marker directly; no condition is relaxed.
+    if(version===21&&!allowDisposableLocalV21Migration({
+      FLYTALLY_LOCAL_POSTGRES:process.env.FLYTALLY_LOCAL_POSTGRES,
+      FLYTALLY_AUTH_BROWSER:process.env.FLYTALLY_AUTH_BROWSER,
+      FLYTALLY_CURRENCY_V21_BROWSER:process.env.FLYTALLY_CURRENCY_V21_BROWSER,
+      VERCEL:process.env.VERCEL,
+      VERCEL_ENV:process.env.VERCEL_ENV,
+      DATABASE_URL:process.env.DATABASE_URL,
+    })){
       throw new Error("Currency schema v21 requires approved explicit migration before runtime.");
     }
     await sql.transaction([

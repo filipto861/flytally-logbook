@@ -86,7 +86,21 @@ test("release preflight and runtime refuse any partial v21 state and require cer
 
 test("production runtime requires purpose-bound disposable fixture and validates registered v21 physical shape",()=>{
   const guard=source("lib/currency-v21-migration-safety.ts");
-  assert.match(runtime,/if\(version===21&&!allowDisposableLocalV21Migration\(process\.env\)\)/);
+  // Next server code must explicitly read each field rather than passing the
+  // process.env object through a transformed bundler.
+  assert.match(runtime,/if\\(version===21&&!allowDisposableLocalV21Migration\\(\\{/);
+  const guardKeys=[
+    "FLYTALLY_LOCAL_POSTGRES","FLYTALLY_AUTH_BROWSER","FLYTALLY_CURRENCY_V21_BROWSER",
+    "VERCEL","VERCEL_ENV","DATABASE_URL",
+  ];
+  const runtimeGuard=runtime.slice(runtime.indexOf("if(version===21&&!allowDisposableLocalV21Migration({"),
+    runtime.indexOf("Currency schema v21 requires approved explicit migration before runtime."));
+  for(const key of guardKeys){
+    const assignment=key+":process.env."+key;
+    assert.equal(runtimeGuard.split(assignment).length-1,1,
+      "Every v21 authorization and production-denial field must be explicitly read once: "+key);
+  }
+  assert.doesNotMatch(runtimeGuard,/allowDisposableLocalV21Migration\\(process\\.env\\)/);
   assert.match(runtime,/Currency schema v21 requires approved explicit migration before runtime/);
   for(const flag of ["FLYTALLY_LOCAL_POSTGRES","FLYTALLY_AUTH_BROWSER","FLYTALLY_CURRENCY_V21_BROWSER"]){
     assert.ok(guard.includes(flag),"Disposable fixture authorization missing "+flag);
