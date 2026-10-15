@@ -99,6 +99,14 @@ test("Currency browser v21 setup only runs inside a dedicated disposable localho
   assert.ok(harness.includes('String(observed.stdout).trim()!=="1|12|4"'));
   assert.match(runner,/\$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"/);
   assert.match(runner,/Restore-Env "FLYTALLY_CURRENCY_V21_BROWSER"/);
+  assert.match(runner,/npm\.cmd run test:browser -- --currency-v21 e2e\/trash-integrity\.spec\.mjs/);
+  assert.match(runner,/Currency browser PowerShell-to-Node purpose preflight PASS/);
+  assert.ok(runner.indexOf('Currency purpose environment preflight')<runner.indexOf("npm.cmd run build"));
+  assert.match(harness,/const currencyIntent=playwrightArgs\[0\]==="--currency-v21"/);
+  assert.match(harness,/Currency browser purpose\/hosting flags missing or invalid in Node harness/);
+  assert.match(harness,/Currency browser pre-bootstrap purpose and database URL checks PASS/);
+  assert.match(harness,/currencyIntent\?playwrightArgs\.slice\(1\):playwrightArgs/);
+  assert.ok(harness.indexOf("const currencyIntent=")<harness.indexOf("const bootstrapResult="));
   // Next's optimized server bundle must be built against the verified fixture
   // environment; building first can freeze the deny-by-default v21 gate.
   const checked=runner.indexOf('Write-Host "Verified disposable DB identity."');

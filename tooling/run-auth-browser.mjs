@@ -4,6 +4,25 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { probePostgresConnection } from "./postgres-cli.mjs";
 
+// The CLI purpose is explicit. Missing flag must stop BEFORE fixture bootstrap.
+// Never infer permission for currency v21 DDL from a generic browser test.
+const playwrightArgs=process.argv.slice(2);
+const currencyIntent=playwrightArgs[0]==="--currency-v21";
+if(currencyIntent){
+  if(playwrightArgs.length!==2||playwrightArgs[1]!=="e2e/trash-integrity.spec.mjs"){
+    console.error("Currency browser needs exactly its dedicated E2E spec.");process.exit(2);
+  }
+  if(process.env.FLYTALLY_CURRENCY_V21_BROWSER!=="1"
+    ||process.env.FLYTALLY_AUTH_BROWSER!=="1"
+    ||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"
+    ||process.env.VERCEL!==undefined||process.env.VERCEL_ENV!==undefined){
+    console.error("Currency browser purpose/hosting flags missing or invalid in Node harness. No bootstrap.");
+    process.exit(2);
+  }
+}else if(process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
+  console.error("Currency browser purpose flag requires explicit --currency-v21 CLI intent.");
+  process.exit(2);
+}
 if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"){
   console.error("FLYTALLY_AUTH_BROWSER=1 and FLYTALLY_LOCAL_POSTGRES=1 are required for authenticated browser acceptance. The browser gate did not run.");
   process.exit(2);
@@ -27,6 +46,20 @@ if(!new Set(["127.0.0.1","localhost","::1","[::1]"]).has(parsedDatabaseUrl.hostn
   process.exit(2);
 }
 
+if(currencyIntent){
+  if(parsedDatabaseUrl.protocol!=="postgresql:"
+    ||parsedDatabaseUrl.hostname!=="127.0.0.1"
+    ||parsedDatabaseUrl.pathname!=="/flytally_currency_test"
+    ||parsedDatabaseUrl.username!=="flytally"
+    ||parsedDatabaseUrl.password!==""
+    ||parsedDatabaseUrl.port===""
+    ||parsedDatabaseUrl.port==="5432"
+    ||parsedDatabaseUrl.port==="55432"){
+    console.error("Currency browser URL is not the dedicated disposable fixture. No bootstrap.");
+    process.exit(2);
+  }
+  console.log("Currency browser pre-bootstrap purpose and database URL checks PASS.");
+}
 let browserEnv;
 try{
   browserEnv=probePostgresConnection(databaseUrl,{
@@ -46,7 +79,7 @@ if(bootstrapResult.status!==0)process.exit(bootstrapResult.status??1);
 
 // Only explicitly opted-in Currency browser acceptance may use the verified
 // disposable localhost fixture for runtime v20/v21 schema initialization.
-if(process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
+if(currencyIntent){
   if(parsedDatabaseUrl.hostname!=="127.0.0.1" ||
      parsedDatabaseUrl.pathname!=="/flytally_currency_test" ||
      process.env.FLYTALLY_AUTH_BROWSER!=="1" ||
@@ -61,9 +94,9 @@ if(process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
 const require=createRequire(import.meta.url);
 const playwrightPackage=require.resolve("@playwright/test/package.json");
 const playwrightCli=join(dirname(playwrightPackage),"cli.js");
-const browserResult=spawnSync(process.execPath,[playwrightCli,"test","--config=playwright.config.mjs",...process.argv.slice(2)],{stdio:"inherit",env:browserEnv});
+const browserResult=spawnSync(process.execPath,[playwrightCli,"test","--config=playwright.config.mjs",...(currencyIntent?playwrightArgs.slice(1):playwrightArgs)],{stdio:"inherit",env:browserEnv});
 if(browserResult.error)throw browserResult.error;
-if(browserResult.status===0&&process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
+if(browserResult.status===0&&currencyIntent){
   // Browser actions exercised the application against a disposable localhost DB.
   // Independently verify that the runtime finished the complete v21 migration.
   const evidenceQuery=`SELECT (SELECT COUNT(*) FROM public.flytally_schema_migrations

@@ -131,6 +131,10 @@ try {
   }
   Write-Host "Verified disposable DB identity."
 
+  # Confirm actual native Node child process inherited purpose flags before
+  # Next build, npm, Playwright, or any destructive fixture bootstrap.
+  & node -e "const e=process.env; if(e.FLYTALLY_AUTH_BROWSER!=='1'||e.FLYTALLY_LOCAL_POSTGRES!=='1'||e.FLYTALLY_CURRENCY_V21_BROWSER!=='1'||e.VERCEL!==undefined||e.VERCEL_ENV!==undefined){console.error('Currency purpose flags did not reach Node.'); process.exit(3);} console.log('Currency browser PowerShell-to-Node purpose preflight PASS.')"
+  Assert-Exit "Currency purpose environment preflight"
   # Production deployment markers are never valid in the disposable acceptance.
   # Fail closed rather than weakening the v21 migration guard for this test.
   if (Test-Path Env:VERCEL) { throw "VERCEL marker is present; local browser build refused." }
@@ -142,7 +146,7 @@ try {
 
   # The browser harness invokes a fixture bootstrap that drops schema public;
   # DATABASE_URL above points exclusively to the newly created verified cluster.
-  npm.cmd run test:browser -- e2e/trash-integrity.spec.mjs
+  npm.cmd run test:browser -- --currency-v21 e2e/trash-integrity.spec.mjs
   Assert-Exit "Currency 3.8.0 authenticated desktop/mobile Trash-integrity acceptance"
   Write-Host "LOCAL CURRENCY 3.8 AUTH BROWSER PASS on $commit with disposable localhost database only; full signed portable v13 recovery and production Neon remain OPEN. Not production." -ForegroundColor Green
 } finally {
