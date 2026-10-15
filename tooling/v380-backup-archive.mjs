@@ -1,8 +1,21 @@
 import {createCipheriv,createDecipheriv,randomBytes,scrypt as scryptCallback,createHash} from "node:crypto";
 import {promisify} from "node:util";
 import {createReadStream,createWriteStream,promises as fs} from "node:fs";
-import {Transform} from "node:stream";
+import {Transform,PassThrough} from "node:stream";
 import {pipeline} from "node:stream/promises";
+
+// Attach synchronously IMMEDIATELY after spawn(). On Node, short-lived child
+// stdout may otherwise be auto-drained on child exit while async scrypt derives
+// the archive key, resulting in exit 0 but an empty encryption input stream.
+// A bounded PassThrough retains the early chunks and propagates backpressure;
+// it never accumulates the entire PostgreSQL dump in process memory.
+export function retainChildStdout(child){
+  if(!child?.stdout)throw new Error("Spawned subprocess has no stdout pipe.");
+  const buffered=new PassThrough({highWaterMark:64*1024});
+  child.stdout.once("error",error=>buffered.destroy(error));
+  child.stdout.pipe(buffered);
+  return buffered;
+}
 
 const scrypt=promisify(scryptCallback);
 const MAGIC=Buffer.from("FT380A01","ascii");
