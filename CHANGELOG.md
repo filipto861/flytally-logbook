@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 15 October 2026 — pg_dump exit=0/empty stdout race reproduced and fixed in staged encrypted backup code (NOT YET RUN)
+
+- Owner `d1cc5b91` tests: AES-GCM/format/security **5/5 PASS**, actual isolated PG18 synthetic test **FAIL** at stage 05, `pg_dump exit 0` yet streamed **0 bytes**, stderr empty. Test-only PG18 stage10 stop/cleanup reported; no live backup/export.
+- Independently reproduced short-lived child stdout loss in Node (no database): delayed stdout consumption during async key derivation yields empty data, synchronous `PassThrough` attachment before waiting preserves `PGDMP`.
+- Added `retainChildStdout(child)` in `tooling/v380-backup-archive.mjs`: bounded 64KiB in-memory PassThrough with source-error forwarding/backpressure, connected immediately after pg_dump spawn and before asynchronous `scrypt` in both actual production export and synthetic runner. Binary source still never written as an unencrypted dump file; PGDMP magic, exit status, AES-GCM tag and restoration evidence remain mandatory.
+- Added regression for fast exiting child and order invariants in both callers; updated existing safety assertions to use `bufferedDump`. V8 syntax/GitHub source readback PASS; actual owner-local Node tests/PG18 Windows synthetic end-to-end **NOT RUN after patch**. Off-Neon production export and full signed v13 historical restore remain blocked; no production SQL/Neon/branch/merge/deploy. Draft PR #338 remains NO-GO.
+
 ## 15 October 2026 — synthetic PG18 encrypted backup stage-05 failure triaged (fix NOT YET EXECUTED)
 
 - Owner cleanly removed three abandoned synthetic PG18 folders after stopping verified test-only PostgreSQL. On code `c0d6f2d4`, 4/4 crypto/source regression tests PASS; isolated synthetic PG18 reached stage 05/10 then **FAIL** `Encrypted database archive unexpectedly small`. Logged stage 10 owned PG18 shutdown/cleanup without warning; no PASS for PostgreSQL dump→restore.
