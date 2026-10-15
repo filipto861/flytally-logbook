@@ -5,7 +5,7 @@ import {Writable} from "node:stream";
 import {existsSync,promises as fs} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {encryptArchive,decryptArchive} from "./v380-backup-archive.mjs";
+import {encryptArchive,decryptArchive,retainChildStdout} from "./v380-backup-archive.mjs";
 
 // No Neon URL or production data; a disposable local PostgreSQL 18 only.
 const pgBin=join(process.env.ProgramFiles||"C:\\Program Files","PostgreSQL","18","bin");
@@ -118,11 +118,14 @@ async function main(){
     const dump=spawn(exe("pg_dump"),["-Fc","--no-owner","--no-acl","--dbname=ft380_source"],
       {env:src,stdio:["ignore","pipe","pipe"],windowsHide:true});
     activeChild=dump;
+    // Attach synchronously before scrypt's asynchronous KDF step so short
+    // pg_dump subprocesses cannot lose stdout on process exit.
+    const bufferedDump=retainChildStdout(dump);
     let dumpError="";
     dump.stderr.on("data",chunk=>{dumpError=(dumpError+chunk.toString("utf8")).slice(-2000);});
     const dumped=exitOf(dump);
     try{
-      const meta=await encryptArchive(dump.stdout,archive,password,{requirePgDumpCustomFormat:true});
+      const meta=await encryptArchive(bufferedDump,archive,password,{requirePgDumpCustomFormat:true});
       const exit=await dumped;
       must(exit===0,"Synthetic pg_dump exited with code "+exit+": "+dumpError);
       activeChild=null;
