@@ -6,6 +6,8 @@ import {existsSync,promises as fs} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {encryptArchive,decryptArchive,retainChildStdout} from "./v380-backup-archive.mjs";
+import {restrictWindowsDirectory,createEphemeralPwfile} from "./v380-windows-private.mjs";
+import {inspectPgRestoreToc} from "./v380-backup-toc.mjs";
 
 // No Neon URL or production data; a disposable local PostgreSQL 18 only.
 const pgBin=join(process.env.ProgramFiles||"C:\\Program Files","PostgreSQL","18","bin");
@@ -36,11 +38,11 @@ async function port(){
   must(value!==5432&&value!==55432,"Reserved port.");
   return value;
 }
-function environment(port,database){
+function environment(port,database,password){
   const e=Object.fromEntries(Object.entries(process.env).filter(([name])=>
     !name.toUpperCase().startsWith("PG")&&name.toUpperCase()!=="DATABASE_URL"));
   return {...e,PGHOST:"127.0.0.1",PGHOSTADDR:"127.0.0.1",PGPORT:String(port),
-    PGUSER:"ft380_synthetic",PGDATABASE:database,PGPASSWORD:"",
+    PGUSER:"ft380_synthetic",PGDATABASE:database,PGPASSWORD:password,
     PGSSLMODE:"disable",PGOPTIONS:"-c TimeZone=UTC",PGTZ:"UTC",PGCONNECT_TIMEOUT:"5"};
 }
 function run(name,args,env){
@@ -68,13 +70,24 @@ async function main(){
   const dir=await fs.mkdtemp(join(tmpdir(),"flytally-380-pg18-synthetic-"));
   const data=join(dir,"pgdata"),log=join(dir,"postgres.log"),archive=join(dir,"synthetic.ftbak");
   report("Owned temp cluster: "+dir);
-  const p=await port(),admin=environment(p,"postgres"),src=environment(p,"ft380_source"),
-    dst=environment(p,"ft380_target");
-  let startAttempted=false,started=false,stopped=false,verified=false;
+  const p=await port();
+  const ephemeralPassword=randomBytes(36).toString("base64url");
+  const admin=environment(p,"postgres",ephemeralPassword);
+  const src=environment(p,"ft380_source",ephemeralPassword);
+  const dst=environment(p,"ft380_target",ephemeralPassword);
+  let startAttempted=false,started=false,stopped=false,verified=false,pwfile;
   try{
     report("01/10 Initializing private disposable PG18 cluster.");
     notInterrupted();
-    run("initdb",["-D",data,"-U","ft380_synthetic","-A","trust","--encoding=UTF8","--no-instructions"],admin);
+    restrictWindowsDirectory(dir);
+    pwfile=await createEphemeralPwfile(dir,ephemeralPassword);
+    try{
+      run("initdb",["-D",data,"-U","ft380_synthetic","-A","scram-sha-256",
+        "--pwfile="+pwfile,"--encoding=UTF8","--no-instructions"],admin);
+    }finally{
+      await fs.rm(pwfile,{force:true});
+      pwfile=null;
+    }
     startAttempted=true;
     report("02/10 Starting local PG18 on loopback random port "+p+".");
     notInterrupted();
@@ -101,6 +114,13 @@ async function main(){
     for(const [env,db] of [[src,"ft380_source"],[dst,"ft380_target"]])
       must(sql(env,"SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())")===
         db+"|ft380_synthetic|127.0.0.1","Synthetic local DB identity mismatch.");
+    // Security acceptance: correct ephemeral password succeeds, wrong one
+    // is denied by the temporary PostgreSQL 18 server.
+    const invalid={...src,PGPASSWORD:"incorrect-synthetic-secret"};
+    const denied=spawnSync(exe("psql"),["-X","-w","-qAt","-c","SELECT 1"],{
+      env:invalid,encoding:"utf8",timeout:15000,windowsHide:true});
+    must(!denied.error&&denied.status!==0,"SCRAM PG18 negative authentication test FAILED.");
+    report("SCRAM accepted only the correct ephemeral password; wrong password denied.");
     report("04/10 Inserting test-only flight and archive rows.");
     notInterrupted();
     sql(src,"CREATE TABLE flight_sample(id BIGINT PRIMARY KEY,price NUMERIC NOT NULL,certified_at TIMESTAMPTZ,protected_history JSONB NOT NULL);"+
@@ -141,6 +161,9 @@ async function main(){
     report("06/10 Authenticating complete encrypted archive before restore.");
     notInterrupted();
     await decryptArchive(archive,new Writable({write(_chunk,_enc,cb){cb();}}),password);
+    const toc=await inspectPgRestoreToc(archive,password,exe("pg_restore"));
+    must(toc.tableCount===2,"Synthetic archive TOC table inventory mismatch.");
+    report("Synthetic authenticated PG18 TOC: "+toc.tableCount+" tables.");
     report("07/10 Restoring verified ciphertext into separate local PG18 database.");
     notInterrupted();
     const restore=spawn(exe("pg_restore"),
@@ -162,6 +185,7 @@ async function main(){
     // Final success message is printed only after a verified stop/cleanup.
     verified=true;
   }finally{
+    if(pwfile)await fs.rm(pwfile,{force:true}).catch(()=>{});
     activeChild=null;
     if(started){
       report("10/10 Stopping and cleaning owned PG18 test cluster.");
