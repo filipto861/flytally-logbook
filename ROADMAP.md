@@ -1,5 +1,10 @@
 # FlyTally Logbook — ROADMAP
 
+## 15 Oct 2026 — 3.8.0 CZK historical backfill PRODUCTION PASS (scope closed)
+
+Owner confirmed all existing monetary rates were in CZK and requested completion for certified and locked flights. Neon production `muddy-dust-14049657 / br-raspy-fog-b1btvu5t / neondb`: aircraft 25/25, rates 33/33, flights 315/315 now have explicit CZK and parity with original legacy amounts. After read-only review of certification-hash coverage and correction-workflow side effects, protected 110 certified + 2 locked-only flights were changed **only in their three currency metadata fields**, preserving certifications, revision numbers, linked evidence and original prices. Single transactional scoped trigger disable/re-enable; full before/after audit + explicit owner-directed event 112/112; guard enabled and postflight PASS. Production PG18 rehearsal `br-frosty-haze-b16x7r8y` and preserved prechange no-compute checkpoint `br-raspy-tooth-b13sqhpa`. No code/schema/deploy change; no signed-in UI rerun. This is a **one-time, explicitly authorized exception** to historical no-certified-row-update policy, not a default currency inference rule. Next remains owner UI refresh check, then 3.9.0 roadmap; independent off-Neon disaster recovery still open. [Full audit](docs/operations/2026-10-15-czk-historical-backfill.md).
+
+
 ## 15 Oct 2026 — FlyTally Logbook 3.8.0 RELEASED: Neon v21 migrated, PR #338 merged, Vercel READY
 
 **Owner C0 production GO and risk waiver:** owner explicitly authorized the live v21 migration/deployment after accepting a release without a new independent off-Neon backup. This does NOT provide independent disaster recovery. Preserve historical Neon snapshot, same-project safety checkpoint `br-shiny-bonus-b1gqt9u7` and other original branches. Independent signed historical account-v13 recovery remains unproven; source-provenance independent reviewer verdict remains pending and should not be claimed approved.
