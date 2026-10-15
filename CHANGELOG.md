@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — Currency browser schema-first fixture correction (unreleased, NOT TESTED)
+
+- Replaced the fragile expectation that the optimized Next server automatically applies v21 in Playwright. Currency-only browser harness now prepares the **verified new disposable localhost PG16 fixture** with the canonical runtime v20/v21 SQL and exact migration registry entries in a single transaction **before starting Next**. It fails closed on purpose/URL/identity mismatch, unexpected v1–v19 history, source SQL drift/interpolation, or an invalid v21 physical postcheck (registry 1, columns 12, validated checks 4). No second approximation of monetary DDL; scripts read `lib/db-optimization.ts`.
+- For this dedicated Currency run only, Playwright's `reuseExistingServer` is disabled. Source regression updated to assert protected ordering and explicit preconditions. General authenticated browser harness retains legacy behavior without Currency intent.
+- **Not run on new candidate:** targeted source tests, PG16 execution, optimized build, authenticated Playwright, full suite. Previous `40104b91` browser 0/8 remains historic FAIL; earlier PG/Node/build PASS results are tied to their specific SHAs. Application runtime guard, migration SQL, Neon production schema, deployment and user data **not modified**. PR #338 remains Draft and release **NO-GO**.
+
 ## 15 October 2026 — v21 browser compiler environment compatibility (unreleased; tests pending)
 
 - Owner-local `40104b9158f4d39b47fd21a468825822b67f3f36`: signed-backup/fixture source **9/9 PASS**, verified ephemeral PostgreSQL16 identity/clean stop; both native Node and currency harness purpose/URL preflight **PASS**, optimized Next 16.3.2 build PASS (41 static pages), authenticated desktop+mobile Playwright **0/8 FAIL**. Same runtime fail-closed error prevents migration and subsequent fixture rows; local acceptance NOT PASS.
