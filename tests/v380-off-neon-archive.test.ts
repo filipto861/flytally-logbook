@@ -44,6 +44,7 @@ test("v380 export/restore restrict production target, PG18, TLS, and disposable 
   const exportSource=await fs.readFile(new URL("../tooling/v380-off-neon-export.mjs",import.meta.url),"utf8");
   const restore=await fs.readFile(new URL("../tooling/v380-off-neon-restore-check.mjs",import.meta.url),"utf8");
   assert.match(exportSource,/ep-proud-bar-b1ts6cq1\.c-5\.eu-central-1\.aws\.neon\.tech/);
+  assert.match(exportSource,/\["pg_dump","psql","pg_restore","initdb","pg_ctl","createdb"\]/);
   assert.match(exportSource,/u\.hostname===HOST/);
   assert.match(exportSource,/PGSSLMODE:"verify-full"/);
   assert.match(exportSource,/PGSSLROOTCERT:"system"/);
