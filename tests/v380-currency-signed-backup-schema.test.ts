@@ -101,6 +101,9 @@ test("Currency browser v21 setup only runs inside a dedicated disposable localho
   assert.match(schemaFirst,/env.VERCEL!==undefined\|\|env.VERCEL_ENV!==undefined/);
   assert.match(schemaFirst,/if\(registered!==expected\)/);
   assert.match(schemaFirst,/blocks.length!==\(version===20\?39:9\)/);
+  // PostgreSQL psql receives one concatenated transactional script, not the
+  // separate driver calls used by runtime: every extracted block must terminate.
+  assert.match(schemaFirst,/return blocks\.map\(statement=>statement\.trimEnd\(\)\.replace\(\/;\+\$\/,""\)\+";"\)/);
   assert.match(schemaFirst,/SELECT pg_advisory_xact_lock\(704190104\)/);
   assert.match(schemaFirst,/if\(evidence!=="1\|12\|4"\)/);
   assert.match(playwrightConfig,/reuseExistingServer:process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"\?false:!process.env.CI/);
