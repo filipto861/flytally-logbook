@@ -42,7 +42,9 @@ function statements(version,nextMarker){
   if(blocks.length!==(version===20?39:9)||blocks.some(sql=>sql.includes("${"))){
     throw new Error(`Currency v${version} SQL blocks changed or contain interpolation.`);
   }
-  return blocks;
+  // Runtime sends each sql`` as a separate statement. psql requires
+  // a semicolon between them when assembled into one atomic script.
+  return blocks.map(statement=>statement.trimEnd().replace(/;+$/,"")+";");
 }
 const v20=statements(20,"if(version===21)return[");
 const v21=statements(21,"  throw new Error(`Unknown database migration");
