@@ -1,5 +1,20 @@
 # FlyTally Logbook — ROADMAP
 
+## 15 Oct 2026 — synthetic PG18 local test failure: pg_ctl ETIMEDOUT (investigation)
+
+Owner reported last PG18 synthetic test **FAIL**, exact console `SYNTHETIC PG18 CHECK NOT PASS: pg_ctl failed: spawnSync C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe ETIMEDOUT`. Concurrent targeted encrypted-archive tests **3/3 PASS** and PostgreSQL18 binaries `check` PASS, but **actual pg_dump→restore integrated synthetic gate remains FAIL/NOT VERIFIED**; no production connection/export/migration. That run's console had **no** newly staged `[PG18 synthetic] 00/10...` progress labels, indicating it ran an older script revision (or at least not the GitHub code with those labels); successful `git pull --ff-only` had reported `Already up to date` before later GitHub source changes appeared.
+
+**Likely Windows issue, not yet confirmed:** old synchronous `pg_ctl start` captured stdout/stderr pipes while the child `postgres.exe` inherited open handles; `spawnSync` may wait on them despite `pg_ctl` exiting, then report ETIMEDOUT. Current script sets `stdio:"ignore"` specifically for `pg_ctl`, has 00–10 progress markers and bounded timeout. Follow-up hardening adds test-folder path printing; if `pg_ctl` fails but this *exact test folder's* `postmaster.pid` exists, `finally` attempts to stop **only the owned test server**; reads only that folder's `postgres.log` for diagnostic evidence; on uncertain startup leaves path explicit for manual investigation rather than deleting unknown running data. Added source regressions. These fixes are **GitHub source-only; NOT owner-tested yet**. No production DB actions performed.
+
+**Owner next (no deletion or new test until read-only orphan check):**
+```powershell
+git pull --ff-only
+git rev-parse --short HEAD
+Get-ChildItem -Path $env:TEMP -Directory -Filter 'flytally-380-pg18-synthetic-*' | Select-Object FullName,LastWriteTime
+Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" | Where-Object { $_.CommandLine -match 'flytally-380-pg18-synthetic-' } | Select-Object ProcessId,CommandLine
+```
+If a matching PostgreSQL process is running or the temp directories remain, inspect source logs and safe shutdown before rerun; do not `Stop-Process` indiscriminately or remove potentially live PGDATA. If no remnants, rerun `node tooling/v380-off-neon-pg18-synthetic-test.mjs` on pulled HEAD and report stage/error. This is synthetic-only. Release still NO-GO, independent security review & historic signed backup recovery OPEN, live backup remains NOT RUN.
+
 ## 15 Oct 2026 — off-Neon security pre-review fixes and PG18 synthetic end-to-end gate STAGED (NOT RUN)
 
 Owner Windows/Node24 on earlier `4a88bae044dc307ea5f9571e46626cd681f161d5`: encrypted-archive targeted tests **3/3 PASS**, official PostgreSQL18 dump/restore/server binaries `check` **PASS**; **no production backup/export or restore**. On follow-up repository code, security analysis identified and corrected two potential release-critical paths: (1) inherited libpq `PGHOSTADDR`/`PGSERVICE`/other `PG*` could bypass approved endpoint or local restore target; production export and restore now sanitize inherited PG environment, local target additionally explicitly pins `PGHOSTADDR=127.0.0.1`; (2) GCM tag only authenticates at EOF; restore now validates **full ciphertext tag to a discard stream BEFORE any PG18 startup or SQL interpretation**. Additional: manifest `verified_restore=true` only after local decrypted PG instance stops and temporary data is actually removed; export checks protected-history counts/digests and v20 schema pre-and-post dump to fail closed on monitored source drift.
