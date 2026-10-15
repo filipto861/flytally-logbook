@@ -42,7 +42,7 @@ try {
   if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git is not on PATH." }
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw "Node 24 is not on PATH." }
   if (-not (Get-Command npm -ErrorAction SilentlyContinue)) { throw "npm is not on PATH." }
-  $currentBranch = (& git branch --show-current).Trim()
+  $currentBranch = (@(& git branch --show-current) -join "").Trim()
   Assert-Exit "Git branch read"
   if ($currentBranch -ne "" -and $currentBranch -ne $expectedBranch) {
     throw "Wrong branch: $currentBranch. Expected $expectedBranch or clean detached HEAD."
