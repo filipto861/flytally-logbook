@@ -1,5 +1,16 @@
 # FlyTally Logbook — ROADMAP
 
+## 15 Oct 2026 — Neon archived test branch cleanup (owner-authorized; verified)
+
+User requested deletion of unused old Neon branches across the three organization projects. Prior to deletion, each target was checked for exact ID and name, `archived` state, `primary:false`, `default:false`, `protected:false`, idle compute last active in September, no source snapshot, no matching GitHub code reference on canonical repos, and no matching Vercel production target. Neon deletion was executed, then three complete branch inventories, default-branch resolution and snapshot inventories independently confirmed all four IDs **ABSENT**:
+- Logbook `muddy-dust-14049657`: `general-pic-invitation-acceptance` (`br-shiny-mountain-b1ye1aqc`).
+- Training Production `frosty-recipe-46458686`: `m9-real-seed-validation-20260910` (`br-proud-smoke-b1ajnja6`) and `m9-seed-validation-20260910` (`br-flat-meadow-b1csc4ps`).
+- Training Acceptance `dry-king-94424047`: `no-code-acceptance-20260910` (`br-purple-feather-b1gl5g43`).
+
+**After:** six branches remain organization-wide, by project 4 Logbook / 1 Training Production / 1 Training Acceptance. Preserved current Logbook primary `br-raspy-fog-b1btvu5t`, former primary `br-dark-math-b1snjzub`, historical `pre-v20-2026-10-07`, and `sp2-safety-pilot-pic-acceptance` pending old Vercel preview `test/sp2-browser-preview` review. Both Training main/default branches remain. Original manual snapshot `snap-proud-fire-b1bm8oac` from old Logbook primary remains present and untouched. No SQL/migration, snapshot deletion, protection change, GitHub merge or deploy.
+
+**Quota distinction:** ten-branch quota is per project, not across all three. This cleanup does NOT resolve manual snapshot limit (current Logbook one existing slot) or absence of supported protected branch quota; those remain release blockers. `run-currency-380-acceptance.ps1 -WithBrowser` PASS on application SHA `42e72909` remains code evidence; docs-only changes do not change application runtime.
+
 ## 15 Oct 2026 — owner-approved production protection/snapshot attempted; Neon plan quota BLOCKED (no changes)
 
 Owner explicitly approved only **enable branch protection** and **create a new manual snapshot** on current canonical `muddy-dust-14049657 / br-raspy-fog-b1btvu5t` (no v21 DDL/restore/deploy). Reverified that default and specified branch are identical, `production` READY, `neondb` still v20 (20 historical registry entries, 0 v21, 0/12 currency columns). Neon `create_snapshot` on this **exact** branch with name `flytally-logbook-3-8-pre-v21-current-production-2026-10-15` returned **HTTP 422 `snapshots limit exceeded`**; snapshot **NOT CREATED**. Neon `update_branch(protected:true)` on exact branch returned **HTTP 422 `maximum number of protected branches for your current plan`**; protection **NOT ENABLED**. Post-attempt direct `get_branch` remained `protected:false`; snapshot list remained solely `snap-proud-fire-b1bm8oac` sourced from former `br-dark-math-b1snjzub`. Old snapshot retained. No deletion, unprotection, pricing change, database write, DDL, restore, merge, deployment or production data modification.
