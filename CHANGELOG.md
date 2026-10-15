@@ -1,5 +1,7 @@
 # FlyTally changelog
 
+**15 Oct 2026 — off-Neon backup prerequisite owner-local result.** On source SHA `08fbe547558016c7807bf0dc5c83a40fc4eea51f`, owner ran `npm run test:target -- tests/v380-off-neon-archive.test.ts`: **3/3 PASS** (AES-GCM roundtrip, tampering/wrong password, fail-closed source/target guards; 0 fail/skip). `node tooling/v380-off-neon-export.mjs check` **BLOCKED** safely before any database connection/export: `PostgreSQL 18 pg_dump not installed` at `C:\Program Files\PostgreSQL\18\bin`. **No production export, no encrypted backup, no restore.** Small follow-on safeguard adds `initdb`, `pg_ctl`, `createdb` to PG18 local prerequisite check and a test assertion, code SHA `74665cc1cc2a9a2acbcbc46331272110bf4aa210`; not yet owner-tested. Next: install official PostgreSQL 18 server and command line tools alongside 16 (separate port, retain 16 service), `git pull --ff-only`, rerun 3 tests and `check`. Do not run `export` before independent security review and confirmed prerequisites. Backup/recovery release gate remains OPEN; production unchanged.
+
 ## 15 October 2026 — staged encrypted off-Neon v20 backup/PG18 restore tooling (NOT executed against production)
 
 - Added `tooling/v380-backup-archive.mjs` for streaming AES-256-GCM + scrypt encrypted custom-format `pg_dump` data, unique salt/nonce and authenticated tag, no plaintext archive materialization.
