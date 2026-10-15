@@ -61,6 +61,11 @@ test("Phase 0C preserves the original 48 browser contracts, five 3.7.0 map scena
     "Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",
     "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
   ];
+  // H4's two frozen-v20 tests must survive, but can only run on the detached
+  // old-runtime worktree. The ordinary browser suite must never pick them up.
+  assert.ok(baseline.excludedSpecs.includes("v380-h4-frozen-v20.spec.mjs"));
+  assert.match(read("playwright.config.mjs"),/testIgnore:\["\*\*\/v380-h4-frozen-v20\.spec\.mjs"\]/);
+  assert.match(read("e2e/v380-h4-frozen-v20.spec.mjs"),/H4: frozen v20 authenticates and reads/);
   const actual=logicalBrowserTests();
   const expectedCount=originalCount+addedMapTests.length+addedTrashTests.length+addedCurrencyTests.length;
   assert.equal(actual.length,expectedCount);
