@@ -67,6 +67,7 @@ async function main(){
   tools();notInterrupted();
   const dir=await fs.mkdtemp(join(tmpdir(),"flytally-380-pg18-synthetic-"));
   const data=join(dir,"pgdata"),log=join(dir,"postgres.log"),archive=join(dir,"synthetic.ftbak");
+  report("Owned temp cluster: "+dir);
   const p=await port(),admin=environment(p,"postgres"),src=environment(p,"ft380_source"),
     dst=environment(p,"ft380_target");
   let startAttempted=false,started=false,stopped=false,verified=false;
@@ -77,8 +78,21 @@ async function main(){
     startAttempted=true;
     report("02/10 Starting local PG18 on loopback random port "+p+".");
     notInterrupted();
-    run("pg_ctl",["-D",data,"-l",log,"-o","-h 127.0.0.1 -p "+p,"-w","-t","30","start"],admin);
-    started=true;
+    try{
+      run("pg_ctl",["-D",data,"-l",log,"-o","-h 127.0.0.1 -p "+p,"-w","-t","30","start"],admin);
+      started=true;
+    }catch(error){
+      // pg_ctl might time out after postmaster has already started.
+      // The PID file belongs ONLY to this newly created unique directory.
+      if(existsSync(join(data,"postmaster.pid"))){
+        started=true; // allow finally to attempt stopping this owned cluster
+        console.warn("[PG18 synthetic] Startup failed but own postmaster.pid exists; attempting owned-cluster shutdown.");
+      }
+      let logExcerpt="";
+      try{logExcerpt=(await fs.readFile(log,"utf8")).slice(-1600);}catch{}
+      if(logExcerpt)console.error("[PG18 synthetic] PostgreSQL startup log (synthetic-only):\n"+logExcerpt);
+      throw error;
+    }
     report("03/10 Creating two isolated synthetic databases.");
     notInterrupted();
     for(const db of ["ft380_source","ft380_target"])
@@ -143,6 +157,7 @@ async function main(){
         stopped=true;
       }catch{console.warn("Local PG18 stop failed; private synthetic fixture retained at "+dir);}
     }else if(!startAttempted||!existsSync(join(data,"postmaster.pid")))stopped=true;
+    else console.warn("[PG18 synthetic] Startup outcome uncertain; OWNED TEST CLUSTER RETAINED: "+dir);
     if(stopped){
       try{await fs.rm(dir,{recursive:true,force:true});}
       catch(error){stopped=false;console.warn("Test data cleanup failed; inspect "+dir+" before removal: "+error.message);}
