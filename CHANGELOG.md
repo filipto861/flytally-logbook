@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**15 Oct 2026 — PR #340 PostgreSQL full-v20 fixture fix, not released:** Owner-local exact candidate `d01f1ba0`: 3/3 new runner guards, source 234/234, domain 26/26, typecheck, full Node and build PASS; PostgreSQL 123 PASS / 8 FAIL / 32 SKIP, all eight fail before SQL on duplicate `deleted_flights.expenses_data` column creation. Removed redundant `ALTER TABLE` from `tests/integration/postgres-v380-full-v20-restore.test.ts` and replaced with strict existing-column shape assertion. Added dedicated fixture-drift regression to `tests/v380-pr340-disposable-gate-flag.test.ts`. Source inspection PASS; updated local PG/Playwright verification NOT RUN. Remaining raw skipped dedicated PG scenarios require explicit acceptance evidence; PR still Draft, no merge or deployment.
+
+
 **15 Oct 2026 — PR #340 release-test runner correction (pending local verification):** Corrected `tooling/run-v380-cost-summary-acceptance-local.ps1` to turn on historical full-v20 PostgreSQL restore only after the fresh random-port PG16 cluster passes exact DB identity verification, verify the flag reaches the Node child, and restore its previous value on completion/error. Added `tests/v380-pr340-disposable-gate-flag.test.ts` regression coverage. Previous local run `14e32e26`: source 234/234 PASS, domain 26/26 PASS, typecheck/full Node/Next build PASS; PG full 123 PASS / 8 FAIL / 32 SKIP (all eight failed the missing opt-in before SQL). Actual 10k, 50k, 100k performance fixtures PASS, despite release-level `scale=NOT RUN`; browser NOT RUN. New source tests/full release gate **NOT RUN**; no production deploy, data migration, or runtime SQL changes.
 
 
