@@ -13,6 +13,12 @@ const normalize=(v:string)=>v.replace(/\s+/g," ").trim();
 // Git for Windows may check out the SQL draft with CRLF rather than LF.
 const alters=[...draft.matchAll(/^ALTER TABLE (?:rates|aircraft|flights|flight_expenses)\r?\n[\s\S]*?;/gm)].map(x=>x[0]);
 const checks=[...draft.matchAll(/DO \$currency\$[\s\S]*?\$currency\$;/g)].map(x=>x[0]);
+const executableV21=runtime.slice(runtime.indexOf("  if(version===21)return["),
+  runtime.indexOf("  ];\n  throw new Error(",runtime.indexOf("  if(version===21)return[")));
+const extractedBlocks=(text:string)=>[
+  ...[...text.matchAll(/ALTER TABLE (?:rates|aircraft|flights|flight_expenses)\r?\n[\s\S]*?;/g)].map(x=>normalize(x[0])),
+  ...[...text.matchAll(/DO \$currency\$[\s\S]*?\$currency\$;/g)].map(x=>normalize(x[0])),
+];
 
 test("v21 executable DDL and runtime use all eight exact source-backed draft blocks",()=>{
   assert.equal(alters.length,4);
@@ -21,6 +27,10 @@ test("v21 executable DDL and runtime use all eight exact source-backed draft blo
     assert.ok(normalize(migrate).includes(normalize(ddl)),"Production file differs from v21 review DDL");
     assert.ok(normalize(runtime).includes(normalize(ddl)),"Runtime v21 differs from review DDL");
   }
+  // Compare parsed source blocks as complete sequences, not merely presence.
+  const canonical=[...alters,...checks].map(normalize);
+  assert.deepEqual(extractedBlocks(migrate),canonical,"Executable v21 DDL differs from review draft");
+  assert.deepEqual(extractedBlocks(executableV21),canonical,"Runtime v21 DDL differs from reviewed execution blocks");
   assert.match(draft,/REVIEW CANDIDATE ONLY/);
   assert.doesNotMatch(draft,/INSERT INTO public\.flytally_schema_migrations/);
 });
@@ -74,11 +84,26 @@ test("release preflight and runtime refuse any partial v21 state and require cer
   }
 });
 
-test("production runtime never performs an unsanctioned v21 automatic migration",()=>{
-  assert.match(runtime,/if\(version===21&&!allowDisposableLocalV21Migration\(\)\)/);
+test("production runtime requires purpose-bound disposable fixture and validates registered v21 physical shape",()=>{
+  const guard=source("lib/currency-v21-migration-safety.ts");
+  assert.match(runtime,/if\(version===21&&!allowDisposableLocalV21Migration\(process\.env\)\)/);
   assert.match(runtime,/Currency schema v21 requires approved explicit migration before runtime/);
-  assert.match(runtime,/FLYTALLY_LOCAL_POSTGRES!=="1"/);
-  assert.match(runtime,/new URL\(process\.env\.DATABASE_URL\)\.hostname/);
-  assert.match(runtime,/\["127\.0\.0\.1","localhost","::1","\[::1\]"\]/);
+  for(const flag of ["FLYTALLY_LOCAL_POSTGRES","FLYTALLY_AUTH_BROWSER","FLYTALLY_CURRENCY_V21_BROWSER"]){
+    assert.ok(guard.includes(flag),"Disposable fixture authorization missing "+flag);
+  }
+  assert.match(guard,/VERCEL!==undefined/);
+  assert.match(guard,/VERCEL_ENV!==undefined/);
+  assert.match(guard,/url\.hostname==="127\.0\.0\.1"/);
+  assert.match(guard,/url\.username==="flytally"/);
+  assert.match(guard,/flytally_currency_test/);
+  assert.match(runtime,/const registeredV21=rows\.find/);
+  assert.match(runtime,/assertCurrencyV21SchemaEvidence\(registeredV21\.name,shapeRows\[0\]\)/);
+  assert.match(runtime,/c\.convalidated/);
+  assert.match(runtime,/column_default IS NULL/);
+  assert.match(runtime,/is_nullable='YES'/);
+  assert.match(runtime,/t\.relname='flight_expenses'/);
+  for(const type of ["text","smallint","numeric"]){
+    assert.ok(runtime.includes("data_type='"+type+"'"),"Missing exact physical schema data type "+type);
+  }
   assert.doesNotMatch(runtime,/FLYTALLY_V21_RELEASE_DISPOSABLE.*process\.env/);
 });
