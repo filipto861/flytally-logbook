@@ -134,8 +134,18 @@ async function main(){
     exit=new Promise((resolveExit,reject)=>{
       dump.once("error",reject);dump.once("close",resolveExit);
     });
-    const metadata=await encryptArchive(dump.stdout,partial,password);
-    must((await exit)===0,"pg_dump failed: "+errorText.slice(-700));
+    let metadata;
+    try{
+      metadata=await encryptArchive(dump.stdout,partial,password,{requirePgDumpCustomFormat:true});
+      const exitCode=await exit;
+      must(exitCode===0,"pg_dump exited with nonzero status: "+exitCode+"; "+errorText.slice(-700));
+    }catch(error){
+      if(dump.exitCode===null)dump.kill();
+      await exit.catch(()=>{});
+      // Archive validation must never disguise a failed pg_dump process.
+      throw new Error("pg_dump/export invalid: "+String(error.message||error)+
+        "; pg_dump stderr: "+(errorText||"(empty)").slice(-700));
+    }
     // The manifest records a separate pre-dump SELECT, while pg_dump uses
     // its own MVCC snapshot. Refuse to claim parity if any monitored counts,
     // protected row digests or schema identity changed during acquisition.
