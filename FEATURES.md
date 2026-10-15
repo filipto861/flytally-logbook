@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 release verification infrastructure (analysis, 15 Oct 2026):** 32 purpose-gated legacy/migration/race/currency PG16 cases are explicitly inventoried and protected against silent source drift by a new development-pipeline contract test. Their execution is **NOT COMPLETE**; no skipped case is counted as PASS or N/A. Proposed partitioning would execute each category in its own verified fresh disposable PG16 environment with candidate-bound evidence before rendering the exact Flights/Statistics cost hotfix releasable. Implementation is contingent on safety review, not a shipped feature; no runtime or DB changes.
+
+
 **PR #340 verification evidence (15 Oct 2026, `d01f1ba0` owner-local):** source 234/234, domain 26/26, typecheck, full Node suite and Next build PASS; full PostgreSQL 123 PASS, 8 FAIL (all one pre-existing fixture column re-added), 32 SKIP; browser NOT RUN; release FAIL. Added test-only correction asserts canonical `deleted_flights.expenses_data` exact JSONB/NOT NULL/default shape instead of duplicating DDL, plus prevention regression. New commit's end-to-end PostgreSQL execution NOT RUN. Independently gated historic migration/race tests remain 32 raw SKIP in the current shared full mode; explicit source-backed disposition required to satisfy fail-closed acceptance. No shipped code or production DB change.
 
 
