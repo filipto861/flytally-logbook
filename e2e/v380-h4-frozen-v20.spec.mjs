@@ -28,9 +28,10 @@ test("H4: frozen v20 authenticates and reads its existing flight and aircraft wo
   await expect(page.getByText("OK-E2E").first()).toBeVisible();
 });
 
-test("H4: frozen v20 preserves synthetic certified flight while rendering on v21",async({page})=>{
+test("H4: frozen v20 preserves synthetic certified flight while rendering on v21",async({page},testInfo)=>{
   test.skip(!enabled,"H4 requires the isolated fixture and frozen runtime.");
-  const id=9983;
+  // Two browser projects share the same ephemeral DB: avoid duplicate PKs.
+  const id=testInfo.project.name==="mobile-chromium"?9984:9983;
   // Synthetic certificate data is test-only, never a real regulatory record.
   runBrowserSql(`INSERT INTO flights(
     id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
