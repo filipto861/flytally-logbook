@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — Currency v21 isolated authenticated browser accepted on `694b0793` (local only)
+
+- Owner report from Windows/Node24 exact `694b079384cbadc39aab4c4c0a71effa090e3c9f`: targeted source/guard/signed-backup tests **19/19 PASS**; unique disposable PostgreSQL16 identity confirmed; Next 16.3.2 optimized build PASS (41/41 static); dedicated schema-first fixture prepared canonical v20→v21 with registry count 1, twelve monetary columns and four CHECK constraints.
+- **Eight authenticated desktop/mobile Playwright scenarios PASS (2.0 min).** Independent postflight v21 registry/columns/CHECKs PASS, temporary local PostgreSQL server stopped. No current browser regression demonstrated; earlier 0/8 test-environment failure is now superseded for this code SHA.
+- **Not yet done:** combined four-gate acceptance (full Node suite), H4 running old v20 app on migrated v21, real-history portable signed v13 recovery, PG18/Neon branch/protection/production snapshot verification, CI, production v21 DDL, merge, release approval or deploy. PR #338 Draft; production unchanged.
+
 ## 15 October 2026 — Currency schema-first browser SQL separator repair (unreleased; new SHA NOT TESTED)
 
 - Owner-local `68947b34`: targeted tests **19/19 PASS**; isolated PG16 identity/cleanup, PowerShell-to-Node, harness bootstrap checks and Next optimized build **PASS**; schema-first staging **FAILED** with `syntax error at or near CREATE` before any Playwright test. Previously separate `sql` blocks were concatenated with newlines but without SQL statement terminators.
