@@ -1,3 +1,7 @@
+// @ts-nocheck
+// Node-only integration harness for ESM .mjs backup tools (allowJs=false).
+// Covered by explicit Node --test execution; outside Next.js application runtime.
+// Keep this exemption scoped to this test file, not the production source.
 import assert from "node:assert/strict";
 import {randomBytes} from "node:crypto";
 import {spawn} from "node:child_process";
