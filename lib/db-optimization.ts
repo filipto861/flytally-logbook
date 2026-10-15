@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { DATABASE_SCHEMA_VERSION,pendingMigrationVersions } from "@/lib/migration-plan";
+import {allowDisposableLocalV21Migration,assertCurrencyV21SchemaEvidence,type CurrencyV21ShapeEvidence} from "@/lib/currency-v21-migration-safety";
 
 declare global{
   // eslint-disable-next-line no-var
@@ -1037,25 +1038,47 @@ const migrationQueries=(version:number)=>{
   throw new Error(`Unknown database migration ${version}`);
 };
 
-function allowDisposableLocalV21Migration(){
-  if(process.env.FLYTALLY_LOCAL_POSTGRES!=="1"||!process.env.DATABASE_URL)return false;
-  try{
-    const hostname=new URL(process.env.DATABASE_URL).hostname;
-    return ["127.0.0.1","localhost","::1","[::1]"].includes(hostname);
-  }catch{
-    return false;
-  }
-}
-
 async function migrateDatabase(){
   await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
     version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
-  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  const rows=await sql`SELECT version,name FROM public.flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string;name:string}>;
+  const registeredV21=rows.find(row=>Number(row.version)===21);
+  if(registeredV21){
+    // A migration registry row alone is not evidence of a complete physical
+    // schema. Fail closed on wrong table/type/default/nullability or missing
+    // and nonvalidated CHECK constraints before serving currency data.
+    const shapeRows=await sql`SELECT
+      (SELECT COUNT(*)::int FROM information_schema.columns
+        WHERE table_schema='public' AND is_nullable='YES' AND column_default IS NULL AND (
+          (table_name='rates' AND column_name='currency_code' AND data_type='text')
+          OR (table_name='rates' AND column_name='currency_minor_units' AND data_type='smallint')
+          OR (table_name='rates' AND column_name='price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='rates' AND column_name='dry_price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='aircraft' AND column_name='default_price_currency_code' AND data_type='text')
+          OR (table_name='aircraft' AND column_name='default_price_currency_minor_units' AND data_type='smallint')
+          OR (table_name='aircraft' AND column_name='default_price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='flights' AND column_name='price_currency_code' AND data_type='text')
+          OR (table_name='flights' AND column_name='price_currency_minor_units' AND data_type='smallint')
+          OR (table_name='flights' AND column_name='price_per_hour_decimal' AND data_type='numeric')
+          OR (table_name='flight_expenses' AND column_name='amount_encoding' AND data_type='text')
+          OR (table_name='flight_expenses' AND column_name='amount_minor_units' AND data_type='smallint')
+        )) AS columns_count,
+      (SELECT COUNT(*)::int FROM pg_constraint c
+        JOIN pg_class t ON t.oid=c.conrelid
+        JOIN pg_namespace n ON n.oid=t.relnamespace
+        WHERE n.nspname='public' AND c.contype='c' AND c.convalidated AND (
+          (t.relname='rates' AND c.conname='rates_exact_currency_tuple_v21_check')
+          OR (t.relname='aircraft' AND c.conname='aircraft_exact_currency_tuple_v21_check')
+          OR (t.relname='flights' AND c.conname='flights_exact_currency_tuple_v21_check')
+          OR (t.relname='flight_expenses' AND c.conname='expenses_amount_encoding_v21_check')
+        )) AS checks_count` as Array<CurrencyV21ShapeEvidence>;
+    assertCurrencyV21SchemaEvidence(registeredV21.name,shapeRows[0]);
+  }
   for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
-    // Physical v21 + registry must already be applied by the separately approved
-    // schema-first SQL. Only verified disposable loopback fixtures can auto-build it.
-    if(version===21&&!allowDisposableLocalV21Migration()){
+    // Schema-first production migration must have already committed version 21.
+    // Only an explicit, verified disposable browser fixture may create v21.
+    if(version===21&&!allowDisposableLocalV21Migration(process.env)){
       throw new Error("Currency schema v21 requires approved explicit migration before runtime.");
     }
     await sql.transaction([
