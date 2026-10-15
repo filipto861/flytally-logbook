@@ -1,5 +1,21 @@
 # FlyTally Logbook — ROADMAP
 
+## 15 Oct 2026 — synthetic PG18 fast-exit pg_dump stdout race ROOT CAUSE REPRODUCED; bounded capture FIX STAGED (NOT OWNER-RUN)
+
+Owner tested candidate `d1cc5b917b812e3779766c5a17fa9b96c1555f29`: archive/unit/source security tests **5/5 PASS**, isolated Windows PG18 synthetic init/start/DB/fixture phases **00–05 PASS**, but actual encrypted `pg_dump` stream **FAIL**: `Synthetic pg_dump/archive failed (exit 0): Empty archive source stream; ... stderr: (empty)`; stage 10 PostgreSQL cleanup logged, without reported cleanup error. No production DB operation, no dump and no PG18 full restore PASS.
+
+**Root cause independently reproduced using Node.js without PostgreSQL:** a fast-exiting child writes literal `PGDMP` to stdout; parent delays attaching reader for ~600ms (simulating `await scrypt(...)`); unbuffered child.stdout returned **empty**, while immediately `child.stdout.pipe(new PassThrough())` before delay recovered exact `PGDMP`. On Node child exit, unconsumed stdout may be drained before the encryption key derivation resolves. PostgreSQL docs explicitly specify that `pg_dump -Fc` without `-f` writes standard output; the source format flag was not itself wrong. This independently observed reproduction supports the race explanation, but full Windows PG18 export→restore remains unverified.
+
+**Minimal implementation:** `tooling/v380-backup-archive.mjs` exports `retainChildStdout(child)`, synchronously piping child.stdout into a **64KiB bounded PassThrough**, preserving backpressure and forwarding stream errors without any plaintext files. Both `tooling/v380-off-neon-pg18-synthetic-test.mjs` and `tooling/v380-off-neon-export.mjs` attach this buffer IMMEDIATELY after spawning pg_dump, before any asynchronous `scrypt`/cipher setup, and encrypt from `bufferedDump`. Kept PGDMP signature guard, process exit=0+stderr diagnostics, AES-GCM authentication and isolated restore checks. Added **two regressions**: fast-exit child writes PGDMP during key derivation and source ordering in both callers. Existing tests updated for new safe stream path. Syntax and GitHub source readback **PARSED**, owner Windows tests after these changes **NOT RUN**. No real production dump/backup, Neon/DDL/merge/deploy; PR remains Draft/NO-GO.
+
+**Next local commands:**
+```powershell
+git pull --ff-only
+npm run test:target -- tests/v380-off-neon-archive.test.ts
+node tooling/v380-off-neon-pg18-synthetic-test.mjs
+```
+Expected target: seven security/source regressions PASS, actual PG18 stage 05 shows nonzero custom-format bytes, stage 06/07 authenticated decrypt/pg_restore, data comparison, 10/10 cleanup and final PASS. If not, halt and report exact phase/exit/stderr. Before first real production export require independent DeepSeek security review disposition; historical signed v13 recovery separate OPEN. Production stays unchanged.
+
 ## 15 Oct 2026 — synthetic PG18 stage 05 archive-size gate FAIL; narrowed validation staged, re-test PENDING
 
 Owner ran checkout `c0d6f2d497b28cb773c0acb48984f27d184ca074` after cleaning three abandoned PG18 synthetic test folders (no synthetic `postgres.exe` remaining). Encrypted archive regressions **4/4 PASS**. The updated synthetic PostgreSQL18 integration reached **00–05/10**: tools, isolated PG18 init/start on loopback port 50207, creation of two fresh DBs, synthetic rows, then failed at cipher stream with `Encrypted database archive unexpectedly small.`. `10/10` stop/cleanup ran without a reported error; **synthetic end-to-end restore NOT PASS**. Never inferred production database involvement, as no Neon URL or prod data is used. All historical H4 and v3.8 local results unaffected.
