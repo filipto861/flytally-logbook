@@ -12,12 +12,17 @@ export function restrictWindowsDirectory(dir){
   if(process.platform!=="win32")throw new Error("Real-data PG18 restore requires Windows ACL enforcement.");
   // SID avoids localized usernames, spaces and non-ASCII account names.
   const id=command("whoami.exe",["/user","/fo","csv","/nh"]);
-  const sid=id.match(/S-1-\d+(?:-\d+)+/)?.[0];
-  if(!sid)throw new Error("Cannot determine current Windows account SID.");
+  const identity=id.trim().match(/"([^"\r\n]+)"\s*,\s*"(S-1-\d+(?:-\d+)+)"/);
+  if(!identity)throw new Error("Cannot determine current Windows account SID.");
+  const account=identity[1],sid=identity[2];
   command("icacls.exe",[dir,"/inheritance:r","/grant:r",
     "*"+sid+":(OI)(CI)F","/grant:r","*S-1-5-18:(OI)(CI)F"]);
   const audit=command("icacls.exe",[dir]);
-  if(!audit.includes(sid))throw new Error("Cannot verify private directory NTFS ACL.");
+  // icacls usually resolves a numeric SID back to DOMAIN\\username in its
+  // display; do not falsely reject correctly restricted NTFS directories.
+  if(!audit.includes(sid)&&!audit.toLowerCase().includes(account.toLowerCase()))
+    throw new Error("Cannot verify owner-only private directory NTFS ACL.");
+  command("icacls.exe",[dir,"/verify"]);
   return sid;
 }
 export async function createEphemeralPwfile(dir,password){
