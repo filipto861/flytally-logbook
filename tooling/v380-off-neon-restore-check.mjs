@@ -119,6 +119,10 @@ async function main(){
   const archive=resolve(process.argv[3]),rel=relative(home,archive);
   must(rel&&rel!==".."&&!rel.startsWith(".."+sep)&&!rel.startsWith(sep)&&
     basename(archive).endsWith(".ftbak"),"Archive must be inside private off-Neon backup directory.");
+  for(const file of [home,archive,archive+".manifest.json"]){
+    const stat=await fs.lstat(file);
+    must(!stat.isSymbolicLink(),"Refusing backup directory/archive/manifest symbolic link.");
+  }
   const rawManifest=await fs.readFile(archive+".manifest.json","utf8");
   must(rawManifest.length<1024*1024,"Unexpectedly large manifest.");
   const manifest=JSON.parse(rawManifest);
