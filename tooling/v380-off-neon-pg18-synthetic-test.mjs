@@ -118,12 +118,22 @@ async function main(){
     const dump=spawn(exe("pg_dump"),["-Fc","--no-owner","--no-acl","--dbname=ft380_source"],
       {env:src,stdio:["ignore","pipe","pipe"],windowsHide:true});
     activeChild=dump;
+    let dumpError="";
+    dump.stderr.on("data",chunk=>{dumpError=(dumpError+chunk.toString("utf8")).slice(-2000);});
     const dumped=exitOf(dump);
     try{
-      await encryptArchive(dump.stdout,archive,password);
-      must((await dumped)===0,"Synthetic pg_dump failed.");
+      const meta=await encryptArchive(dump.stdout,archive,password,{requirePgDumpCustomFormat:true});
+      const exit=await dumped;
+      must(exit===0,"Synthetic pg_dump exited with code "+exit+": "+dumpError);
       activeChild=null;
-    }catch(error){dump.kill();await dumped.catch(()=>{});throw error;}
+      report("pg_dump completed successfully; custom-format payload "+meta.plaintextBytes+" bytes.");
+    }catch(error){
+      if(dump.exitCode===null)dump.kill();
+      const exit=await dumped.catch(()=>null);
+      activeChild=null;
+      throw new Error("Synthetic pg_dump/archive failed (exit "+exit+"): "+
+        String(error.message||error)+"; stderr: "+(dumpError||"(empty)"));
+    }
     // Complete authenticated preflight BEFORE starting pg_restore.
     report("06/10 Authenticating complete encrypted archive before restore.");
     notInterrupted();
