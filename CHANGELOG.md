@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 15 October 2026 — Independent v21 release review intake and accepted-source code packet (documentation only)
+
+- Received DeepSeek's first independent **documentation-only** review of Currency 3.8 R1; reviewer declared no repository/code/cloud access, no exact `path:line` verification and no executed tests. Findings B1-B5/H1-H5 are advisory until source-level reconciliation.
+- Read actual accepted `4f816527` code and confirmed procedural current-primary branch-protection/branch-identity risk and code improvements: H1 generic loopback-only v21 runtime opt-in, H3 path hardening, H5 missing schema validation when registry21 already exists; historical v20 migrator filters version21 but runtime rollback remains untested. Noted that an in-DB branch-ID sentinel is cloned with the DB and cannot independently prove Neon identity.
+- Added `docs/product/3_8_0_V21_DEEPSEEK_R1_SOURCE_REVIEW_PACKET_2026-10-15.md`: source snapshot from exact accepted SHA with original line numbers, three complete v21 SQL artifacts, migration plan, new tests and relevant runtime/Playwright excerpts for independent code review. **No runtime/SQL/test modifications, no new acceptance run.** Pending independent source review and next approved corrective small batch; PR #338 Draft; production unchanged v20.
+
 ## 14 October 2026 — Currency 3.8.0 complete local implementation acceptance PASS (NOT RELEASED)
 
 - Exact owner-local code SHA `4f8165272ff5dc33facdc60af1931f37b97c0303`: targeted 38/38 PASS; TypeScript PASS; native disposable PostgreSQL16 tests **6/6 static**, **9/9 integration**, **3/3 executed v21 release SQL**; full Node **1549/1549 PASS**; Next.js 16.3.2 optimized build **PASS 41/41** in both standard and browser phases; isolated authenticated desktop/mobile Playwright **8/8 PASS**; browser PostgreSQL schema evidence verified exactly one registry21 row, 12 columns, 4 CHECKs. Both localhost PG clusters identity-checked and stopped. **Owner-local, not CI or production**.
