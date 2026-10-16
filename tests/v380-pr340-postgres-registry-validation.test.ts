@@ -46,6 +46,11 @@ test("M1 validates both LF and CRLF worktrees while still rejecting changed sour
     writeFileSync(target,crlf);
     const result=validatePostgresPartitionRegistry({registryPath:f.registryPath,directory:f.dir});
     assert.equal(result.status,"PASS","Git for Windows CRLF must not change canonical source hash");
+    const originalRegistrySha=result.registrySha256;
+    writeFileSync(f.registryPath,readFileSync(f.registryPath,"utf8").replace(/\r?\n/g,"\r\n"));
+    assert.equal(validatePostgresPartitionRegistry({
+      registryPath:f.registryPath,directory:f.dir
+    }).registrySha256,originalRegistrySha,"Registry identity must also be platform-independent");
     writeFileSync(target,crlf+"// altered content\r\n");
     assert.throws(()=>validatePostgresPartitionRegistry({registryPath:f.registryPath,directory:f.dir}),
       /PARTITION_REGISTRY_DRIFT: SHA-256 mismatch/);
