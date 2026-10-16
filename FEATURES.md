@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 release fixture identity follow-up (staged 16 Oct):** Release verification requires the native test-only certificate bridge as part of browser-fixture source identity; its changes invalidate old browser results. Source-contract test list now includes this third required fixture. No visible product functionality change; re-verification pending.
+
+
 **PR340 browser certification test harness (16 Oct, staged):** Isolated test fixture signatures now use the canonical existing flight certification algorithm in a native Node subprocess to avoid Playwright TypeScript loader incompatibility. Runtime certification behavior unchanged; owner-local browser acceptance still required before release.
 
 
