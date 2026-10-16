@@ -6,7 +6,7 @@ const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
 
 function resetElevationFixture(){
   // This helper is only callable in explicitly authenticated localhost browser mode.
-  runBrowserSql("DELETE FROM airports WHERE user_id IN (9001,9002) AND ident IN ('ZZAE1','ZZAE2');");
+  runBrowserSql("DELETE FROM airports WHERE user_id IN (9001,9002) AND ident IN ('ZZAE1','ZZAE2','ZZAE3');");
 }
 
 function storedElevation(code){
@@ -18,6 +18,8 @@ function storedElevation(code){
 
 test("Airport elevation add edit and clear preserves nullable persisted MSL values",async({page})=>{
   test.skip(!authenticatedBrowser,"Requires an explicitly isolated authenticated localhost browser database.");
+  // This scenario navigates through six real server-action form submissions.
+  test.setTimeout(90_000);
   resetElevationFixture();
   await loginBrowserPilot(page,"/database");
   await page.goto("/database?view=airports");
@@ -36,22 +38,18 @@ test("Airport elevation add edit and clear preserves nullable persisted MSL valu
   const original="Elevation Test Strip|Test Town|CZ|49.5|15.5";
   expect(storedElevation("ZZAE1")).toBe("NULL|"+original);
 
-  // A crafted invalid numeric payload must be rejected by the server before
-  // attempting the upsert; the stored name/elevation remain untouched.
-  const addActionName=await add.locator('input[name^="$ACTION_ID_"]').first().getAttribute("name");
-  expect(addActionName).toMatch(new RegExp("^\\$ACTION_ID_"));
-  const invalid=await page.evaluate(async(actionName)=>{
-    const form=new FormData();
-    form.set(actionName,"");
-    form.set("ident","ZZAE1");
-    form.set("name","MUST NOT PERSIST");
-    form.set("elevation_ft","not-a-number");
-    const response=await fetch("/database?view=airports",{
-      method:"POST",body:form,credentials:"same-origin",redirect:"follow",
-    });
-    return {status:response.status,url:response.url};
-  },addActionName);
-  expect(invalid.url).toContain("airportStatus=invalid-elevation");
+  // Submit through the REAL Next.js Server Action form, not an assumed
+  // $ACTION_ID_ hidden field (not guaranteed in React/Next production DOM).
+  // A modified input type permits a deliberately malformed payload to
+  // exercise server-side validation even when the public UI uses type=number.
+  await add.locator('input[name="ident"]').fill("ZZAE1");
+  await add.locator('input[name="name"]').fill("MUST NOT PERSIST");
+  const invalidElevation=add.locator('input[name="elevation_ft"]');
+  await invalidElevation.evaluate(input=>{input.type="text";});
+  await invalidElevation.fill("not-a-number");
+  await add.getByRole("button",{name:"Add / update"}).click();
+  await expect(page).toHaveURL(/airportStatus=invalid-elevation/);
+  await expect(page.getByRole("alert")).toContainText("valid airport elevation");
   expect(storedElevation("ZZAE1")).toBe("NULL|"+original);
 
   const custom=()=>page.locator(".u31-airport-panel").first()
@@ -86,26 +84,29 @@ test("Airport elevation add edit and clear preserves nullable persisted MSL valu
 
 test("Airport elevation server action refuses a cross-user forged edit",async({page,browser})=>{
   test.skip(!authenticatedBrowser,"Requires an explicitly isolated authenticated localhost browser database.");
+  test.setTimeout(60_000);
   resetElevationFixture();
+  // Each user owns a real airport record and can see an actual elevation
+  // form. No forged/assumed Next.js action ID or manual fetch protocol.
   runBrowserSql(`INSERT INTO airports
     (user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,elevation_ft,source)
-    VALUES (9001,'ZZAE2','Owner Strip','Owner Town','CZ',49.1,15.1,345,'Manual')`);
+    VALUES
+      (9001,'ZZAE2','Owner Strip','Owner Town','CZ',49.1,15.1,345,'Manual'),
+      (9002,'ZZAE3','Other Strip','Other Town','CZ',49.2,15.2,456,'Manual')`);
+  const ownerId=browserSqlScalar("SELECT id::text FROM airports WHERE user_id=9001 AND ident='ZZAE2'");
+  const otherId=browserSqlScalar("SELECT id::text FROM airports WHERE user_id=9002 AND ident='ZZAE3'");
+  expect(ownerId).toMatch(/^\\d+$/);
+  expect(otherId).toMatch(/^\\d+$/);
+  expect(ownerId).not.toBe(otherId);
 
   await loginBrowserPilot(page,"/database");
   await page.goto("/database?view=airports");
-  const row=page.locator(".u31-airport-panel").first()
+  const ownerRow=page.locator(".u31-airport-panel").first()
     .locator("tbody tr").filter({hasText:"ZZAE2"});
-  await expect(row).toBeVisible();
-  await row.locator("details summary").click();
-  const editor=row.locator("form.u31-airport-elevation-form");
-  const actionInput=editor.locator('input[name^="$ACTION_ID_"]').first();
-  await expect(actionInput).toHaveCount(1);
-  const actionName=await actionInput.getAttribute("name");
-  const recordId=await editor.locator('input[name="id"]').getAttribute("value");
-  expect(actionName).toMatch(new RegExp("^\\$ACTION_ID_"));
-  expect(recordId).toMatch(new RegExp("^\\d+$"));
+  await expect(ownerRow).toBeVisible();
+  await expect(ownerRow).toContainText("345 ft MSL");
 
-  // The second fixture account is authenticated separately, not granted access to the first.
+  // A second authenticated user must not see the first user's airport.
   const other=await browser.newContext({baseURL:"http://127.0.0.1:3000"});
   try{
     const otherPage=await other.newPage();
@@ -114,23 +115,28 @@ test("Airport elevation server action refuses a cross-user forged edit",async({p
     await otherPage.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
     await otherPage.getByRole("button",{name:"Sign in"}).click();
     await expect(otherPage).toHaveURL("http://127.0.0.1:3000/database");
-
-    // Deliberately submit the owner's genuine Server Action ID from another session.
-    const result=await otherPage.evaluate(async({actionName,recordId})=>{
-      const form=new FormData();
-      form.set(actionName,"");
-      form.set("id",recordId);
-      form.set("elevation_ft","777");
-      const response=await fetch("/database?view=airports",{
-        method:"POST",body:form,credentials:"same-origin",redirect:"follow",
-      });
-      return {status:response.status,url:response.url};
-    },{actionName,recordId});
-    expect(result.url).toContain("airportStatus=not-found");
-    expect(storedElevation("ZZAE2")).toBe("345|Owner Strip|Owner Town|CZ|49.1|15.1");
-
     await otherPage.goto("/database?view=airports");
-    await expect(otherPage.locator(".u31-airport-panel").first().getByText("ZZAE2")).toHaveCount(0);
+    const custom=otherPage.locator(".u31-airport-panel").first();
+    await expect(custom.locator("tbody tr").filter({hasText:"ZZAE2"})).toHaveCount(0);
+    const otherRow=custom.locator("tbody tr").filter({hasText:"ZZAE3"});
+    await expect(otherRow).toBeVisible();
+    await otherRow.locator("details summary").click();
+    const otherEditor=otherRow.locator("form.u31-airport-elevation-form");
+    const idInput=otherEditor.locator('input[name="id"]');
+    await expect(idInput).toHaveValue(otherId);
+    await otherEditor.locator('input[name="elevation_ft"]').fill("777");
+    // IDOR attempt: change only the form's record identifier to the first
+    // user's ID, preserving the signed-in second user's genuine action.
+    await idInput.evaluate((input,value)=>{input.value=value;},ownerId);
+    await expect(idInput).toHaveValue(ownerId);
+    await otherEditor.getByRole("button",{name:"Save",exact:true}).click();
+    await expect(otherPage).toHaveURL(/airportStatus=not-found/);
+    await expect(otherPage.getByRole("alert")).toContainText("not available for editing");
+
+    expect(storedElevation("ZZAE2")).toBe("345|Owner Strip|Owner Town|CZ|49.1|15.1");
+    expect(browserSqlScalar("SELECT elevation_ft::text FROM airports WHERE user_id=9002 AND ident='ZZAE3'")).toBe("456");
+    await expect(otherPage.locator(".u31-airport-panel").first()
+      .locator("tbody tr").filter({hasText:"ZZAE2"})).toHaveCount(0);
   }finally{
     await other.close();
   }
