@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-16 — Airport elevation rates browser-fixture read-model parity (PR #346 DRAFT; NOT RELEASED)
+
+`3871685e` owner-local iteration 257/257 source, 20/20 domain, typecheck PASS; owned PG16 and production build PASS. Browser 25 PASS / 2 FAIL (desktop), failing `/database` before elevation logic due to test-only `rates` missing `aircraft_type`. Inspected the complete `lib/data/database.ts` rates SELECT and expanded disposable `rates` fixture with pre-v21 `aircraft_type`, `dry_price_per_hour`, `source` and existing `UNIQUE(user_id,registration,valid_from)`; v21 fields still installed by canonical schema-first migration. Added direct source guard. **New SHA not yet tested**; no merge, schema migration execution or deploy.
+
 ## 2026-10-16 — Airport Elevation E2E infrastructure fix (DRAFT PR #346, NOT RELEASED)
 
 On `92405480`: local `npm test` 1,630/1,630 PASS, iteration source 257/257 + domain 20/20 + typecheck PASS, browser production build PASS; browser desktop **25 PASS / 2 FAIL** because the disposable fixture omitted the existing `aircraft_photos` table needed by the `/database` read model. Updated only the test fixture to mirror the canonical `lib/v300-aircraft-sharing-schema.ts` photo table/constraint/index, supplied a `baseURL` for independently authenticated second-user E2E context, added source-contract assertions, and recorded evidence. **Post-fix verification NOT RUN**. Production schema unverified; no DB migration, merge or deploy.
