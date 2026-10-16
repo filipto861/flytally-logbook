@@ -194,7 +194,31 @@ test("v1.69 pilot insights exclude auxiliary modes on the mixed-category 50k acc
     userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,section:"all",
     "rolling.currentStart":"2025-09-07","rolling.currentEnd":"2026-09-06","rolling.previousStart":"2024-09-07","rolling.previousEnd":"2025-09-06"
   });
-  const result=explain(query);recordMetric("pilotInsights50k",result,3000);
+  const result=explain(query);
+  // Diagnostic only: report the actual planner tree when the unchanged bound
+  // is exceeded. No threshold relaxation and no release-crediting override.
+  if(result.executionMs>=3000){
+    const nodes:Array<{type:string;relation:string;actualMs:number;loops:number;tempRead:number;tempWritten:number}>=[];
+    const visit=(plan:unknown)=>{
+      if(!plan||typeof plan!=="object")return;
+      const p=plan as Record<string,unknown>;
+      nodes.push({
+        type:String(p["Node Type"]??""),
+        relation:String(p["Relation Name"]??""),
+        actualMs:Number(p["Actual Total Time"]??0),
+        loops:Number(p["Actual Loops"]??0),
+        tempRead:Number(p["Temp Read Blocks"]??0),
+        tempWritten:Number(p["Temp Written Blocks"]??0),
+      });
+      if(Array.isArray(p.Plans))for(const child of p.Plans)visit(child);
+    };
+    visit(result.plan);
+    console.log("V169 INSIGHTS50K PLAN "+JSON.stringify({
+      executionMs:result.executionMs,planningMs:result.planningMs,
+      slowestNodes:nodes.sort((a,b)=>b.actualMs*b.loops-a.actualMs*a.loops).slice(0,12),
+    }));
+  }
+  recordMetric("pilotInsights50k",result,3000);
   const row=rows(query)[0]??{};
   assert.equal(Number(row.flights),LOGGED_ROWS);
   const roleRows=jsonArray(row.roles);
