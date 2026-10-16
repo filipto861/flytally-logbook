@@ -39,6 +39,10 @@ test("PR340 benchmark profile is explicit, local and does not rewrite SQL or tes
   assert.match(wrapper,/\$env:FLYTALLY_PR340_PARTITION_RELEASE = "1"/);
   assert.match(wrapper,/Restore-Env "FLYTALLY_PR340_PARTITION_RELEASE"/);
   assert.match(wrapper,/verify:release:risk/);
+  assert.match(wrapper,/param\(\[switch\]\$BrowserOnly\)/);
+  assert.match(wrapper,/if \(\$BrowserOnly\) \{[\s\S]*?npm\.cmd run verify:browser:risk -- --base origin\/main/);
+  assert.match(wrapper,/NOT FULL RELEASE PASS/);
+  assert.match(wrapper,/PR340 candidate-bound browser risk gate/);
   // Both cheap guards must run before any PostgreSQL cluster is created.
   const preflight=wrapper.indexOf("npm.cmd run test:target -- tests/v380-pr340-owned-pg-release.test.ts");
   const typecheck=wrapper.indexOf("npm.cmd run typecheck");
