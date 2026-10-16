@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 M3 shared-core isolate historic 50k/100k benchmarks), NOT YET VERIFIED:** Owner's first two clean shared-core PG16 runs each yielded 122/123 PASS with 0 SKIP/TODO; first failed 100k Insights limit by 6.908ms, second failed unrelated 50k Insights by 40.374ms. Changed only `tooling/run-pr340-partition-tests.mjs` and its source contract test to run each heavy performance file separately from the other 113 tests, using strict per-segment TAP and total 123-case accounting, preserving existing SQL and limits. Local Node/typecheck/PG rerun on new SHA NOT RUN. No migration, deployment, release ledger or production data change.
+
+
 **16 Oct 2026 — test(PR340 M3 partial partition runner), NOT VERIFIED LOCALLY:** Added `tooling/run-pr340-postgres-partitions-local.ps1`, `tooling/run-pr340-partition-tests.mjs` and source-only contract test registered in development-pipeline. Proposed execution uses owned distinct temporary PG16 clusters and exact registry specs with fail-closed strict TAP; intentionally refuses real-v20-catalog until its source-backed historical `public` migration prerequisite is implemented. The script can execute at most 161/163 cases; 163/163 PostgreSQL release evidence and Playwright NOT RUN. No production data or canonical ledger writes, merge or deploy.
 
 
