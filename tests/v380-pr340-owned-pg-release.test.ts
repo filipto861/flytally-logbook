@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {spawnSync} from "node:child_process";
+import {fileURLToPath} from "node:url";
 import {readFileSync} from "node:fs";
 import {assertPr340AcceptancePreflight} from "../tooling/pr340-owned-postgres-acceptance.mjs";
 
@@ -75,4 +77,36 @@ test("PR340 Safety Pilot browser seed signs actual persisted v8 row and rejects 
   assert.match(cli,/FLYTALLY_LOCAL_POSTGRES/);
   assert.doesNotMatch(source,/import \{flightCertificationHash,verifyFlightCertification\} from/);
   assert.match(source,/--experimental-strip-types/);
+});
+
+test("PR340 native browser certificate bridge signs, verifies and refuses altered data",()=>{
+  const script=fileURLToPath(new URL("../tooling/certification-browser-fixture-cli.mjs",import.meta.url));
+  const row={
+    id:9903,user_id:9001,certification_version:8,certified_by_user_id:9001,
+    certified_at:"2026-10-16T07:00:00.000Z",
+    certification_hash:"PENDING_FIXTURE_SIGNATURE",
+    date:"2026-09-20",registration:"OK-SP2E",evidence:"EASA",
+    aircraft_type:"B23",aircraft_class:"SEP",departure:"LKLT",arrival:"LKPR",
+    off_block:"10:00",takeoff:"10:05",landing:"11:05",on_block:"11:12",
+    role:"SAFETY PILOT",starts:3,commander:"Browser Friend",landings_day:3,
+    movement_evidence_recorded:true,takeoffs_day:3,approaches_day:3,
+  };
+  const env={...process.env,FLYTALLY_AUTH_BROWSER:"1",FLYTALLY_LOCAL_POSTGRES:"1"};
+  const invoke=(mode:string,value:Record<string,unknown>,processEnv=env)=>
+    spawnSync(process.execPath,["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
+      "--experimental-strip-types",script,mode],{
+      input:JSON.stringify(value),encoding:"utf8",env:processEnv,timeout:10000,
+    });
+  const missingPurpose=invoke("sign",row,{...env,FLYTALLY_AUTH_BROWSER:"0"});
+  assert.notEqual(missingPurpose.status,0);
+  const signed=invoke("sign",row);
+  assert.equal(signed.status,0,signed.stderr);
+  assert.match(signed.stdout,/^[0-9a-f]{64}$/);
+  const verified=invoke("verify",{...row,certification_hash:signed.stdout});
+  assert.equal(verified.status,0,verified.stderr);
+  assert.equal(verified.stdout,"verified");
+  const tampered=invoke("verify",{...row,registration:"OK-ALTERED",certification_hash:signed.stdout});
+  assert.notEqual(tampered.status,0);
+  const wrongSource=invoke("sign",{...row,id:9904});
+  assert.notEqual(wrongSource.status,0);
 });
