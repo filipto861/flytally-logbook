@@ -37,6 +37,8 @@ export function verificationConfigIdentity(){
     "tooling/verification-browser-risk.mjs",
     "tooling/verify-domain.mjs",
     "tooling/verify-postgres.mjs",
+    "tooling/postgres-partition-registry.json",
+    "tooling/validate-postgres-partition-registry.mjs",
     "tooling/run-postgres-tests.mjs",
     "tooling/postgres-cli.mjs",
     "tooling/verify-release-risk.mjs",
