@@ -84,7 +84,7 @@ test("isolated browser database fixtures include the nullable elevation prerequi
     "updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
     "CONSTRAINT airports_user_ident_unique UNIQUE(user_id,ident)",
   ]) assert.ok(bootstrap.includes(column),column);
-  assert.ok(bootstrap.includes("(9002,\${quote(passwordHash)})"),
+  assert.ok(bootstrap.includes("(9002,${quote(passwordHash)})"),
     "secondary authenticated fixture account must have explicit test-only credentials");
   assert.ok(browser.includes("ALTER TABLE airports ADD COLUMN IF NOT EXISTS elevation_ft DOUBLE PRECISION"));
 });
