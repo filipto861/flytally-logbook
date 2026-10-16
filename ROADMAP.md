@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct PR340 release gate blocker:** Owner-local exact SHA `2eef9c36` typecheck PASS and 9/9 targeted M3/M4 tests PASS. First full candidate-aware release run reached source gate: 256/257 PASS, one obsolete M2 contract asserted pre-bridge `runNodeTests(tests)` while canonical implementation now deliberately preserves legacy `runNodeTests(configuration.testFiles)` and adds authorized six-owned-cluster executor. This was not a DB/runtime failure; PostgreSQL and browser NOT RUN. Contract corrected on branch `b2c2b00a` to assert both legacy and new paths, pure TAP cannot issue ledger. Must re-run targeted test/typecheck/full release at new exact SHA; no release PASS or deploy.
+
+
 **16 Oct PR340 M4 typecheck correction (owner finding, follow-up verification pending):** Owner ran 9/9 targeted PR340 contract tests PASS at `f5ada8d0`, but TypeScript failed on two negative-environment test fixtures because Next extends `NodeJS.ProcessEnv` with required `NODE_ENV`. Declaration now accepts `Partial<NodeJS.ProcessEnv>` (`ec5bf5fd`), without changing runtime guard. Rerun typecheck and tests on newest commit before release. Canonical PG/Playwright NOT RUN.
 
 
