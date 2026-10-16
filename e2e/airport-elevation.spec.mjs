@@ -36,6 +36,24 @@ test("Airport elevation add edit and clear preserves nullable persisted MSL valu
   const original="Elevation Test Strip|Test Town|CZ|49.5|15.5";
   expect(storedElevation("ZZAE1")).toBe("NULL|"+original);
 
+  // A crafted invalid numeric payload must be rejected by the server before
+  // attempting the upsert; the stored name/elevation remain untouched.
+  const addActionName=await add.locator('input[name^="$ACTION_ID_"]').first().getAttribute("name");
+  expect(addActionName).toMatch(new RegExp("^\\\\$ACTION_ID_"));
+  const invalid=await page.evaluate(async(actionName)=>{
+    const form=new FormData();
+    form.set(actionName,"");
+    form.set("ident","ZZAE1");
+    form.set("name","MUST NOT PERSIST");
+    form.set("elevation_ft","not-a-number");
+    const response=await fetch("/database?view=airports",{
+      method:"POST",body:form,credentials:"same-origin",redirect:"follow",
+    });
+    return {status:response.status,url:response.url};
+  },addActionName);
+  expect(invalid.url).toContain("airportStatus=invalid-elevation");
+  expect(storedElevation("ZZAE1")).toBe("NULL|"+original);
+
   const custom=()=>page.locator(".u31-airport-panel").first()
     .locator("tbody tr").filter({hasText:"ZZAE1"});
   await expect(custom()).toContainText("—");
