@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 M4b/M4c IMPLEMENTED but NOT LOCALLY VERIFIED:** Canonical `verify-postgres.mjs` now uses a trusted six-owned-PG16 partition executor only under explicit `FLYTALLY_PR340_PARTITION_RELEASE=1` from the existing guarded disposable release wrapper. The executor checks clean exact fetched branch SHA, pinned registry, strict TAP for every subprocess, 163 total cases, distinct actual DB identities, empty stderr/zero exit, real public v1–v20 bootstrap, and shutdown of every owned cluster; it does not consume external PASS files or self-issue a ledger. Canonical verifier issues ledger only after accepted real execution. Other candidates retain legacy single-db execution. Shared-core uses **explicit controlled localhost benchmark profile `work_mem=64MB`**, thresholds unchanged; this is NOT equivalence to default PostgreSQL (previous default 50k FAIL), nor a claim that production requires 64MB. New source-contract/negative tests staged. IMPORTANT: no owner-local verification of this SHA yet; full release/browser evidence NOT RUN; PR Draft. Independent reviewer recommended for benchmark policy/authority boundary before merge.
+
+
 **16 Oct PR340 M4 bridge design frozen (NOT IMPLEMENTED):** See `docs/product/3_8_0_PR340_M4_CANONICAL_PG_BRIDGE_DESIGN_2026-10-16.md`. Before granting any canonical release PASS, obtain independent review of evidence authority and benchmark policy; then implement trusted six-cluster executor and verified candidate-bound ledger, followed by same-head 163/163 PG and risk browser. Prior Node/build and per-partition successes remain exact-SHA observations only. No merge/deploy.
 
 
