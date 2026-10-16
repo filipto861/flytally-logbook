@@ -280,6 +280,7 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R2");
   expect(browserSqlScalar(`SELECT arrival||'|'||record_revision::text||'|'||length(certification_hash)::text FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKMT|2|64");
   expect(browserSqlScalar(`SELECT snapshot_data->>'arrival' FROM flight_certified_revisions WHERE flight_id=${correctedFlightId} AND user_id=9001 AND revision_number=1`)).toBe("LKPR");
+  expect(browserSqlScalar(`SELECT certification_hash FROM flight_certified_revisions WHERE flight_id=${correctedFlightId} AND user_id=9001 AND revision_number=1`)).toBe(originalHash);
   expect(browserSqlScalar(`SELECT COUNT(*) FROM flight_certified_revisions WHERE flight_id=${correctedFlightId} AND user_id=9001`)).toBe("1");
   expect(browserSqlScalar(`SELECT certification_hash FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).not.toBe(originalHash);
   await page.reload();
