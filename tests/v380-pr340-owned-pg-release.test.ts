@@ -4,7 +4,6 @@ import {spawnSync} from "node:child_process";
 import {fileURLToPath} from "node:url";
 import {readFileSync} from "node:fs";
 import {assertPr340AcceptancePreflight,assertOwnedPostgresAcceptancePreflight} from "../tooling/pr340-owned-postgres-acceptance.mjs";
-import {postgresVerificationConfiguration} from "../tooling/verify-postgres.mjs";
 
 const source=(name:string)=>readFileSync(new URL("../tooling/"+name,import.meta.url),"utf8");
 const candidate={headSha:"a".repeat(40),worktree:{files:[]}};
@@ -178,7 +177,8 @@ test("Generic owned PG16 preflight refuses CI, unsafe remote refs and dirty work
   }),/Source HEAD drift/);
 });
 
-test("Generic PG16 release route remains explicit; default and PR340 modes are preserved",()=>{
+test("Generic PG16 release route remains explicit; default and PR340 modes are preserved",async()=>{
+  const {postgresVerificationConfiguration}=await import(new URL("../tooling/verify-postgres.mjs",import.meta.url).href);
   assert.equal(postgresVerificationConfiguration({}).mode,"full");
   assert.equal(postgresVerificationConfiguration({FLYTALLY_PR340_PARTITION_RELEASE:"1"}).mode,
     "pr340-six-owned-pg16");
