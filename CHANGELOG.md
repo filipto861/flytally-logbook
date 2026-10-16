@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-16 — Airport elevation browser acceptance staged (DRAFT PR #346; NOT RELEASED)
+
+Prior exact SHA `e88bc4f9` owner-local evidence: 257/257 source, 19/19 domain, typecheck PASS; 163/163 owned PG16 acceptance PASS; 1,629/1,629 full Node tests PASS. Subsequent commits: disposable browser airports fixture now includes municipality/country/updated_at and owner-ident uniqueness; second fixture account has test-only credentials; new Playwright Airport Elevation nullable add/edit/clear, invalid payload and cross-user forged action tests for desktop and mobile; strict baseline/registry extended by four browser targets; owned disposable PG16 PowerShell browser-risk launcher added. **New HEAD verification NOT RUN**; candidate-bound regression/typecheck/build/Postgres/browser release gates and read-only production schema preflight remain blockers. No code merge, migration execution or deploy.
+
 ## 2026-10-16 — Airport elevation PR #346: post-test source inventory correction (DRAFT / NOT RELEASED)
 
 Owner-local Node 24 on `79b9a66a` reported 13/13 targeted tests PASS, typecheck PASS and Next production build PASS. Initial `verify:iterate` source evidence FAIL (256/257: audited runtime total 397, actual 398 with new `lib/airport-elevation.ts`); direct domain 13/13 PASS and typecheck PASS. Corrected `tooling/development-modules.json` runtime audit total to 398, retaining exact ownership guard, and registered `tests/airport-elevation.test.ts` among approved aircraft-airports domain evidence. Corrected branch head **NOT YET RETESTED**. PostgreSQL and browser acceptance NOT RUN (no local PostgreSQL configured); production PostgreSQL schema preflight NOT RUN; no migration, merge or deploy.
