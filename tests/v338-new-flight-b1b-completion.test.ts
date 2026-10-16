@@ -56,7 +56,9 @@ test("B1B keeps draft as the implicit server intent and certification as an expl
   assert.match(actions,/redirect\(`\/flights\/\$\{id\}\?certified=1`\)/);
   assert.match(actions,/`\/flights\/\$\{id\}\?tab=logbook&saved=1`/);
   assert.doesNotMatch(actions,/form\.get\("intent"\)\|\|"certify"/);
-  assert.equal((read("components/flight-form.tsx").match(/value="certify"/g)??[]).length,1);
+  const submit=read("components/flight-form.tsx");
+  assert.equal((submit.match(/value="certify"/g)??[]).length,2);
+  assert.match(submit,/if\(editing\)return[\s\S]*name="intent" value="certify"[\s\S]*Save &amp; certify[\s\S]*return <>[\s\S]*name="intent" value="certify"[\s\S]*Save &amp; certify flight/);
 });
 
 test("B1B does not move route/time completeness into draft-save blockers",()=>{

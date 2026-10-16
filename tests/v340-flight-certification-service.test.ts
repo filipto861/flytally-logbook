@@ -74,3 +74,25 @@ test("3.4.0 saved-draft and direct-certification outcomes are explicit on flight
   assert.match(workspace,/params\.delete\("certified"\)/);
   assert.match(workspace,/params\.delete\("certify"\)/);
 });
+
+test("certified correction Save & certify seals exactly the row returned by the successful draft update",()=>{
+  const form=read("components/flight-form.tsx");
+  const actions=read("app/(protected)/flights/actions.ts");
+  const service=read("lib/flight-certification.ts");
+  const update=actions.slice(actions.indexOf("export async function updateFlight("),actions.indexOf("export async function saveFlightExpenses("));
+  assert.match(form,/if\(editing\)return[\s\S]*name="intent" value="draft"[\s\S]*Save changes[\s\S]*name="intent" value="certify"[\s\S]*Save &amp; certify/);
+  assert.match(update,/if\(existing\.certified_at\)return\{error:/);
+  assert.match(update,/flight\.locked_at IS NULL AND flight\.certified_at IS NULL/);
+  assert.match(update,/RETURNING flight\.id,flight\.xmin::text row_xmin,COALESCE\(flight\.record_revision,1\)::int record_revision/);
+  assert.match(update,/if\(String\(form\.get\("intent"\)\|\|"draft"\)==="certify"\)/);
+  assert.match(update,/certifyStoredFlight\(userId,id,String\(rows\[0\]\.row_xmin\?\?""\)\)/);
+  assert.match(service,/expectedRowXmin\?:string/);
+  assert.match(service,/expectedRowXmin!==undefined&&String\(row\.row_xmin\?\?""\)!==expectedRowXmin\)return\{status:"stale"/);
+  assert.match(update,/if\(certification\.status==="certified"\)[\s\S]*revalidateFlightCertificationViews\(id\);[\s\S]*redirect\(`\/flights\/\$\{id\}\?certified=1`\)/);
+  assert.match(update,/Changes saved as a draft, but certification was blocked/);
+  assert.match(update,/certification status could not be confirmed/);
+  assert.match(update,/certification did not complete or the record changed concurrently/);
+  assert.match(update,/saved:true/);
+  assert.match(form,/if\(!state\.saved\)\{markDirty\(\);flightEdit\?\.setUnsaved\(true\)\}/);
+});
+

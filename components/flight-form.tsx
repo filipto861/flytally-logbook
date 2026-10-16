@@ -16,6 +16,7 @@ import { roleCrewSpec } from "@/lib/role-crew";
 import { FlightPurposePicker } from "@/components/flight-purpose-picker";
 import { PendingActionButton } from "@/components/pending-action-button";
 import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
+import { useFlightEditState } from "@/components/flight-detail-workspace";
 import { FlightExpensesEditor } from "@/components/flight-expenses-editor";
 import { ProfessionalContextFields } from "@/components/professional-context-fields";
 import type { FlightExpenseRecord } from "@/lib/flight-expenses";
@@ -35,7 +36,10 @@ const balloonClassLabel=(value:string)=>({HOT_AIR_BALLOON:"Hot-air balloon",GAS_
 const regulatoryContextLabel=(value:string)=>({AEROPLANE:"Aeroplane · Part-FCL",SAILPLANE:"Sailplane · Part-SFCL",HELICOPTER:"Helicopter · Part-FCL",BALLOON:"Balloon · Part-BFCL",ULL:"ULL",OTHER:"Other"} as Record<string,string>)[value]||value;
 const compactContextSummary=(parts:Array<string|undefined>)=>[...new Set(parts.filter((value):value is string=>Boolean(value)))].join(" · ");
 function Submit({editing=false,certifyDisabled=false,onAttempt}:{editing?:boolean;certifyDisabled?:boolean;onAttempt?:()=>void}){
-  if(editing)return <PendingActionButton className="primary-button" name="intent" value="draft" pendingLabel="Saving…" onClick={onAttempt}>Save changes</PendingActionButton>;
+  if(editing)return <>
+    <PendingActionButton className="secondary-button" name="intent" value="draft" pendingLabel="Saving…" onClick={onAttempt}>Save changes</PendingActionButton>
+    <PendingActionButton className="primary-button" name="intent" value="certify" pendingLabel="Saving & certifying…" disabled={certifyDisabled} onClick={onAttempt}>Save &amp; certify</PendingActionButton>
+  </>;
   return <>
     <PendingActionButton className="secondary-button" name="intent" value="draft" pendingLabel="Saving draft…" onClick={onAttempt}>Save draft</PendingActionButton>
     <PendingActionButton className="primary-button" name="intent" value="certify" pendingLabel="Saving & certifying…" disabled={certifyDisabled} onClick={onAttempt}>Save &amp; certify flight</PendingActionButton>
@@ -44,6 +48,7 @@ function Submit({editing=false,certifyDisabled=false,onAttempt}:{editing?:boolea
 
 export function FlightForm({defaultCurrency="",action,aircraft,initial={},calendarDefault,instructors=[],picConnections=[],connectedPic=null,expenses=[],formId}:{defaultCurrency?:string;action:Action;aircraft:AircraftOption[];initial?:Initial;calendarDefault?:SaveableCalendarDefault;instructors?:Array<{name:string}>;picConnections?:PicConnection[];connectedPic?:ConnectedPicInitial;expenses?:FlightExpenseRecord[];formId?:string}){
   const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
+  const flightEdit=useFlightEditState();
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null),formRef=useRef<HTMLFormElement>(null),[submitAttempted,setSubmitAttempted]=useState(false);
   const normalizedAircraft=useMemo(()=>aircraft.map(item=>({...item,registration:normalizeRegistration(item.registration)})),[aircraft]);
   const initialRegistration=normalizeRegistration(field("registration"));
@@ -104,8 +109,11 @@ export function FlightForm({defaultCurrency="",action,aircraft,initial={},calend
     if(!selector)return;
     requestAnimationFrame(()=>requestAnimationFrame(()=>formRef.current?.querySelector<HTMLElement>(selector)?.focus()));
   };
-  useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);
-  return <form ref={formRef} id={formId} action={formAction} className="flight-form" data-aircraft-category={entryProfile.selected?entryProfile.category:"unselected"} onChangeCapture={markDirty} onReset={event=>event.preventDefault()} onSubmitCapture={beginSubmit}>
+  useEffect(()=>{if(dirty)flightEdit?.setUnsaved(true)},[dirty,flightEdit?.setUnsaved]);
+  useEffect(()=>{flightEdit?.setSubmitting(false);if(state.error){if(!state.saved){markDirty();flightEdit?.setUnsaved(true)}errorRef.current?.focus()}},[state,markDirty,flightEdit?.setSubmitting,flightEdit?.setUnsaved]);
+  const markFormDirty=()=>{markDirty();flightEdit?.setUnsaved(true)};
+  const beginFormSubmit=()=>{beginSubmit();flightEdit?.setUnsaved(false);flightEdit?.setSubmitting(true)};
+  return <form ref={formRef} id={formId} action={formAction} className="flight-form" data-aircraft-category={entryProfile.selected?entryProfile.category:"unselected"} onChangeCapture={markFormDirty} onReset={event=>event.preventDefault()} onSubmitCapture={beginFormSubmit}>
     {instructors.length?<datalist id="connected-instructors">{instructors.map((item,index)=><option value={item.name} key={`${item.name}-${index}`}/>)}</datalist>:null}
     {!safetyCrewInline?<input type="hidden" name="connectedPicUserId" value=""/>:null}
     <section className="entry-section entry-section-primary"><p className="section-kicker">Flight essentials</p>
@@ -175,6 +183,6 @@ export function FlightForm({defaultCurrency="",action,aircraft,initial={},calend
       <div><span>UTC times</span><strong>{certificationTimesSummary}</strong><small>Off-block / Takeoff / Landing / On-block</small></div>
       <div><span>Evidence</span><strong>{certificationLandingSummary} · Night {nightTime||"0:00"} · IFR {ifrTime||"0:00"}</strong></div>
     </div><p className="value-origin-note"><span>Certification</span> Certified flights are locked; later changes are recorded as corrections.</p></section>:null}
-    <div className="form-actions field-actions"><div className="entry-save-state">{missing.length?<><strong>Complete before save</strong><div className="entry-save-blockers" aria-label="Missing required fields">{missing.map(item=><button key={item} type="button" className="entry-blocker-link" onClick={()=>focusMissing(item)}>{missingLabel[item]||item}</button>)}</div></>:<small>{editing?"Save the corrected draft.":"Save draft keeps the record editable. Save & certify seals the persisted record when compliance checks pass."}</small>}{dirty?<small className="unsaved-indicator">Unsaved changes</small>:null}</div><Submit editing={editing} certifyDisabled={missing.length>0} onAttempt={()=>setSubmitAttempted(true)}/></div>
+    <div className="form-actions field-actions"><div className="entry-save-state">{missing.length?<><strong>Complete before save</strong><div className="entry-save-blockers" aria-label="Missing required fields">{missing.map(item=><button key={item} type="button" className="entry-blocker-link" onClick={()=>focusMissing(item)}>{missingLabel[item]||item}</button>)}</div></>:<small>{editing?"Save changes to keep editing, or Save & certify to seal this flight in one step.":"Save draft keeps the record editable. Save & certify seals the persisted record when compliance checks pass."}</small>}{dirty?<small className="unsaved-indicator">Unsaved changes</small>:null}</div><Submit editing={editing} certifyDisabled={missing.length>0} onAttempt={()=>setSubmitAttempted(true)}/></div>
   </form>;
 }

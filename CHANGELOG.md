@@ -8,6 +8,14 @@ Added an explicit generic entrypoint for the existing six-cluster PostgreSQL16 e
 **Verification at new infrastructure commit:** tests/typecheck/build/PG/browser NOT RUN. Related but separate owner-local PR341 evidence: browser risk 22/22 PASS at `370e63bb`; six PG16 diagnostic partitions 163/163 VALIDATED-ONLY, **not canonical release PASS**. Shared-core's 64MB local benchmark profile remains qualified. No app SQL, certification, migration, deployment or main update.
 
 
+
+## 2026-10-16 — Unreleased P1 correction workflow safety fix (branch only)
+
+**Staged code:** `fix/certified-correction-save-and-certify` introduces an explicit **Save & certify** action alongside **Save changes** for an already-opened certified-flight correction; prevents silent unsaved-data loss on tab/workflow transitions, pins certification to the saved PostgreSQL row `xmin`, rejects direct edits on still-certified rows, and distinguishes persisted draft from failed/uncertain certification. Existing revision history and v8 fingerprint rules are unchanged.
+
+**Staged tests:** Extended source tests and the established Manual authenticated Playwright scenario to verify R1 → R2 correction → canceled discard → persisted R2 certification and archived R1. **NOT RUN:** TypeScript, Node, PostgreSQL, browser (desktop/mobile), build. **N/A:** DB migration. **NOT DONE:** merge, deployment, production smoke. [Design/acceptance](docs/product/CERTIFIED_CORRECTION_SAVE_CERTIFY_2026-10-16.md).
+
+
 ## 2026-10-16 — FlyTally Logbook 3.8.0 follow-up: PR #340 published
 
 **Release:** [PR #340](https://github.com/filipto861/flytally-logbook/pull/340) merged (squash) as `main@10ab523ba83987f7d3bf3d3a1020ac0d452269e0`; Vercel `logbook` production deployment `dpl_HdL5q8Fzmxe6v69fQ2GKBw7vHsMB` **READY**, aliases include **fly-tally.com**. Original source candidate `b4a0cb4a3acf6661aa1a823e8d383a1c68f2d16e` preserved through merge.

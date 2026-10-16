@@ -44,13 +44,14 @@ async function certificationRow(userId:number,flightId:number){
   return rows[0]??null;
 }
 
-export async function certifyStoredFlight(userId:number,flightId:number):Promise<StoredFlightCertificationResult>{
+export async function certifyStoredFlight(userId:number,flightId:number,expectedRowXmin?:string):Promise<StoredFlightCertificationResult>{
   if(!Number.isSafeInteger(userId)||userId<=0||!Number.isSafeInteger(flightId)||flightId<=0)return{status:"not-found",flightId};
   await ensureDatabaseOptimizations();
   await Promise.all([ensureV132Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);
 
   const row=await certificationRow(userId,flightId);
   if(!row)return{status:"not-found",flightId};
+  if(expectedRowXmin!==undefined&&String(row.row_xmin??"")!==expectedRowXmin)return{status:"stale",flightId};
   if(row.certified_at)return{status:"already-certified",flightId};
 
   const issues=blockingComplianceIssues(flightCertificationCompliance(row,text(row.pilot_name)));
