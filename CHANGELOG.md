@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 D3b 17/19 blocker, NOT YET VERIFIED LOCALLY):** Real PG16 D3b-chain evidence exposed two failures inserting `amount_encoding` into actual v20 schema. In test-only `expensesSaveSql`, added assertion-guarded projection removing exactly the two v21-only columns from INSERT, SELECT and JSON-recordset declaration, preserving actual parent-lock, ownership, delete and race semantics. Updated pinned registry source hash. No production runtime, migration, database or release evidence changes; rerun NOT RUN.
+
+
 **16 Oct 2026 — test(PR340 50k Insights diagnostic, NOT YET VERIFIED LOCALLY):** Added compact EXPLAIN plan-node output on unchanged v1.69 50k SQL benchmark failure; refreshed pinned SHA256 in PostgreSQL source registry. Standalone failure evidence: 3134.911ms > 3000ms, 4/5 test cases PASS, 0 skips. No product SQL, limit, runtime, database, ledger, deployment or merge change. Local gates/PG run after these code changes NOT RUN.
 
 
