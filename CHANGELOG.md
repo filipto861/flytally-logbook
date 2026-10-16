@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 remaining signed-backup browser mismatch), verification pending:** Owner SHA `8a3049b1` passed source 257, domain 39, Node 1618, typecheck, build, PostgreSQL 163 but failed browser 24/25 at signed v13 restore preflight because unrelated test DUAL flight 9904 carried hardcoded `browser-f24-hash`. In localhost-only fixtures, now sign 9904 from persisted canonical v8 flight using the same restricted native Node bridge as 9903; immediately re-read and verify; helper CLI permits only 9903 Safety Pilot and 9904 DUAL under expected test user. Added positive and adversarial tests. No change to production certification, restore validation, DDL, release thresholds, or data. Full local verification on new HEAD NOT RUN; PR remains Draft.
+
+
 **16 Oct 2026 — test(PR340 stale browser-fixture identity assertion), awaiting owner rerun:** On owner SHA `0ad8e08f`, typecheck and 8 targeted tests passed, but canonical source gate stopped at 256/257 because `tests/verification-ledger.test.ts` assumed only two browser-fixture files. Updated its exact expected list to retain all three authoritative sources including `tooling/certification-browser-fixture-cli.mjs`; source hash authority not weakened. No production runtime/DB modification, no canonical same-head PG or browser pass, no merge/deploy.
 
 
