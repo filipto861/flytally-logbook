@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 preflight-first, no rerun yet):** Fixed obsolete 9903 fixture assertion by checking the extracted canonical signing helper rather than requiring an inline `UPDATE` in `resetSafetyPilotPicInviteFixture`. Owner SHA `8c3ede2f` had 17/18 targeted fail and full Node 1617/1618 fail on the identical assertion; source 257/domain 39/typecheck passed; heavy PG/Next/Playwright NOT RUN in that attempt. Added mandatory non-database typecheck and both targeted fixture/ledger tests at the **start** of the Windows PR340 release wrapper, before cluster startup; added regression asserting ordering. No production changes or weakening of fingerprints/thresholds. Current new-head typecheck, targeted tests, PostgreSQL and browser NOT RUN; Draft, no merge/deploy.
+
+
 **16 Oct 2026 — test(PR340 remaining signed-backup browser mismatch), verification pending:** Owner SHA `8a3049b1` passed source 257, domain 39, Node 1618, typecheck, build, PostgreSQL 163 but failed browser 24/25 at signed v13 restore preflight because unrelated test DUAL flight 9904 carried hardcoded `browser-f24-hash`. In localhost-only fixtures, now sign 9904 from persisted canonical v8 flight using the same restricted native Node bridge as 9903; immediately re-read and verify; helper CLI permits only 9903 Safety Pilot and 9904 DUAL under expected test user. Added positive and adversarial tests. No change to production certification, restore validation, DDL, release thresholds, or data. Full local verification on new HEAD NOT RUN; PR remains Draft.
 
 
