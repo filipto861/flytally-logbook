@@ -90,3 +90,18 @@ test("GPS player keeps the useful 2D replay and removes the fake 3D projection",
   assert.doesNotMatch(player,/GPS altitude perspective/);
   assert.doesNotMatch(player,/function scene\(/);
 });
+
+test("flight correction cannot discard a dirty edit by switching workflow tabs without confirmation",()=>{
+  const workspace=read("components/flight-detail-workspace.tsx");
+  const form=read("components/flight-form.tsx");
+  assert.match(workspace,/FlightEditContext\.Provider/);
+  assert.match(workspace,/if\(value===tab\|\|submitting\)return/);
+  assert.match(workspace,/unsaved&&!window\.confirm\("You have unsaved flight changes\. Switch tabs and discard them\?"\)/);
+  assert.match(workspace,/if\(unsaved\)setUnsaved\(false\)/);
+  assert.match(form,/useFlightEditState\(\)/);
+  assert.match(form,/onChangeCapture=\{markFormDirty\}/);
+  assert.match(form,/onSubmitCapture=\{beginFormSubmit\}/);
+  assert.match(form,/flightEdit\?\.setUnsaved\(true\)/);
+  assert.match(form,/flightEdit\?\.setSubmitting\(true\)/);
+});
+
