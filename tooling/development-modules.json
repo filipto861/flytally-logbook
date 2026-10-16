@@ -623,6 +623,7 @@
       "evidenceTests": {
         "domain-unit": [
           "tests/airport-code.test.ts",
+          "tests/airport-elevation.test.ts",
           "tests/aircraft-profile-domain.test.ts",
           "tests/billing-rate-history.test.ts"
         ]
@@ -922,7 +923,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 397,
+    "auditedTotal": 398,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
