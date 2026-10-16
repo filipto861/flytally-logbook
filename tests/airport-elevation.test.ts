@@ -78,6 +78,21 @@ test("isolated browser database fixtures include the nullable elevation prerequi
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
   const browser=read("e2e/browser-db.mjs");
   assert.ok(bootstrap.includes("elevation_ft DOUBLE PRECISION"));
+  const aircraftPhotosSchema=read("lib/v300-aircraft-sharing-schema.ts");
+  for(const ddl of [
+    "aircraft_photos",
+    "aircraft_id BIGINT PRIMARY KEY REFERENCES aircraft(id) ON DELETE CASCADE",
+    "user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE",
+    "mime_type TEXT NOT NULL DEFAULT 'image/jpeg'",
+    "image_base64 TEXT NOT NULL",
+    "CHECK(mime_type IN ('image/jpeg','image/webp','image/png'))",
+    "CHECK(length(image_base64)<=1200000)",
+  ]){
+    assert.ok(bootstrap.includes(ddl),"browser fixture is missing required aircraft-photo schema: "+ddl);
+    assert.ok(aircraftPhotosSchema.includes(ddl),"production photo schema contract changed: "+ddl);
+  }
+  assert.ok(bootstrap.includes("CREATE INDEX idx_aircraft_photos_user"));
+  assert.ok(aircraftPhotosSchema.includes("idx_aircraft_photos_user"));
   for (const column of [
     "municipality TEXT NOT NULL DEFAULT ''",
     "iso_country TEXT NOT NULL DEFAULT ''",
@@ -103,6 +118,8 @@ test("Airport elevation browser tests are authority-registered and run only on o
   assert.ok(spec.includes('test.skip(!authenticatedBrowser'));
   assert.ok(spec.includes("browserSqlScalar"));
   assert.ok(spec.includes('input[name^="$ACTION_ID_"]'));
+  assert.ok(spec.includes('browser.newContext({baseURL:"http://127.0.0.1:3000"})'),
+    "cross-user browser context must not navigate to a relative URL without a baseURL");
   for(const kind of ["mutation","ownership"]){
     for(const device of ["desktop","mobile"]){
       const id="airport-elevation-"+kind+"-"+device;
