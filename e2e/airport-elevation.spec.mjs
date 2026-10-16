@@ -44,12 +44,30 @@ test("Airport elevation add edit and clear preserves nullable persisted MSL valu
   // exercise server-side validation even when the public UI uses type=number.
   await add.locator('input[name="ident"]').fill("ZZAE1");
   await add.locator('input[name="name"]').fill("MUST NOT PERSIST");
-  const invalidElevation=add.locator('input[name="elevation_ft"]');
-  await invalidElevation.evaluate(input=>{input.type="text";});
-  await invalidElevation.fill("not-a-number");
-  await add.getByRole("button",{name:"Add / update"}).click();
+  // Keep the DOM mutation and genuine form submission in the SAME
+  // browser task: React may re-render and restore type=number between awaits,
+  // silently turning our malformed value into an empty (valid NULL) field.
+  // Verify both the real HTML FormData and the outgoing POST payload.
+  const invalidPost=page.waitForRequest(request=>
+    request.method()==="POST" && new URL(request.url()).pathname==="/database");
+  await add.evaluate(form=>{
+    const input=form.querySelector('input[name="elevation_ft"]');
+    const submit=form.querySelector('button[type="submit"]');
+    if(!(input instanceof HTMLInputElement)||!(submit instanceof HTMLButtonElement)){
+      throw new Error("Missing native airport field or submit button");
+    }
+    input.type="text";
+    input.value="not-a-number";
+    if(new FormData(form).get("elevation_ft")!=="not-a-number"){
+      throw new Error("Malformed elevation missing from actual form data");
+    }
+    form.requestSubmit(submit);
+  });
+  const capturedInvalidPost=await invalidPost;
+  expect(capturedInvalidPost.postData(),"Actual server-action request must contain the tested invalid payload")
+    .toContain("not-a-number");
   await expect(page).toHaveURL(/airportStatus=invalid-elevation/);
-  await expect(page.getByRole("alert")).toContainText("valid airport elevation");
+  await expect(page.locator("p.form-error[role='alert']")).toContainText("valid airport elevation");
   expect(storedElevation("ZZAE1")).toBe("NULL|"+original);
 
   const custom=()=>page.locator(".u31-airport-panel").first()
@@ -63,7 +81,8 @@ test("Airport elevation add edit and clear preserves nullable persisted MSL valu
     await edit.locator('input[name="elevation_ft"]').fill(input);
     await edit.getByRole("button",{name:"Save",exact:true}).click();
     await expect(page).toHaveURL(/airportStatus=saved/);
-    expect(storedElevation("ZZAE1")).toBe(expected+"|"+original);
+    await expect.poll(()=>storedElevation("ZZAE1"),{timeout:10_000})
+      .toBe(expected+"|"+original);
     await page.reload();
   }
 
@@ -131,7 +150,7 @@ test("Airport elevation server action refuses a cross-user forged edit",async({p
     await expect(idInput).toHaveValue(ownerId);
     await otherEditor.getByRole("button",{name:"Save",exact:true}).click();
     await expect(otherPage).toHaveURL(/airportStatus=not-found/);
-    await expect(otherPage.getByRole("alert")).toContainText("not available for editing");
+    await expect(otherPage.locator("p.form-error[role='alert']")).toContainText("not available for editing");
 
     expect(storedElevation("ZZAE2")).toBe("345|Owner Strip|Owner Town|CZ|49.1|15.1");
     expect(browserSqlScalar("SELECT elevation_ft::text FROM airports WHERE user_id=9002 AND ident='ZZAE3'")).toBe("456");
