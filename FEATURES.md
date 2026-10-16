@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 controlled browser recovery fixture (staged 16 Oct):** Certified browser fixture 9904 now uses the same source-derived canonical v8 fingerprint as fixture 9903, preserving strict recovery verification of the full account. Local exact-head retest pending; no shipped user-visible functionality changes from this test-only repair.
+
+
 **PR340 release fixture identity follow-up (staged 16 Oct):** Release verification requires the native test-only certificate bridge as part of browser-fixture source identity; its changes invalidate old browser results. Source-contract test list now includes this third required fixture. No visible product functionality change; re-verification pending.
 
 
