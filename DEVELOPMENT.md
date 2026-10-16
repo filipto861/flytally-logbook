@@ -2,6 +2,10 @@
 
 FlyTally uses a candidate-first development workflow. The objective is to keep normal iteration fast while retaining full integrity and performance gates where they are relevant.
 
+## Production deployment separation (16 Oct 2026 — pre-merge configuration candidate)
+
+The repository config `vercel.json` explicitly disables automatic Git deployments from all branches, **including `main`**: `git.deploymentEnabled = {"*":false,"main":false}`. This is an intentional governance barrier, **not** a production deployment or permission to skip release checks. The standalone config PR must first pass candidate-bound verification and be squash-merged; before merging dependent feature PRs, independently inspect Vercel production deployment metadata after the config merge to confirm no new deployment was triggered. If the config merge does create a new production deployment or if the observable state is ambiguous, **STOP**; do not merge dependent feature PRs. Manual production deploy from an explicitly verified Git SHA requires a separate owner authorization, target preflight, and post-deploy production smoke. The product remains operational on the previously deployed production build until manual deployment is authorized.
+
 ## Development loop
 
 1. Work locally on a complete slice. Do not push every intermediate edit to the candidate branch.
