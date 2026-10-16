@@ -1,5 +1,16 @@
 # FlyTally changelog
 
+## 2026-10-16 — FlyTally Logbook 3.8.0 follow-up: PR #340 published
+
+**Release:** [PR #340](https://github.com/filipto861/flytally-logbook/pull/340) merged (squash) as `main@10ab523ba83987f7d3bf3d3a1020ac0d452269e0`; Vercel `logbook` production deployment `dpl_HdL5q8Fzmxe6v69fQ2GKBw7vHsMB` **READY**, aliases include **fly-tally.com**. Original source candidate `b4a0cb4a3acf6661aa1a823e8d383a1c68f2d16e` preserved through merge.
+
+**Visible fixes:** Flights cost overview uses exact per-flight rounded ISO-money amounts for the *entire filtered result set* (not just the visible page); Statistics → Aircraft → Registrations uses the matching per-flight exact aggregation. Multiple currencies remain separate; invalid, unknown or unsupported evidence cannot silently create currency/zero-cost totals. Quick Add aircraft without an initial hourly rate no longer violates the legacy non-null numeric column and does not invent an exact-money tuple/rate history.
+
+**Release/testing evidence (owner Windows, local, not CI):** preflight 18/18, source 257/257, domain 39/39, full Node 1618/1618, TypeScript PASS, Next production build PASS (reused exact-head build artifact); disposable six-cluster PostgreSQL16 163/163; desktop Chromium 25/25 + mobile Chromium 24/24 PASS (same-head browser evidence reused); `release_status=PASS`, `blocked_evidence=none`. No skipped/retried required cases. PG shared-core used a **local controlled 64MB work_mem** profile for 123 cases; other five groups used defaults. **Not evidence for Neon production/default-work_mem performance.**
+
+**Data/deployment:** No PR-specific database DDL, production backfill, or certification hashing changes; deployed source SHA and Vercel READY independently confirmed. No production authenticated `/flights` or `/statistics?section=aircraft` end-to-end smoke was performed from an authorized account; only deployment metadata and Vercel's no-errors result in the queried hour are evidenced. The independent production encrypted-backup restore remains outside the scope of this follow-up and was not validated here. No new complete release run was performed on documentation-only post-merge commits. Earlier PR340 staged/failed descriptions below are historical and superseded, not removed.
+
+
 **16 Oct 2026 — test(PR340 preflight + browser-only iteration), awaiting owner validation:** Corrected stale source assertion to inspect extracted certified-flight fixture signing helper; added fail-fast `npm run typecheck` and targeted fixture/ledger tests prior to any disposable PostgreSQL startup. New explicit `-BrowserOnly` switch in the Windows runner executes exact-target canonical risk-selected Playwright (and required same-candidate build) with its owned isolated PostgreSQL browser fixture, bypassing the six PG partitions and full aggregate Node suite; prints **NOT FULL RELEASE PASS** on success. Preserves strict evidence freshness, signature verification, disposable database guards and final full release authority. No app/database/production mutations, no deployment. Current SHA fast, browser, and full tests NOT RUN.
 
 
