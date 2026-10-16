@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 M2 evidence architecture (staged 16 Oct 2026):** Pure typed Node TAP13 parser rejects missing/duplicated summary or root plan, mismatched summary counts, untyped/failing assertions, SKIP, TODO, cancelled and incorrect test count. Independent aggregator validates evidence for six pinned partitions and matching candidate SHA, registry/config/toolchain identity and different explicitly local PG16 identities. It intentionally returns `VALIDATED-ONLY` / `releaseEvidence: NOT RUN` rather than PASS; no authorization to run destructive fixtures or replace canonical release evidence. Eight source/negative tests added, Node24 owner-local verification pending. M1 was owner-locally verified 42/163/6, 11/11 tests, typecheck PASS on earlier exact SHA `8043ede6`.
+
+
 **PR #340 M1 portability correction (16 Oct 2026, staged):** The SHA-256-locked PostgreSQL inventory now defines the portable canonical text representation (`sha256-utf8-canonical-lf`) so that LF and Windows CRLF checkouts verify the same reviewed source, while non-EOL changes, malformed UTF-8 and bare CR fail closed. Type-only ESM declaration provided for strict TS clients; declaration included in verification config identity. User-local previous M1 acceptance 7/9 tests and TS7016 (FAIL); corrected local verification still NOT RUN. This is test infrastructure only, not a runtime feature.
 
 
