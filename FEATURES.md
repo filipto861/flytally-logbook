@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Airport elevation browser E2E corrective batch (16 Oct 2026, DRAFT):** 25/27 desktop regression cases passed on `e6c43f7a`; two new cases failed test-side assumptions about internal Server Action hidden inputs and hand-built fetch, not proven product behavior. Replacement cases use real authenticated form submissions for malformed elevation and forged cross-user airport ID with persisted ownership assertions. Updated SHA **NOT YET VERIFIED**; production DB preflight and release gates remain open.
+
 **Airport Elevation Phase 1 — test acceptance follow-up (16 Oct, DRAFT):** after production-backed aircraft-photo test fixture fix, desktop browser-risk remained 25/27 with both Airport cases FAIL due to missing `rates.aircraft_type` in shared `/database` read model. Fixed `rates` fixture `aircraft_type`/`dry_price_per_hour`/`source` and uniqueness, preserving isolated v21 schema-first handling. New corrective SHA NOT RUN; no production code, DB or release changes.
 
 **Airport Elevation browser acceptance fix staged (16 Oct, DRAFT):** `92405480` passed full Node 1,630/1,630, but airport E2E 2/2 FAIL due to missing production `aircraft_photos` dependency in disposable browser fixture (25 other desktop scenarios PASS). Later branch correction adds exact photo DDL/index and secondary Playwright context baseURL; **post-fix acceptance NOT RUN**. No application runtime behavior change, merge, migration or deploy.
