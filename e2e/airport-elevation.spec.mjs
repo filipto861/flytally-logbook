@@ -39,7 +39,7 @@ test("Airport elevation add edit and clear preserves nullable persisted MSL valu
   // A crafted invalid numeric payload must be rejected by the server before
   // attempting the upsert; the stored name/elevation remain untouched.
   const addActionName=await add.locator('input[name^="$ACTION_ID_"]').first().getAttribute("name");
-  expect(addActionName).toMatch(new RegExp("^\\\\$ACTION_ID_"));
+  expect(addActionName).toMatch(new RegExp("^\\$ACTION_ID_"));
   const invalid=await page.evaluate(async(actionName)=>{
     const form=new FormData();
     form.set(actionName,"");
