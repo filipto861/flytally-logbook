@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 test harness D3b v20 compatibility (staged 16 Oct):** Historical D3b migration-chain fixture evaluates real v1–v20 private-schema migrations and adapts only v21-added expense payload columns out of its current-source INSERT, asserting all three exact source fragments before projection. Production expense serialization and schema remain unchanged. Local rerun pending; not shipped product behavior.
+
+
 **PR340 diagnostic-only test tooling (16 Oct):** v1.69 PostgreSQL 50k Pilot Insights benchmark retains its original 3000ms acceptance threshold but emits a compact top-12 native EXPLAIN plan on failure to identify actual expensive operations; source SHA is updated in the pinned PG registry. This is not a product capability or a changed performance SLA. Owner-local verification pending.
 
 
