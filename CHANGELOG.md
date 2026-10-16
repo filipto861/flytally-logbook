@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 stale browser-fixture identity assertion), awaiting owner rerun:** On owner SHA `0ad8e08f`, typecheck and 8 targeted tests passed, but canonical source gate stopped at 256/257 because `tests/verification-ledger.test.ts` assumed only two browser-fixture files. Updated its exact expected list to retain all three authoritative sources including `tooling/certification-browser-fixture-cli.mjs`; source hash authority not weakened. No production runtime/DB modification, no canonical same-head PG or browser pass, no merge/deploy.
+
+
 **16 Oct 2026 — test(PR340 Playwright TypeScript module interop), staged:** Owner SHA `5b666f8c` full release verification passed source 257, domain 39, aggregate Node 1617, production build and PostgreSQL 163, but failed browser startup with missing named TypeScript export. Removed direct TypeScript import from E2E browser DB helper; introduced native Node strip-types certification CLI with canonical v8 hash/verify, strict test fixture identity, local-purpose checks and tamper verification. Added file to browser evidence source identity and updated source/executable tests. No production SQL or certification logic changes; new HEAD acceptance NOT RUN, no merge/deploy.
 
 
