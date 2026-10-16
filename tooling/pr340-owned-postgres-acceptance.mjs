@@ -18,11 +18,12 @@ const flags=["FLYTALLY_POSTGRES_INTEGRATION","FLYTALLY_D2_FULL_V20_DISPOSABLE",
   "FLYTALLY_V21_RELEASE_DISPOSABLE","FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE",
   "FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE","FLYTALLY_D3B_FULL_V20_DISPOSABLE"];
 const allowedHost="127.0.0.1";
-function proc(exe,args,{env=process.env,timeout=60000,cwd=root,input}={}){
+function proc(exe,args,{env=process.env,timeout=60000,cwd=root,input,stdio="pipe"}={}){
   const r=spawnSync(exe,args,{env,cwd,input,encoding:"utf8",timeout,maxBuffer:64*1024*1024,
-    windowsHide:true,shell:false});
+    windowsHide:true,shell:false,stdio});
   if(r.error||r.signal||r.status!==0)throw Error("PR340 owned PG16 command failed ("+
-    path.basename(exe)+"; exit="+r.status+"): "+String(r.stderr??r.error??r.signal).slice(0,1100));
+    path.basename(exe)+"; exit="+r.status+"; signal="+r.signal+"; error="+(r.error?.code??"none")+
+    "): "+String(r.error?.message??r.stderr??r.signal).slice(0,1100));
   return String(r.stdout??"").trim();
 }
 function ownEnv(extra={}){
@@ -99,7 +100,7 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
           {env:dbEnv,timeout:45000});
         startAttempted=true;
         proc(bins.pg_ctl,["-D",data,"-l",log,"-o","-h 127.0.0.1 -p "+port,"-w","-t","30","start"],
-          {env:dbEnv,timeout:45000});
+          {env:dbEnv,timeout:45000,stdio:"ignore"});
         proc(bins.createdb,["-h",allowedHost,"-p",String(port),"-U","flytally","flytally_currency_test"],
           {env:dbEnv});
         const observed=proc(bins.psql,["-X","-w","-A","-t","-v","ON_ERROR_STOP=1","-d",url,
@@ -136,7 +137,7 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
           tap.push({segment:segment.label,passed:result.passed,sha256:result.tapSha256});
         }
         assert.equal(passed,part.expectedTests);
-        proc(bins.pg_ctl,["-D",data,"-m","fast","-w","-t","30","stop"],{env:dbEnv,timeout:45000});
+        proc(bins.pg_ctl,["-D",data,"-m","fast","-w","-t","30","stop"],{env:dbEnv,timeout:45000,stdio:"ignore"});
         stopVerified=true;
         observations.push({partition:part.id,passed,databaseIdentity:observed,
           profile:benchmarkProfile,segments:tap,ownedClusterStopped:true});
