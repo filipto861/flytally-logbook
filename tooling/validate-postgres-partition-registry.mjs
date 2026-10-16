@@ -112,7 +112,7 @@ export function validatePostgresPartitionRegistry({
     throw new Error("PARTITION_REGISTRY_DRIFT: actual integration directory differs from pinned inventory");
   }
   return {status:"PASS",files:seen.size,tests:cases,partitions:seenPartitions.size,
-    registrySha256:hash(readFileSync(registryPath)),note:"SOURCE INVENTORY ONLY; PostgreSQL NOT RUN"};
+    registrySha256:hash(canonicalTestSource(readFileSync(registryPath))),note:"SOURCE INVENTORY ONLY; PostgreSQL NOT RUN"};
 }
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1])){
