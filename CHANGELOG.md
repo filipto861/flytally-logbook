@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — fix(PR340 Windows owned PG16 launch), NOT YET LOCALLY VERIFIED:** Second full local release gate at `d747c1ec` passed source 257/257, domain 26/26, typecheck, Node 1615/1615 and Next build; canonical PG failed early at `pg_ctl.exe; exit=0` without proof of exact root cause. Updated trusted PG16 runner to avoid inherited stdio pipe handles during pg_ctl start/stop and expose spawn error codes/signals. Added contract assertion. Browser and scale NOT RUN; no runtime migration/deploy.
+
+
 **16 Oct 2026 — test(PR340 M2 stale contract):** Owner's first full local gate at `2eef9c36` showed source 256/257 PASS and FAIL at obsolete `runNodeTests(tests)` source-pattern assertion; PG and Playwright were not executed. Updated M2 contract to validate preserved legacy `runNodeTests(configuration.testFiles)`, authorized six-cluster execution, and pure aggregate non-authority. Owner-local retest NOT RUN on new commit. No production changes.
 
 
