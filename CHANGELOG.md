@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-16 — feat(airports): nullable elevation staged as DRAFT PR #346 (NOT VERIFIED)
+
+Implemented in `feat/airport-elevation-phase1`: CSV `elevation_ft` surfaced through catalogue as nullable `elevationFt`; pure strict parse/validate/format helpers preserve unknown vs 0/negative; database read plus optional custom-airport save/edit/clear; row-level editing limited to authenticated owner and reference exclusions; legacy form omission preserves existing elevation; user-visible status and `ft MSL` on both airport tables. Added focused parser/source contract tests, browser fixture schema updates, documentation and optional additive SQL precondition. **Production schema remains unverified**; Logbook Shadow nullable double-precision column verified READ ONLY. **Tests/typecheck/build/PG/browser NOT RUN; no migration executed, no merge, no deployment.** No modifications to flight records or GPS classification. [PR #346](https://github.com/filipto861/flytally-logbook/pull/346); [contract](docs/product/AIRPORT_ELEVATION_PHASE1_2026-10-16.md).
+
+
 
 ## 2026-10-16 — PR #341 public production smoke verified (Vercel READY)
 
