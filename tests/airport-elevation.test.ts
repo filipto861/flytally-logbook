@@ -141,8 +141,18 @@ test("Airport elevation browser tests are authority-registered and run only on o
   // Exercise the real registered form action instead of a guessed protocol.
   assert.ok(!spec.includes('input[name^="$ACTION_ID_"]'));
   assert.ok(!spec.includes("fetch("),"browser security checks must use real form submissions");
-  assert.ok(spec.includes('await invalidElevation.evaluate(input=>{input.type="text";});'));
-  assert.ok(spec.includes('await add.getByRole("button",{name:"Add / update"}).click()'));
+  assert.ok(spec.includes('input.type="text";'));
+  assert.ok(spec.includes('input.value="not-a-number";'));
+  assert.ok(spec.includes('new FormData(form).get("elevation_ft")'));
+  assert.ok(spec.includes("form.requestSubmit(submit)"),
+    "must send malformed input using the actual Next form in one browser task");
+  assert.ok(spec.includes("page.waitForRequest("));
+  assert.ok(spec.includes('capturedInvalidPost.postData()'),
+    "must inspect the actual submitted wire payload, not infer it from DOM");
+  assert.ok(spec.includes("expect.poll(()=>storedElevation("),
+    "edit mutations need eventual DB evidence, not URL-only confirmation");
+  assert.ok(spec.includes('p.form-error[role=\'alert\']'),
+    "scope errors to app form alerts instead of Next route announcer");
   assert.ok(spec.includes("test.setTimeout(90_000)"));
   assert.ok(spec.includes('input[name="id"]'));
   assert.ok(spec.includes('await idInput.evaluate((input,value)=>{input.value=value;},ownerId)'));
