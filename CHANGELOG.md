@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — M1 locally verified, M2 pure TAP parser implementation staged, NOT RELEASED:** Owner Windows Node24 clean commit `8043ede6`: PostgreSQL registry validator PASS 42 files/163 tests/6 partitions, focused 11/11 PASS, typecheck PASS. Implemented `tooling/postgres-partition-tap.mjs` + `.d.mts`, M2 strict TAP13 case/suite accounting and candidate-bound pure evidence aggregator, plus eight regression tests `tests/v380-pr340-postgres-tap-partitions.test.ts` for true TAP and adversarial false evidence. Added M2 files to `tooling/verification-identity.mjs` and test to development-pipeline. M2 source changes not yet owner-local tested. No DB, scale, browser, release acceptance or production deployment for new head. Existing PostgreSQL gate continues unchanged with 32 raw gated skips; M3 partition orchestration not implemented.
+
+
 **16 Oct 2026 — fix(PR340 M1):** Corrected cross-platform SHA-256 validation for PostgreSQL source test inventory after owner Windows Node24 M1 run returned two false registry-drift test failures and TS7016 (`7/9 PASS`, typecheck FAIL). Hash canonically normalizes CRLF→LF but preserves all substantive bytes, explicitly rejects invalid UTF-8/bare CR; registry contract renamed `sha256-utf8-canonical-lf`. Added LF/CRLF and malformed-file negative regression checks, adjacent `tooling/validate-postgres-partition-registry.d.mts` declaration and verification identity pin. No PostgreSQL operations, product runtime, schema, merge or deployment. Latest changes NOT YET owner-locally tested.
 
 
