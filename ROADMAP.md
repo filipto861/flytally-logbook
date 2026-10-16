@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 D3b migration-chain targeted fix STAGED, NOT LOCALLY RE-RUN:** Owner PG16 showed 17/19 PASS and two exact v20 fixture errors: current `saveFlightExpenses` INSERT references `amount_encoding` / `amount_minor_units` introduced in v21, absent from intentional real v1–v20 private-schema test. Added narrowly asserted v20 compatibility projection to the *two test writers* via `expensesSaveSql`; preserves production source row lock, conditional delete, insert ownership predicates and original race/locked-flight semantics; never asserts these were historically v20 columns. Updated D3b registry test SHA pin. No runtime SQL, migration or schema change. Next owner-local registry+typecheck and D3b partition only. Distinct previously verified groups: shared-restore 8/8 PASS, v21-migration 5/5 PASS; D3b races NOT RUN, shared-core unresolved 50k perf, real-v20-catalog BLOCKED, release NOT RUN.
+
+
 **16 Oct 2026 PR340 M3 50k diagnosis (test-only, NOT RUN on this SHA):** Owner's standalone v1.69 fixture measured `pilotInsights50k` 3134.911ms versus existing 3000ms (4/5 PASS, 1 FAIL, 0 SKIP). Added a compact top-12 `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` plan-node diagnostic to the existing test only when 3000ms is exceeded, without changing SQL, the threshold, test count or release authority. Updated the exact test-source SHA256 in pinned PostgreSQL registry. Next: owner-local registry + typecheck + focused source tests and single shared-core isolated run; inspect `postgres-v169-production-hardening.tap.txt` for `V169 INSIGHTS50K PLAN`. No PG rerun/build/Playwright/merge/deploy on current SHA.
 
 
