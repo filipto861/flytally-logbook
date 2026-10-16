@@ -227,7 +227,7 @@ SELECT flight_id FROM validated WHERE inserted_ok=1 AND track_ok=1 AND crew_ok=1
 export async function updateFlight(id:number,_:FlightActionState,form:FormData):Promise<FlightActionState>{
   const{userId}=await requireUser();await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);if(!Number.isSafeInteger(id)||id<=0)return{error:"Invalid record."};
   const existingRows=await sql`SELECT registration,date::text date,price_per_hour,price_currency_code AS currency_code,price_currency_minor_units AS currency_minor_units,price_per_hour_decimal::text AS rate_decimal,locked_at,certified_at,COALESCE(evidence,'') evidence,COALESCE(aircraft_type,'') aircraft_type,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category,COALESCE(balloon_class,'') balloon_class,COALESCE(balloon_group,'') balloon_group,COALESCE(purpose_code,'') purpose_code,COALESCE(task,'') task FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<StoredFlightAircraftContextRow&{date:string;price_per_hour:number|null;currency_code:string|null;currency_minor_units:number|null;rate_decimal:string|null;locked_at:string|null;certified_at:string|null;purpose_code:string;task:string}>;
-  const existing=existingRows[0];if(!existing)return{error:"Flight not found or access denied."};if(existing.locked_at)return{error:"This flight is locked. Unlock it before editing."};
+  const existing=existingRows[0];if(!existing)return{error:"Flight not found or access denied."};if(existing.locked_at)return{error:"This flight is locked. Unlock it before editing."};if(existing.certified_at)return{error:"This flight is certified. Open a correction revision before editing."};
   const existingPurposeCodes=normalizeFlightPurposeCodes([existing.purpose_code,...flightPurposeCodesFromTask(existing.task)]),parsed=parseFlightInput(form,{existingPurposeCodes}),expenseResult=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};if(!expenseResult.data)return{error:expenseResult.error};
   const f=parsed.data,picResolution=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!picResolution.ok)return{error:picResolution.error};const connectedPicUserId=picResolution.connectedUserId,commander=picResolution.commander;
   if(connectedPicUserId>0&&existing.certified_at)return{error:"Connected Actual PIC can only be changed on an editable draft or correction."};
@@ -256,7 +256,7 @@ export async function updateFlight(id:number,_:FlightActionState,form:FormData):
   if(rate===null)return{error:"The selected aircraft rate has invalid currency metadata. Correct the rate before saving."};
   const rows=await sql`WITH updated AS (
     UPDATE flights flight SET date=${f.date},evidence=${persistedAircraftContext.evidence},registration=${f.registration},aircraft_type=${persistedAircraftContext.aircraftType},aircraft_class=${persistedAircraftContext.aircraftClass},regulatory_category=${persistedAircraftContext.regulatoryCategory},balloon_class=${persistedAircraftContext.balloonClass},balloon_group=${persistedAircraftContext.balloonGroup},balloon_operation=${f.balloonOperation},launch_method=${f.launchMethod},launches=${f.launches},departure=${departure},arrival=${arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=${commander},instructor=${f.instructor},role=${f.role},task=${f.task},purpose_code=${f.purposeCode},price_per_hour=${rate.price_per_hour},price_currency_code=${rate.currency_code},price_currency_minor_units=${rate.currency_minor_units},price_per_hour_decimal=${rate.rate_decimal},billing_basis=${f.billingBasis},note=${f.note},operation_type=${f.operationType},engine_type=${f.engineType},operator_name=${f.operatorName},flight_number=${f.flightNumber},operation_context=${f.operationContext},landings_day=${f.landingsDay},landings_night=${f.landingsNight},movement_evidence_recorded=${f.movementEvidenceRecorded},takeoffs_day=${f.takeoffsDay},takeoffs_night=${f.takeoffsNight},approaches_day=${f.approachesDay},approaches_night=${f.approachesNight},night_minutes=${f.nightMinutes},ifr_minutes=${f.ifrMinutes},pic_minutes=${f.picMinutes},copilot_minutes=${f.copilotMinutes},dual_minutes=${f.dualMinutes},instructor_minutes=${f.instructorMinutes},verification_name=${f.verificationName},verification_reference=${f.verificationReference}
-    WHERE flight.id=${id} AND flight.user_id=${userId} AND flight.locked_at IS NULL
+    WHERE flight.id=${id} AND flight.user_id=${userId} AND flight.locked_at IS NULL AND flight.certified_at IS NULL
       AND (${connectedPicUserId}=0 OR flight.certified_at IS NULL)
       AND (${connectedPicUserId}=0 OR EXISTS(
         SELECT 1 FROM users u
@@ -270,7 +270,7 @@ export async function updateFlight(id:number,_:FlightActionState,form:FormData):
                 OR (pc.recipient_user_id=${userId} AND pc.requester_user_id=u.id))
           )
       ))
-    RETURNING flight.id
+    RETURNING flight.id,flight.xmin::text row_xmin,COALESCE(flight.record_revision,1)::int record_revision
   ),deleted_expenses AS (
     DELETE FROM flight_expenses WHERE flight_id=${id} AND user_id=${userId} AND EXISTS(SELECT 1 FROM updated) RETURNING id
   ),expense_rows AS (
@@ -293,12 +293,22 @@ export async function updateFlight(id:number,_:FlightActionState,form:FormData):
       SET source_user_id=EXCLUDED.source_user_id,connected_user_id=EXCLUDED.connected_user_id,updated_at=NOW()
     RETURNING id
   )
-  SELECT id FROM updated` as Array<{id:number|string}>;
+  SELECT id,row_xmin,record_revision FROM updated` as Array<{id:number|string;row_xmin:string;record_revision:number|string}>;
   if(!rows[0]){
     if(connectedPicUserId>0){const recheck=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!recheck.ok)return{error:recheck.error}}
     return{error:"Flight not found or access denied."};
   }
-  revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath(`/flights/${id}`);return{success:"Flight changes saved."};
+  revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath(`/flights/${id}`);
+  if(String(form.get("intent")||"draft")==="certify"){
+    const certification=await certifyStoredFlight(userId,id,String(rows[0].row_xmin??""));
+    if(certification.status==="certified"){
+      revalidateFlightCertificationViews(id);
+      redirect(`/flights/${id}?certified=1`);
+    }
+    if(certification.status==="blocked")return{error:`Changes saved as a draft, but certification was blocked: ${certification.issues.map(issue=>issue.message).join(" · ")}`};
+    return{error:"Changes saved as a draft, but certification was not completed. Reload the flight and review it before certifying."};
+  }
+  return{success:"Flight changes saved."};
 }
 export async function saveFlightExpenses(id:number,_:FlightActionState,form:FormData):Promise<FlightActionState>{const{userId}=await requireUser();await ensureDatabaseOptimizations();await ensureV159Schema();if(!Number.isSafeInteger(id)||id<=0)return{error:"Invalid flight."};const owned=await sql`SELECT id FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1`;if(!owned[0])return{error:"Flight not found or access denied."};const parsed=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};const expenseJson=JSON.stringify(parsed.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency,amount_encoding:item.amountEncoding,amount_minor_units:item.amountMinorUnits})));let result:Array<Array<{id:number|string}>>;try{result=await sql.transaction([sql`SELECT f.id FROM flights f WHERE f.id=${id} AND f.user_id=${userId} FOR UPDATE`,sql`DELETE FROM flight_expenses WHERE flight_id=${id} AND user_id=${userId} AND EXISTS(SELECT 1 FROM flights f WHERE f.id=${id} AND f.user_id=${userId})`,sql`INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency,amount_encoding,amount_minor_units) SELECT ${userId},f.id,e.category,e.label,e.amount_minor,e.currency,e.amount_encoding,e.amount_minor_units FROM flights f CROSS JOIN jsonb_to_recordset(${expenseJson}::jsonb) AS e(category text,label text,amount_minor bigint,currency text,amount_encoding text,amount_minor_units smallint) WHERE f.id=${id} AND f.user_id=${userId}`]) as Array<Array<{id:number|string}>>}catch(error){console.error("save-flight-expenses-transaction-failed",error);return{error:"Expenses could not be saved safely. Existing data is unchanged."}}if(!result[0]?.[0])return{error:"Flight changed while saving expenses. Please reopen the flight and try again."};revalidatePath(`/flights/${id}`);revalidatePath("/flights");revalidatePath("/dashboard");return{success:"Expenses saved."}}
 export async function deleteFlight(id:number){const{userId}=await requireUser();await ensureDatabaseOptimizations();if(!Number.isSafeInteger(id)||id<=0)return;let deleted=false;try{deleted=await moveFlightToTrash(userId,id)}catch(error){console.error("flight-trash-transaction-failed",error);redirect(`/flights/${id}?trash=error`)}if(!deleted)redirect(`/flights/${id}?trash=blocked`);revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/map");revalidatePath("/data");revalidatePath("/export");redirect("/flights")}
