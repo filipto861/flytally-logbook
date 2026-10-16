@@ -466,8 +466,12 @@ CREATE TABLE rates(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   registration TEXT NOT NULL,
+  aircraft_type TEXT NOT NULL DEFAULT '',
   valid_from TEXT,
-  price_per_hour NUMERIC NOT NULL DEFAULT 0
+  price_per_hour NUMERIC NOT NULL DEFAULT 0,
+  dry_price_per_hour NUMERIC,
+  source TEXT NOT NULL DEFAULT '',
+  UNIQUE(user_id,registration,valid_from)
 );
 -- Historic legacy points are still queried by ordinary Trash/track deletion;
 -- portable backup v13 merely omits their export, not the database table.
