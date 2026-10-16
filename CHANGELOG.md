@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-16 — PR #347 manual-deploy test contract correction (DRAFT, NOT RELEASED)
+
+Owner-local initial PR head `f69333a9`: iteration 142/142 source and TypeScript PASS; canonical risk release **FAIL** (`npm test` 1622/1623, exit 1). Sole failing E1.5 source contract expected old automatic Vercel `main:true`, conflicting with approved `main:false`. Updated the original test to enforce manual-only Git deployment for `main`, wildcard, and every configured exception; existing CI database isolation checks retained. This is a test-contract repair, not a downgrade of verification; corrected candidate **NOT TESTED**. No merges, production DB writes or deploys.
+
 
 ## 2026-10-16 — Explicit manual-only production deployment control (DRAFT, NOT RELEASED)
 
