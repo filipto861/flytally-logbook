@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Airport Elevation browser acceptance fix staged (16 Oct, DRAFT):** `92405480` passed full Node 1,630/1,630, but airport E2E 2/2 FAIL due to missing production `aircraft_photos` dependency in disposable browser fixture (25 other desktop scenarios PASS). Later branch correction adds exact photo DDL/index and secondary Playwright context baseURL; **post-fix acceptance NOT RUN**. No application runtime behavior change, merge, migration or deploy.
+
 **Airport elevation PR #346 browser acceptance (DRAFT; new HEAD NOT VERIFIED, 16 Oct):** isolated disposable browser fixture now mirrors manual-airport persistence constraints; dedicated authenticated desktop/mobile scenarios cover nullable elevation add/edit/clear, malformed-rejection, reference display and cross-user edit guard. Four exact targets registered to the aircraft-airports release gate. Earlier `e88bc4f9` passed 1,629/1,629 Node and 163/163 local PG tests, but evidence does NOT transfer to new code. No production schema confirmation, merge, deploy or GPS detection changes.
 
 **Airport Elevation Phase 1 verification checkpoint — DRAFT / NOT RELEASED (16 Oct 2026):** owner-local targeted tests 13/13, typecheck and production build PASS on `79b9a66a`; initial iteration source contract FAIL on audited runtime inventory 397→398, domain/typecheck PASS. Updated reviewed inventory and registered elevation domain evidence; post-fix test result pending. PostgreSQL/browser acceptance NOT RUN (local PostgreSQL CLI and `DATABASE_URL` absent), production schema NOT VERIFIED.
