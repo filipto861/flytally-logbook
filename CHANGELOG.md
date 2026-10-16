@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-16 — Airport Elevation E2E infrastructure fix (DRAFT PR #346, NOT RELEASED)
+
+On `92405480`: local `npm test` 1,630/1,630 PASS, iteration source 257/257 + domain 20/20 + typecheck PASS, browser production build PASS; browser desktop **25 PASS / 2 FAIL** because the disposable fixture omitted the existing `aircraft_photos` table needed by the `/database` read model. Updated only the test fixture to mirror the canonical `lib/v300-aircraft-sharing-schema.ts` photo table/constraint/index, supplied a `baseURL` for independently authenticated second-user E2E context, added source-contract assertions, and recorded evidence. **Post-fix verification NOT RUN**. Production schema unverified; no DB migration, merge or deploy.
+
 ## 2026-10-16 — Airport elevation browser acceptance staged (DRAFT PR #346; NOT RELEASED)
 
 Prior exact SHA `e88bc4f9` owner-local evidence: 257/257 source, 19/19 domain, typecheck PASS; 163/163 owned PG16 acceptance PASS; 1,629/1,629 full Node tests PASS. Subsequent commits: disposable browser airports fixture now includes municipality/country/updated_at and owner-ident uniqueness; second fixture account has test-only credentials; new Playwright Airport Elevation nullable add/edit/clear, invalid payload and cross-user forged action tests for desktop and mobile; strict baseline/registry extended by four browser targets; owned disposable PG16 PowerShell browser-risk launcher added. **New HEAD verification NOT RUN**; candidate-bound regression/typecheck/build/Postgres/browser release gates and read-only production schema preflight remain blockers. No code merge, migration execution or deploy.
