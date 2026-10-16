@@ -35,7 +35,7 @@ test("generic PostgreSQL verification does not turn on the destructive legacy-v2
 test("legacy v20 restore fixture validates the existing expense archive schema without duplicate DDL",()=>{
   const bootstrap=readFileSync(new URL("../tooling/bootstrap-browser-smoke-db.mjs",import.meta.url),"utf8");
   const restore=readFileSync(new URL("../tests/integration/postgres-v380-full-v20-restore.test.ts",import.meta.url),"utf8");
-  assert.match(bootstrap,/expenses_data JSONB NOT NULL DEFAULT '\\[\\]'::jsonb/);
+  assert.match(bootstrap,/expenses_data JSONB NOT NULL DEFAULT '\[\]'::jsonb/);
   assert.match(restore,/column_name='expenses_data'/);
   assert.match(restore,/jsonb\\|NO\\|/);
   assert.doesNotMatch(restore,/ALTER TABLE deleted_flights ADD COLUMN expenses_data/);
