@@ -84,8 +84,8 @@ test("Airport elevation server action refuses a cross-user forged edit",async({p
   await expect(actionInput).toHaveCount(1);
   const actionName=await actionInput.getAttribute("name");
   const recordId=await editor.locator('input[name="id"]').getAttribute("value");
-  expect(actionName).toMatch(/^\\$ACTION_ID_/);
-  expect(recordId).toMatch(/^\\d+$/);
+  expect(actionName).toMatch(new RegExp("^\\$ACTION_ID_"));
+  expect(recordId).toMatch(new RegExp("^\\d+$"));
 
   // The second fixture account is authenticated separately, not granted access to the first.
   const other=await browser.newContext();
@@ -95,7 +95,7 @@ test("Airport elevation server action refuses a cross-user forged edit",async({p
     await otherPage.getByLabel("Email").fill("browser-friend@example.test");
     await otherPage.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
     await otherPage.getByRole("button",{name:"Sign in"}).click();
-    await expect(otherPage).toHaveURL(/\\/database(?:\\?|$)/);
+    await expect(otherPage).toHaveURL("http://127.0.0.1:3000/database");
 
     // Deliberately submit the owner's genuine Server Action ID from another session.
     const result=await otherPage.evaluate(async({actionName,recordId})=>{
