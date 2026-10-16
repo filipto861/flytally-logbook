@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 preflight + browser-only iteration), awaiting owner validation:** Corrected stale source assertion to inspect extracted certified-flight fixture signing helper; added fail-fast `npm run typecheck` and targeted fixture/ledger tests prior to any disposable PostgreSQL startup. New explicit `-BrowserOnly` switch in the Windows runner executes exact-target canonical risk-selected Playwright (and required same-candidate build) with its owned isolated PostgreSQL browser fixture, bypassing the six PG partitions and full aggregate Node suite; prints **NOT FULL RELEASE PASS** on success. Preserves strict evidence freshness, signature verification, disposable database guards and final full release authority. No app/database/production mutations, no deployment. Current SHA fast, browser, and full tests NOT RUN.
+
+
 **16 Oct 2026 — test(PR340 preflight-first, no rerun yet):** Fixed obsolete 9903 fixture assertion by checking the extracted canonical signing helper rather than requiring an inline `UPDATE` in `resetSafetyPilotPicInviteFixture`. Owner SHA `8c3ede2f` had 17/18 targeted fail and full Node 1617/1618 fail on the identical assertion; source 257/domain 39/typecheck passed; heavy PG/Next/Playwright NOT RUN in that attempt. Added mandatory non-database typecheck and both targeted fixture/ledger tests at the **start** of the Windows PR340 release wrapper, before cluster startup; added regression asserting ordering. No production changes or weakening of fingerprints/thresholds. Current new-head typecheck, targeted tests, PostgreSQL and browser NOT RUN; Draft, no merge/deploy.
 
 
