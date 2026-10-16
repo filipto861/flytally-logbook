@@ -1,5 +1,11 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Certified-flight correction Save & certify — IMPLEMENTED ON MAIN (16 Oct 2026, PR #341).** Newly opened R2+ corrections have separate **Save changes** and explicit **Save & certify** submit actions; dirty edit navigation requires discard confirmation and pending save blocks navigation. The shared certification service compares the exact saved revision using PostgreSQL `xmin`, fails closed on concurrent edits, and keeps archived certified R1 fingerprints immutable. Saved-but-uncertified outcomes are accurately reported; no auto-certification or migration. Canonical exact-head local release evidence PASS (`aef0f65e`; source 257, domain 19, Node 1623, PG16 163, desktop 11, mobile 11; typecheck/build PASS). Squash merged `main@ea35b6a6`. **Production deployment and runtime smoke NOT RUN; do not label as production released.**
+
+**Reusable owner-local PG16 canonical release gate — IMPLEMENTED ON MAIN (16 Oct 2026, PR #342).** Explicitly authorized fresh six-cluster PG16 verification of pinned 42-file/163-test registry with exact origin topic branch/clean commit identity, strict TAP and canonical ledger; preserves PR340 legacy and generic default paths. Candidate `080f3b6e` verified locally: 19 targeted, 1621 Node, typecheck, build and canonical PG16 163/163 PASS. Squash merged `main@b88ea277`; shared-core benchmark remains controlled-local `work_mem=64MB`, **not** a production performance assertion.
+
+**Historical context:** Prior `STAGED / NOT VERIFIED / NOT RELEASED` entries below record the earlier planning state and are superseded by the verified merge entries above; no history has been deleted.
+
 
 **Developer infrastructure (Draft; NOT VERIFIED, 16 Oct 2026):** Reusable opt-in canonical PostgreSQL16 acceptance for clean exact-head feature PRs, reusing the proven PR340 six-owned-cluster executor and pinned 163-test registry. Explicit `FLYTALLY_OWNED_PG16_RELEASE` plus fetched `FLYTALLY_OWNED_PG16_EXPECTED_REF` branch identity are mandatory; default and PR340-specific modes retain their contracts. Reports controlled local 64MB `work_mem` separately from production performance. No application functionality or DB schema changes. No generic release PASS claimed.
 
