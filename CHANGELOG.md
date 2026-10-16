@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — verification evidence (no runtime change):** Owner-local exact SHA `15e138e5` Node 1610/1610 PASS (no skips), Next production build PASS (41/41 static pages), PostgreSQL real-v20-catalog 2/2 PASS. Previous owner-local 38/38 other PG cases PASS on prior SHA, shared-core 123/123 diagnostic work_mem=64MB PASS on earlier SHA. Canonical full release/PG ledger and Playwright NOT RUN. Actual release verifier remains single-DB and must not inherit fabricated six-partition PASS; PR Draft / no merge / no deploy.
+
+
 **16 Oct 2026 — test(PR340 source-backed real-v20 public catalog, NOT YET LOCALLY VERIFIED):** Added guarded empty-public PG16 bootstrap, executing canonical optimizer migrations v1–v20 with migration-record audit and enabling real-v20-catalog 2-test partition; updated partition runner, TAP gate and source contract. Prior 38/38 non-shared-core cases passed on owner local PG16; shared-core 123/123 only in 64MB diagnostic configuration. New source head PG tests/build/browser NOT RUN; PR stays Draft, no merge/deploy.
 
 
