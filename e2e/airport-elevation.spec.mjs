@@ -95,8 +95,8 @@ test("Airport elevation server action refuses a cross-user forged edit",async({p
       (9002,'ZZAE3','Other Strip','Other Town','CZ',49.2,15.2,456,'Manual')`);
   const ownerId=browserSqlScalar("SELECT id::text FROM airports WHERE user_id=9001 AND ident='ZZAE2'");
   const otherId=browserSqlScalar("SELECT id::text FROM airports WHERE user_id=9002 AND ident='ZZAE3'");
-  expect(ownerId).toMatch(/^\\d+$/);
-  expect(otherId).toMatch(/^\\d+$/);
+  expect(ownerId).toMatch(/^[0-9]+$/);
+  expect(otherId).toMatch(/^[0-9]+$/);
   expect(ownerId).not.toBe(otherId);
 
   await loginBrowserPilot(page,"/database");
