@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-16 — Airport elevation Playwright real-form submission correction (DRAFT PR #346)
+
+Owner-local `e6c43f7a`: iteration 257/257 source, 20/20 domain and typecheck PASS; Next build PASS; disposable PG16/v20+v21 PASS; browser desktop **25 PASS / 2 FAIL** (no mobile acceptance). The two new E2E scripts relied on an absent `$ACTION_ID_` hidden input and a manually synthesized `fetch` that failed. Replaced with real Next Server Action form clicks: injected invalid elevation via a test-only DOM numeric-input type change and validated non-mutation; second authenticated user now submits their own real edit form with forged owner ID, checking failure and unchanged records. Added precise test timeouts and source-contract guards. **New SHA tests NOT RUN**; no app code, schema migration, merge or deployment.
+
 ## 2026-10-16 — Airport elevation rates browser-fixture read-model parity (PR #346 DRAFT; NOT RELEASED)
 
 `3871685e` owner-local iteration 257/257 source, 20/20 domain, typecheck PASS; owned PG16 and production build PASS. Browser 25 PASS / 2 FAIL (desktop), failing `/database` before elevation logic due to test-only `rates` missing `aircraft_type`. Inspected the complete `lib/data/database.ts` rates SELECT and expanded disposable `rates` fixture with pre-v21 `aircraft_type`, `dry_price_per_hour`, `source` and existing `UNIQUE(user_id,registration,valid_from)`; v21 fields still installed by canonical schema-first migration. Added direct source guard. **New SHA not yet tested**; no merge, schema migration execution or deploy.
