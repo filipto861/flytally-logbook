@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 M1 portability correction (16 Oct 2026, staged):** The SHA-256-locked PostgreSQL inventory now defines the portable canonical text representation (`sha256-utf8-canonical-lf`) so that LF and Windows CRLF checkouts verify the same reviewed source, while non-EOL changes, malformed UTF-8 and bare CR fail closed. Type-only ESM declaration provided for strict TS clients; declaration included in verification config identity. User-local previous M1 acceptance 7/9 tests and TS7016 (FAIL); corrected local verification still NOT RUN. This is test infrastructure only, not a runtime feature.
+
+
 **PR #340 M1 verification infrastructure — staged 16 Oct 2026, not released:** Complete SHA-256-pinned inventory for all 42 PostgreSQL integration files and 163 source-declared cases. Six mutually purpose-bound partition definitions are **inventory metadata, not live test execution**. Fail-closed validation and negative mutation coverage protect additions/removals, duplicates, bad flags, modified source bytes and miscounted suites. Canonical release config hash includes the registry and validator; no raw SKIP converted to PASS/N/A, no production runtime or database touched. M1 local unit validation pending.
 
 
