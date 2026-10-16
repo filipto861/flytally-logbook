@@ -37,6 +37,30 @@ test("M1 positive: all 42 actual integration files and 163 declared cases are ha
   assert.match(r.registrySha256,/^[a-f0-9]{64}$/);
   assert.match(r.note,/PostgreSQL NOT RUN/);
 });
+test("M1 validates both LF and CRLF worktrees while still rejecting changed source",()=>{
+  const f=fixture();
+  try{
+    const target=path.join(f.dir,"postgres-aircraft-profile-validation.test.ts");
+    const original=readFileSync(target,"utf8");
+    const crlf=original.replace(/\r?\n/g,"\r\n");
+    writeFileSync(target,crlf);
+    const result=validatePostgresPartitionRegistry({registryPath:f.registryPath,directory:f.dir});
+    assert.equal(result.status,"PASS","Git for Windows CRLF must not change canonical source hash");
+    writeFileSync(target,crlf+"// altered content\r\n");
+    assert.throws(()=>validatePostgresPartitionRegistry({registryPath:f.registryPath,directory:f.dir}),
+      /PARTITION_REGISTRY_DRIFT: SHA-256 mismatch/);
+  }finally{rmSync(f.tmp,{recursive:true,force:true});}
+});
+test("M1 fails closed on a bare carriage return and a malformed UTF-8 file",()=>{
+  rejected(f=>{
+    const file=path.join(f.dir,"postgres-aircraft-profile-validation.test.ts");
+    writeFileSync(file,readFileSync(file,"utf8")+"\runexpected");
+  });
+  rejected(f=>{
+    const file=path.join(f.dir,"postgres-aircraft-profile-validation.test.ts");
+    writeFileSync(file,Buffer.from([0xc3,0x28]));
+  });
+});
 test("M1 rejects actual test-file content mutation, not just an inventory count difference",()=>{
   rejected(f=>{
     const target=path.join(f.dir,"postgres-pilot-insights.test.ts");
