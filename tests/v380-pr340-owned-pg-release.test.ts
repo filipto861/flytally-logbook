@@ -74,7 +74,8 @@ test("PR340 Safety Pilot browser seed signs actual persisted v8 row and rejects 
   assert.match(source,/browserFixtureCertification\("sign",unsignedRow\)/);
   assert.match(source,/browserFixtureCertification\("verify",signedRow\)!=="verified"/);
   assert.doesNotMatch(source,/browser-f24-hash/);
-  assert.match(fixture,/runBrowserFlightFixtureCleanup\(`UPDATE flights SET certification_hash=/);
+  const helper=source.slice(source.indexOf("function signCertifiedBrowserFixture(flightId)"),begin);
+  assert.match(helper,/runBrowserFlightFixtureCleanup\(`UPDATE flights SET certification_hash=/);
   const cli=readFileSync(new URL("../tooling/certification-browser-fixture-cli.mjs",import.meta.url),"utf8");
   assert.match(cli,/flightCertificationHash\(row,9001,8\)/);
   assert.match(cli,/verifyFlightCertification\(row,9001\)\.status!=="verified"/);
