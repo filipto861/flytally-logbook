@@ -513,9 +513,27 @@ function trackDeleteSql(flightId:number,trackId:number,userId=9001){
   return steps;
 }
 function expensesSaveSql(flightId:number,items:Array<Record<string,string|number>>,userId=9001){
-  return childWriterSql("saveFlightExpenses","deleteFlight",{
+  const statements=childWriterSql("saveFlightExpenses","deleteFlight",{
     userId:String(userId),id:String(flightId),expenseJson:q(JSON.stringify(items))
   });
+  // This fixture intentionally stops at migration v20. The current action's
+  // v21 exact-money fields do not exist there. Project only those three v21
+  // INSERT fields out of the SQL, leaving the actual parent FOR UPDATE,
+  // DELETE, INSERT ownership predicates and transaction ordering untouched.
+  const insert=statements[2];
+  const fragments=[
+    ",amount_encoding,amount_minor_units",
+    ",e.amount_encoding,e.amount_minor_units",
+    ",amount_encoding text,amount_minor_units smallint",
+  ];
+  for(const fragment of fragments){
+    assert.equal(insert.split(fragment).length,2,
+      "v21 expense projection changed: legacy v20 test adapter needs review");
+  }
+  statements[2]=fragments.reduce((sql,fragment)=>sql.replace(fragment,""),insert);
+  assert.doesNotMatch(statements[2],/amount_encoding|amount_minor_units/,
+    "Legacy v20 fixture must never claim v21 exact-money columns");
+  return statements;
 }
 const expense=(label:string,amount_minor:number)=>({
   category:"OTHER",label,amount_minor,currency:"EUR"
