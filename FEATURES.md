@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 verification efficiency (staged 16 Oct):** The owner-local disposable-PostgreSQL acceptance script has a separate `-BrowserOnly` mode for fast risk-selected Playwright plus same-candidate build, without rerunning all six PostgreSQL partitions; it explicitly cannot confer full release PASS. Cheap TypeScript and fixture contract preflight always runs before starting the cluster. This is developer test infrastructure only, not a shipped product feature.
+
+
 **PR340 verification ergonomics (staged 16 Oct):** Windows full-release runner now runs fast non-destructive TypeScript and fixture/ledger source tests before creating disposable PostgreSQL clusters or starting any heavy checks. A failed cheap gate aborts early, without claiming release acceptance. Existing exact-candidate and fail-closed production protections remain unchanged. Local confirmation pending.
 
 
