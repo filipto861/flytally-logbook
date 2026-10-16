@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 browser repair (staged; not released):** Creating aircraft with no initial rate maintains absence in exact v21 monetary fields and avoids legacy numeric NULL rejection. Test-only certified flight 9903 now uses source-derived v8 integrity evidence. Browser verification pending.
+
+
 **PR340 controlled local acceptance capability (staged 16 Oct):** Optional source-backed six-owned-cluster PostgreSQL gate for PR340 is activated by the guarded acceptance wrapper, counts 163 exact TAP tests across six isolated PG16 databases, and carries a disclosed 64MB shared-core benchmark profile. Existing generic PostgreSQL verification behavior remains unchanged. This is release tooling, not app feature or production database tuning. Local execution/acceptance pending.
 
 
