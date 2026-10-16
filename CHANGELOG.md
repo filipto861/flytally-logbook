@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — fix(PR340 M1):** Corrected cross-platform SHA-256 validation for PostgreSQL source test inventory after owner Windows Node24 M1 run returned two false registry-drift test failures and TS7016 (`7/9 PASS`, typecheck FAIL). Hash canonically normalizes CRLF→LF but preserves all substantive bytes, explicitly rejects invalid UTF-8/bare CR; registry contract renamed `sha256-utf8-canonical-lf`. Added LF/CRLF and malformed-file negative regression checks, adjacent `tooling/validate-postgres-partition-registry.d.mts` declaration and verification identity pin. No PostgreSQL operations, product runtime, schema, merge or deployment. Latest changes NOT YET owner-locally tested.
+
+
 **16 Oct 2026 — PR #340 M1 PostgreSQL registry (staged; tests NOT RUN):** Created `tooling/postgres-partition-registry.json` (42 SHA-256 pinned test files, 163 declared cases, six partitions) and `tooling/validate-postgres-partition-registry.mjs` (read-only drift detection). Added `tests/v380-pr340-postgres-registry-validation.test.ts` negative tests and registered them in development-pipeline source-contract inventory; added registry and validator to `tooling/verification-identity.mjs` configuration hash. Existing PostgreSQL execution, release ledger policy, 3.8.0 runtime and production untouched. User-local Node24 validation and all PG/scale/browser gates on updated exact PR SHA NOT RUN.
 
 
