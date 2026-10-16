@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — owner-local M2 verification completed, PR Draft:** Clean `54c4469b` checked out and verified on Windows Node24; read-only PostgreSQL registry PASS (42 files/163 tests/6 groups); M1/M2/fixture/ledger targeted 31/31 PASS; typecheck PASS; complete Node 1606/1606 PASS, no skipped/TODO. This closes the pure M1/M2 test infrastructure milestones locally. M3 independent, purpose-bound ephemeral database orchestration remains design-only, PostgreSQL/Playwright/build **NOT RUN** on exact commit, no merge or deployment.
+
+
 **16 Oct 2026 — fix(PR340 M2 local validation blockers), verification pending:** Owner Node24 on clean `2e69206a` confirmed registry PASS, typecheck PASS, targeted 25 PASS/2 FAIL, complete Node 1603 PASS/3 FAIL. Corrected nested child Node TAP fixture inheritance (`NODE_TEST_CONTEXT`), 40-char Git commit SHA guard (SHA-256 fields retain 64), and both incorrectly escaped regexes in full-v20 fixture source test. Exact-head owner-local tests after changes NOT RUN; PG/scale/Playwright NOT RUN; no product runtime or production database change, merge or deploy.
 
 
