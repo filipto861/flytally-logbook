@@ -69,11 +69,12 @@ export async function saveAirport(form:FormData){
   const {userId}=await requireUser();
   const ident=canonicalAirportIdent(s(form,"ident"));
   if(!ident)return finishAirportSave("invalid-code");
+  const elevationSpecified=form.has("elevation_ft");
   const elevation=validateManualAirportElevationFt(s(form,"elevation_ft"));
-  if(elevation.error)return finishAirportSave("invalid-elevation");
+  if(elevationSpecified&&elevation.error)return finishAirportSave("invalid-elevation");
   await sql`INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,elevation_ft,active,closed,source,updated_at)
     VALUES(${userId},${ident},${s(form,"name")},${s(form,"municipality")},${s(form,"iso_country").toUpperCase()},${n(form,"latitude_deg")},${n(form,"longitude_deg")},${elevation.value},1,0,'Manual',NOW())
-    ON CONFLICT(user_id,ident) DO UPDATE SET name=EXCLUDED.name,municipality=EXCLUDED.municipality,iso_country=EXCLUDED.iso_country,latitude_deg=EXCLUDED.latitude_deg,longitude_deg=EXCLUDED.longitude_deg,elevation_ft=EXCLUDED.elevation_ft,active=1,updated_at=NOW()`;
+    ON CONFLICT(user_id,ident) DO UPDATE SET name=EXCLUDED.name,municipality=EXCLUDED.municipality,iso_country=EXCLUDED.iso_country,latitude_deg=EXCLUDED.latitude_deg,longitude_deg=EXCLUDED.longitude_deg,elevation_ft=CASE WHEN ${elevationSpecified} THEN EXCLUDED.elevation_ft ELSE airports.elevation_ft END,active=1,updated_at=NOW()`;
   return finishAirportSave("saved");
 }
 
@@ -82,6 +83,7 @@ export async function saveAirportElevation(form:FormData){
   const {userId}=await requireUser();
   const id=n(form,"id");
   if(!Number.isSafeInteger(id)||!id||id<=0)return finishAirportSave("not-found");
+  if(!form.has("elevation_ft"))return finishAirportSave("invalid-elevation");
   const elevation=validateManualAirportElevationFt(s(form,"elevation_ft"));
   if(elevation.error)return finishAirportSave("invalid-elevation");
   const updated=await sql`UPDATE airports SET elevation_ft=${elevation.value},updated_at=NOW()
