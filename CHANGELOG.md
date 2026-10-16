@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 M3 partial partition runner), NOT VERIFIED LOCALLY:** Added `tooling/run-pr340-postgres-partitions-local.ps1`, `tooling/run-pr340-partition-tests.mjs` and source-only contract test registered in development-pipeline. Proposed execution uses owned distinct temporary PG16 clusters and exact registry specs with fail-closed strict TAP; intentionally refuses real-v20-catalog until its source-backed historical `public` migration prerequisite is implemented. The script can execute at most 161/163 cases; 163/163 PostgreSQL release evidence and Playwright NOT RUN. No production data or canonical ledger writes, merge or deploy.
+
+
 **16 Oct 2026 — docs(PR340 M3 execution design, review pending):** Added `docs/product/3_8_0_PR340_M3_PARTITION_EXECUTION_DESIGN_2026-10-16.md` after inspecting canonical PostgreSQL runner, six purpose-bound suites, current disposable PowerShell wrapper and M2 strict TAP. Defines isolation, fresh PG16 ownership/cleanup, real pre-v1 foundation and v1–v20 catalog, candidate evidence, release ledger and staged M3a–M3e rollout with independent reviewer questions. No runner/schema/runtime/DB changes, no tests on new docs SHA, no merge or deploy.
 
 
