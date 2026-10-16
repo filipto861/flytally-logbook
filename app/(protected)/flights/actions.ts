@@ -31,7 +31,7 @@ import { flightPurposeCodesFromTask,normalizeFlightPurposeCodes } from "@/lib/fl
 import { certifyStoredFlight } from "@/lib/flight-certification";
 import { revalidateFlightCertificationViews } from "@/lib/flight-revalidation";
 
-export type FlightActionState = { error?: string; success?: string };
+export type FlightActionState = { error?: string; success?: string; saved?: boolean };
 
 type AircraftAuthorityRow=FlightAircraftAuthorityProfileInput&{
   aircraft_type:string;
@@ -300,13 +300,19 @@ export async function updateFlight(id:number,_:FlightActionState,form:FormData):
   }
   revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath(`/flights/${id}`);
   if(String(form.get("intent")||"draft")==="certify"){
-    const certification=await certifyStoredFlight(userId,id,String(rows[0].row_xmin??""));
+    let certification;
+    try{
+      certification=await certifyStoredFlight(userId,id,String(rows[0].row_xmin??""));
+    }catch(error){
+      console.error("flight-correction-certification-failed",{userId,flightId:id,error});
+      return{error:"Flight changes were saved, but certification status could not be confirmed. Reload the record before proceeding.",saved:true};
+    }
     if(certification.status==="certified"){
       revalidateFlightCertificationViews(id);
       redirect(`/flights/${id}?certified=1`);
     }
-    if(certification.status==="blocked")return{error:`Changes saved as a draft, but certification was blocked: ${certification.issues.map(issue=>issue.message).join(" · ")}`};
-    return{error:"Changes saved as a draft, but certification was not completed. Reload the flight and review it before certifying."};
+    if(certification.status==="blocked")return{error:`Changes saved as a draft, but certification was blocked: ${certification.issues.map(issue=>issue.message).join(" · ")}`,saved:true};
+    return{error:"Flight changes were saved, but certification did not complete or the record changed concurrently. Reload and verify the record before proceeding.",saved:true};
   }
   return{success:"Flight changes saved."};
 }
