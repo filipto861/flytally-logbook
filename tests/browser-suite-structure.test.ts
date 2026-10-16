@@ -61,13 +61,17 @@ test("Phase 0C preserves the original 48 browser contracts, five 3.7.0 map scena
     "Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",
     "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
   ];
+  const addedElevationTests=[
+    "Airport elevation add edit and clear preserves nullable persisted MSL values",
+    "Airport elevation server action refuses a cross-user forged edit",
+  ];
   // H4's two frozen-v20 tests must survive, but can only run on the detached
   // old-runtime worktree. The ordinary browser suite must never pick them up.
   assert.ok(baseline.excludedSpecs.includes("v380-h4-frozen-v20.spec.mjs"));
   assert.match(read("playwright.config.mjs"),/testIgnore:\["\*\*\/v380-h4-frozen-v20\.spec\.mjs"\]/);
   assert.match(read("e2e/v380-h4-frozen-v20.spec.mjs"),/H4: frozen v20 authenticates and reads/);
   const actual=logicalBrowserTests();
-  const expectedCount=originalCount+addedMapTests.length+addedTrashTests.length+addedCurrencyTests.length;
+  const expectedCount=originalCount+addedMapTests.length+addedTrashTests.length+addedCurrencyTests.length+addedElevationTests.length;
   assert.equal(actual.length,expectedCount);
   assert.equal(new Set(actual).size,actual.length,"browser test names must remain unique and grep-able");
   assert.deepEqual([...actual].sort(),[...baseline.acceptanceLogicalTests].sort());
@@ -76,8 +80,12 @@ test("Phase 0C preserves the original 48 browser contracts, five 3.7.0 map scena
     "Phase 1 additions must not replace or reorder the original 48 logical tests");
   assert.deepEqual(baseline.acceptanceLogicalTests.slice(originalCount+addedMapTests.length,originalCount+addedMapTests.length+addedTrashTests.length),addedTrashTests,
     "D3b-1g must retain both original Trash safety scenarios without altering prior contracts");
-  assert.deepEqual(baseline.acceptanceLogicalTests.slice(originalCount+addedMapTests.length+addedTrashTests.length),addedCurrencyTests,
-    "Currency 3.8 adds exactly the reviewed Trash and signed-v13 recovery tests");
+  const currencyStart=originalCount+addedMapTests.length+addedTrashTests.length;
+  const airportStart=currencyStart+addedCurrencyTests.length;
+  assert.deepEqual(baseline.acceptanceLogicalTests.slice(currencyStart,airportStart),addedCurrencyTests,
+    "Currency 3.8 preserves both reviewed Trash and signed-v13 recovery tests");
+  assert.deepEqual(baseline.acceptanceLogicalTests.slice(airportStart),addedElevationTests,
+    "Airport Elevation adds reviewed nullable persistence and account-ownership browser cases");
 });
 
 test("Phase 0C keeps the serialized two-project Playwright contract",()=>{
