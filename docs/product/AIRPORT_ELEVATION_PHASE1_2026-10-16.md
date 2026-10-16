@@ -1,6 +1,6 @@
 # Airport elevation — Phase 1 GPS Detection 2.0 foundation (2026-10-16)
 
-**Scope:** `flytally-logbook` only. Owner approved Phase 1 on 2026-10-16. **Implementation staged on `feat/airport-elevation-phase1`; not verified/released.**
+**Scope:** `flytally-logbook` only. Owner approved Phase 1 on 2026-10-16. Implementation staged on `feat/airport-elevation-phase1`. The **source candidate `c37ae3ba` passed the owner-local acceptance matrix** and production-schema read-only preflight; this subsequent documentation reconciliation is **not yet retested**. **Not merged or deployed.**
 
 ## Why
 
@@ -18,7 +18,7 @@ The intended downstream product value is **more accurate GPS takeoff / landing /
 
 A read-only Neon `describe_table_schema` check of project **Logbook Shadow** (`muddy-dust-14049657`) on 2026-10-16 found `public.airports.elevation_ft` of type **double precision nullable**. **No database writes or schema changes were made.**
 
-**Production schema was NOT inspected / verified** because the available Neon connection does not identify the Logbook production project. Before any merge/deploy:
+**Historical preflight state, now superseded by the verified production-branch endpoint mapping above:** the initial Neon inspection alone did not identify the production target. The required steps below are retained as audit criteria; the exact `public.airports.elevation_ft` check later passed on the confirmed Vercel production branch. Before any merge/deploy:
 
 1. Determine exact target from authorized production configuration, **not** from an assumed project name.
 2. Read-only check: `SELECT data_type,is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='airports' AND column_name='elevation_ft';`.
@@ -38,6 +38,22 @@ The app's airport page now reads this column; deploying it before column availab
 - Isolated browser fixtures: `tooling/bootstrap-browser-smoke-db.mjs` and `e2e/browser-db.mjs`
 - `tests/airport-elevation.test.ts`: parser/validator/format assertions plus source/persistence/fixture contracts
 - Optional migration artifact only: `tooling/airport-elevation-phase1-additive.sql`
+
+## Latest verified evidence and production DB identity (16 Oct 2026; supersedes historical FAIL / NOT RUN sections)
+
+**Exact verified source candidate `c37ae3ba9f2d69d8972ca23d61291a1f9d62266f`**, clean owner-local checkout, not CI:
+
+- `verify:iterate -- --base origin/main`: source **257/257 PASS**, domain **20/20 PASS**, TypeScript **PASS**, candidate ID `879b73ad71c4abecbf51ba805ccbc7a7e8eea385e49db2910fc4117824c23ce6`.
+- Full `npm test`: **1,630/1,630 PASS**, zero failures/skips, exit **0**.
+- `verify:postgres` in explicitly owned six-isolated-PG16 mode: **163/163 PASS** (123 + 8 + 5 + 19 + 6 + 2), exit **0**.
+- Exact-SHA `tooling/run-airport-elevation-browser-local.ps1`: production Next build **PASS**, safe disposable localhost PG16 identity and v20/v21 schema-first **PASS**, Playwright **27/27 desktop PASS** and **26/26 mobile PASS**, exit **0**, disposable server stopped. This includes nullable/zero/negative/clear, malformed input POST evidence and cross-account forged record rejection without mutation.
+- These are **owner-local tests**, not CI or production smoke. No production writes or deployment occurred.
+
+**Read-only production-target preflight:** Vercel project **`logbook`**, ID `prj_GYFLbRQjVyjn82Xnre5qZjz8UlAQ`, selected by its actual `filipto861/flytally-logbook` GitHub association. Its **production-target** `DATABASE_URL` resolves to Neon endpoint `ep-proud-bar-b1ts6cq1`, mapped by exact endpoint enumeration to Neon project **`muddy-dust-14049657`** (project display name `Logbook Shadow`) on **default/primary branch `br-raspy-fog-b1btvu5t`, named `production`**, database `neondb`. Earlier schema checks did **not** identify this production branch and must not be conflated with it. No URI credentials are included here.
+
+Read-only `describe_table_schema` on that **specific production branch** confirmed `public.airports.elevation_ft` **double precision nullable**, `UNIQUE(user_id,ident)`, municipality, iso_country, latitude/longitude, source, active, closed and updated_at. **No airport elevation migration required: N/A.** Existing production `updated_at` is **nullable text**; isolated browser fixture models it as TIMESTAMPTZ. Phase 1 reads neither timestamp meaning nor ordering, but does assign `NOW()` on custom airport updates. The type difference remains an explicit fixture-fidelity observation; no direct production mutation/smoke proof is claimed. Do not silently migrate this legacy column as part of Phase 1.
+
+**Current release state after this documentation-only edit:** New HEAD source/tests/build/PostgreSQL/browser acceptance **NOT RUN for the new SHA**; the verified `c37ae3ba` evidence above is historical exact-candidate evidence. Run the canonical candidate-aware `verify:release:risk` with the safe owned-PG16 browser/postgres workflow on the new documentation HEAD before labeling it READY. **PR remains DRAFT. NO MERGE, NO DEPLOY, NO PRODUCTION MIGRATION.**
 
 ## Fourth browser-risk run: malformed POST coverage and explicit error selector (16 Oct 2026)
 
