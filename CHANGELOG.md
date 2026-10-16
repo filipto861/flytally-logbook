@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+
+## 2026-10-16 — chore(test): generalized owned PG16 release intent (Draft, NOT RUN)
+
+Added an explicit generic entrypoint for the existing six-cluster PostgreSQL16 executor, independently bound to a clean Git commit and fetched `origin` topic ref. Updated canonical PostgreSQL release routing to select this mode only with `FLYTALLY_OWNED_PG16_RELEASE=1`, while retaining PR340-specific and default single-DB behavior. The owned mode validates newly created localhost physical DB identities and executes all 163 registry-pinned strict TAP cases; it does not promote imported diagnostics or touch an existing PostgreSQL service. New preflight contract tests cover missing/mixed intents, CI/production markers, unsafe refs, dirty worktrees, and source HEAD drift.
+
+**Verification at new infrastructure commit:** tests/typecheck/build/PG/browser NOT RUN. Related but separate owner-local PR341 evidence: browser risk 22/22 PASS at `370e63bb`; six PG16 diagnostic partitions 163/163 VALIDATED-ONLY, **not canonical release PASS**. Shared-core's 64MB local benchmark profile remains qualified. No app SQL, certification, migration, deployment or main update.
+
+
 ## 2026-10-16 — FlyTally Logbook 3.8.0 follow-up: PR #340 published
 
 **Release:** [PR #340](https://github.com/filipto861/flytally-logbook/pull/340) merged (squash) as `main@10ab523ba83987f7d3bf3d3a1020ac0d452269e0`; Vercel `logbook` production deployment `dpl_HdL5q8Fzmxe6v69fQ2GKBw7vHsMB` **READY**, aliases include **fly-tally.com**. Original source candidate `b4a0cb4a3acf6661aa1a823e8d383a1c68f2d16e` preserved through merge.
