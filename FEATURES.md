@@ -1,6 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
 
+**Release operational state (16 Oct 2026 — deployment separation candidate):** Application capabilities are unchanged. Standalone deployment-governance PR stages `git.deploymentEnabled.main=false` in `vercel.json` to separate future Git merges from Vercel production deployment. **NOT MERGED, NOT TESTED, NOT DEPLOYED** at documentation time. Airport Elevation PR #346 remains independent and unreleased; manual production deployment requires a separate explicit approval. No product feature or data migration is enabled by this config alone.
+
 **Certified correction — DEPLOYED, PUBLIC SMOKE VERIFIED (16 Oct 2026).** **Save changes** and **Save & certify** for open R2+ corrections are implemented by merged PR #341; Vercel production deployment `dpl_7vc9hpzbjgaSPa3DaN4cGTGpLX2a` reports READY for `main@ea35b6a6` and is aliased to verified `fly-tally.com`. Read-only public HTTP routes `/`, `/login`, `/legal/release-status`, and `/manifest.webmanifest` passed 4/4. Canonical isolated browser and PostgreSQL release acceptance passed before merge; **actual authenticated Save & certify with production flight data was NOT TESTED**. Protected R1 archives and conflict checks remain governed by the source-backed implementation, not inferred from the public smoke. The docs-only subsequent `main@82e5c8ce` changes no application runtime. Existing historical `production NOT RUN / STAGED` notes below record an earlier state and are superseded only to the stated extent.
 
 
