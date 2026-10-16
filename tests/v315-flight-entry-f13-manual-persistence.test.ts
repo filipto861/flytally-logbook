@@ -35,7 +35,9 @@ test("F1.3 Manual actions do not re-read semantic flight fields from FormData af
   const createGets=[...create.matchAll(/form\.get(?:All)?\("([^"]+)"/g)].map(match=>match[1]);
   const updateGets=[...update.matchAll(/form\.get(?:All)?\("([^"]+)"/g)].map(match=>match[1]);
   assert.deepEqual(createGets,["intent"]);
-  assert.deepEqual(updateGets,[]);
+  // Intent is workflow metadata, not a semantic FlightInput field; only the explicit certification branch may read it.
+  assert.deepEqual(updateGets,["intent"]);
+  assert.match(update,/if\(String\(form\.get\("intent"\)\|\|"draft"\)==="certify"\)/);
   assert.doesNotMatch(actions,/function connectedPicSelection/);
   assert.match(actions,/resolveSafetyPilotPicForSave\(\{sourceUserId:userId,role:f\.role,evidence:f\.evidence,commander:f\.commander,form\}\)/);
   assert.match(connectedCrew,/form\.get\("actualPicMode"\)/);
