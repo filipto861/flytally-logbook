@@ -51,3 +51,22 @@ test("PR340 accepts only independently owned PG16 clusters with exact identity a
   assert.match(executor,/stdio:"ignore"/);
   assert.match(executor,/error="\+\(r\.error\?\.code/);
 });
+
+
+test("PR340 optional Quick Add pricing preserves missing currency rather than inventing zero money",()=>{
+  const source=readFileSync(new URL("../app/(protected)/database/actions.ts",import.meta.url),"utf8");
+  assert.match(source,/initialPrice=initialDecimal===null\?null:Number\(initialDecimal\)/);
+  assert.match(source,/\$\{initialPrice\?\?0\},\$\{initialCurrency\?\.code\?\?null\},\$\{initialCurrency\?\.minorUnits\?\?null\},\$\{initialDecimal\}/);
+  assert.doesNotMatch(source,/\$\{initialDecimal\?\?["']0["']\}/);
+});
+test("PR340 Safety Pilot browser seed signs actual persisted v8 row and rejects mismatch",()=>{
+  const source=readFileSync(new URL("../e2e/browser-db.mjs",import.meta.url),"utf8");
+  const begin=source.indexOf("export function resetSafetyPilotPicInviteFixture()");
+  const end=source.indexOf("export function resetE14LegacyTaskFixture()",begin);
+  assert.ok(begin>=0&&end>begin);
+  const fixture=source.slice(begin,end);
+  assert.doesNotMatch(fixture,/browser-sp3-hash/);
+  assert.match(fixture,/flightCertificationHash\(signedRow,9001,8\)/);
+  assert.match(fixture,/verifyFlightCertification\(verifiedRow,9001\)\.status!=="verified"/);
+  assert.match(fixture,/runBrowserFlightFixtureCleanup\(`UPDATE flights SET certification_hash=/);
+});
