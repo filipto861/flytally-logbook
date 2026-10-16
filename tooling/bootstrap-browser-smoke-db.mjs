@@ -90,13 +90,17 @@ CREATE TABLE airports(
   id BIGSERIAL PRIMARY KEY,
   ident TEXT NOT NULL,
   name TEXT NOT NULL DEFAULT '',
+  municipality TEXT NOT NULL DEFAULT '',
+  iso_country TEXT NOT NULL DEFAULT '',
   latitude_deg DOUBLE PRECISION,
   longitude_deg DOUBLE PRECISION,
   elevation_ft DOUBLE PRECISION,
   user_id BIGINT NOT NULL DEFAULT 0,
   source TEXT NOT NULL DEFAULT '',
   active INTEGER NOT NULL DEFAULT 1,
-  closed INTEGER NOT NULL DEFAULT 0
+  closed INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT airports_user_ident_unique UNIQUE(user_id,ident)
 );
 CREATE INDEX airports_ident_idx ON airports(ident);
 
@@ -726,7 +730,7 @@ INSERT INTO users(id,email,display_name,role,active,email_verified_at)
 VALUES
   (9001,'browser-auth@example.test','Browser Smoke Pilot','user',1,NOW()),
   (9002,'browser-friend@example.test','Browser Friend','user',1,NOW());
-INSERT INTO user_credentials(user_id,password_hash) VALUES(9001,${quote(passwordHash)});
+INSERT INTO user_credentials(user_id,password_hash) VALUES(9001,${quote(passwordHash)}),(9002,${quote(passwordHash)});
 INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json)
 VALUES
   (9001,'Europe/Prague','CZK','LKLT','PIC','{}'::jsonb),
