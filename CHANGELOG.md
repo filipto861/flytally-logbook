@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 work_mem PG16 diagnosis), NOT LOCALLY VERIFIED:** Opt-in `-WorkMemDiagnostic` on `shared-core` creates the original owned disposable cluster, applies PostgreSQL work_mem 64MB using ALTER SYSTEM and pg_reload_conf, verifies SHOW work_mem, then runs unchanged 123 tests. Diagnostic explicitly marked non-release; all normal runner defaults, SQL and performance thresholds remain unchanged. Local run NOT RUN, no production DB/deploy/merge change.
+
+
 **16 Oct 2026 — test(PR340 D3b 17/19 blocker, NOT YET VERIFIED LOCALLY):** Real PG16 D3b-chain evidence exposed two failures inserting `amount_encoding` into actual v20 schema. In test-only `expensesSaveSql`, added assertion-guarded projection removing exactly the two v21-only columns from INSERT, SELECT and JSON-recordset declaration, preserving actual parent-lock, ownership, delete and race semantics. Updated pinned registry source hash. No production runtime, migration, database or release evidence changes; rerun NOT RUN.
 
 
