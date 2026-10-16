@@ -7,13 +7,16 @@ const script=source("tooling/run-pr340-postgres-partitions-local.ps1");
 const node=source("tooling/run-pr340-partition-tests.mjs");
 const registry=JSON.parse(source("tooling/postgres-partition-registry.json"));
 
-test("M3 test runner refuses public-v20 catalog and never treats five partitions as full PASS",()=>{
+test("M3 test runner requires real v20 public bootstrap and does not claim release PASS",()=>{
   assert.match(script,/real-v20-catalog/);
-  assert.match(script,/Five partitions executed; real-v20-catalog NOT RUN/);
-  assert.match(node,/selected\.id==="real-v20-catalog"/);
+  assert.match(script,/bootstrap-pr340-real-v20-local\.mjs/);
+  assert.doesNotMatch(node,/selected\.id==="real-v20-catalog"/);
   assert.match(node,/release_status=NOT RUN/);
-  assert.equal(registry.partitions.filter((p:{id:string})=>p.id!=="real-v20-catalog")
-    .reduce((n:number,p:{expectedTests:number})=>n+p.expectedTests,0),161);
+  assert.equal(registry.partitions.reduce((n:number,p:{expectedTests:number})=>n+p.expectedTests,0),163);
+  const bootstrap=source("tooling/bootstrap-pr340-real-v20-local.mjs");
+  assert.match(bootstrap,/flytally_schema_migrations/);
+  assert.match(bootstrap,/for\(let v=1;v<=20;v\+\+\)/);
+  assert.match(bootstrap,/public must be empty/);
 });
 test("M3 test runner requires own verified PG16, exact PR SHA and cleans only its cluster",()=>{
   assert.match(script,/refs\/remotes\/origin\/\$branch/);
