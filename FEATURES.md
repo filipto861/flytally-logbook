@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #347 deployment-governance acceptance (16 Oct 2026, DRAFT):** first local iteration 142/142 source, TypeScript PASS; canonical release FAIL due only to pre-policy E1.5 assertion expecting `main:true` (`npm test` 1622/1623). Updated E1.5 source contract to require all Git auto-deploy branch rules false and preserve CI DB isolation. New HEAD verification **NOT RUN**. Feature runtime and production untouched.
+
 
 **Release operational state (16 Oct 2026 — deployment separation candidate):** Application capabilities are unchanged. Standalone deployment-governance PR stages `git.deploymentEnabled.main=false` in `vercel.json` to separate future Git merges from Vercel production deployment. **NOT MERGED, NOT TESTED, NOT DEPLOYED** at documentation time. Airport Elevation PR #346 remains independent and unreleased; manual production deployment requires a separate explicit approval. No product feature or data migration is enabled by this config alone.
 
