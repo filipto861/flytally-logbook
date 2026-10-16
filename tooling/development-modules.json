@@ -126,6 +126,7 @@
         "tests/development-pipeline.test.ts",
         "tests/development-scope.test.ts",
         "tests/evidence-contract.test.ts",
+        "tests/v380-pr340-partition-runner-contract.test.ts",
         "tests/v380-pr340-postgres-partition-inventory.test.ts",
         "tests/v380-pr340-postgres-registry-validation.test.ts",
         "tests/v380-pr340-postgres-tap-partitions.test.ts",
