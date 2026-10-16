@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 Playwright TypeScript module interop), staged:** Owner SHA `5b666f8c` full release verification passed source 257, domain 39, aggregate Node 1617, production build and PostgreSQL 163, but failed browser startup with missing named TypeScript export. Removed direct TypeScript import from E2E browser DB helper; introduced native Node strip-types certification CLI with canonical v8 hash/verify, strict test fixture identity, local-purpose checks and tamper verification. Added file to browser evidence source identity and updated source/executable tests. No production SQL or certification logic changes; new HEAD acceptance NOT RUN, no merge/deploy.
+
+
 **16 Oct 2026 — PR340 browser remediation staged; not re-tested:** Aircraft Quick Add now projects a legacy numeric zero sentinel only for the non-null historical default price field when no price is provided; v21 exact-money fields remain NULL and no rate row is created. Safety Pilot fixture 9903 now derives and checks a real v8 certification fingerprint from its persisted test row instead of a literal invalid token. Two source regression assertions added. No production schema, data, merge or deployment. Typecheck/browser/full release pending.
 
 
