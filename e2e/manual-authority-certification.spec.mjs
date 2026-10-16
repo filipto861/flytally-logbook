@@ -255,6 +255,36 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
   expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='12:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");
 
+  // Regression: a correction must never silently certify stale persisted data.
+  const correctedFlightId=Number(browserSqlScalar("SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='12:00' ORDER BY id DESC LIMIT 1"));
+  const originalHash=browserSqlScalar(`SELECT certification_hash FROM flights WHERE id=${correctedFlightId} AND user_id=9001`);
+  const correction=page.locator("details.certified-correction");
+  await correction.locator("summary").click();
+  await correction.locator('textarea[name="reason"]').fill("Correct the originally recorded arrival airport.");
+  await correction.getByRole("button",{name:"Open correction R2"}).click();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CORRECTION R2");
+  await page.getByRole("tab",{name:"Logbook data"}).click();
+  const revisionForm=page.locator("form.flight-form");
+  await revisionForm.locator('input[name="arrival"]').fill("LKMT");
+  const discarded=page.waitForEvent("dialog").then(async dialog=>{
+    expect(dialog.message()).toContain("unsaved flight changes");
+    await dialog.dismiss();
+  });
+  await page.getByRole("button",{name:"Continue to certification"}).click();
+  await discarded;
+  await expect(page.getByRole("tab",{name:"Logbook data"})).toHaveAttribute("aria-selected","true");
+  await expect(revisionForm.locator('input[name="arrival"]')).toHaveValue("LKMT");
+  expect(browserSqlScalar(`SELECT arrival||'|'||CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKPR|DRAFT");
+  await revisionForm.getByRole("button",{name:"Save & certify",exact:true}).click();
+  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R2");
+  expect(browserSqlScalar(`SELECT arrival||'|'||record_revision::text||'|'||length(certification_hash)::text FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKMT|2|64");
+  expect(browserSqlScalar(`SELECT snapshot_data->>'arrival' FROM flight_certified_revisions WHERE flight_id=${correctedFlightId} AND user_id=9001 AND revision_number=1`)).toBe("LKPR");
+  expect(browserSqlScalar(`SELECT COUNT(*) FROM flight_certified_revisions WHERE flight_id=${correctedFlightId} AND user_id=9001`)).toBe("1");
+  expect(browserSqlScalar(`SELECT certification_hash FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).not.toBe(originalHash);
+  await page.reload();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R2");
+
   await page.goto("/flights/new");
   form=await completeManual("13:00","13:05","13:55","14:00");
   await form.locator('input[name="arrival"]').press("Enter");
