@@ -6,6 +6,8 @@
 # This runner exclusively creates, verifies, and destroys its OWN localhost cluster.
 # Windows PowerShell 5.1; Git/Node 24/PG16 and repository Playwright browsers.
 # Run: powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-cost-summary-acceptance-local.ps1
+param([switch]$BrowserOnly)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -168,12 +170,22 @@ try {
   # and risk-selected Playwright.
   # The browser harness applies canonical v20/v21 schema only after its own
   # verified localhost fixture preflight, before launching the Next browser app.
-  npm.cmd run verify:release:risk -- --base origin/main
-  Assert-Exit "PR340 candidate-aware full local release gate"
+  if ($BrowserOnly) {
+    Write-Host "PR340 browser-only verification: no six-partition PostgreSQL acceptance." -ForegroundColor Cyan
+    npm.cmd run verify:browser:risk -- --base origin/main
+    Assert-Exit "PR340 candidate-bound browser risk gate"
+  } else {
+    npm.cmd run verify:release:risk -- --base origin/main
+    Assert-Exit "PR340 candidate-aware full local release gate"
+  }
   $finishedSha = (& git rev-parse HEAD).Trim()
   Assert-Exit "Final exact candidate identity"
   if ($finishedSha -cne $commit) { throw "Candidate HEAD changed during acceptance. Evidence invalid." }
-  Write-Host "PR #340 LOCAL RELEASE GATE PASS on $commit; production is unchanged." -ForegroundColor Green
+  if ($BrowserOnly) {
+    Write-Host "PR #340 LOCAL BROWSER-ONLY GATE PASS on $commit; NOT FULL RELEASE PASS." -ForegroundColor Green
+  } else {
+    Write-Host "PR #340 LOCAL RELEASE GATE PASS on $commit; production is unchanged." -ForegroundColor Green
+  }
 
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
