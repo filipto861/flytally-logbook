@@ -137,7 +137,17 @@ test("Airport elevation browser tests are authority-registered and run only on o
   }
   assert.ok(spec.includes('test.skip(!authenticatedBrowser'));
   assert.ok(spec.includes("browserSqlScalar"));
-  assert.ok(spec.includes('input[name^="$ACTION_ID_"]'));
+  // Production Next/React need not emit $ACTION_ID_ as a hidden input.
+  // Exercise the real registered form action instead of a guessed protocol.
+  assert.ok(!spec.includes('input[name^="$ACTION_ID_"]'));
+  assert.ok(!spec.includes("fetch("),"browser security checks must use real form submissions");
+  assert.ok(spec.includes('await invalidElevation.evaluate(input=>{input.type="text";});'));
+  assert.ok(spec.includes('await add.getByRole("button",{name:"Add / update"}).click()'));
+  assert.ok(spec.includes("test.setTimeout(90_000)"));
+  assert.ok(spec.includes('input[name="id"]'));
+  assert.ok(spec.includes('await idInput.evaluate((input,value)=>{input.value=value;},ownerId)'));
+  assert.ok(spec.includes('await otherEditor.getByRole("button",{name:"Save",exact:true}).click()'));
+  assert.ok(spec.includes("test.setTimeout(60_000)"));
   assert.ok(spec.includes('browser.newContext({baseURL:"http://127.0.0.1:3000"})'),
     "cross-user browser context must not navigate to a relative URL without a baseURL");
   for(const kind of ["mutation","ownership"]){
