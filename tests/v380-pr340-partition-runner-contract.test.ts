@@ -29,7 +29,17 @@ test("M3 partition subprocess uses exact registry files and strict TAP, not shel
   assert.match(node,/validatePostgresPartitionRegistry\(\)/);
   assert.match(node,/selected\.files\.map/);
   assert.match(node,/shell:false/);
-  assert.match(node,/parseStrictPartitionTap\(stdout,\{expectedTests:selected\.expectedTests\}\)/);
-  assert.match(node,/writeFileSync\(resolve\(outDir,"tap\.txt"\),stdout/);
+  assert.match(node,/parseStrictPartitionTap\(stdout,\{expectedTests\}\)/);
+  assert.match(node,/writeFileSync\(resolve\(outDir,label\+"\.tap\.txt"\),stdout/);
   assert.doesNotMatch(node,/writeVerificationLedgerEntry|runPostgresVerification\(/);
+});
+
+test("M3 shared-core isolates the two observed 50k/100k performance files without relaxing limits",()=>{
+  assert.match(node,/postgres-v169-production-hardening\.test\.ts/);
+  assert.match(node,/postgres-v230-large-logbook-performance\.test\.ts/);
+  assert.match(node,/perf\.length!==2/);
+  assert.match(node,/expectedTests,0\)!==10/);
+  assert.match(node,/for\(const group of groups\)/);
+  assert.match(node,/if\(passed!==selected\.expectedTests\)/);
+  assert.doesNotMatch(node,/4_000|3_000|retry|--test-concurrency/);
 });
