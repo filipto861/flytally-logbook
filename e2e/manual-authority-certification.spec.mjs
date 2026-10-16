@@ -222,7 +222,7 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
 
 test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 completion coverage requires the isolated browser database.");
-  runBrowserFlightFixtureCleanup("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block IN ('12:00','13:00');");
+  runBrowserFlightFixtureCleanup(`DELETE FROM flight_certified_revisions WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block IN ('12:00','13:00')); DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block IN ('12:00','13:00');`);
   await loginBrowserPilot(page,"/flights/new");
 
   const completeManual=async(offBlock,takeoff,landing,onBlock)=>{
