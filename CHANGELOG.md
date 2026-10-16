@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — docs(PR340 M3 execution design, review pending):** Added `docs/product/3_8_0_PR340_M3_PARTITION_EXECUTION_DESIGN_2026-10-16.md` after inspecting canonical PostgreSQL runner, six purpose-bound suites, current disposable PowerShell wrapper and M2 strict TAP. Defines isolation, fresh PG16 ownership/cleanup, real pre-v1 foundation and v1–v20 catalog, candidate evidence, release ledger and staged M3a–M3e rollout with independent reviewer questions. No runner/schema/runtime/DB changes, no tests on new docs SHA, no merge or deploy.
+
+
 **16 Oct 2026 — owner-local M2 verification completed, PR Draft:** Clean `54c4469b` checked out and verified on Windows Node24; read-only PostgreSQL registry PASS (42 files/163 tests/6 groups); M1/M2/fixture/ledger targeted 31/31 PASS; typecheck PASS; complete Node 1606/1606 PASS, no skipped/TODO. This closes the pure M1/M2 test infrastructure milestones locally. M3 independent, purpose-bound ephemeral database orchestration remains design-only, PostgreSQL/Playwright/build **NOT RUN** on exact commit, no merge or deployment.
 
 
