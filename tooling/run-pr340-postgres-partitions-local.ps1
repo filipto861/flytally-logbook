@@ -9,6 +9,8 @@ $branch="fix/3.8.0-flights-exact-cost-summary"
 $oldPath=$env:Path
 $vars=@("DATABASE_URL","PGPASSWORD","PGHOST","PGPORT","PGUSER","PGDATABASE","PGSERVICE","PGSERVICEFILE","PGPASSFILE","PGOPTIONS","PGSSLMODE","PGCONNECT_TIMEOUT","FLYTALLY_POSTGRES_INTEGRATION","FLYTALLY_D2_FULL_V20_DISPOSABLE","FLYTALLY_V21_RELEASE_DISPOSABLE","FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE","FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE","FLYTALLY_D3B_FULL_V20_DISPOSABLE")
 $saved=@{}
+# Capture every inherited PG* route/credential knob, not a hand-picked subset.
+$vars=@($vars + @([Environment]::GetEnvironmentVariables("Process").Keys | Where-Object { [string]$_ -match "^PG[A-Z0-9_]+$" }) | Select-Object -Unique)
 foreach($name in $vars){$saved[$name]=[Environment]::GetEnvironmentVariable($name,"Process")}
 $clusters=@()
 function Ensure-Exit([string]$step) {if($LASTEXITCODE -ne 0){throw "$step failed ($LASTEXITCODE)"}}
