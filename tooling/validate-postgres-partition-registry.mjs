@@ -15,6 +15,16 @@ const declaredPartitions=new Map([
   ["real-v20-catalog",{flags:["FLYTALLY_D3B_FULL_V20_DISPOSABLE"],schema:"fresh-owned-public/real-v1-through-v20-migrations",locked:["v380-d3b-full-v20-catalog.test.ts","v380-d3b-zero-delete-counterexample.test.ts"]}],
 ]);
 const hash=(body)=>createHash("sha256").update(body).digest("hex");
+// Git stores text with LF while Git for Windows may check out CRLF. Pin the
+// exact canonical Git text, not platform-specific working-tree line endings.
+// All other bytes remain significant. Invalid UTF-8 and bare CR fail closed.
+const canonicalTestSource=(bytes)=>{
+  const content=bytes.toString("utf8");
+  if(!Buffer.from(content,"utf8").equals(bytes)||/\r(?!\n)/.test(content)){
+    throw new Error("PARTITION_REGISTRY_DRIFT: invalid UTF-8 or bare carriage return in test source");
+  }
+  return content.replaceAll("\r\n","\n");
+};
 const testCount=(body)=>[...body.matchAll(/(?:^|\n)\s*test\s*\(\s*["'`]/g)].length;
 const onlyKeys=(value,expected,label)=>{
   if(!value||typeof value!=="object"||Array.isArray(value)||
@@ -32,7 +42,7 @@ export function validatePostgresPartitionRegistry({
   onlyKeys(registry,["schemaVersion","stage","sourceDirectory","hashAlgorithm","expectedFiles","expectedTests","partitions"],"registry");
   if(registry.schemaVersion!==1||registry.stage!=="M1-INVENTORY-ONLY-NO-EXECUTION"||
      registry.sourceDirectory!=="tests/integration"||
-     registry.hashAlgorithm!=="sha256-raw-utf8-bytes"||
+     registry.hashAlgorithm!=="sha256-utf8-canonical-lf"||
      registry.expectedFiles!==42||registry.expectedTests!==163||
      !Array.isArray(registry.partitions)||registry.partitions.length!==declaredPartitions.size){
     throw new Error("PARTITION_REGISTRY_DRIFT: unsupported registry metadata or inventory total");
@@ -72,10 +82,11 @@ export function validatePostgresPartitionRegistry({
       }catch{
         throw new Error("PARTITION_REGISTRY_DRIFT: missing/nonregular test file "+entry.file);
       }
-      if(hash(source)!==entry.sha256){
+      const canonical=canonicalTestSource(source);
+      if(hash(canonical)!==entry.sha256){
         throw new Error("PARTITION_REGISTRY_DRIFT: SHA-256 mismatch for "+entry.file);
       }
-      const count=testCount(source.toString("utf8"));
+      const count=testCount(canonical);
       if(count!==entry.expectedTests){
         throw new Error("PARTITION_REGISTRY_DRIFT: declared test count mismatch for "+entry.file);
       }
