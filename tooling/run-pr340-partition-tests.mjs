@@ -37,7 +37,7 @@ try{
   validatePostgresPartitionRegistry();
   const registry=JSON.parse(readFileSync(join(root,"tooling/postgres-partition-registry.json"),"utf8"));
   const selected=registry.partitions.find(p=>p.id===partitionId);
-  if(!selected||selected.id==="real-v20-catalog"||!outDir)throw Error("Unknown, unreviewed, or blocked partition");
+  if(!selected||!outDir)throw Error("Unknown, unreviewed, or blocked partition");
 
   const perf=selected.id==="shared-core"
     ?selected.files.filter(f=>isolatedPerformance.has(f.file)):[];
