@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 PR340 second full local gate (`d747c1ec`) evidence:** source 257/257 PASS, domain 26/26 PASS, typecheck PASS, aggregate Node 1615/1615 PASS, production build PASS (41/41 static). PostgreSQL canonical owned PG16 stage FAIL before verified partition output; stderr `pg_ctl.exe; exit=0` ambiguity and retained owned evidence directory `flytally-pr340-release-JDH9Oi`; browser/scale NOT RUN. Likely Windows spawnSync pipe inheritance/timeout, not yet proven. Executor now starts/stops pg_ctl with stdio ignored (server file logging retained), and reports spawn error/signal/exit separately. Owner local retest pending. No canonical PostgreSQL/browser PASS; no merge/deploy.
+
+
 **16 Oct PR340 release gate blocker:** Owner-local exact SHA `2eef9c36` typecheck PASS and 9/9 targeted M3/M4 tests PASS. First full candidate-aware release run reached source gate: 256/257 PASS, one obsolete M2 contract asserted pre-bridge `runNodeTests(tests)` while canonical implementation now deliberately preserves legacy `runNodeTests(configuration.testFiles)` and adds authorized six-owned-cluster executor. This was not a DB/runtime failure; PostgreSQL and browser NOT RUN. Contract corrected on branch `b2c2b00a` to assert both legacy and new paths, pure TAP cannot issue ledger. Must re-run targeted test/typecheck/full release at new exact SHA; no release PASS or deploy.
 
 
