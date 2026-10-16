@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 controlled local acceptance capability (staged 16 Oct):** Optional source-backed six-owned-cluster PostgreSQL gate for PR340 is activated by the guarded acceptance wrapper, counts 163 exact TAP tests across six isolated PG16 databases, and carries a disclosed 64MB shared-core benchmark profile. Existing generic PostgreSQL verification behavior remains unchanged. This is release tooling, not app feature or production database tuning. Local execution/acceptance pending.
+
+
 **PR340 verification status (16 Oct owner-local):** Full 1610/1610 Node regression suite and Next production build PASS on `15e138e5`. Real-v20 source-backed six-partition harness supports all 163 PG tests, but 123 were verified under a non-authoritative 64MB diagnostic and canonical release verifier still uses incompatible shared-db execution. Release acceptance remains NOT RUN, browser NOT RUN, no production change.
 
 
