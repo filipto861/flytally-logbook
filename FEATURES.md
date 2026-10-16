@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 browser certification test harness (16 Oct, staged):** Isolated test fixture signatures now use the canonical existing flight certification algorithm in a native Node subprocess to avoid Playwright TypeScript loader incompatibility. Runtime certification behavior unchanged; owner-local browser acceptance still required before release.
+
+
 **PR340 browser repair (staged; not released):** Creating aircraft with no initial rate maintains absence in exact v21 monetary fields and avoids legacy numeric NULL rejection. Test-only certified flight 9903 now uses source-derived v8 integrity evidence. Browser verification pending.
 
 
