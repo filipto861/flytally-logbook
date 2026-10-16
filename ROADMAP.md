@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 shared-core work_mem experiment STAGED, NOT RUN:** Added opt-in `-WorkMemDiagnostic` to the owned localhost PG16 partition runner, allowed only for `shared-core`, setting and verifying 64MB `work_mem` inside that disposable cluster. Purpose: distinguish expensive CTE/sort temp I/O in `pilotInsights50k` (latest baseline 3532.497ms vs 3000ms) from other query costs; existing baseline thresholds and product SQL unchanged. Diagnostic results must not count as standard PG/release PASS. Local execution pending; 38/38 other supported partition tests previously passed on owner Windows PG16. Real-v20-catalog remains blocked, no deployment.
+
+
 **16 Oct 2026 — PR340 D3b migration-chain targeted fix STAGED, NOT LOCALLY RE-RUN:** Owner PG16 showed 17/19 PASS and two exact v20 fixture errors: current `saveFlightExpenses` INSERT references `amount_encoding` / `amount_minor_units` introduced in v21, absent from intentional real v1–v20 private-schema test. Added narrowly asserted v20 compatibility projection to the *two test writers* via `expensesSaveSql`; preserves production source row lock, conditional delete, insert ownership predicates and original race/locked-flight semantics; never asserts these were historically v20 columns. Updated D3b registry test SHA pin. No runtime SQL, migration or schema change. Next owner-local registry+typecheck and D3b partition only. Distinct previously verified groups: shared-restore 8/8 PASS, v21-migration 5/5 PASS; D3b races NOT RUN, shared-core unresolved 50k perf, real-v20-catalog BLOCKED, release NOT RUN.
 
 
