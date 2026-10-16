@@ -148,7 +148,7 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
         if(startAttempted&&!stopVerified){
           try{
             proc(bins.pg_ctl,["-D",data,"-m","fast","-w","-t","30","stop"],
-              {env:dbEnv,timeout:45000});
+              {env:dbEnv,timeout:45000,stdio:"ignore"});
           }catch{process.stderr.write("PR340 WARNING: possibly running owned cluster retained: "+directory+"\\n");}
         }
       }
