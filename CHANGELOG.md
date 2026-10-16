@@ -1,6 +1,10 @@
 # FlyTally changelog
 
 
+## 2026-10-16 — Explicit manual-only production deployment control (DRAFT, NOT RELEASED)
+
+Prepared dedicated `chore/disable-main-auto-deploy` branch to change only `vercel.json` `git.deploymentEnabled.main` from `true` to `false`, keeping wildcard `"*": false`. Vercel project-scope Deployment Policy API returned 404, and **no project setting was changed**. Documentation in DEVELOPMENT, ROADMAP and FEATURES records the safe sequence: local verification → config squash merge → verify Vercel did not launch a production deployment → update/reverify PR #346 against latest `main` → independent feature squash merge → **no production deploy until separate owner authorization**. This is an undeployed configuration change; NO SQL writes, branch merge or production action performed yet.
+
 ## 2026-10-16 — PR #341 public production smoke verified (Vercel READY)
 
 **Actual production evidence:** Vercel `logbook` deployment `dpl_7vc9hpzbjgaSPa3DaN4cGTGpLX2a` was created automatically by the existing `main` Git integration and reports `target=production`, `readyState=READY`, source SHA `ea35b6a6f35b665f3bcf89c449a40496d565b468` (PR #341 squash merge), and verified domain alias `fly-tally.com`. Subsequent current `main@82e5c8ce` changes only `ROADMAP.md`, `FEATURES.md`, `CHANGELOG.md`, and the certified-correction contract (PR #343); deployed runtime is not behind in application code.
