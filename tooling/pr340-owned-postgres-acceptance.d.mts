@@ -4,5 +4,5 @@ export type Pr340Observation = {
   notApplicable:number;retries:number;sourceGate:"postgres";registrySha256:string;
   profile:string;partitions:unknown[];evidenceDirectory:string;
 };
-export function assertPr340AcceptancePreflight(options:{candidate:Pr340Candidate;env?:NodeJS.ProcessEnv}):void;
-export function runOwnedPr340PostgresAcceptance(options:{candidate:Pr340Candidate;env?:NodeJS.ProcessEnv}):Pr340Observation;
+export function assertPr340AcceptancePreflight(options:{candidate:Pr340Candidate;env?:Partial<NodeJS.ProcessEnv>}):void;
+export function runOwnedPr340PostgresAcceptance(options:{candidate:Pr340Candidate;env?:Partial<NodeJS.ProcessEnv>}):Pr340Observation;
