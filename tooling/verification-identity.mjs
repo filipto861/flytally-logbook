@@ -70,6 +70,7 @@ export function browserFixtureContractIdentity(){
   const files=[
     "tooling/bootstrap-browser-smoke-db.mjs",
     "e2e/browser-db.mjs",
+    "tooling/certification-browser-fixture-cli.mjs",
   ];
   const entries=fileEntries(files);
   return {kind:"browser-fixture-contract-v1",hash:hashEntries(entries),files:entries};
