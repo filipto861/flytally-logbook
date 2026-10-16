@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct PR340 M4 typecheck correction (owner finding, follow-up verification pending):** Owner ran 9/9 targeted PR340 contract tests PASS at `f5ada8d0`, but TypeScript failed on two negative-environment test fixtures because Next extends `NodeJS.ProcessEnv` with required `NODE_ENV`. Declaration now accepts `Partial<NodeJS.ProcessEnv>` (`ec5bf5fd`), without changing runtime guard. Rerun typecheck and tests on newest commit before release. Canonical PG/Playwright NOT RUN.
+
+
 **16 Oct 2026 — PR340 M4b/M4c IMPLEMENTED but NOT LOCALLY VERIFIED:** Canonical `verify-postgres.mjs` now uses a trusted six-owned-PG16 partition executor only under explicit `FLYTALLY_PR340_PARTITION_RELEASE=1` from the existing guarded disposable release wrapper. The executor checks clean exact fetched branch SHA, pinned registry, strict TAP for every subprocess, 163 total cases, distinct actual DB identities, empty stderr/zero exit, real public v1–v20 bootstrap, and shutdown of every owned cluster; it does not consume external PASS files or self-issue a ledger. Canonical verifier issues ledger only after accepted real execution. Other candidates retain legacy single-db execution. Shared-core uses **explicit controlled localhost benchmark profile `work_mem=64MB`**, thresholds unchanged; this is NOT equivalence to default PostgreSQL (previous default 50k FAIL), nor a claim that production requires 64MB. New source-contract/negative tests staged. IMPORTANT: no owner-local verification of this SHA yet; full release/browser evidence NOT RUN; PR Draft. Independent reviewer recommended for benchmark policy/authority boundary before merge.
 
 
