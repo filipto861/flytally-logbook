@@ -75,6 +75,14 @@ try {
   if ($remoteCommit -cne $commit) { throw "Current HEAD is not the fetched PR #340 HEAD. Fetch origin and switch to the latest remote commit before acceptance." }
   Write-Host "Exact candidate: $commit"
 
+  # Fast failure gate: protect the owner's time before any PG16 initdb, Next
+  # build or Playwright run. These checks do not connect to or alter any DB.
+  Write-Host "Fast preflight: typecheck and fixture/ledger contracts (no database)."
+  npm.cmd run typecheck
+  Assert-Exit "PR340 fast preflight typecheck"
+  npm.cmd run test:target -- tests/v380-pr340-owned-pg-release.test.ts tests/verification-ledger.test.ts
+  Assert-Exit "PR340 fast preflight fixture contracts"
+
   # Refuse a pre-existing web server: Playwright must start our own Next process.
   # Next/Turbopack builds against the verified disposable environment, not the
   # owner's .env.local. The harness applies v20/v21 before starting Next.
