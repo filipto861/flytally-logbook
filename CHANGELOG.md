@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — PR340 browser remediation staged; not re-tested:** Aircraft Quick Add now projects a legacy numeric zero sentinel only for the non-null historical default price field when no price is provided; v21 exact-money fields remain NULL and no rate row is created. Safety Pilot fixture 9903 now derives and checks a real v8 certification fingerprint from its persisted test row instead of a literal invalid token. Two source regression assertions added. No production schema, data, merge or deployment. Typecheck/browser/full release pending.
+
+
 **16 Oct 2026 — fix(PR340 Windows owned PG16 launch), NOT YET LOCALLY VERIFIED:** Second full local release gate at `d747c1ec` passed source 257/257, domain 26/26, typecheck, Node 1615/1615 and Next build; canonical PG failed early at `pg_ctl.exe; exit=0` without proof of exact root cause. Updated trusted PG16 runner to avoid inherited stdio pipe handles during pg_ctl start/stop and expose spawn error codes/signals. Added contract assertion. Browser and scale NOT RUN; no runtime migration/deploy.
 
 
