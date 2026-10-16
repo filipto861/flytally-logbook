@@ -1,5 +1,17 @@
 # FlyTally changelog
 
+## 2026-10-16 — fix(logbook): certified correction Save & certify MERGED (PR #341)
+
+**Actual changes:** Existing certified flight R1 remains immutable when opening editable R2; correction form offers explicit **Save changes** and **Save & certify**. Pending/dirty navigation cannot silently discard edits. Submission uses canonical flight parser/persistence; certification only follows successful update and is pinned to returned PostgreSQL `xmin`. Concurrent/stale or uncertain outcomes fail closed and distinguish saved draft from certified record. No schema migration, hash/payload algorithm changes or legacy removal.
+
+**Git:** PR #341 verified source `aef0f65e9b85c9b437b745d9efb96e5aa489ac85`; squash-merged `main@ea35b6a6f35b665f3bcf89c449a40496d565b468`. **Canonical owner-local release evidence:** `release_status=PASS`, candidate `f884f186e3252929bc408506b5172bf3aa61f6ce0254ffc98d15cddc325ed501`; targeted 27/27, source 257/257, domain 19/19, full Node 1623/1623, TypeScript PASS, production build PASS, six owned PostgreSQL16 clusters 163/163 PASS, desktop Playwright 11/11 PASS, mobile Playwright 11/11 PASS. No blocked evidence, release exit code 0. Shared-core performance uses controlled **local** `work_mem=64MB`; production/default performance not established. Optional independent AI review explicitly waived by owner. **Production deploy/smoke NOT RUN.** Exact release evidence was generated before the squash merge, on the exact approved source candidate; there is no claim of a second post-merge runtime test.
+
+## 2026-10-16 — chore(test): reusable owned PG16 release verification MERGED (PR #342)
+
+**Actual changes:** Existing PR340 six-partition PostgreSQL 16 acceptance executor exposed behind separately authorized generic owner-local intent with clean exact-HEAD/fetched origin branch protection; default and PR340 legacy paths retained, strict TAP and canonical ledger preserved. Test source `080f3b6e` locally passed typecheck, 19/19 targeted tests, 1621/1621 Node, production build and canonical six-cluster PG16 163/163; all six owned clusters stopped. Squash-merged `main@b88ea277d4a5a88f660abff15edfb7a85ce4dc46`. No runtime/schema/production-data edits; no production deploy.
+
+**Historical:** The `Draft / NOT RUN / Unreleased` notes immediately below were recorded before owner-local acceptance and merge. They are retained as superseded development history, not present release status.
+
 
 ## 2026-10-16 — chore(test): generalized owned PG16 release intent (Draft, NOT RUN)
 
