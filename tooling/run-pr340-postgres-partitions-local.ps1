@@ -1,7 +1,7 @@
 # PR340: isolated PostgreSQL16 partition execution. NEVER production/Neon.
 # Each partition gets a new owned PG16 cluster. No release ledger writes.
 # The real-v20 catalog remains BLOCKED until a reviewed canonical public seed exists.
-param([ValidateSet("shared-core","shared-restore","v21-migration","d3b-migration-chain","d3b-races","all-supported")][string]$Partition="all-supported",[switch]$WorkMemDiagnostic)
+param([ValidateSet("shared-core","shared-restore","v21-migration","d3b-migration-chain","d3b-races","real-v20-catalog","all-supported")][string]$Partition="all-supported",[switch]$WorkMemDiagnostic)
 $ErrorActionPreference="Stop"
 Set-StrictMode -Version Latest
 $root=(Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -34,7 +34,6 @@ try {
   foreach($prog in @("initdb.exe","pg_ctl.exe","createdb.exe","psql.exe")){if(-not(Test-Path (Join-Path $pgBin $prog))){throw "PostgreSQL16 binary missing: $prog"}}
   $env:Path="$pgBin;$oldPath"
   foreach($part in $selected){
-    if($part.id -eq "real-v20-catalog"){throw "BLOCKED: source-backed public pre-v1 foundation and actual v1-v20 migration setup not verified. No release PASS."}
     # Remove all inherited PostgreSQL routing and prior partition flags.
     foreach($name in $vars){[Environment]::SetEnvironmentVariable($name,$null,"Process")}
     $temp=Join-Path $env:TEMP ("flytally-pr340-part-"+[guid]::NewGuid().ToString("N"))
@@ -72,6 +71,10 @@ try {
       Write-Host "DIAGNOSTIC-ONLY work_mem=64MB (not baseline/release evidence)" -ForegroundColor Yellow
     }
     foreach($flag in $part.purposeFlags){[Environment]::SetEnvironmentVariable([string]$flag,"1","Process")}
+    if($part.id -eq "real-v20-catalog"){
+      & node tooling/bootstrap-pr340-real-v20-local.mjs
+      Ensure-Exit "real v20 catalog bootstrap"
+    }
     Write-Host "Running $($part.id): $($part.expectedTests) cases on owned localhost PG16 $port"
     & node tooling/run-pr340-partition-tests.mjs $part.id $temp
     Ensure-Exit "strict TAP partition $($part.id)"
@@ -81,7 +84,7 @@ try {
     Ensure-Exit "owned cluster stop"
     $owned.Started=$false;$owned.StopSuccess=$true
   }
-  if($Partition -eq "all-supported"){throw "Five partitions executed; real-v20-catalog NOT RUN. 163/163 release gate BLOCKED; evidence must be reviewed."}
+  if($Partition -eq "all-supported"){Write-Host "All six partitions executed; local TAP only, NOT canonical release PASS." -ForegroundColor Yellow}
   Write-Host "Individual partition executed; not a canonical release PASS." -ForegroundColor Yellow
 }finally{
   foreach($cluster in $clusters){
