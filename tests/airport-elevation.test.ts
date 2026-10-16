@@ -60,11 +60,13 @@ test("airport elevation is user-owned and does not overwrite unrelated airport c
   const page=read("app/(protected)/database/page.tsx");
   assert.ok(db.includes("latitude_deg,longitude_deg,elevation_ft,active,closed,source FROM airports WHERE user_id="));
   assert.ok(actions.includes("INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,elevation_ft,active"));
-  assert.ok(actions.includes("elevation_ft=EXCLUDED.elevation_ft"));
+  assert.ok(actions.includes("elevation_ft=CASE WHEN "+"$"+"{elevationSpecified} THEN EXCLUDED.elevation_ft ELSE airports.elevation_ft END"));
   assert.ok(actions.includes("UPDATE airports SET elevation_ft="+"$"+"{elevation.value},updated_at=NOW()"));
   assert.ok(actions.includes("WHERE id="+"$"+"{id} AND user_id="+"$"+"{userId}"));
   assert.ok(actions.includes("NOT LIKE 'ourairports%'"));
   assert.ok(actions.includes('validateManualAirportElevationFt(s(form,"elevation_ft"))'));
+  assert.ok(actions.includes('const elevationSpecified=form.has("elevation_ft")'));
+  assert.ok(actions.includes('if(!form.has("elevation_ft"))return finishAirportSave("invalid-elevation")'));
   assert.ok(page.includes("formatAirportElevationFt(item.elevation_ft)"));
   assert.ok(page.includes("formatAirportElevationFt(airport.elevationFt)"));
   assert.ok(page.includes("action={saveAirportElevation}"));
