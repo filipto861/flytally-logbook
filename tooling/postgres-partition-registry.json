@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "stage": "M1-INVENTORY-ONLY-NO-EXECUTION",
   "sourceDirectory": "tests/integration",
-  "hashAlgorithm": "sha256-raw-utf8-bytes",
+  "hashAlgorithm": "sha256-utf8-canonical-lf",
   "expectedFiles": 42,
   "expectedTests": 163,
   "partitions": [
