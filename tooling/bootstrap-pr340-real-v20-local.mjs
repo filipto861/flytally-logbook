@@ -56,7 +56,7 @@ for(let v=1;v<=20;v++){
   assert.ok(a>=0&&b>a,"Missing actual migration "+v);
   const statements=[...text.slice(a,b).matchAll(re)].map(x=>x[1]);
   assert.ok(statements.length>=2,"Migration statements incomplete "+v);
-  assert.ok(!statements.some(x=>x.includes("${")||/\\bpublic\\./i.test(x)),"Non-static or public schema SQL in migration "+v);
+  assert.ok(!statements.some(x=>x.includes("${")||/\bpublic\./i.test(x)),"Non-static or public schema SQL in migration "+v);
   run("BEGIN;\nSET LOCAL search_path TO public,pg_catalog;\nSELECT pg_advisory_xact_lock(704190104);\n"+statements.join(";\n")+";\nINSERT INTO flytally_schema_migrations(version,name) VALUES("+v+","+quote(names.get(v))+");\nCOMMIT;");
 }
 assert.equal(run("SELECT COUNT(*) FROM public.flytally_schema_migrations WHERE version BETWEEN 1 AND 20"),"20");
