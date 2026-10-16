@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {spawnSync} from "node:child_process";
 import {fileURLToPath} from "node:url";
 import {readFileSync} from "node:fs";
-import {assertPr340AcceptancePreflight} from "../tooling/pr340-owned-postgres-acceptance.mjs";
+import {assertPr340AcceptancePreflight,assertOwnedPostgresAcceptancePreflight} from "../tooling/pr340-owned-postgres-acceptance.mjs";
+import {postgresVerificationConfiguration} from "../tooling/verify-postgres.mjs";
 
 const source=(name:string)=>readFileSync(new URL("../tooling/"+name,import.meta.url),"utf8");
 const candidate={headSha:"a".repeat(40),worktree:{files:[]}};
@@ -135,4 +136,60 @@ test("PR340 native browser certificate bridge signs, verifies and refuses altere
   assert.notEqual(invoke("verify",{...secondRow,role:"PIC",certification_hash:secondSigned.stdout}).status,0);
   const wrongSource=invoke("sign",{...row,id:9905});
   assert.notEqual(wrongSource.status,0);
+});
+
+test("Generic owned PG16 mode is explicit and cannot masquerade as legacy PR340",()=>{
+  const ref="refs/remotes/origin/fix/certified-correction-save-and-certify";
+  assert.throws(()=>assertOwnedPostgresAcceptancePreflight({candidate,env:{}}),
+    /Explicit owned PG16 acceptance intent/);
+  assert.throws(()=>assertOwnedPostgresAcceptancePreflight({
+    candidate,env:{FLYTALLY_OWNED_PG16_RELEASE:"1"},
+  }),/Explicit origin feature-branch ref required/);
+  assert.throws(()=>assertOwnedPostgresAcceptancePreflight({
+    candidate,env:{FLYTALLY_OWNED_PG16_RELEASE:"1",
+      FLYTALLY_OWNED_PG16_EXPECTED_REF:ref,FLYTALLY_PR340_PARTITION_RELEASE:"1"},
+  }),/cannot be enabled together/);
+  assert.throws(()=>assertPr340AcceptancePreflight({
+    candidate,env:{FLYTALLY_OWNED_PG16_RELEASE:"1"},
+  }),/Explicit isolated PR340 acceptance intent/);
+});
+
+test("Generic owned PG16 preflight refuses CI, unsafe remote refs and dirty worktrees",()=>{
+  const allowed="refs/remotes/origin/fix/certified-correction-save-and-certify";
+  for(const key of ["CI","VERCEL","VERCEL_ENV"]){
+    assert.throws(()=>assertOwnedPostgresAcceptancePreflight({
+      candidate,env:{FLYTALLY_OWNED_PG16_RELEASE:"1",
+        FLYTALLY_OWNED_PG16_EXPECTED_REF:allowed,[key]:"1"},
+    }),/Refuse CI\/production marker/);
+  }
+  for(const value of ["refs/remotes/origin/main","refs/remotes/origin/fix/../main",
+    "refs/remotes/origin/fix/foo//bar","refs/remotes/origin/fix/foo.lock"]){
+    assert.throws(()=>assertOwnedPostgresAcceptancePreflight({
+      candidate,env:{FLYTALLY_OWNED_PG16_RELEASE:"1",
+        FLYTALLY_OWNED_PG16_EXPECTED_REF:value},
+    }),/origin feature-branch ref|Unsafe origin branch ref/);
+  }
+  assert.throws(()=>assertOwnedPostgresAcceptancePreflight({
+    candidate:{...candidate,worktree:{files:["untracked.txt"]}},
+    env:{FLYTALLY_OWNED_PG16_RELEASE:"1",FLYTALLY_OWNED_PG16_EXPECTED_REF:allowed},
+  }),/clean worktree/);
+  assert.throws(()=>assertOwnedPostgresAcceptancePreflight({
+    candidate,env:{FLYTALLY_OWNED_PG16_RELEASE:"1",FLYTALLY_OWNED_PG16_EXPECTED_REF:allowed},
+  }),/Source HEAD drift/);
+});
+
+test("Generic PG16 release route remains explicit; default and PR340 modes are preserved",()=>{
+  assert.equal(postgresVerificationConfiguration({}).mode,"full");
+  assert.equal(postgresVerificationConfiguration({FLYTALLY_PR340_PARTITION_RELEASE:"1"}).mode,
+    "pr340-six-owned-pg16");
+  const owned=postgresVerificationConfiguration({FLYTALLY_OWNED_PG16_RELEASE:"1"});
+  assert.equal(owned.mode,"owned-six-pg16");
+  assert.equal(owned.benchmarkProfile,"shared-core-work_mem-64MB");
+  const bridge=source("verify-postgres.mjs");
+  const executor=source("pr340-owned-postgres-acceptance.mjs");
+  assert.match(bridge,/runOwnedPostgresAcceptance\(\{candidate,env\}\)/);
+  assert.match(bridge,/assertOwnedPostgresAcceptancePreflight\(\{candidate,env\}\)/);
+  assert.match(executor,/assertSelectedAcceptancePreflight\(\{candidate,env\}\)/);
+  assert.doesNotMatch(executor,/writeVerificationLedgerEntry\(/);
+  assert.match(executor,/FLYTALLY_OWNED_PG16_EXPECTED_REF/);
 });
