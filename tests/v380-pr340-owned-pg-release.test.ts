@@ -39,7 +39,15 @@ test("PR340 benchmark profile is explicit, local and does not rewrite SQL or tes
   assert.match(wrapper,/\$env:FLYTALLY_PR340_PARTITION_RELEASE = "1"/);
   assert.match(wrapper,/Restore-Env "FLYTALLY_PR340_PARTITION_RELEASE"/);
   assert.match(wrapper,/verify:release:risk/);
+  // Both cheap guards must run before any PostgreSQL cluster is created.
+  const preflight=wrapper.indexOf("npm.cmd run test:target -- tests/v380-pr340-owned-pg-release.test.ts");
+  const typecheck=wrapper.indexOf("npm.cmd run typecheck");
+  const cluster=wrapper.indexOf("Creating isolated PostgreSQL 16 cluster");
+  assert.ok(typecheck>=0&&preflight>typecheck&&cluster>preflight,
+    "Cheap TypeScript and fixture contracts must run before expensive cluster startup");
+  assert.match(wrapper,/Assert-Exit "PR340 fast preflight fixture contracts"/);
 });
+
 test("PR340 accepts only independently owned PG16 clusters with exact identity and full strict TAP",()=>{
   const executor=source("pr340-owned-postgres-acceptance.mjs");
   assert.match(executor,/refs\/remotes\/origin\/fix\/3\.8\.0-flights-exact-cost-summary/);
