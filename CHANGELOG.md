@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — PR #340 M1 PostgreSQL registry (staged; tests NOT RUN):** Created `tooling/postgres-partition-registry.json` (42 SHA-256 pinned test files, 163 declared cases, six partitions) and `tooling/validate-postgres-partition-registry.mjs` (read-only drift detection). Added `tests/v380-pr340-postgres-registry-validation.test.ts` negative tests and registered them in development-pipeline source-contract inventory; added registry and validator to `tooling/verification-identity.mjs` configuration hash. Existing PostgreSQL execution, release ledger policy, 3.8.0 runtime and production untouched. User-local Node24 validation and all PG/scale/browser gates on updated exact PR SHA NOT RUN.
+
+
 **15 Oct 2026 — PR #340 release-gate discovery and design (STAGED, not deployed):** Added `docs/product/3_8_0_PR340_POSTGRES_EVIDENCE_PARTITION_REVIEW_2026-10-15.md`; added source-only `tests/v380-pr340-postgres-partition-inventory.test.ts` and registered it in `tooling/development-modules.json`. Independently inspected actual suites and recovered 32 opt-in tests (5+19+6+1+1); canonical raw skips remain PARTIAL. Proposed fresh-DB per-partition execution and actual v20 public catalog authority for external DeepSeek review. Code/source inspection PASS only; new Node, PostgreSQL, scale, browser and build **NOT RUN** on updated PR head. No changes to application runtime, schema, certified flight data or production deployment.
 
 
