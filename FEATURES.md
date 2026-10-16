@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 shared-core test stabilization (staged 16 Oct 2026):** Instead of modifying benchmark thresholds or production SQL, existing v1.69 50k and v2.3 100k performance files are executed individually without competing Node integration specs; the remaining 113 shared-core cases execute together. All 123 expected test results must be emitted and verified across three strict TAP evidence segments in a single exclusively owned local PostgreSQL16 fixture. Owner-local rerun pending; no CI/release PASS claimed.
+
+
 **PR #340 M3 partial test execution staged (16 Oct 2026):** An opt-in developer-only Windows PowerShell runner provisions distinct ephemeral PostgreSQL16 localhost clusters for five reviewed partitions (161 declared tests), validates database identity and runs the exact registered specs via shell-free Node with strict TAP verification. It retains diagnostic files and never creates a canonical release ledger PASS. Real-v20 public catalog (2 tests) is **NOT RUN/BLOCKED** pending authentic historical migration setup. No application runtime, database schema, certification, or production release changes.
 
 
