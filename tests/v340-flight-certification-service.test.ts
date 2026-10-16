@@ -90,6 +90,8 @@ test("certified correction Save & certify seals exactly the row returned by the 
   assert.match(service,/expectedRowXmin!==undefined&&String\(row\.row_xmin\?\?""\)!==expectedRowXmin\)return\{status:"stale"/);
   assert.match(update,/if\(certification\.status==="certified"\)[\s\S]*revalidateFlightCertificationViews\(id\);[\s\S]*redirect\(`\/flights\/\$\{id\}\?certified=1`\)/);
   assert.match(update,/Changes saved as a draft, but certification was blocked/);
-  assert.match(update,/Changes saved as a draft, but certification was not completed/);
+  assert.match(update,/certification status could not be confirmed/);
+  assert.match(update,/certification did not complete or the record changed concurrently/);
+  assert.match(update,/saved:true/);
 });
 
