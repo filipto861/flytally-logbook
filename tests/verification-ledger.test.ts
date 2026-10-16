@@ -154,6 +154,7 @@ test("verification identities cover planner release toolchain and browser fixtur
   assert.deepEqual(fixture.files.map((entry:{name:string})=>entry.name),[
     "e2e/browser-db.mjs",
     "tooling/bootstrap-browser-smoke-db.mjs",
+    "tooling/certification-browser-fixture-cli.mjs",
   ]);
 
   assert.match(toolchain.hash,/^[a-f0-9]{64}$/);
