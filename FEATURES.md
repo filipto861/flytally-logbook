@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Airport Elevation Phase 1 — test acceptance follow-up (16 Oct, DRAFT):** after production-backed aircraft-photo test fixture fix, desktop browser-risk remained 25/27 with both Airport cases FAIL due to missing `rates.aircraft_type` in shared `/database` read model. Fixed `rates` fixture `aircraft_type`/`dry_price_per_hour`/`source` and uniqueness, preserving isolated v21 schema-first handling. New corrective SHA NOT RUN; no production code, DB or release changes.
+
 **Airport Elevation browser acceptance fix staged (16 Oct, DRAFT):** `92405480` passed full Node 1,630/1,630, but airport E2E 2/2 FAIL due to missing production `aircraft_photos` dependency in disposable browser fixture (25 other desktop scenarios PASS). Later branch correction adds exact photo DDL/index and secondary Playwright context baseURL; **post-fix acceptance NOT RUN**. No application runtime behavior change, merge, migration or deploy.
 
 **Airport elevation PR #346 browser acceptance (DRAFT; new HEAD NOT VERIFIED, 16 Oct):** isolated disposable browser fixture now mirrors manual-airport persistence constraints; dedicated authenticated desktop/mobile scenarios cover nullable elevation add/edit/clear, malformed-rejection, reference display and cross-user edit guard. Four exact targets registered to the aircraft-airports release gate. Earlier `e88bc4f9` passed 1,629/1,629 Node and 163/163 local PG tests, but evidence does NOT transfer to new code. No production schema confirmation, merge, deploy or GPS detection changes.
