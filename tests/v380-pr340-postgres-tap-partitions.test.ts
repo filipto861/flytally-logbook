@@ -99,9 +99,14 @@ test("M2 accepts real Node test runner TAP, including nested suites without doub
       "describe('group',()=>{it('one',()=>{});it('two',()=>{});});",
       "it('top-level',()=>{});",
     ].join("\n"));
+    // Node's parent --test worker exports NODE_TEST_CONTEXT. Passing it to a
+    // nested --test process suppresses normal TAP ("recursive test runner").
+    // Strip only that internal test-worker marker; keep the subprocess local.
+    const {NODE_TEST_CONTEXT: _parentTestContext,...childEnv}=process.env;
     const result=spawnSync(process.execPath,["--test","--test-reporter=tap",spec],
-      {encoding:"utf8",timeout:15000,env:{...process.env,DATABASE_URL:""}});
+      {encoding:"utf8",timeout:15000,env:{...childEnv,DATABASE_URL:""}});
     assert.equal(result.status,0,result.stderr);
+    assert.ok(result.stdout?.startsWith("TAP version 13"),"Nested Node must emit its own TAP stream: "+result.stderr);
     const parsed=parseStrictPartitionTap(result.stdout,{expectedTests:3});
     assert.equal(parsed.passed,3);
     assert.equal(parsed.suites,1);
@@ -117,9 +122,11 @@ test("M2 real Node TAP TODO and SKIP cases remain disallowed, even if process ex
       "import test from 'node:test';",
       "test('yes',()=>{});test.todo('later');test.skip('skipped');",
     ].join("\n"));
+    const {NODE_TEST_CONTEXT: _parentTestContext,...childEnv}=process.env;
     const result=spawnSync(process.execPath,["--test","--test-reporter=tap",spec],
-      {encoding:"utf8",timeout:15000});
+      {encoding:"utf8",timeout:15000,env:childEnv});
     assert.equal(result.status,0,result.stderr);
+    assert.ok(result.stdout?.startsWith("TAP version 13"),"Expected actual TODO/SKIP TAP, not empty stdout");
     assert.throws(()=>parseStrictPartitionTap(result.stdout,{expectedTests:3}),
       /PARTITION_TAP_INVALID/);
   }finally{rmSync(dir,{recursive:true,force:true});}
