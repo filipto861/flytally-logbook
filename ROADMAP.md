@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 PR340 M3 50k diagnosis (test-only, NOT RUN on this SHA):** Owner's standalone v1.69 fixture measured `pilotInsights50k` 3134.911ms versus existing 3000ms (4/5 PASS, 1 FAIL, 0 SKIP). Added a compact top-12 `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` plan-node diagnostic to the existing test only when 3000ms is exceeded, without changing SQL, the threshold, test count or release authority. Updated the exact test-source SHA256 in pinned PostgreSQL registry. Next: owner-local registry + typecheck + focused source tests and single shared-core isolated run; inspect `postgres-v169-production-hardening.tap.txt` for `V169 INSIGHTS50K PLAN`. No PG rerun/build/Playwright/merge/deploy on current SHA.
+
+
 **16 Oct 2026 — PR340 M3 shared-core performance isolation staged, not owner-retested:** Two distinct local PG16 runs executed all 123 cases with **122 PASS, 1 FAIL, 0 SKIP/TODO** each. First benchmark `pilotInsightsAircraft100k` measured 4006.908ms vs existing 4000ms; second run failed a **different** `pilotInsights50k` benchmark at 3040.374ms vs 3000ms. No source-backed evidence of persistent cost-summary regression; do not change SQL or thresholds on these near-boundary observations. Updated test-only `run-pr340-partition-tests.mjs` to execute the original 5-case v1.69 50k and 5-case v2.3 100k suites separately from the remaining 113 shared-core cases **in the same exclusively owned PG16 cluster**. Each segment is verified with strict TAP and exact registry test count; 123/123 required, no retries, no fake PASS. Added regression source test. New exact-head typecheck/test/PG execution NOT RUN. Other four supported partitions NOT RUN; real-v20 catalog 2/2 BLOCKED, release/ledger/production untouched.
 
 
