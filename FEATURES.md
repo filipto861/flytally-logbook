@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 locally verified M2 (16 Oct 2026):** Strict TAP v13 parser and read-only six-partition candidate-bound evidence aggregator pass full owner-local source acceptance: registry 42/163/6 PASS, 31/31 targeted PASS, `tsc --noEmit` PASS, full 1606/1606 PASS. M2 emits only `VALIDATED-ONLY`, explicitly not release PostgreSQL PASS. M3 six-partition real PostgreSQL execution is *not yet implemented or verified*; no schema/production actions.
+
+
 **PR #340 M2 owner-local correction (16 Oct 2026, staged):** Strict parser's positive real-Node test now isolates nested `--test` subprocess from inherited Node test-worker context, with explicit requirement for emitted TAP. Candidate-bound aggregation distinguishes Git SHA-1 (40) from SHA-256 identities (64). Full-v20 historical column source guards now match literal JSONB `[]` and `jsonb|NO|` rather than accidentally double-escaped text. Previous exact-head targeted tests 25/27 and full Node 1603/1606 FAIL; typecheck PASS; corrected tests NOT RUN. No accepted PostgreSQL, browser or release evidence claimed.
 
 
