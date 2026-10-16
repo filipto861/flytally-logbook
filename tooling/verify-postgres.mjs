@@ -6,15 +6,17 @@ import { preflightPostgresGate,selectPostgresTests } from "./run-postgres-tests.
 import { runNodeTests } from "./verification-execution.mjs";
 import { writeVerificationLedgerEntry } from "./verification-ledger.mjs";
 import { verificationConfigIdentity,declaredToolchainIdentity } from "./verification-identity.mjs";
+import {runOwnedPr340PostgresAcceptance,assertPr340AcceptancePreflight} from "./pr340-owned-postgres-acceptance.mjs";
 
 function canonicalCommand(argv){
   return "npm run verify:postgres -- "+argv.join(" ");
 }
 
-export function postgresVerificationConfiguration(){
+export function postgresVerificationConfiguration(env=process.env){
   const tests=selectPostgresTests("full").map((name)=>"tests/integration/"+name);
   return {
-    mode:"full",
+    mode:env.FLYTALLY_PR340_PARTITION_RELEASE==="1"?"pr340-six-owned-pg16":"full",
+    benchmarkProfile:env.FLYTALLY_PR340_PARTITION_RELEASE==="1"?"shared-core-work_mem-64MB":"database-default",
     localhostOnly:true,
     testFiles:tests,
     configHash:verificationConfigIdentity().hash,
@@ -26,10 +28,11 @@ export async function runPostgresVerification(argv,env=process.env){
   const plan=createVerificationPlan(argv);
   const {candidate}=plan;
   let gateEnv;
-  const configuration=postgresVerificationConfiguration();
+  const configuration=postgresVerificationConfiguration(env);
 
   try{
     gateEnv=preflightPostgresGate(env);
+    if(configuration.mode==="pr340-six-owned-pg16")assertPr340AcceptancePreflight({candidate,env});
   }catch(error){
     const reason=error instanceof Error?error.message:String(error);
     const ledger=writeVerificationLedgerEntry({
@@ -44,21 +47,29 @@ export async function runPostgresVerification(argv,env=process.env){
     return {exitCode:2,plan,ledger};
   }
 
-  const tests=configuration.testFiles;
-  const execution=await runNodeTests(tests,{
-    coverage:"full",
-    env:{...gateEnv,FLYTALLY_POSTGRES_INTEGRATION:"1"},
-  });
-  const observation=execution.summary?{
-    command:execution.command,
-    coverage:"full",
-    ...execution.summary,
-    sourceGate:"postgres",
-  }:null;
+  let observation=null,executionCode=0,executionFailure=null;
+  if(configuration.mode==="pr340-six-owned-pg16"){
+    try{
+      observation=runOwnedPr340PostgresAcceptance({candidate,env});
+    }catch(error){
+      executionCode=1;
+      executionFailure=error instanceof Error?error.message:String(error);
+      console.error("PR340 PostgreSQL partition acceptance failed: "+executionFailure);
+    }
+  }else{
+    const execution=await runNodeTests(configuration.testFiles,{
+      coverage:"full",env:{...gateEnv,FLYTALLY_POSTGRES_INTEGRATION:"1"},
+    });
+    observation=execution.summary?{
+      command:execution.command,coverage:"full",...execution.summary,sourceGate:"postgres",
+    }:null;
+    executionCode=execution.code;
+  }
   const evaluation=observation
     ?evaluateEvidenceObservation("postgres-acceptance",observation)
-    :{status:"FAIL",reason:"PostgreSQL execution failed before an evidence summary was produced."};
-  const exitCode=execution.code!==0?execution.code:(evaluation.status==="PASS"?0:1);
+    :{status:"FAIL",reason:executionFailure??
+       "PostgreSQL execution failed before an evidence summary was produced."};
+  const exitCode=executionCode!==0?executionCode:(evaluation.status==="PASS"?0:1);
 
   const ledger=writeVerificationLedgerEntry({
     gate:"postgres",

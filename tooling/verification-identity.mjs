@@ -37,6 +37,17 @@ export function verificationConfigIdentity(){
     "tooling/verification-browser-risk.mjs",
     "tooling/verify-domain.mjs",
     "tooling/verify-postgres.mjs",
+    "tooling/pr340-owned-postgres-acceptance.mjs",
+    "tooling/pr340-owned-postgres-acceptance.d.mts",
+    "tooling/run-pr340-partition-tests.mjs",
+    "tooling/run-pr340-postgres-partitions-local.ps1",
+    "tooling/bootstrap-pr340-real-v20-local.mjs",
+    "tooling/run-v380-cost-summary-acceptance-local.ps1",
+    "tooling/postgres-partition-registry.json",
+    "tooling/validate-postgres-partition-registry.mjs",
+    "tooling/validate-postgres-partition-registry.d.mts",
+    "tooling/postgres-partition-tap.mjs",
+    "tooling/postgres-partition-tap.d.mts",
     "tooling/run-postgres-tests.mjs",
     "tooling/postgres-cli.mjs",
     "tooling/verify-release-risk.mjs",
@@ -59,6 +70,7 @@ export function browserFixtureContractIdentity(){
   const files=[
     "tooling/bootstrap-browser-smoke-db.mjs",
     "e2e/browser-db.mjs",
+    "tooling/certification-browser-fixture-cli.mjs",
   ];
   const entries=fileEntries(files);
   return {kind:"browser-fixture-contract-v1",hash:hashEntries(entries),files:entries};

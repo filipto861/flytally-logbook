@@ -119,7 +119,7 @@ test("Currency browser v21 setup only runs inside a dedicated disposable localho
   assert.match(harness,/const currencyIntent=playwrightArgs\[0\]==="--currency-v21"/);
   assert.match(harness,/Currency browser purpose\/hosting flags missing or invalid in Node harness/);
   assert.match(harness,/Currency browser pre-bootstrap purpose and database URL checks PASS/);
-  assert.match(harness,/currencyIntent\?playwrightArgs\.slice\(1\):playwrightArgs/);
+  assert.match(harness,/schemaFirstIntent\?playwrightArgs\.slice\(1\):playwrightArgs/);
   assert.ok(harness.indexOf("const currencyIntent=")<harness.indexOf("const bootstrapResult="));
   // Next's optimized server bundle must be built against the verified fixture
   // environment; building first can freeze the deny-by-default v21 gate.

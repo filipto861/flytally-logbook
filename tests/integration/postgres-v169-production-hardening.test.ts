@@ -97,7 +97,7 @@ before(()=>{
       id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,date DATE,evidence TEXT NOT NULL DEFAULT '',registration TEXT NOT NULL DEFAULT '',aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT '',
       aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',departure TEXT NOT NULL DEFAULT '',arrival TEXT NOT NULL DEFAULT '',off_block TEXT NOT NULL DEFAULT '',takeoff TEXT NOT NULL DEFAULT '',landing TEXT NOT NULL DEFAULT '',on_block TEXT NOT NULL DEFAULT '',
       starts INTEGER NOT NULL DEFAULT 0,commander TEXT NOT NULL DEFAULT '',instructor TEXT NOT NULL DEFAULT '',role TEXT NOT NULL DEFAULT '',task TEXT NOT NULL DEFAULT '',purpose_code TEXT NOT NULL DEFAULT '',note TEXT NOT NULL DEFAULT '',
-      price_per_hour NUMERIC,billing_basis TEXT NOT NULL DEFAULT 'BLOCK',operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,
+      price_per_hour NUMERIC,price_currency_code TEXT,price_currency_minor_units SMALLINT,price_per_hour_decimal NUMERIC,billing_basis TEXT NOT NULL DEFAULT 'BLOCK',operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,
       takeoffs_day INTEGER NOT NULL DEFAULT 0,takeoffs_night INTEGER NOT NULL DEFAULT 0,approaches_day INTEGER NOT NULL DEFAULT 0,approaches_night INTEGER NOT NULL DEFAULT 0,movement_evidence_recorded BOOLEAN NOT NULL DEFAULT FALSE,
       night_minutes INTEGER NOT NULL DEFAULT 0,ifr_minutes INTEGER NOT NULL DEFAULT 0,pic_minutes INTEGER NOT NULL DEFAULT 0,copilot_minutes INTEGER NOT NULL DEFAULT 0,dual_minutes INTEGER NOT NULL DEFAULT 0,instructor_minutes INTEGER NOT NULL DEFAULT 0,
       launch_method TEXT NOT NULL DEFAULT '',launches INTEGER NOT NULL DEFAULT 0,balloon_class TEXT NOT NULL DEFAULT '',balloon_group TEXT NOT NULL DEFAULT '',balloon_operation TEXT NOT NULL DEFAULT '',
@@ -194,7 +194,31 @@ test("v1.69 pilot insights exclude auxiliary modes on the mixed-category 50k acc
     userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,section:"all",
     "rolling.currentStart":"2025-09-07","rolling.currentEnd":"2026-09-06","rolling.previousStart":"2024-09-07","rolling.previousEnd":"2025-09-06"
   });
-  const result=explain(query);recordMetric("pilotInsights50k",result,3000);
+  const result=explain(query);
+  // Diagnostic only: report the actual planner tree when the unchanged bound
+  // is exceeded. No threshold relaxation and no release-crediting override.
+  if(result.executionMs>=3000){
+    const nodes:Array<{type:string;relation:string;actualMs:number;loops:number;tempRead:number;tempWritten:number}>=[];
+    const visit=(plan:unknown)=>{
+      if(!plan||typeof plan!=="object")return;
+      const p=plan as Record<string,unknown>;
+      nodes.push({
+        type:String(p["Node Type"]??""),
+        relation:String(p["Relation Name"]??""),
+        actualMs:Number(p["Actual Total Time"]??0),
+        loops:Number(p["Actual Loops"]??0),
+        tempRead:Number(p["Temp Read Blocks"]??0),
+        tempWritten:Number(p["Temp Written Blocks"]??0),
+      });
+      if(Array.isArray(p.Plans))for(const child of p.Plans)visit(child);
+    };
+    visit(result.plan);
+    console.log("V169 INSIGHTS50K PLAN "+JSON.stringify({
+      executionMs:result.executionMs,planningMs:result.planningMs,
+      slowestNodes:nodes.sort((a,b)=>b.actualMs*b.loops-a.actualMs*a.loops).slice(0,12),
+    }));
+  }
+  recordMetric("pilotInsights50k",result,3000);
   const row=rows(query)[0]??{};
   assert.equal(Number(row.flights),LOGGED_ROWS);
   const roleRows=jsonArray(row.roles);

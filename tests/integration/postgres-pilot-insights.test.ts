@@ -22,7 +22,7 @@ before(()=>{
       evidence TEXT DEFAULT 'EASA',regulatory_category TEXT DEFAULT '',departure TEXT DEFAULT '',arrival TEXT DEFAULT '',
       starts INTEGER DEFAULT 0,landings_day INTEGER DEFAULT 0,landings_night INTEGER DEFAULT 0,night_minutes INTEGER DEFAULT 0,ifr_minutes INTEGER DEFAULT 0,
       pic_minutes INTEGER DEFAULT 0,copilot_minutes INTEGER DEFAULT 0,dual_minutes INTEGER DEFAULT 0,instructor_minutes INTEGER DEFAULT 0,
-      price_per_hour NUMERIC DEFAULT 0,billing_basis TEXT DEFAULT 'BLOCK',off_block TEXT,takeoff TEXT,landing TEXT,on_block TEXT
+      price_per_hour NUMERIC DEFAULT 0,price_currency_code TEXT,price_currency_minor_units SMALLINT,price_per_hour_decimal NUMERIC,billing_basis TEXT DEFAULT 'BLOCK',off_block TEXT,takeoff TEXT,landing TEXT,on_block TEXT
     );
     INSERT INTO flights(user_id,date,role,instructor,registration,aircraft_type,aircraft_class,evidence,regulatory_category,departure,arrival,starts,landings_day,landings_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,price_per_hour,billing_basis,off_block,takeoff,landing,on_block) VALUES
       (1,'2026-09-01','PIC','','OK-AAA','C172','SEP','EASA','AEROPLANE','LKPR','LKTB',1,1,0,10,5,60,0,0,0,0,'BLOCK','10:00','10:10','10:50','11:00'),

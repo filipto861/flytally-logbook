@@ -147,6 +147,7 @@ export async function runBrowserRiskVerification(argv,env=process.env){
     const runner=path.join(repositoryRoot,"tooling","run-auth-browser.mjs");
     const args=[
       runner,
+      ...(env.FLYTALLY_V21_RISK_BROWSER==="1"?["--currency-v21-risk"]:[]),
       ...specs,
       "--project="+group.project,
       "--grep="+grep,

@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import {fileURLToPath} from "node:url";
 
 const LOCAL_HOSTS=new Set(["127.0.0.1","localhost","::1","[::1]"]);
 
@@ -250,9 +251,10 @@ export function resetF24VerificationFixture(){
       'SP','SE','DUAL',1,1,0,
       0,0,60,0,'','Browser Instructor',
       '','',NOW(),9001,
-      'browser-f24-hash',8,1,NOW(),9001
+      'PENDING_FIXTURE_SIGNATURE',8,1,NOW(),9001
     );
   `);
+  signCertifiedBrowserFixture(9904);
 }
 
 export function resetSafetyPilotPicFixture(){
@@ -279,6 +281,41 @@ export function revokeSafetyPilotPicConnectionFixture(){
 }
 
 
+// Run the canonical TypeScript certification engine outside Playwright's .ts loader.
+function browserFixtureCertification(mode,row){
+  if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"){
+    throw new Error("Browser fixture signing is restricted to isolated authenticated localhost tests.");
+  }
+  databaseUrl(); // Validate localhost-only routing before invoking any subprocess.
+  const script=fileURLToPath(new URL("../tooling/certification-browser-fixture-cli.mjs",import.meta.url));
+  const result=spawnSync(process.execPath,[
+    "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON","--experimental-strip-types",script,mode,
+  ],{encoding:"utf8",input:JSON.stringify(row),env:process.env,
+    timeout:15000,maxBuffer:1024*1024,windowsHide:true});
+  if(result.error||result.signal||result.status!==0){
+    throw new Error("Canonical browser fixture certification failed: "+
+      String(result.error?.message??result.stderr??result.signal??result.status).slice(0,400));
+  }
+  return String(result.stdout??"").trim();
+}
+
+// Canonical signing for the two exact, disposable browser-only certified fixtures.
+// Backup/restore exercises the whole account; even unrelated certified fixtures
+// must carry a verifiable hash, not merely look like certified records.
+function signCertifiedBrowserFixture(flightId){
+  if(flightId!==9903&&flightId!==9904)throw new Error("Unexpected signed browser fixture ID");
+  const rowSql=`SELECT row_to_json(f)::text FROM flights f WHERE id=${flightId} AND user_id=9001`;
+  const unsignedRow=JSON.parse(browserSqlScalar(rowSql));
+  const signature=browserFixtureCertification("sign",unsignedRow);
+  if(!/^[0-9a-f]{64}$/.test(signature))throw new Error("Cannot sign certified browser fixture");
+  runBrowserFlightFixtureCleanup(`UPDATE flights SET certification_hash='${signature}'
+    WHERE id=${flightId} AND user_id=9001 AND certification_hash='PENDING_FIXTURE_SIGNATURE';`);
+  const signedRow=JSON.parse(browserSqlScalar(rowSql));
+  if(browserFixtureCertification("verify",signedRow)!=="verified"){
+    throw new Error("Certified browser fixture failed canonical verification");
+  }
+}
+
 export function resetSafetyPilotPicInviteFixture(){
   runBrowserSql(`
     UPDATE users SET display_name='Browser Friend' WHERE id=9002;
@@ -303,11 +340,12 @@ export function resetSafetyPilotPicInviteFixture(){
     ) VALUES(
       9903,9001,'2026-09-20','EASA','OK-SP2E','B23','SEP','AEROPLANE',
       'LKLT','LKPR','10:00','10:05','11:05','11:12','SAFETY PILOT',3,'Browser Friend',
-      3,TRUE,3,3,NOW(),9001,'browser-sp3-hash',8,1,NOW(),9001
+      3,TRUE,3,3,NOW(),9001,'PENDING_FIXTURE_SIGNATURE',8,1,NOW(),9001
     );
     INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role)
     VALUES(9903,9001,9002,'PIC');
   `);
+  signCertifiedBrowserFixture(9903);
 }
 
 export function resetE14LegacyTaskFixture(){

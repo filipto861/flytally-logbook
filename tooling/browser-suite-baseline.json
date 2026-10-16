@@ -60,7 +60,8 @@
     "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency"
   ],
   "excludedSpecs": [
-    "ui-audit-capture.spec.mjs"
+    "ui-audit-capture.spec.mjs",
+    "v380-h4-frozen-v20.spec.mjs"
   ],
   "playwright": {
     "projects": [

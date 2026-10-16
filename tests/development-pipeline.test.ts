@@ -86,7 +86,11 @@ test("authenticated browser gate fails closed before fixture reset when auth mod
     {
       cwd:root,
       encoding:"utf8",
-      env:{...process.env,FLYTALLY_AUTH_BROWSER:""},
+      // This tests ordinary no-auth entry, not the separate explicit v21 risk mode.
+      // Parent release gate legitimately sets risk-purpose env for its own browser
+      // run; clear that purpose in the child to preserve the test's intent.
+      env:{...process.env,FLYTALLY_AUTH_BROWSER:"",
+        FLYTALLY_V21_RISK_BROWSER:"",FLYTALLY_CURRENCY_V21_BROWSER:""},
     },
   );
   assert.equal(result.status,2,result.stderr||result.stdout);

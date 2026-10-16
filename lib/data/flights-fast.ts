@@ -50,10 +50,44 @@ export async function getFlightsPageFast(userId:number,filters:FastFlightFilters
     OR (${workflow}='shared' AND COALESCE(o.accepted_shared,0)>0)
     OR (${workflow}='received' AND COALESCE(rc.received_shared,0)>0)
     OR (${workflow}='none' AND COALESCE(o.pending_shared,0)=0 AND COALESCE(o.accepted_shared,0)=0 AND COALESCE(rc.received_shared,0)=0))
+
+ ),
+ scoped AS MATERIALIZED (SELECT * FROM b WHERE (${category}::text IS NULL OR resolved_category=${category}::text)),
+ classified AS MATERIALIZED (
+  SELECT scoped.*,CASE
+   WHEN COALESCE(TRIM(billing_basis),'')='' THEN 'not_tracked'
+   WHEN UPPER(TRIM(billing_basis)) !~ '^(BLOCK|AIR)(/([1-9]|1[0-9]|20))?$' THEN 'invalid'
+   WHEN price_currency_code IS NULL AND price_currency_minor_units IS NULL AND price_per_hour_decimal IS NULL THEN 'unknown'
+   WHEN price_currency_code IS NULL OR price_currency_minor_units IS NULL OR price_per_hour_decimal IS NULL THEN 'invalid'
+   WHEN price_currency_code !~ '^[A-Z]{3}$' OR price_currency_minor_units NOT BETWEEN 0 AND 9 THEN 'invalid'
+   WHEN price_per_hour_decimal::numeric<0 OR price_per_hour_decimal::numeric<>ROUND(price_per_hour_decimal::numeric,price_currency_minor_units) THEN 'invalid'
+   WHEN UPPER(TRIM(billing_basis)) LIKE 'BLOCK%' AND
+    (COALESCE(off_block,'') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' OR COALESCE(on_block,'') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$') THEN 'invalid'
+   WHEN UPPER(TRIM(billing_basis)) LIKE 'AIR%' AND
+    (COALESCE(takeoff,'') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' OR COALESCE(landing,'') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$') THEN 'invalid'
+   ELSE 'known' END cost_state FROM scoped
+ ),
+ costed AS MATERIALIZED (
+  SELECT classified.*,CASE WHEN cost_state='known' THEN ROUND(
+   price_per_hour_decimal::numeric * (CASE WHEN UPPER(TRIM(billing_basis)) LIKE 'AIR%' THEN air_minutes ELSE block_minutes END)::numeric /
+   (60::numeric * COALESCE(NULLIF(split_part(UPPER(TRIM(billing_basis)),'/',2),''),'1')::numeric),
+   price_currency_minor_units) ELSE NULL END cost_exact FROM classified
+ ),
+ cost_totals AS (
+  SELECT (SELECT COALESCE(jsonb_agg(jsonb_build_object('currency',g.price_currency_code,
+   'minorUnits',g.price_currency_minor_units,'minor',g.total_minor,'flights',g.priced_count)
+   ORDER BY g.price_currency_code,g.price_currency_minor_units),'[]'::jsonb)
+   FROM (SELECT price_currency_code,price_currency_minor_units,COUNT(*)::int priced_count,
+    TRUNC(SUM(cost_exact * POWER(10::numeric,price_currency_minor_units)))::text total_minor
+    FROM costed WHERE cost_state='known' GROUP BY price_currency_code,price_currency_minor_units) g) summary_cost_groups,
+   (SELECT COUNT(*)::int FROM costed WHERE cost_state='not_tracked') summary_cost_not_tracked,
+   (SELECT COUNT(*)::int FROM costed WHERE cost_state='unknown') summary_cost_unknown,
+   (SELECT COUNT(*)::int FROM costed WHERE cost_state='invalid') summary_cost_invalid
  )
- SELECT *,COUNT(*) OVER()::int total_count,COALESCE(SUM(block_minutes) OVER(),0)::int summary_block,COALESCE(SUM(CASE WHEN resolved_category IN ('SAILPLANE','BALLOON') THEN CASE WHEN air_minutes>0 THEN air_minutes ELSE block_minutes END ELSE block_minutes END) OVER(),0)::int summary_logged,COALESCE(SUM(CASE WHEN COALESCE(pic_minutes,0)>0 THEN pic_minutes WHEN UPPER(COALESCE(role,'')) IN ('PIC','SOLO','SPIC','PICUS','INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN block_minutes ELSE 0 END) OVER(),0)::int summary_pic,COALESCE(SUM(starts) OVER(),0)::int summary_landings,COALESCE(SUM(track_count) OVER(),0)::int summary_tracks,COALESCE(SUM(gps_km) OVER(),0) summary_gps,COALESCE(SUM(GREATEST(COALESCE(price_per_hour,0),0)*(CASE WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'AIR%' THEN air_minutes WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'BLOCK%' THEN block_minutes ELSE 0 END)/60.0/(CASE WHEN split_part(UPPER(COALESCE(billing_basis,'')),'/',2)~'^[1-9][0-9]*$' AND split_part(UPPER(COALESCE(billing_basis,'')),'/',2)::int<=20 THEN split_part(UPPER(billing_basis),'/',2)::numeric ELSE 1 END)) OVER(),0) summary_cost
- FROM b WHERE (${category}::text IS NULL OR resolved_category=${category}::text) ORDER BY CASE WHEN ${sort}='oldest' THEN date END ASC,CASE WHEN ${sort}='longest' THEN block_minutes END DESC,CASE WHEN ${sort}='cost' THEN COALESCE(price_per_hour,0)*(CASE WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'AIR%' THEN air_minutes WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'BLOCK%' THEN block_minutes ELSE 0 END)/(CASE WHEN split_part(UPPER(COALESCE(billing_basis,'')),'/',2)~'^[1-9][0-9]*$' AND split_part(UPPER(COALESCE(billing_basis,'')),'/',2)::int<=20 THEN split_part(UPPER(billing_basis),'/',2)::numeric ELSE 1 END) END DESC,CASE WHEN ${sort}='gps' THEN gps_km END DESC,date DESC,off_block DESC NULLS LAST,id DESC LIMIT ${size} OFFSET ${offset}`,550) as Array<Record<string,unknown>>;
- const x=rows[0]??{};return{rows:rows.map(mapRow),total:n(x.total_count),page,size,summary:{flights:n(x.total_count),blockMinutes:n(x.summary_block),loggedMinutes:n(x.summary_logged),picMinutes:n(x.summary_pic),landings:n(x.summary_landings),tracks:n(x.summary_tracks),gpsKm:n(x.summary_gps),cost:n(x.summary_cost)} satisfies FlightsSummary};
+ SELECT costed.*,cost_totals.summary_cost_groups,cost_totals.summary_cost_not_tracked,
+ cost_totals.summary_cost_unknown,cost_totals.summary_cost_invalid,COUNT(*) OVER()::int total_count,COALESCE(SUM(block_minutes) OVER(),0)::int summary_block,COALESCE(SUM(CASE WHEN resolved_category IN ('SAILPLANE','BALLOON') THEN CASE WHEN air_minutes>0 THEN air_minutes ELSE block_minutes END ELSE block_minutes END) OVER(),0)::int summary_logged,COALESCE(SUM(CASE WHEN COALESCE(pic_minutes,0)>0 THEN pic_minutes WHEN UPPER(COALESCE(role,'')) IN ('PIC','SOLO','SPIC','PICUS','INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN block_minutes ELSE 0 END) OVER(),0)::int summary_pic,COALESCE(SUM(starts) OVER(),0)::int summary_landings,COALESCE(SUM(track_count) OVER(),0)::int summary_tracks,COALESCE(SUM(gps_km) OVER(),0) summary_gps,COALESCE(SUM(GREATEST(COALESCE(price_per_hour,0),0)*(CASE WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'AIR%' THEN air_minutes WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'BLOCK%' THEN block_minutes ELSE 0 END)/60.0/(CASE WHEN split_part(UPPER(COALESCE(billing_basis,'')),'/',2)~'^[1-9][0-9]*$' AND split_part(UPPER(COALESCE(billing_basis,'')),'/',2)::int<=20 THEN split_part(UPPER(billing_basis),'/',2)::numeric ELSE 1 END)) OVER(),0) summary_cost
+ FROM costed CROSS JOIN cost_totals ORDER BY CASE WHEN ${sort}='oldest' THEN date END ASC,CASE WHEN ${sort}='longest' THEN block_minutes END DESC,CASE WHEN ${sort}='cost' THEN COALESCE(price_per_hour,0)*(CASE WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'AIR%' THEN air_minutes WHEN UPPER(COALESCE(billing_basis,'')) LIKE 'BLOCK%' THEN block_minutes ELSE 0 END)/(CASE WHEN split_part(UPPER(COALESCE(billing_basis,'')),'/',2)~'^[1-9][0-9]*$' AND split_part(UPPER(COALESCE(billing_basis,'')),'/',2)::int<=20 THEN split_part(UPPER(billing_basis),'/',2)::numeric ELSE 1 END) END DESC,CASE WHEN ${sort}='gps' THEN gps_km END DESC,date DESC,off_block DESC NULLS LAST,id DESC LIMIT ${size} OFFSET ${offset}`,550) as Array<Record<string,unknown>>;
+ const x=rows[0]??{};return{rows:rows.map(mapRow),total:n(x.total_count),page,size,summary:{flights:n(x.total_count),blockMinutes:n(x.summary_block),loggedMinutes:n(x.summary_logged),picMinutes:n(x.summary_pic),landings:n(x.summary_landings),tracks:n(x.summary_tracks),gpsKm:n(x.summary_gps),cost:n(x.summary_cost)} satisfies FlightsSummary,costSummarySource:{buckets:x.summary_cost_groups??[],notTracked:n(x.summary_cost_not_tracked),unknown:n(x.summary_cost_unknown),invalid:n(x.summary_cost_invalid)}};
 }
 
 export async function getFlightFilterOptionsFast(userId:number){const rows=await measureServerTask("flight-filter-options",()=>sql`WITH b AS MATERIALIZED(SELECT UPPER(TRIM(COALESCE(registration,''))) registration,UPPER(TRIM(COALESCE(evidence,''))) evidence,UPPER(TRIM(COALESCE(role,''))) role,UPPER(TRIM(COALESCE(aircraft_class,''))) class,UPPER(TRIM(COALESCE(departure,''))) dep,UPPER(TRIM(COALESCE(arrival,''))) arr,date::text date FROM flights WHERE user_id=${userId}) SELECT COALESCE((SELECT jsonb_agg(v ORDER BY v) FROM(SELECT DISTINCT registration v FROM b WHERE registration<>'')x),'[]'::jsonb) registrations,COALESCE((SELECT jsonb_agg(v ORDER BY v) FROM(SELECT DISTINCT evidence v FROM b WHERE evidence<>'')x),'[]'::jsonb) evidence,COALESCE((SELECT jsonb_agg(v ORDER BY v) FROM(SELECT DISTINCT role v FROM b WHERE role<>'')x),'[]'::jsonb) roles,COALESCE((SELECT jsonb_agg(v ORDER BY v) FROM(SELECT DISTINCT class v FROM b WHERE class<>'')x),'[]'::jsonb) classes,COALESCE((SELECT jsonb_agg(v ORDER BY v) FROM(SELECT dep v FROM b WHERE dep<>'' UNION SELECT arr FROM b WHERE arr<>'')x),'[]'::jsonb) airports,COALESCE((SELECT jsonb_agg(v ORDER BY v) FROM(SELECT DISTINCT dep||'→'||arr v FROM b WHERE dep<>'' AND arr<>'')x),'[]'::jsonb) routes,COALESCE((SELECT jsonb_agg(v ORDER BY v DESC) FROM(SELECT DISTINCT LEFT(date,4) v FROM b WHERE LEFT(date,4)~'^[0-9]{4}$')x),'[]'::jsonb) years`,400) as Array<Record<string,unknown>>;const x=rows[0]??{};return{registrations:arr(x.registrations),evidence:arr(x.evidence),roles:arr(x.roles),classes:arr(x.classes),airports:arr(x.airports),routes:arr(x.routes),years:arr(x.years)}};
