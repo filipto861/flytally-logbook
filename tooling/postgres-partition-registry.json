@@ -238,7 +238,7 @@
       "files": [
         {
           "file": "postgres-v380-d3b-migrations-v1-v20-trash.test.ts",
-          "sha256": "45dbb04e064901b94909d3008f4ba5239817f2dc84a0ac7a527b6f03094eb3f0",
+          "sha256": "777c9ef94426dd10d259b043175e2e67064f7ece26f1dfd743425fa4aa0a6aaa",
           "expectedTests": 19
         }
       ]
