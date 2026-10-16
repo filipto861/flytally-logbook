@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 verification status (16 Oct owner-local):** Full 1610/1610 Node regression suite and Next production build PASS on `15e138e5`. Real-v20 source-backed six-partition harness supports all 163 PG tests, but 123 were verified under a non-authoritative 64MB diagnostic and canonical release verifier still uses incompatible shared-db execution. Release acceptance remains NOT RUN, browser NOT RUN, no production change.
+
+
 **PR340 real-v20 PG16 fixture support (staged 16 Oct):** Six-partition isolated PG16 runner now builds `public` using canonical database optimization migrations 1–20 from source after checking empty owned local DB, then checks real v20 constraints and triggers plus rollback-only zero-row delete counterexample. No fabricated migration status, no production changes. Historical base remains explicitly minimal and must be locally verified before release.
 
 
