@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 M3 partial test execution staged (16 Oct 2026):** An opt-in developer-only Windows PowerShell runner provisions distinct ephemeral PostgreSQL16 localhost clusters for five reviewed partitions (161 declared tests), validates database identity and runs the exact registered specs via shell-free Node with strict TAP verification. It retains diagnostic files and never creates a canonical release ledger PASS. Real-v20 public catalog (2 tests) is **NOT RUN/BLOCKED** pending authentic historical migration setup. No application runtime, database schema, certification, or production release changes.
+
+
 **PR #340 M3 (planned only, 16 Oct 2026):** Strictly isolated PostgreSQL execution for six reviewed source partitions (163 declared cases), own fresh PG16 fixture per group, explicit flags/schema preconditions, exact candidate-bound TAP and ledger, with true v1→v20 public migrated catalog required. Design and reviewer questions documented in `docs/product/3_8_0_PR340_M3_PARTITION_EXECUTION_DESIGN_2026-10-16.md`. No partition executor, database mutation or shipped feature yet; M1/M2 verified owner-local only.
 
 
