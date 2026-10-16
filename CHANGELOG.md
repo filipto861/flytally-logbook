@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 source-backed real-v20 public catalog, NOT YET LOCALLY VERIFIED):** Added guarded empty-public PG16 bootstrap, executing canonical optimizer migrations v1–v20 with migration-record audit and enabling real-v20-catalog 2-test partition; updated partition runner, TAP gate and source contract. Prior 38/38 non-shared-core cases passed on owner local PG16; shared-core 123/123 only in 64MB diagnostic configuration. New source head PG tests/build/browser NOT RUN; PR stays Draft, no merge/deploy.
+
+
 **16 Oct 2026 — test(PR340 work_mem PG16 diagnosis), NOT LOCALLY VERIFIED:** Opt-in `-WorkMemDiagnostic` on `shared-core` creates the original owned disposable cluster, applies PostgreSQL work_mem 64MB using ALTER SYSTEM and pg_reload_conf, verifies SHOW work_mem, then runs unchanged 123 tests. Diagnostic explicitly marked non-release; all normal runner defaults, SQL and performance thresholds remain unchanged. Local run NOT RUN, no production DB/deploy/merge change.
 
 
