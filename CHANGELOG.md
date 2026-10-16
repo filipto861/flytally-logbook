@@ -1,5 +1,15 @@
 # FlyTally changelog
 
+
+## 2026-10-16 — PR #341 public production smoke verified (Vercel READY)
+
+**Actual production evidence:** Vercel `logbook` deployment `dpl_7vc9hpzbjgaSPa3DaN4cGTGpLX2a` was created automatically by the existing `main` Git integration and reports `target=production`, `readyState=READY`, source SHA `ea35b6a6f35b665f3bcf89c449a40496d565b468` (PR #341 squash merge), and verified domain alias `fly-tally.com`. Subsequent current `main@82e5c8ce` changes only `ROADMAP.md`, `FEATURES.md`, `CHANGELOG.md`, and the certified-correction contract (PR #343); deployed runtime is not behind in application code.
+
+**Owner-executed, read-only public HTTP smoke:** `https://fly-tally.com/` → 307 `/login`; `/login` → 200; `/legal/release-status` → 200; `/manifest.webmanifest` → 200 with expected FlyTally identity and `/dashboard` start URL. `PUBLIC_HTTP_SMOKE=PASS passed=4 failed=0`. HTTP responses contained Vercel request IDs from `fra1`. The independent deployment metadata, not HTTP request IDs or the smoke script's expected-value string, establishes deployed Git SHA. Vercel runtime-error summary: no errors found in queried past 24 hours; **this is not an authenticated functional check**.
+
+**Explicit exclusions:** no production authenticated certified-flight correction Save & certify executed; no production DB writes, no schema migration, no new manual deployment, no in-production data integrity or user-flow confirmation. Prior exact-head owner-local risk-release gate for source `aef0f65e` remains PASS (six PG16 partitions 163/163, Playwright desktop 11/11, mobile 11/11). Earlier `production deploy/smoke NOT RUN` text below is preserved as pre-deployment history and superseded by the evidence above **only for deployment READY and the four public routes**.
+
+
 ## 2026-10-16 — fix(logbook): certified correction Save & certify MERGED (PR #341)
 
 **Actual changes:** Existing certified flight R1 remains immutable when opening editable R2; correction form offers explicit **Save changes** and **Save & certify**. Pending/dirty navigation cannot silently discard edits. Submission uses canonical flight parser/persistence; certification only follows successful update and is pinned to returned PostgreSQL `xmin`. Concurrent/stale or uncertain outcomes fail closed and distinguish saved draft from certified record. No schema migration, hash/payload algorithm changes or legacy removal.
