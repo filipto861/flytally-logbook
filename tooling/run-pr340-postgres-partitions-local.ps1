@@ -58,16 +58,10 @@ try {
     $env:DATABASE_URL=$url
     $env:PGCONNECT_TIMEOUT="5"
     foreach($flag in $part.purposeFlags){[Environment]::SetEnvironmentVariable([string]$flag,"1","Process")}
-    $specs=@($part.files | ForEach-Object {Join-Path $root ("tests\integration\"+$_.file)})
     Write-Host "Running $($part.id): $($part.expectedTests) cases on owned localhost PG16 $port"
-    $nodeArgs=@("--disable-warning=MODULE_TYPELESS_PACKAGE_JSON","--test","--test-reporter=tap","--experimental-strip-types")+ $specs
-    $stdout=Join-Path $temp "tap.txt";$stderr=Join-Path $temp "stderr.txt"
-    $process=Start-Process -FilePath (Get-Command node).Source -ArgumentList $nodeArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-    if($process.ExitCode -ne 0){throw "Partition $($part.id) exited $($process.ExitCode); evidence retained: $temp"}
-    # Do not claim TAP acceptance from process exit alone.
-    $tap=Get-Content $stdout -Raw
-    if($tap -notmatch '(?m)^# tests ([0-9]+)$' -or [int]$Matches[1] -ne [int]$part.expectedTests -or $tap -notmatch '(?m)^# pass ([0-9]+)$' -or [int]$Matches[1] -ne [int]$part.expectedTests -or $tap -match '(?m)^# (fail|skipped|todo|cancelled) [1-9][0-9]*$'){throw "TAP incomplete or failing; evidence retained: $temp"}
-    Write-Host "Partition $($part.id) completed; TAP kept at $stdout (independent strict parser validation still required)." -ForegroundColor Green
+    & node tooling/run-pr340-partition-tests.mjs $part.id $temp
+    Ensure-Exit "strict TAP partition $($part.id)"
+    Write-Host "Validated partition $($part.id) (NOT a release PASS), evidence: $temp" -ForegroundColor Green
     & (Join-Path $pgBin "pg_ctl.exe") -D $data -m fast -w -t 30 stop
     Ensure-Exit "owned cluster stop"
     $owned.Started=$false;$owned.StopSuccess=$true
