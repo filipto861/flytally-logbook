@@ -93,6 +93,26 @@ test("isolated browser database fixtures include the nullable elevation prerequi
   }
   assert.ok(bootstrap.includes("CREATE INDEX idx_aircraft_photos_user"));
   assert.ok(aircraftPhotosSchema.includes("idx_aircraft_photos_user"));
+
+  // /database always resolves the complete read model, including aircraft and
+  // rates, regardless of the currently selected aircraft/airports tab.
+  const databaseWorkspace=read("lib/data/database.ts");
+  assert.ok(databaseWorkspace.includes("SELECT id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source,currency_code"));
+  for(const legacyRateField of [
+    "aircraft_type TEXT NOT NULL DEFAULT ''",
+    "dry_price_per_hour NUMERIC",
+    "source TEXT NOT NULL DEFAULT ''",
+    "UNIQUE(user_id,registration,valid_from)",
+  ]){
+    assert.ok(bootstrap.includes(legacyRateField),
+      "rates fixture missing the existing database workspace requirement: "+legacyRateField);
+  }
+  // Exact currency fields are supplied by the canonical disposable v21
+  // migration, never implicitly added to the pre-v21 bootstrap.
+  const v21SchemaFirst=read("tooling/apply-currency-v21-disposable.mjs");
+  assert.ok(v21SchemaFirst.includes("...v20,"));
+  assert.ok(v21SchemaFirst.includes("...v21,"));
+
   for (const column of [
     "municipality TEXT NOT NULL DEFAULT ''",
     "iso_country TEXT NOT NULL DEFAULT ''",
