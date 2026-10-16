@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 owner-local release evidence at `0ad8e08f`:** typecheck PASS; targeted native certificate tests 8/8 PASS; full release source contracts 256/257, FAIL exclusively at `tests/verification-ledger.test.ts` due to stale two-file browser-fixture identity expectation. Canonical fixture list correctly now has a third source (`tooling/certification-browser-fixture-cli.mjs`) for evidence freshness. Updated test to require all three, preserving the new file's hash protection. No full Node, PG or Playwright run at this SHA; earlier PostgreSQL 163/163 belongs to older SHA. New exact-head local source tests/full release NOT RUN. Draft, no merge or deployment.
+
+
 **16 Oct 2026 — PR340 follow-up on owner SHA `5b666f8c`:** Full owner-local release gate: source 257/257 PASS, domain 39/39 PASS, typecheck PASS, Node 1617/1617 PASS, Next production build PASS, PostgreSQL 163/163 PASS (shared-core explicit 64MB test work_mem), browser PARTIAL, release FAIL. Playwright failed module initialization: importing `lib/certification-integrity.ts` directly from `e2e/browser-db.mjs` did not preserve named exports in Playwright's loader. Staged correction moves canonical v8 signing/verification into a separate native Node `--experimental-strip-types` subprocess with isolated browser purpose guard; no duplicate hashing algorithm, signature checks unweakened. Browser fixture identity now includes its helper; source and executable tamper tests added. Exact-head local typecheck/targeted test/browser/full release NOT RUN on staged fix; PR remains Draft, no deploy.
 
 
