@@ -109,6 +109,7 @@ export function FlightForm({defaultCurrency="",action,aircraft,initial={},calend
     if(!selector)return;
     requestAnimationFrame(()=>requestAnimationFrame(()=>formRef.current?.querySelector<HTMLElement>(selector)?.focus()));
   };
+  useEffect(()=>{if(dirty)flightEdit?.setUnsaved(true)},[dirty,flightEdit?.setUnsaved]);
   useEffect(()=>{flightEdit?.setSubmitting(false);if(state.error){if(!state.saved){markDirty();flightEdit?.setUnsaved(true)}errorRef.current?.focus()}},[state,markDirty,flightEdit?.setSubmitting,flightEdit?.setUnsaved]);
   const markFormDirty=()=>{markDirty();flightEdit?.setUnsaved(true)};
   const beginFormSubmit=()=>{beginSubmit();flightEdit?.setUnsaved(false);flightEdit?.setSubmitting(true)};
