@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 opt-in local diagnostic only (16 Oct):** Owned PG16 runner can experimentally use `-WorkMemDiagnostic` for the shared-core suite to measure effects of 64MB PostgreSQL work_mem on Pilot Insights temp disk I/O. It is not enabled by default, does not affect production/Neon or modify product behavior, and cannot substitute standard baseline release evidence. Local run pending.
+
+
 **PR340 test harness D3b v20 compatibility (staged 16 Oct):** Historical D3b migration-chain fixture evaluates real v1–v20 private-schema migrations and adapts only v21-added expense payload columns out of its current-source INSERT, asserting all three exact source fragments before projection. Production expense serialization and schema remain unchanged. Local rerun pending; not shipped product behavior.
 
 
