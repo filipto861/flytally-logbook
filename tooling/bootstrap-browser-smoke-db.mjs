@@ -92,6 +92,7 @@ CREATE TABLE airports(
   name TEXT NOT NULL DEFAULT '',
   latitude_deg DOUBLE PRECISION,
   longitude_deg DOUBLE PRECISION,
+  elevation_ft DOUBLE PRECISION,
   user_id BIGINT NOT NULL DEFAULT 0,
   source TEXT NOT NULL DEFAULT '',
   active INTEGER NOT NULL DEFAULT 1,
