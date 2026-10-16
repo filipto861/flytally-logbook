@@ -106,7 +106,7 @@ test("Airport elevation server action refuses a cross-user forged edit",async({p
   expect(recordId).toMatch(new RegExp("^\\d+$"));
 
   // The second fixture account is authenticated separately, not granted access to the first.
-  const other=await browser.newContext();
+  const other=await browser.newContext({baseURL:"http://127.0.0.1:3000"});
   try{
     const otherPage=await other.newPage();
     await otherPage.goto("/login?returnTo=%2Fdatabase");
