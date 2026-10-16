@@ -95,7 +95,8 @@ export function parseStrictPartitionTap(stdout,{expectedTests}={}){
 }
 
 const requireIdentity=(value,label)=>{
-  if(typeof value!=="string"||!/^[a-f0-9]{64}$/.test(value)){
+  const length=label==="head SHA"?40:64;
+  if(typeof value!=="string"||new RegExp("^[a-f0-9]{"+length+"}$").test(value)===false){
     die("missing or malformed "+label);
   }
   return value;
