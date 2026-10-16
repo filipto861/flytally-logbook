@@ -48,4 +48,6 @@ test("PR340 accepts only independently owned PG16 clusters with exact identity a
   assert.match(executor,/\.stderr\.txt"/);
   assert.match(executor,/assert\.equal\(stderr,""/);
   assert.match(executor,/pg_ctl/);
+  assert.match(executor,/stdio:"ignore"/);
+  assert.match(executor,/error="\+\(r\.error\?\.code/);
 });
