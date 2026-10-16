@@ -127,6 +127,7 @@
         "tests/development-scope.test.ts",
         "tests/evidence-contract.test.ts",
         "tests/v380-pr340-postgres-partition-inventory.test.ts",
+        "tests/v380-pr340-postgres-registry-validation.test.ts",
         "tests/vercel-ignore-build.test.ts",
         "tests/verification-iterate.test.ts",
         "tests/verification-ledger.test.ts",
