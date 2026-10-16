@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import {flightCertificationHash,verifyFlightCertification} from "../lib/certification-integrity.ts";
 
 const LOCAL_HOSTS=new Set(["127.0.0.1","localhost","::1","[::1]"]);
 
@@ -303,11 +304,22 @@ export function resetSafetyPilotPicInviteFixture(){
     ) VALUES(
       9903,9001,'2026-09-20','EASA','OK-SP2E','B23','SEP','AEROPLANE',
       'LKLT','LKPR','10:00','10:05','11:05','11:12','SAFETY PILOT',3,'Browser Friend',
-      3,TRUE,3,3,NOW(),9001,'browser-sp3-hash',8,1,NOW(),9001
+      3,TRUE,3,3,NOW(),9001,'PENDING_FIXTURE_SIGNATURE',8,1,NOW(),9001
     );
     INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role)
     VALUES(9903,9001,9002,'PIC');
   `);
+  // Source-backed signed fixture: derive the v8 digest from the actual persisted
+  // canonical row instead of inserting a plausible but invalid hardcoded hash.
+  const signedRow=JSON.parse(browserSqlScalar("SELECT row_to_json(f)::text FROM flights f WHERE id=9903 AND user_id=9001"));
+  const signature=flightCertificationHash(signedRow,9001,8);
+  if(!/^[0-9a-f]{64}$/.test(signature))throw new Error("Cannot sign Safety Pilot browser fixture");
+  runBrowserFlightFixtureCleanup(`UPDATE flights SET certification_hash='${signature}'
+    WHERE id=9903 AND user_id=9001 AND certification_hash='PENDING_FIXTURE_SIGNATURE';`);
+  const verifiedRow=JSON.parse(browserSqlScalar("SELECT row_to_json(f)::text FROM flights f WHERE id=9903 AND user_id=9001"));
+  if(verifyFlightCertification(verifiedRow,9001).status!=="verified"){
+    throw new Error("Safety Pilot browser fixture certification failed verification");
+  }
 }
 
 export function resetE14LegacyTaskFixture(){
