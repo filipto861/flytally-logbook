@@ -14,7 +14,7 @@ const root=fileURLToPath(new URL("../",import.meta.url));
 const sha=s=>createHash("sha256").update(s).digest("hex");
 const performance=new Set(["postgres-v169-production-hardening.test.ts",
   "postgres-v230-large-logbook-performance.test.ts"]);
-const flags=["FLYTALLY_POSTGRES_INTEGRATION","FLYTALLY_D2_FULL_V20_DISPOSABLE",
+const flags=["FLYTALLY_OWNED_PG16_RELEASE","FLYTALLY_OWNED_PG16_EXPECTED_REF","FLYTALLY_POSTGRES_INTEGRATION","FLYTALLY_D2_FULL_V20_DISPOSABLE",
   "FLYTALLY_V21_RELEASE_DISPOSABLE","FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE",
   "FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE","FLYTALLY_D3B_FULL_V20_DISPOSABLE"];
 const allowedHost="127.0.0.1";
@@ -58,8 +58,39 @@ function splitGroups(part){
   return [...perf.map(x=>({label:x.file.replace(".test.ts",""),expectedTests:x.expectedTests})),
     {label:"remaining",expectedTests:rest.reduce((n,x)=>n+x.expectedTests,0)}].filter(x=>x.expectedTests);
 }
+// Additional explicit owner-local PG16 mode. Never accepts a caller-supplied test result.
+export function assertOwnedPostgresAcceptancePreflight({candidate,env=process.env}={}){
+  assert.equal(env.FLYTALLY_OWNED_PG16_RELEASE,"1","Explicit owned PG16 acceptance intent required");
+  assert.notEqual(env.FLYTALLY_PR340_PARTITION_RELEASE,"1",
+    "Legacy PR340 and generic PG16 intents cannot be enabled together");
+  for(const name of ["CI","VERCEL","VERCEL_ENV"]){
+    assert.equal(env[name],undefined,"Refuse CI/production marker "+name);
+  }
+  const expectedRef=String(env.FLYTALLY_OWNED_PG16_EXPECTED_REF??"").trim();
+  assert.match(expectedRef,
+    /^refs\/remotes\/origin\/(?:fix|feat|chore|test)\/[A-Za-z0-9][A-Za-z0-9._/-]{2,180}$/,
+    "Explicit origin feature-branch ref required");
+  assert.ok(!expectedRef.includes("..")&&!expectedRef.includes("//")
+    &&!expectedRef.endsWith("/")&&!expectedRef.endsWith(".lock"),"Unsafe origin branch ref");
+  assert.match(candidate?.headSha??"",/^[a-f0-9]{40}$/);
+  assert.deepEqual(candidate?.worktree?.files,[],"Owned PG16 acceptance needs clean worktree");
+  const actual=proc("git",["rev-parse","HEAD"]);
+  const origin=proc("git",["rev-parse","--verify",expectedRef]);
+  assert.equal(actual,candidate.headSha,"Source HEAD drift");
+  assert.equal(origin,actual,"Candidate is not latest fetched origin branch HEAD");
+  validatePostgresPartitionRegistry();
+}
+function assertSelectedAcceptancePreflight({candidate,env=process.env}={}){
+  if(env.FLYTALLY_OWNED_PG16_RELEASE==="1"){
+    assertOwnedPostgresAcceptancePreflight({candidate,env});
+  }else{
+    assertPr340AcceptancePreflight({candidate,env});
+  }
+}
+
 export function assertPr340AcceptancePreflight({candidate,env=process.env}={}){
   assert.equal(env.FLYTALLY_PR340_PARTITION_RELEASE,"1","Explicit isolated PR340 acceptance intent required");
+  assert.notEqual(env.FLYTALLY_OWNED_PG16_RELEASE,"1","Legacy PR340 and generic PG16 intents cannot be enabled together");
   for(const name of ["CI","VERCEL","VERCEL_ENV"]){
     assert.equal(env[name],undefined,"Refuse CI/production marker "+name);
   }
@@ -72,7 +103,7 @@ export function assertPr340AcceptancePreflight({candidate,env=process.env}={}){
   validatePostgresPartitionRegistry();
 }
 export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
-  assertPr340AcceptancePreflight({candidate,env});
+  assertSelectedAcceptancePreflight({candidate,env});
   const registry=JSON.parse(readFileSync(path.join(root,"tooling/postgres-partition-registry.json"),"utf8"));
   const registrySha256=sha(readFileSync(path.join(root,"tooling/postgres-partition-registry.json")));
   assert.equal(registry.expectedTests,163);
@@ -81,12 +112,15 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
   const parentPath=env.Path??env.PATH??"";
   const exeEnv=ownEnv({Path:path.dirname(bins.psql)+path.delimiter+parentPath,
     PATH:path.dirname(bins.psql)+path.delimiter+parentPath});
-  const evidenceRoot=mkdtempSync(path.join(tmpdir(),"flytally-pr340-release-"));
+  const generic=env.FLYTALLY_OWNED_PG16_RELEASE==="1";
+  const evidenceRoot=generic
+    ?mkdtempSync(path.join(tmpdir(),"flytally-owned-pg16-release-"))
+    :mkdtempSync(path.join(tmpdir(),"flytally-pr340-release-"));
   const observations=[];
   let completed=0;
   try{
     for(const part of registry.partitions){
-      assertPr340AcceptancePreflight({candidate,env});
+      assertSelectedAcceptancePreflight({candidate,env});
       const directory=path.join(evidenceRoot,part.id);
       mkdirSync(directory,{recursive:true});
       const data=path.join(directory,"pgdata");
@@ -142,7 +176,7 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
         observations.push({partition:part.id,passed,databaseIdentity:observed,
           profile:benchmarkProfile,segments:tap,ownedClusterStopped:true});
         completed+=passed;
-        process.stdout.write("PR340 owned PG16 "+part.id+" "+passed+"/"+part.expectedTests+
+        process.stdout.write((generic?"Owned":"PR340")+" owned PG16 "+part.id+" "+passed+"/"+part.expectedTests+
           " "+benchmarkProfile+" PASS\\n");
       }finally{
         if(startAttempted&&!stopVerified){
@@ -155,8 +189,10 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
     }
     assert.equal(completed,163,"Incomplete PG16 partition acceptance");
     assert.equal(new Set(observations.map(x=>x.databaseIdentity)).size,6,"Database reused");
-    assertPr340AcceptancePreflight({candidate,env});
-    const observation={command:"trusted PR340 six-owned-PG16 partition TAP executor",
+    assertSelectedAcceptancePreflight({candidate,env});
+    const observation={command:generic
+      ?"trusted generic six-owned-PG16 partition TAP executor"
+      :"trusted PR340 six-owned-PG16 partition TAP executor",
       coverage:"full",planned:163,passed:163,failed:0,skipped:0,notApplicable:0,retries:0,
       sourceGate:"postgres",registrySha256,profile:"controlled-local-pg16-shared-core-work_mem-64MB",
       partitions:observations,evidenceDirectory:evidenceRoot};
@@ -164,7 +200,13 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
       status:"LOCAL-PG16-ACCEPTANCE-PARTITIONS-VERIFIED",headSha:candidate.headSha,observation},null,2));
     return observation;
   }catch(error){
-    process.stderr.write("PR340 PG16 FAILED; retained evidence: "+evidenceRoot+"\\n");
+    process.stderr.write((generic?"Owned":"PR340")+" PG16 FAILED; retained evidence: "+evidenceRoot+"\\n");
     throw error;
   }
+}
+
+// Generic adapter retains the proven six-cluster executor and legacy PR340 API.
+export function runOwnedPostgresAcceptance({candidate,env=process.env}={}){
+  assertOwnedPostgresAcceptancePreflight({candidate,env});
+  return runOwnedPr340PostgresAcceptance({candidate,env});
 }

@@ -1,5 +1,14 @@
 # FlyTally changelog
 
+
+## 2026-10-16 — chore(test): generalized owned PG16 release intent (Draft, NOT RUN)
+
+Added an explicit generic entrypoint for the existing six-cluster PostgreSQL16 executor, independently bound to a clean Git commit and fetched `origin` topic ref. Updated canonical PostgreSQL release routing to select this mode only with `FLYTALLY_OWNED_PG16_RELEASE=1`, while retaining PR340-specific and default single-DB behavior. The owned mode validates newly created localhost physical DB identities and executes all 163 registry-pinned strict TAP cases; it does not promote imported diagnostics or touch an existing PostgreSQL service. New preflight contract tests cover missing/mixed intents, CI/production markers, unsafe refs, dirty worktrees, and source HEAD drift.
+
+**Verification at new infrastructure commit:** tests/typecheck/build/PG/browser NOT RUN. Related but separate owner-local PR341 evidence: browser risk 22/22 PASS at `370e63bb`; six PG16 diagnostic partitions 163/163 VALIDATED-ONLY, **not canonical release PASS**. Shared-core's 64MB local benchmark profile remains qualified. No app SQL, certification, migration, deployment or main update.
+
+
+
 ## 2026-10-16 — Unreleased P1 correction workflow safety fix (branch only)
 
 **Staged code:** `fix/certified-correction-save-and-certify` introduces an explicit **Save & certify** action alongside **Save changes** for an already-opened certified-flight correction; prevents silent unsaved-data loss on tab/workflow transitions, pins certification to the saved PostgreSQL row `xmin`, rejects direct edits on still-certified rows, and distinguishes persisted draft from failed/uncertain certification. Existing revision history and v8 fingerprint rules are unchanged.
