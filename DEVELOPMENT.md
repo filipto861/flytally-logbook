@@ -193,6 +193,28 @@ npm run verify:browser
 
 `npm run test:browser` remains the low-level authenticated browser runner. It fails before resetting the fixture unless both explicit browser-test flags are set; the bootstrap itself rejects a missing or non-local `DATABASE_URL`. Canonical release browser evidence uses `npm run verify:browser:risk -- <candidate args>`; it owns or reuses a fresh candidate-bound build and executes only the exact planner-selected risk targets. `npm run verify:browser -- <candidate args>` and `verify:browser:with-build` are legacy full-matrix diagnostics only.
 
+## Owned PostgreSQL 16 acceptance for subsequent PRs (Draft; validation pending)
+
+The six-partition PG16 executor introduced by PR #340 has an explicitly gated, reusable **owner-local** entrypoint. It runs the pinned 42 files / 163 tests in six newly created and physically verified `127.0.0.1` PostgreSQL 16 clusters; the caller does **not** supply or reuse a database. The original PR340 `FLYTALLY_PR340_PARTITION_RELEASE=1` path and ordinary single-database path are unchanged.
+
+In a **clean** worktree whose HEAD matches a freshly fetched remote topic branch, with Node.js 24 and native Windows PostgreSQL 16 tools:
+
+```powershell
+git fetch origin
+$env:FLYTALLY_OWNED_PG16_RELEASE="1"
+$env:FLYTALLY_OWNED_PG16_EXPECTED_REF="refs/remotes/origin/fix/your-topic-branch"
+npm run verify:postgres -- --base origin/main
+Remove-Item Env:FLYTALLY_OWNED_PG16_RELEASE,Env:FLYTALLY_OWNED_PG16_EXPECTED_REF -ErrorAction SilentlyContinue
+```
+
+The expected origin branch is an identity check, **not** a connection string. Only topic branches with `fix/`, `feat/`, `chore/` or `test/` are accepted. HEAD must exactly match that fetched remote branch; staged, unstaged or untracked files cause refusal. Both owned-mode flags must be explicitly present, and the legacy PR340 flag must not also be enabled. CI/Vercel environments are refused. A `DATABASE_URL` is **not required** for `verify:postgres` in this mode; its own launcher creates fresh clusters and does not use inherited PostgreSQL routing/credentials. Old generic mode still requires a localhost `DATABASE_URL`.
+
+The canonical verifier writes `postgres-acceptance` ledger only after direct execution of all six partitions with strict TAP, no missing/failed/skipped/retried cases, and verified distinct cluster identities. A `VALIDATED-ONLY` diagnostic report is **not** release authority. Shared-core runs under the declared controlled-local `work_mem=64MB` benchmark profile (unchanged performance limits); this proves neither production defaults nor Neon latency. No runtime or production database DDL is authorized by this mode.
+
+For `verify:release:risk`, browser acceptance may also be required. That remains a **separate** authenticated fixture, with its own disposable localhost `DATABASE_URL`, `FLYTALLY_AUTH_BROWSER=1`, `FLYTALLY_LOCAL_POSTGRES=1`, and, when required for v21 schema-first, both `FLYTALLY_CURRENCY_V21_BROWSER=1` and `FLYTALLY_V21_RISK_BROWSER=1`. Do not point a browser fixture reset at an existing database. Source-only, PG-only and browser-only evidence must remain separately identified.
+
+**Verification status:** This reusable mode was staged in a Draft PR; same-head typecheck, contract tests, canonical PostgreSQL release evidence and full release acceptance are **NOT RUN** until demonstrated by owner-local logs.
+
 ## PostgreSQL commands
 
 - `npm run test:postgres` — core database/integrity acceptance tests, excluding large scale fixtures.
