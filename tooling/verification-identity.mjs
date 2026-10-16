@@ -40,6 +40,8 @@ export function verificationConfigIdentity(){
     "tooling/postgres-partition-registry.json",
     "tooling/validate-postgres-partition-registry.mjs",
     "tooling/validate-postgres-partition-registry.d.mts",
+    "tooling/postgres-partition-tap.mjs",
+    "tooling/postgres-partition-tap.d.mts",
     "tooling/run-postgres-tests.mjs",
     "tooling/postgres-cli.mjs",
     "tooling/verify-release-risk.mjs",
