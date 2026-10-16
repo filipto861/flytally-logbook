@@ -414,6 +414,16 @@ CREATE TABLE aircraft(
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id,registration)
 );
+CREATE TABLE aircraft_photos(
+  aircraft_id BIGINT PRIMARY KEY REFERENCES aircraft(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  image_base64 TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(mime_type IN ('image/jpeg','image/webp','image/png')),
+  CHECK(length(image_base64)<=1200000)
+);
+CREATE INDEX idx_aircraft_photos_user ON aircraft_photos(user_id,aircraft_id);
 
 CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $flytally$
   DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
