@@ -103,5 +103,6 @@ test("flight correction cannot discard a dirty edit by switching workflow tabs w
   assert.match(form,/onSubmitCapture=\{beginFormSubmit\}/);
   assert.match(form,/flightEdit\?\.setUnsaved\(true\)/);
   assert.match(form,/flightEdit\?\.setSubmitting\(true\)/);
+  assert.match(form,/if\(dirty\)flightEdit\?\.setUnsaved\(true\)/);
 });
 
