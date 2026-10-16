@@ -41,7 +41,7 @@ The app's airport page now reads this column; deploying it before column availab
 
 ## Verification required before READY
 
-**Current status: source reviewed, automated tests NOT RUN.** Connection tool access did not provide an actual checked-out Node 24 repository or authorized disposable local PostgreSQL/browser test runner. Do not report PASS before execution.
+**Current verification (owner-local Windows PowerShell, 16 Oct 2026, original PR head `79b9a66a`):** Node v24.19.0; `npm ci` complete; targeted elevation/airport-code/U3.1 tests **13/13 PASS**; `npm run typecheck` **PASS**; `npm run build` **PASS**. Initial `verify:iterate -- --base origin/main` reported **source FAIL** (256/257; source inventory expected 397 vs actual 398), **domain PASS** (13/13) and **typecheck PASS**. Corrective branch update increments the reviewed `tooling/development-modules.json` audited runtime count to **398**, preserving full ownership coverage, and registers `tests/airport-elevation.test.ts` as direct domain-unit evidence. **The new branch head has NOT YET BEEN TESTED**; rerun the exact candidate `verify:iterate` after `git pull`. `psql` and `pg_isready` are not on the user's PATH, and `DATABASE_URL` is not configured: PostgreSQL/browser acceptance **NOT RUN**. Do not use remote Neon or an assumed production database for test acceptance.
 
 On owner-local checkout of exact branch HEAD:
 
