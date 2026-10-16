@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — fix(PR340 M2 local validation blockers), verification pending:** Owner Node24 on clean `2e69206a` confirmed registry PASS, typecheck PASS, targeted 25 PASS/2 FAIL, complete Node 1603 PASS/3 FAIL. Corrected nested child Node TAP fixture inheritance (`NODE_TEST_CONTEXT`), 40-char Git commit SHA guard (SHA-256 fields retain 64), and both incorrectly escaped regexes in full-v20 fixture source test. Exact-head owner-local tests after changes NOT RUN; PG/scale/Playwright NOT RUN; no product runtime or production database change, merge or deploy.
+
+
 **16 Oct 2026 — M1 locally verified, M2 pure TAP parser implementation staged, NOT RELEASED:** Owner Windows Node24 clean commit `8043ede6`: PostgreSQL registry validator PASS 42 files/163 tests/6 partitions, focused 11/11 PASS, typecheck PASS. Implemented `tooling/postgres-partition-tap.mjs` + `.d.mts`, M2 strict TAP13 case/suite accounting and candidate-bound pure evidence aggregator, plus eight regression tests `tests/v380-pr340-postgres-tap-partitions.test.ts` for true TAP and adversarial false evidence. Added M2 files to `tooling/verification-identity.mjs` and test to development-pipeline. M2 source changes not yet owner-local tested. No DB, scale, browser, release acceptance or production deployment for new head. Existing PostgreSQL gate continues unchanged with 32 raw gated skips; M3 partition orchestration not implemented.
 
 
