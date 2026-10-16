@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 M3 sixth PG16 partition staged, NOT LOCALLY VERIFIED:** Added `tooling/bootstrap-pr340-real-v20-local.mjs`, source-backed by actual `lib/db-optimization.ts` v1–v20 migrations and the same minimal pre-optimization table foundation independently proven in D3b migration-chain. Strictly requires the runner-owned empty `public` schema on localhost PG16, authentic migration execution and 20 migration records; no v20 fake version insert, no user/production DB changes. The previously blocked 2-test real-v20-catalog now runs as separate sixth partition with strict TAP and preserved evidence. Owner must locally verify on exact SHA before claiming PASS; successful five prior partitions alone do not establish release PASS. Historical foundation is a minimal D3b test fixture, not a full clone of production pre-v1 tables; catalog assertion verifies the required FK/trigger subset. Next gates: 2/2 PG v20, controlled 123/123 shared-core performance baseline, 163/163 single-head aggregate, node/build/risk-browser and final review. No merge/deploy.
+
+
 **16 Oct 2026 — PR340 shared-core work_mem experiment STAGED, NOT RUN:** Added opt-in `-WorkMemDiagnostic` to the owned localhost PG16 partition runner, allowed only for `shared-core`, setting and verifying 64MB `work_mem` inside that disposable cluster. Purpose: distinguish expensive CTE/sort temp I/O in `pilotInsights50k` (latest baseline 3532.497ms vs 3000ms) from other query costs; existing baseline thresholds and product SQL unchanged. Diagnostic results must not count as standard PG/release PASS. Local execution pending; 38/38 other supported partition tests previously passed on owner Windows PG16. Real-v20-catalog remains blocked, no deployment.
 
 
