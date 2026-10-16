@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 real-v20 PG16 fixture support (staged 16 Oct):** Six-partition isolated PG16 runner now builds `public` using canonical database optimization migrations 1–20 from source after checking empty owned local DB, then checks real v20 constraints and triggers plus rollback-only zero-row delete counterexample. No fabricated migration status, no production changes. Historical base remains explicitly minimal and must be locally verified before release.
+
+
 **PR340 opt-in local diagnostic only (16 Oct):** Owned PG16 runner can experimentally use `-WorkMemDiagnostic` for the shared-core suite to measure effects of 64MB PostgreSQL work_mem on Pilot Insights temp disk I/O. It is not enabled by default, does not affect production/Neon or modify product behavior, and cannot substitute standard baseline release evidence. Local run pending.
 
 
