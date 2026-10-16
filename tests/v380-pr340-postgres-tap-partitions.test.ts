@@ -159,13 +159,19 @@ test("M2 aggregate rejects tampered commands, subprocess errors and reused/cross
   rejected(all=>all.map((x,i)=>i===0?{...x,stdout:syntheticTap(x.partitionId==="shared-core"?122:1)}:x));
 });
 
-test("M2 cannot replace canonical PG gate or create ledger evidence yet",()=>{
+test("M2 pure aggregation cannot issue canonical PG evidence; trusted executor preserves legacy gate",()=>{
   const runner=readFileSync(path.join(root,"tooling/verify-postgres.mjs"),"utf8");
   const parser=readFileSync(path.join(root,"tooling/postgres-partition-tap.mjs"),"utf8");
-  assert.match(runner,/runNodeTests\(tests/);
+  const executor=readFileSync(path.join(root,"tooling/pr340-owned-postgres-acceptance.mjs"),"utf8");
+  assert.match(runner,/runNodeTests\(configuration\.testFiles/);
+  assert.match(runner,/runOwnedPr340PostgresAcceptance\(\{candidate,env\}\)/);
+  assert.match(runner,/if\(configuration\.mode==="pr340-six-owned-pg16"\)/);
   assert.doesNotMatch(runner,/aggregatePartitionTapEvidence/);
   assert.doesNotMatch(parser,/writeVerificationLedgerEntry|DATABASE_URL|spawnSync|postgresVerificationConfiguration/);
+  assert.match(executor,/parseStrictPartitionTap\(stdout,\{expectedTests:segment\.expectedTests\}\)/);
+  assert.doesNotMatch(executor,/writeVerificationLedgerEntry/);
   const identitySource=readFileSync(path.join(root,"tooling/verification-identity.mjs"),"utf8");
   assert.match(identitySource,/tooling\/postgres-partition-tap\.mjs/);
   assert.match(identitySource,/tooling\/postgres-partition-tap\.d\.mts/);
+  assert.match(identitySource,/tooling\/pr340-owned-postgres-acceptance\.mjs/);
 });
