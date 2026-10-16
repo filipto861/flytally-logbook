@@ -1,9 +1,16 @@
 # Certified-flight correction — single-step Save & certify (16 October 2026)
 
 **Repository:** `flytally-logbook` only  
-**Status:** MERGED ON MAIN via PR #341 (`ea35b6a6`); owner-local canonical release acceptance PASS for exact source `aef0f65e`; no schema change, data backfill or verified production deployment  
+**Status:** MERGED via PR #341 (`ea35b6a6`); Vercel production deployment READY, public HTTP smoke PASS (4/4); owner-local canonical release acceptance PASS for exact source `aef0f65e`; authenticated production certification NOT TESTED; no schema change or backfill  
 **Branch:** `fix/certified-correction-save-and-certify`  
 **Trigger:** Owner reproduced data loss by editing an opened certified-flight correction and selecting *Continue to certification* without first pressing *Save changes*. The tab transition unmounted the local form; certification then sealed the older persisted row.
+
+## Production evidence — public routes only (16 October 2026)
+
+- **Vercel target:** project `logbook` (`prj_GYFLbRQjVyjn82Xnre5qZjz8UlAQ`), deployment `dpl_7vc9hpzbjgaSPa3DaN4cGTGpLX2a`, `target=production`, `readyState=READY`, Git source `main@ea35b6a6f35b665f3bcf89c449a40496d565b468`, alias `fly-tally.com` (domain verified). GitHub `main@82e5c8ce` differs only by documentation, not runtime.
+- **Public read-only smoke performed by owner:** anonymous GET `/` gave 307 redirect to `/login`; `/login`, `/legal/release-status`, and `/manifest.webmanifest` gave 200 with expected FlyTally content/manifest identity. `PUBLIC_HTTP_SMOKE=PASS passed=4 failed=0`. Source: owner-supplied PowerShell output. The script itself does not attest deployed SHA; that was confirmed separately via Vercel metadata.
+- **Remaining explicitly untested:** real authenticated production R1 → R2 correction, dirty-navigation handling, Save & certify, certified history/integrity roundtrip. Do **not** use real certified flight records as a destructive production smoke fixture. No production database mutation was performed by the smoke test.
+- **Historical qualifiers:** earlier `no production deployment / no post-merge runtime smoke` statements below reflect the earlier pre-deployment checkpoint. They are superseded for production READY and public routes, but **not** for authenticated business behavior.
 
 ## Final verification and merge evidence (16 October 2026)
 
