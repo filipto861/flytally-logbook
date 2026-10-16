@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 scoped browser patch staged (LOCAL RECHECK PENDING):** Quick Add legacy non-null numeric rate compatibility is explicit, with absent v21 exact-money fields remaining NULL; test flight 9903 now signs and verifies a real canonical v8 fingerprint instead of a hardcoded placeholder. Two source guards added to registered tests. Previous PG163 and browser23/25 belong to earlier HEAD. Next: owner exact-head targeted tests/typecheck, risk browser and full release. No merge/deploy.
+
+
 **16 Oct 2026 PR340 second full local gate (`d747c1ec`) evidence:** source 257/257 PASS, domain 26/26 PASS, typecheck PASS, aggregate Node 1615/1615 PASS, production build PASS (41/41 static). PostgreSQL canonical owned PG16 stage FAIL before verified partition output; stderr `pg_ctl.exe; exit=0` ambiguity and retained owned evidence directory `flytally-pr340-release-JDH9Oi`; browser/scale NOT RUN. Likely Windows spawnSync pipe inheritance/timeout, not yet proven. Executor now starts/stops pg_ctl with stdio ignored (server file logging retained), and reports spawn error/signal/exit separately. Owner local retest pending. No canonical PostgreSQL/browser PASS; no merge/deploy.
 
 
