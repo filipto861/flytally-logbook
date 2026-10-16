@@ -980,7 +980,11 @@
         "aircraft-quick-add-desktop",
         "aircraft-quick-add-mobile",
         "aircraft-profile-authority-desktop",
-        "aircraft-profile-authority-mobile"
+        "aircraft-profile-authority-mobile",
+        "airport-elevation-mutation-desktop",
+        "airport-elevation-mutation-mobile",
+        "airport-elevation-ownership-desktop",
+        "airport-elevation-ownership-mobile"
       ],
       "gps-tracks": [
         "flight-gps-save-desktop",
@@ -1127,6 +1131,10 @@
       "aircraft-profile-authority-mobile",
       "aircraft-quick-add-desktop",
       "aircraft-quick-add-mobile",
+      "airport-elevation-mutation-desktop",
+      "airport-elevation-mutation-mobile",
+      "airport-elevation-ownership-desktop",
+      "airport-elevation-ownership-mobile",
       "appearance-desktop",
       "appearance-mobile",
       "auth-login-pending-desktop",
@@ -1139,6 +1147,10 @@
       "connections-accept-mobile",
       "connections-access-desktop",
       "connections-access-mobile",
+      "currency-backup-v13-desktop",
+      "currency-backup-v13-mobile",
+      "currency-trash-desktop",
+      "currency-trash-mobile",
       "flight-gps-save-desktop",
       "flight-gps-save-mobile",
       "flight-manual-save-desktop",
@@ -1167,11 +1179,7 @@
       "shell-offline-desktop",
       "shell-offline-mobile",
       "verifier-evidence-desktop",
-      "verifier-evidence-mobile",
-      "currency-trash-desktop",
-      "currency-trash-mobile",
-      "currency-backup-v13-desktop",
-      "currency-backup-v13-mobile"
+      "verifier-evidence-mobile"
     ],
     "targets": {
       "shell-core-desktop": {
@@ -1467,6 +1475,26 @@
       "currency-backup-v13-mobile": {
         "spec": "e2e/trash-integrity.spec.mjs",
         "title": "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
+        "project": "mobile-chromium"
+      },
+      "airport-elevation-mutation-desktop": {
+        "spec": "e2e/airport-elevation.spec.mjs",
+        "title": "Airport elevation add edit and clear preserves nullable persisted MSL values",
+        "project": "desktop-chromium"
+      },
+      "airport-elevation-mutation-mobile": {
+        "spec": "e2e/airport-elevation.spec.mjs",
+        "title": "Airport elevation add edit and clear preserves nullable persisted MSL values",
+        "project": "mobile-chromium"
+      },
+      "airport-elevation-ownership-desktop": {
+        "spec": "e2e/airport-elevation.spec.mjs",
+        "title": "Airport elevation server action refuses a cross-user forged edit",
+        "project": "desktop-chromium"
+      },
+      "airport-elevation-ownership-mobile": {
+        "spec": "e2e/airport-elevation.spec.mjs",
+        "title": "Airport elevation server action refuses a cross-user forged edit",
         "project": "mobile-chromium"
       }
     }
