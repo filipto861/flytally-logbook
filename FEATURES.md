@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 diagnostic-only test tooling (16 Oct):** v1.69 PostgreSQL 50k Pilot Insights benchmark retains its original 3000ms acceptance threshold but emits a compact top-12 native EXPLAIN plan on failure to identify actual expensive operations; source SHA is updated in the pinned PG registry. This is not a product capability or a changed performance SLA. Owner-local verification pending.
+
+
 **PR340 shared-core test stabilization (staged 16 Oct 2026):** Instead of modifying benchmark thresholds or production SQL, existing v1.69 50k and v2.3 100k performance files are executed individually without competing Node integration specs; the remaining 113 shared-core cases execute together. All 123 expected test results must be emitted and verified across three strict TAP evidence segments in a single exclusively owned local PostgreSQL16 fixture. Owner-local rerun pending; no CI/release PASS claimed.
 
 
