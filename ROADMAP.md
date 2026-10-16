@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 owner local exact-head `8a3049b1` acceptance:** source 257/257 PASS; domain 39/39 PASS; typecheck PASS; full Node 1618/1618 PASS; Next production build PASS (41 static routes); PostgreSQL 163/163 PASS across 6 isolated groups (`shared-core` controlled local 64MB `work_mem`, others default); browser 24/25 PASS, 1 FAIL in signed portable v13 restore preview on `Certified flight 9904 failed fingerprint verification (mismatch)`; release FAIL. Audit traced 9904 to test-only `resetF24VerificationFixture()` hardcoded `'browser-f24-hash'`. Scoped test-fixture fix staged: use same canonical signed v8 persisted-row signer/verifier as 9903, and restrict helper CLI to exact two fixture IDs/roles. Added executable positive 9904 sign/verify plus mutated role/unknown ID negative assertions. No certification algorithm, production schema, production data or release guard changed. New exact-head targeted/browser/full release NOT RUN; PR Draft, no merge/deploy. Prior 163/163 PG is evidence for `8a3049b1`, not the new commit.
+
+
 **16 Oct 2026 — PR340 owner-local release evidence at `0ad8e08f`:** typecheck PASS; targeted native certificate tests 8/8 PASS; full release source contracts 256/257, FAIL exclusively at `tests/verification-ledger.test.ts` due to stale two-file browser-fixture identity expectation. Canonical fixture list correctly now has a third source (`tooling/certification-browser-fixture-cli.mjs`) for evidence freshness. Updated test to require all three, preserving the new file's hash protection. No full Node, PG or Playwright run at this SHA; earlier PostgreSQL 163/163 belongs to older SHA. New exact-head local source tests/full release NOT RUN. Draft, no merge or deployment.
 
 
