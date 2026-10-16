@@ -161,7 +161,7 @@
         },
         {
           "file": "postgres-v169-production-hardening.test.ts",
-          "sha256": "ddb0b95d2d87a3ed44ffc2cc002eb13f79a8b77569248050e40bf23105fe207f",
+          "sha256": "1b823266319e60a01ee7cc286dd76f0e04e36dab33d9ce2603c0ca732f9450ca",
           "expectedTests": 5
         },
         {
