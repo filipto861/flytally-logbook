@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect,useState,type KeyboardEvent,type ReactNode } from "react";
+import { createContext,useContext,useEffect,useState,type Dispatch,type KeyboardEvent,type ReactNode,type SetStateAction } from "react";
 import Link from "next/link";
 import { FlightWorkflowProgress,type FlightWorkflowState } from "@/components/flight-workflow-progress";
 
 type Tab = "overview" | "gps" | "logbook";
 type CompletionState="draft-saved"|"certified"|"certification-blocked"|"certification-deferred"|null;
+type FlightEditState={unsaved:boolean;submitting:boolean;setUnsaved:Dispatch<SetStateAction<boolean>>;setSubmitting:Dispatch<SetStateAction<boolean>>};
+const FlightEditContext=createContext<FlightEditState|null>(null);
+export const useFlightEditState=()=>useContext(FlightEditContext);
 const TABS:Tab[]=["overview","gps","logbook"];
 
 export function FlightDetailWorkspace({
@@ -28,6 +31,7 @@ export function FlightDetailWorkspace({
   completionMessage?:string;
 }){
   const[tab,setTab]=useState<Tab>(completion==="draft-saved"||completion==="certification-blocked"||completion==="certification-deferred"?"logbook":initialTab);
+  const[unsaved,setUnsaved]=useState(false),[submitting,setSubmitting]=useState(false);
   useEffect(()=>{
     if(!completion)return;
     const params=new URLSearchParams(window.location.search);
@@ -38,7 +42,12 @@ export function FlightDetailWorkspace({
     window.history.replaceState(window.history.state,"",window.location.pathname+(query?`?${query}`:""));
   },[completion]);
 
-  const selectTab=(value:Tab)=>setTab(value);
+  const selectTab=(value:Tab)=>{
+    if(value===tab||submitting)return;
+    if(unsaved&&!window.confirm("You have unsaved flight changes. Switch tabs and discard them?"))return;
+    if(unsaved)setUnsaved(false);
+    setTab(value);
+  };
   const onTabKeyDown=(event:KeyboardEvent<HTMLButtonElement>,value:Tab)=>{
     const current=TABS.indexOf(value);let next=current;
     if(event.key==="ArrowRight")next=(current+1)%TABS.length;
@@ -61,10 +70,10 @@ export function FlightDetailWorkspace({
           ?{title:"Flight saved as draft.",detail:"The record is still editable and has not been certified."}
           :null;
 
-  return <section className="flight-detail-workspace">
+  return <FlightEditContext.Provider value={{unsaved,submitting,setUnsaved,setSubmitting}}><section className="flight-detail-workspace" aria-busy={submitting||undefined}>
     {banner?<div className={`flight-post-save completion-${completion}`}><div role="status"><strong>{banner.title}</strong><span>{banner.detail}</span></div><Link className="secondary-link" href="/flights/new?added=1">Add another flight</Link></div>:null}
     <FlightWorkflowProgress state={workflow} activeTab={tab} onSelectTab={selectTab}/>
     <nav className="detail-tabs" role="tablist" aria-label="Flight detail sections">{item("overview","Overview")}{item("gps","GPS track",gpsCount)}{item("logbook","Logbook data")}</nav>
     <div className="detail-tab-content" role="tabpanel" id={`flight-panel-${tab}`} aria-labelledby={`flight-tab-${tab}`}>{tab==="overview"?overview:tab==="gps"?gps:logbook}</div>
-  </section>;
+  </section></FlightEditContext.Provider>;
 }
