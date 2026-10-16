@@ -73,3 +73,10 @@ test("airport elevation is user-owned and does not overwrite unrelated airport c
   assert.ok(page.includes('name="elevation_ft" type="number" step="any"'));
   assert.ok(page.includes("colSpan={7}"));
 });
+
+test("isolated browser database fixtures include the nullable elevation prerequisite",()=>{
+  const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
+  const browser=read("e2e/browser-db.mjs");
+  assert.ok(bootstrap.includes("elevation_ft DOUBLE PRECISION"));
+  assert.ok(browser.includes("ALTER TABLE airports ADD COLUMN IF NOT EXISTS elevation_ft DOUBLE PRECISION"));
+});
