@@ -12,7 +12,9 @@ if(!["sign","verify"].includes(mode)||process.argv.length!==3){
   throw new Error("Browser certification fixture CLI accepts only sign or verify.");
 }
 const row=JSON.parse(readFileSync(0,"utf8"));
-if(!row||typeof row!=="object"||Number(row.id)!==9903||
+const allowedBrowserFixtureRoles=new Map([[9903,"SAFETY PILOT"],[9904,"DUAL"]]);
+if(!row||typeof row!=="object"||
+   row.role!==allowedBrowserFixtureRoles.get(Number(row.id))||
    Number(row.user_id)!==9001||Number(row.certification_version)!==8||
    Number(row.certified_by_user_id)!==9001||!row.certified_at){
   throw new Error("Unexpected browser certified flight fixture identity.");
