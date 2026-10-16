@@ -78,5 +78,45 @@ test("isolated browser database fixtures include the nullable elevation prerequi
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
   const browser=read("e2e/browser-db.mjs");
   assert.ok(bootstrap.includes("elevation_ft DOUBLE PRECISION"));
+  for (const column of [
+    "municipality TEXT NOT NULL DEFAULT ''",
+    "iso_country TEXT NOT NULL DEFAULT ''",
+    "updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+    "CONSTRAINT airports_user_ident_unique UNIQUE(user_id,ident)",
+  ]) assert.ok(bootstrap.includes(column),column);
+  assert.ok(bootstrap.includes("(9002,\${quote(passwordHash)})"),
+    "secondary authenticated fixture account must have explicit test-only credentials");
   assert.ok(browser.includes("ALTER TABLE airports ADD COLUMN IF NOT EXISTS elevation_ft DOUBLE PRECISION"));
+});
+
+test("Airport elevation browser tests are authority-registered and run only on owned PG16",()=>{
+  const spec=read("e2e/airport-elevation.spec.mjs");
+  const registry=JSON.parse(read("tooling/development-modules.json"));
+  const baseline=JSON.parse(read("tooling/browser-suite-baseline.json"));
+  const browser=registry.browserAcceptance;
+  const first="Airport elevation add edit and clear preserves nullable persisted MSL values";
+  const second="Airport elevation server action refuses a cross-user forged edit";
+  for(const title of [first,second]){
+    assert.ok(spec.includes('test("'+title+'"'),title);
+    assert.ok(baseline.acceptanceLogicalTests.includes(title),title);
+  }
+  assert.ok(spec.includes('test.skip(!authenticatedBrowser'));
+  assert.ok(spec.includes("browserSqlScalar"));
+  assert.ok(spec.includes('input[name^="$ACTION_ID_"]'));
+  for(const kind of ["mutation","ownership"]){
+    for(const device of ["desktop","mobile"]){
+      const id="airport-elevation-"+kind+"-"+device;
+      assert.ok(browser.targets[id],id);
+      assert.ok(browser.moduleTargets["aircraft-airports"].includes(id));
+      assert.ok(browser.harnessTargets.includes(id));
+    }
+  }
+  const wrapper=read("tooling/run-airport-elevation-browser-local.ps1");
+  assert.ok(wrapper.includes('refs/remotes/origin/$expectedBranch'));
+  assert.ok(wrapper.includes('FLYTALLY_V21_RISK_BROWSER = "1"'));
+  assert.ok(wrapper.includes("npm.cmd run verify:browser:risk -- --base origin/main"));
+  assert.ok(wrapper.includes("Verified disposable DB identity."));
+  assert.ok(wrapper.includes('Join-Path $env:TEMP'));
+  assert.ok(wrapper.includes('pg_ctl.exe'));
+  assert.ok(wrapper.includes('DROP'));
 });
