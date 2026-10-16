@@ -6,3 +6,7 @@ export type Pr340Observation = {
 };
 export function assertPr340AcceptancePreflight(options:{candidate:Pr340Candidate;env?:Partial<NodeJS.ProcessEnv>}):void;
 export function runOwnedPr340PostgresAcceptance(options:{candidate:Pr340Candidate;env?:Partial<NodeJS.ProcessEnv>}):Pr340Observation;
+
+// Explicit generic owner-local mode; still uses the original strict owned executor.
+export function assertOwnedPostgresAcceptancePreflight(options:{candidate:Pr340Candidate;env?:Partial<NodeJS.ProcessEnv>}):void;
+export function runOwnedPostgresAcceptance(options:{candidate:Pr340Candidate;env?:Partial<NodeJS.ProcessEnv>}):Pr340Observation;
