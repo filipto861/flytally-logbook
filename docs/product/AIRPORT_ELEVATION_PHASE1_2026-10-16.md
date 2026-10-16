@@ -39,6 +39,12 @@ The app's airport page now reads this column; deploying it before column availab
 - `tests/airport-elevation.test.ts`: parser/validator/format assertions plus source/persistence/fixture contracts
 - Optional migration artifact only: `tooling/airport-elevation-phase1-additive.sql`
 
+## Browser-risk failure and root-cause correction (16 Oct 2026, after 92405480)
+
+Owner-local exact candidate `92405480f1103d50143da2bdb9d986e57fee2706`, clean branch, `verify:iterate` **PASS** (257 source, 20 domain, typecheck), full `npm test` **1,630/1,630 PASS**, browser-risk production build **PASS**. Browser-risk ran 27 desktop targets; **25 PASS, 2 FAIL** — both newly added airport scenarios were blocked by `Local PostgreSQL query failed: relation "aircraft_photos" does not exist` when `getDatabaseData` attempted the aircraft/photo outer join for `/database`. The errors occurred before elevation persistence was exercised. Disposable PG16 identity was checked on 127.0.0.1:61012, browser schema-first v20/v21 initialization succeeded, and the owned PG server was safely stopped. **Browser acceptance FAIL**; never count 25 PASS as full browser evidence.
+
+Corrective new branch commits add the production-backed `aircraft_photos` table and index to the disposable browser bootstrap (from `lib/v300-aircraft-sharing-schema.ts`, not a fake mock), set an explicit localhost `baseURL` on the second independently authenticated Playwright context, and add source-contract guards requiring exact photo schema parity and cross-account origin. No production runtime, application schema or permission logic was modified. **New corrective head remains NOT RUN.** Repeat `verify:iterate` and exact-candidate owned PG16 browser-risk acceptance before any release decision. Production DB schema preflight still **NOT RUN**; no merge/migration/deploy.
+
 ## Verified owner-local gates and new browser acceptance batch
 
 - On `e88bc4f9923b091bfde125bfcdb323877506c45c`, clean tree (16 Oct 2026): `verify:iterate -- --base origin/main` **PASS**, source 257/257, direct domain 19/19, typecheck PASS. `verify:postgres -- --base origin/main`, explicit six-owned-local-PG16 mode: **163/163 PASS**, exit 0; six isolated clusters, PostgreSQL 16.15. `npm test` full aggregate **1,629/1,629 PASS**, exit 0. Initial targeted 13/13 and build PASS were also recorded on an earlier SHA.
