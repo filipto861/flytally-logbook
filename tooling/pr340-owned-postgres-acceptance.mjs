@@ -112,7 +112,10 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
   const parentPath=env.Path??env.PATH??"";
   const exeEnv=ownEnv({Path:path.dirname(bins.psql)+path.delimiter+parentPath,
     PATH:path.dirname(bins.psql)+path.delimiter+parentPath});
-  const evidenceRoot=mkdtempSync(path.join(tmpdir(),"flytally-pr340-release-"));
+  const generic=env.FLYTALLY_OWNED_PG16_RELEASE==="1";
+  const evidenceRoot=generic
+    ?mkdtempSync(path.join(tmpdir(),"flytally-owned-pg16-release-"))
+    :mkdtempSync(path.join(tmpdir(),"flytally-pr340-release-"));
   const observations=[];
   let completed=0;
   try{
@@ -173,7 +176,7 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
         observations.push({partition:part.id,passed,databaseIdentity:observed,
           profile:benchmarkProfile,segments:tap,ownedClusterStopped:true});
         completed+=passed;
-        process.stdout.write("PR340 owned PG16 "+part.id+" "+passed+"/"+part.expectedTests+
+        process.stdout.write((generic?"Owned":"PR340")+" owned PG16 "+part.id+" "+passed+"/"+part.expectedTests+
           " "+benchmarkProfile+" PASS\\n");
       }finally{
         if(startAttempted&&!stopVerified){
@@ -187,7 +190,9 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
     assert.equal(completed,163,"Incomplete PG16 partition acceptance");
     assert.equal(new Set(observations.map(x=>x.databaseIdentity)).size,6,"Database reused");
     assertSelectedAcceptancePreflight({candidate,env});
-    const observation={command:"trusted PR340 six-owned-PG16 partition TAP executor",
+    const observation={command:generic
+      ?"trusted generic six-owned-PG16 partition TAP executor"
+      :"trusted PR340 six-owned-PG16 partition TAP executor",
       coverage:"full",planned:163,passed:163,failed:0,skipped:0,notApplicable:0,retries:0,
       sourceGate:"postgres",registrySha256,profile:"controlled-local-pg16-shared-core-work_mem-64MB",
       partitions:observations,evidenceDirectory:evidenceRoot};
@@ -195,7 +200,7 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
       status:"LOCAL-PG16-ACCEPTANCE-PARTITIONS-VERIFIED",headSha:candidate.headSha,observation},null,2));
     return observation;
   }catch(error){
-    process.stderr.write("PR340 PG16 FAILED; retained evidence: "+evidenceRoot+"\\n");
+    process.stderr.write((generic?"Owned":"PR340")+" PG16 FAILED; retained evidence: "+evidenceRoot+"\\n");
     throw error;
   }
 }
