@@ -1,9 +1,18 @@
 # Certified-flight correction — single-step Save & certify (16 October 2026)
 
 **Repository:** `flytally-logbook` only  
-**Status:** IMPLEMENTED IN ISOLATED BRANCH, ACCEPTANCE NOT RUN; no merge, schema change, data backfill or deployment  
+**Status:** MERGED ON MAIN via PR #341 (`ea35b6a6`); owner-local canonical release acceptance PASS for exact source `aef0f65e`; no schema change, data backfill or verified production deployment  
 **Branch:** `fix/certified-correction-save-and-certify`  
 **Trigger:** Owner reproduced data loss by editing an opened certified-flight correction and selecting *Continue to certification* without first pressing *Save changes*. The tab transition unmounted the local form; certification then sealed the older persisted row.
+
+## Final verification and merge evidence (16 October 2026)
+
+- **Source HEAD:** `aef0f65e9b85c9b437b745d9efb96e5aa489ac85`, containing PR #342 infrastructure merged `main@b88ea277`.
+- **Canonical risk release:** `release_status=PASS`, candidate ID `f884f186e3252929bc408506b5172bf3aa61f6ce0254ffc98d15cddc325ed501`; source/domain/typecheck/aggregate/build/postgres/browser PASS, scale N/A, `blocked_evidence=none`, release exit 0.
+- **Local evidence:** targeted 27/27, source 257/257, domain 19/19, Node 1623/1623, production build PASS, PostgreSQL16 six disposable owned partitions 163/163 PASS, Playwright desktop 11/11 PASS and mobile 11/11 PASS. Browser v20/v21 disposable schema-first fixture passed. Test PostgreSQL server stopped. Controlled local shared-core `work_mem=64MB` does not prove production performance.
+- **PR #341:** squash merged as `ea35b6a6f35b665f3bcf89c449a40496d565b468`; GitHub main updated. No post-merge runtime/prod smoke claim.
+- **Decision:** user explicitly waived independent second-AI review for expedited completion. No production deployment requested/executed through this workflow. Migration: N/A.
+- Any `NOT RUN` / draft acceptance entries retained below describe the pre-acceptance plan and are superseded by this exact-head evidence.
 
 ## Frozen owner decision
 
