@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — test(PR340 M2 stale contract):** Owner's first full local gate at `2eef9c36` showed source 256/257 PASS and FAIL at obsolete `runNodeTests(tests)` source-pattern assertion; PG and Playwright were not executed. Updated M2 contract to validate preserved legacy `runNodeTests(configuration.testFiles)`, authorized six-cluster execution, and pure aggregate non-authority. Owner-local retest NOT RUN on new commit. No production changes.
+
+
 **16 Oct 2026 — fix(PR340 TS fixture typing), awaiting owner recheck:** Change declared PR340 PG preflight/executor `env` argument to `Partial<NodeJS.ProcessEnv>` for intentionally missing-environment negative tests. Owner prior run 9/9 targeted tests PASS, typecheck 2 TS2741 failures before this fix. No change to runtime behavior, database or deployment.
 
 
