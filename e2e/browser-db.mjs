@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import {flightCertificationHash,verifyFlightCertification} from "../lib/certification-integrity.ts";
+import {fileURLToPath} from "node:url";
 
 const LOCAL_HOSTS=new Set(["127.0.0.1","localhost","::1","[::1]"]);
 
@@ -280,6 +280,24 @@ export function revokeSafetyPilotPicConnectionFixture(){
 }
 
 
+// Run the canonical TypeScript certification engine outside Playwright's .ts loader.
+function safetyPilotFixtureCertification(mode,row){
+  if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"){
+    throw new Error("Browser fixture signing is restricted to isolated authenticated localhost tests.");
+  }
+  databaseUrl(); // Validate localhost-only routing before invoking any subprocess.
+  const script=fileURLToPath(new URL("../tooling/certification-browser-fixture-cli.mjs",import.meta.url));
+  const result=spawnSync(process.execPath,[
+    "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON","--experimental-strip-types",script,mode,
+  ],{encoding:"utf8",input:JSON.stringify(row),env:process.env,
+    timeout:15000,maxBuffer:1024*1024,windowsHide:true});
+  if(result.error||result.signal||result.status!==0){
+    throw new Error("Canonical browser fixture certification failed: "+
+      String(result.error?.message??result.stderr??result.signal??result.status).slice(0,400));
+  }
+  return String(result.stdout??"").trim();
+}
+
 export function resetSafetyPilotPicInviteFixture(){
   runBrowserSql(`
     UPDATE users SET display_name='Browser Friend' WHERE id=9002;
@@ -312,12 +330,12 @@ export function resetSafetyPilotPicInviteFixture(){
   // Source-backed signed fixture: derive the v8 digest from the actual persisted
   // canonical row instead of inserting a plausible but invalid hardcoded hash.
   const signedRow=JSON.parse(browserSqlScalar("SELECT row_to_json(f)::text FROM flights f WHERE id=9903 AND user_id=9001"));
-  const signature=flightCertificationHash(signedRow,9001,8);
+  const signature=safetyPilotFixtureCertification("sign",signedRow);
   if(!/^[0-9a-f]{64}$/.test(signature))throw new Error("Cannot sign Safety Pilot browser fixture");
   runBrowserFlightFixtureCleanup(`UPDATE flights SET certification_hash='${signature}'
     WHERE id=9903 AND user_id=9001 AND certification_hash='PENDING_FIXTURE_SIGNATURE';`);
   const verifiedRow=JSON.parse(browserSqlScalar("SELECT row_to_json(f)::text FROM flights f WHERE id=9903 AND user_id=9001"));
-  if(verifyFlightCertification(verifiedRow,9001).status!=="verified"){
+  if(safetyPilotFixtureCertification("verify",verifiedRow)!=="verified"){
     throw new Error("Safety Pilot browser fixture certification failed verification");
   }
 }
