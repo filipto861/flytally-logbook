@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct PR340 M4 bridge design frozen (NOT IMPLEMENTED):** See `docs/product/3_8_0_PR340_M4_CANONICAL_PG_BRIDGE_DESIGN_2026-10-16.md`. Before granting any canonical release PASS, obtain independent review of evidence authority and benchmark policy; then implement trusted six-cluster executor and verified candidate-bound ledger, followed by same-head 163/163 PG and risk browser. Prior Node/build and per-partition successes remain exact-SHA observations only. No merge/deploy.
+
+
 **16 Oct 2026 — PR340 owner-local exact-head verification evidence (`15e138e5`):** `npm test` 1610/1610 PASS (0 fail/skip/todo, 29.9s); `npm run build` PASS (Next 16.3.2, 41/41 static pages, TypeScript and compilation PASS). Owner-local `real-v20-catalog` canonical migration bootstrap and 2/2 strict TAP PASS on same commit; other four non-shared-core groups 38/38 owner-local PASS on earlier commit `579ff2e1`, while shared-core 123/123 on `ef5c1afe` only under explicit diagnostic PG16 work_mem 64MB. **These observations are not a single-head canonical 163/163 acceptance ledger.** Verified current `verify:release:risk` still calls `verify-postgres` with all integration files in one database, without source-backed partition ownership and mixed-schema isolation; cannot safely label it PASS. Next scoped task: bridge canonical PostgreSQL gate to six owned-cluster partition executor with strict exact-candidate identities/aggregate, validate baseline work_mem policy with independent review, rerun full acceptance then browser risk. No merge/deploy.
 
 
