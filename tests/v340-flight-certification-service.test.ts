@@ -93,5 +93,6 @@ test("certified correction Save & certify seals exactly the row returned by the 
   assert.match(update,/certification status could not be confirmed/);
   assert.match(update,/certification did not complete or the record changed concurrently/);
   assert.match(update,/saved:true/);
+  assert.match(form,/if\(!state\.saved\)\{markDirty\(\);flightEdit\?\.setUnsaved\(true\)\}/);
 });
 
