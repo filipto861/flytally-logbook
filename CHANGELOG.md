@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-16 — Airport Elevation E2E wire-evidence hardening (PR #346 DRAFT; NOT RELEASED)
+
+Owner-local `6e626bda` passed iteration source 257/257, domain 20/20, typecheck, build and owned disposable PG16 v20/v21; browser-risk desktop **25 PASS / 2 FAIL**. One failed E2E observed `airportStatus=saved` after a DOM-modified invalid numeric input, but had no wire-payload evidence to distinguish React input reset from server defect. Cross-user forged ID correctly returned `not-found`; broad alert locator also matched Next's route announcer and failed. Corrective **test-only** commits now synchronize invalid input mutation and real form submission in one browser task, assert HTML FormData and actual outgoing POST both contain `not-a-number`, narrow the error alert selector, and poll real persisted airport values across repeated saves. Post-fix verification **NOT RUN**. No production migration, merge or deployment.
+
 ## 2026-10-16 — Airport elevation Playwright real-form submission correction (DRAFT PR #346)
 
 Owner-local `e6c43f7a`: iteration 257/257 source, 20/20 domain and typecheck PASS; Next build PASS; disposable PG16/v20+v21 PASS; browser desktop **25 PASS / 2 FAIL** (no mobile acceptance). The two new E2E scripts relied on an absent `$ACTION_ID_` hidden input and a manually synthesized `fetch` that failed. Replaced with real Next Server Action form clicks: injected invalid elevation via a test-only DOM numeric-input type change and validated non-mutation; second authenticated user now submits their own real edit form with forged owner ID, checking failure and unchanged records. Added precise test timeouts and source-contract guards. **New SHA tests NOT RUN**; no app code, schema migration, merge or deployment.
