@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 M1 verification infrastructure — staged 16 Oct 2026, not released:** Complete SHA-256-pinned inventory for all 42 PostgreSQL integration files and 163 source-declared cases. Six mutually purpose-bound partition definitions are **inventory metadata, not live test execution**. Fail-closed validation and negative mutation coverage protect additions/removals, duplicates, bad flags, modified source bytes and miscounted suites. Canonical release config hash includes the registry and validator; no raw SKIP converted to PASS/N/A, no production runtime or database touched. M1 local unit validation pending.
+
+
 **PR #340 release verification infrastructure (analysis, 15 Oct 2026):** 32 purpose-gated legacy/migration/race/currency PG16 cases are explicitly inventoried and protected against silent source drift by a new development-pipeline contract test. Their execution is **NOT COMPLETE**; no skipped case is counted as PASS or N/A. Proposed partitioning would execute each category in its own verified fresh disposable PG16 environment with candidate-bound evidence before rendering the exact Flights/Statistics cost hotfix releasable. Implementation is contingent on safety review, not a shipped feature; no runtime or DB changes.
 
 
