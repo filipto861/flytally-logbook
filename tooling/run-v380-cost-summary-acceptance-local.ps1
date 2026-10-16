@@ -14,6 +14,7 @@ $expectedBranch = "fix/3.8.0-flights-exact-cost-summary"
 $oldPath = $env:Path
 $oldDatabaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
 $oldPgIntegration = [Environment]::GetEnvironmentVariable("FLYTALLY_POSTGRES_INTEGRATION", "Process")
+$oldPr340Partition = [Environment]::GetEnvironmentVariable("FLYTALLY_PR340_PARTITION_RELEASE", "Process")
 $oldD2FullV20 = [Environment]::GetEnvironmentVariable("FLYTALLY_D2_FULL_V20_DISPOSABLE", "Process")
 $oldD3bTargetedPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE", "Process")
 $oldD3bMigrationsPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE", "Process")
@@ -123,6 +124,7 @@ try {
   # Fresh cluster uses localhost trust, never copies any existing DB password.
   $env:PGPASSWORD = ""
   $env:DATABASE_URL = "postgresql://flytally@127.0.0.1:$port/flytally_currency_test"
+  $env:FLYTALLY_PR340_PARTITION_RELEASE = "1"
   $env:FLYTALLY_AUTH_BROWSER = "1"
   $env:FLYTALLY_CURRENCY_V21_BROWSER = "1"
   $env:FLYTALLY_V21_RISK_BROWSER = "1"
@@ -147,14 +149,15 @@ try {
 
   # Confirm actual native Node child process inherited purpose flags before
   # Next build, npm, Playwright, or any destructive fixture bootstrap.
-  & node -e "const e=process.env; if(e.FLYTALLY_AUTH_BROWSER!=='1'||e.FLYTALLY_LOCAL_POSTGRES!=='1'||e.FLYTALLY_CURRENCY_V21_BROWSER!=='1'||e.FLYTALLY_V21_RISK_BROWSER!=='1'||e.FLYTALLY_D2_FULL_V20_DISPOSABLE!=='1'||e.VERCEL!==undefined||e.VERCEL_ENV!==undefined){console.error('PR340 purpose flags did not reach Node.'); process.exit(3);} console.log('PR340 PowerShell-to-Node purpose preflight PASS.')"
+  & node -e "const e=process.env; if(e.FLYTALLY_PR340_PARTITION_RELEASE!=='1'||e.FLYTALLY_AUTH_BROWSER!=='1'||e.FLYTALLY_LOCAL_POSTGRES!=='1'||e.FLYTALLY_CURRENCY_V21_BROWSER!=='1'||e.FLYTALLY_V21_RISK_BROWSER!=='1'||e.FLYTALLY_D2_FULL_V20_DISPOSABLE!=='1'||e.VERCEL!==undefined||e.VERCEL_ENV!==undefined){console.error('PR340 purpose flags did not reach Node.'); process.exit(3);} console.log('PR340 PowerShell-to-Node purpose preflight PASS.')"
   Assert-Exit "Currency purpose environment preflight"
   # Production deployment markers are never valid in the disposable acceptance.
   # Fail closed rather than weakening the v21 migration guard for this test.
   if (Test-Path Env:VERCEL) { throw "VERCEL marker is present; local browser build refused." }
   if (Test-Path Env:VERCEL_ENV) { throw "VERCEL_ENV marker is present; local browser build refused." }
   # Candidate-aware source, domain, typecheck, full Node, optimized Next build,
-  # full localhost PG integration including scale, and risk-selected Playwright.
+  # six distinct owned PG16 partitions (explicit shared-core work_mem test profile),
+  # and risk-selected Playwright.
   # The browser harness applies canonical v20/v21 schema only after its own
   # verified localhost fixture preflight, before launching the Next browser app.
   npm.cmd run verify:release:risk -- --base origin/main
@@ -167,6 +170,7 @@ try {
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
   Restore-Env "FLYTALLY_POSTGRES_INTEGRATION" $oldPgIntegration
+  Restore-Env "FLYTALLY_PR340_PARTITION_RELEASE" $oldPr340Partition
   Restore-Env "FLYTALLY_D2_FULL_V20_DISPOSABLE" $oldD2FullV20
   Restore-Env "FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE" $oldD3bTargetedPg16
   Restore-Env "FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE" $oldD3bMigrationsPg16
