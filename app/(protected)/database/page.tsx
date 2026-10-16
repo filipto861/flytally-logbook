@@ -62,13 +62,13 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
         </form>
         {data.airports.length?<div className="table-scroll"><table><thead><tr><th>Code</th><th>Name</th><th>City</th><th>Country</th><th>Coordinates</th><th>Elevation</th><th>Status</th></tr></thead><tbody>{data.airports.map(item=><tr key={t(item.id)}><td><strong>{t(item.ident)}</strong></td><td>{t(item.name)||"—"}</td><td>{t(item.municipality)||"—"}</td><td>{t(item.iso_country)||"—"}</td><td>{t(item.latitude_deg)}, {t(item.longitude_deg)}</td><td>
           <span>{formatAirportElevationFt(item.elevation_ft)}</span>
-          <details className="u31-airport-elevation-details"><summary>Edit elevation</summary>
+          {!String(item.source??"").toLowerCase().startsWith("ourairports")?<details className="u31-airport-elevation-details"><summary>Edit elevation</summary>
             <form action={saveAirportElevation} className="u31-airport-elevation-form">
               <input type="hidden" name="id" value={t(item.id)}/>
               <label>Elevation (ft MSL)<input name="elevation_ft" type="number" step="any" defaultValue={t(item.elevation_ft)} placeholder="Unknown"/></label>
               <PendingActionButton className="secondary-button" pendingLabel="Saving…">Save</PendingActionButton>
             </form>
-          </details>
+          </details>:null}
         </td><td><form action={toggleAirport}><input type="hidden" name="id" value={t(item.id)}/><PendingActionButton className={Number(item.active)?"status-on":"status-off"} pendingLabel="Updating…">{Number(item.active)?"Active":"Inactive"}</PendingActionButton></form></td></tr>)}</tbody></table></div>:<div className="empty-state"><strong>No custom airports</strong><span>You only need one when a location is not available in FlyTally's reference catalogue.</span></div>}
       </section>
 
