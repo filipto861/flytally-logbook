@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 M3 (planned only, 16 Oct 2026):** Strictly isolated PostgreSQL execution for six reviewed source partitions (163 declared cases), own fresh PG16 fixture per group, explicit flags/schema preconditions, exact candidate-bound TAP and ledger, with true v1→v20 public migrated catalog required. Design and reviewer questions documented in `docs/product/3_8_0_PR340_M3_PARTITION_EXECUTION_DESIGN_2026-10-16.md`. No partition executor, database mutation or shipped feature yet; M1/M2 verified owner-local only.
+
+
 **PR #340 locally verified M2 (16 Oct 2026):** Strict TAP v13 parser and read-only six-partition candidate-bound evidence aggregator pass full owner-local source acceptance: registry 42/163/6 PASS, 31/31 targeted PASS, `tsc --noEmit` PASS, full 1606/1606 PASS. M2 emits only `VALIDATED-ONLY`, explicitly not release PostgreSQL PASS. M3 six-partition real PostgreSQL execution is *not yet implemented or verified*; no schema/production actions.
 
 
