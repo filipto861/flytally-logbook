@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR #340 M2 owner-local correction (16 Oct 2026, staged):** Strict parser's positive real-Node test now isolates nested `--test` subprocess from inherited Node test-worker context, with explicit requirement for emitted TAP. Candidate-bound aggregation distinguishes Git SHA-1 (40) from SHA-256 identities (64). Full-v20 historical column source guards now match literal JSONB `[]` and `jsonb|NO|` rather than accidentally double-escaped text. Previous exact-head targeted tests 25/27 and full Node 1603/1606 FAIL; typecheck PASS; corrected tests NOT RUN. No accepted PostgreSQL, browser or release evidence claimed.
+
+
 **PR #340 M2 evidence architecture (staged 16 Oct 2026):** Pure typed Node TAP13 parser rejects missing/duplicated summary or root plan, mismatched summary counts, untyped/failing assertions, SKIP, TODO, cancelled and incorrect test count. Independent aggregator validates evidence for six pinned partitions and matching candidate SHA, registry/config/toolchain identity and different explicitly local PG16 identities. It intentionally returns `VALIDATED-ONLY` / `releaseEvidence: NOT RUN` rather than PASS; no authorization to run destructive fixtures or replace canonical release evidence. Eight source/negative tests added, Node24 owner-local verification pending. M1 was owner-locally verified 42/163/6, 11/11 tests, typecheck PASS on earlier exact SHA `8043ede6`.
 
 
