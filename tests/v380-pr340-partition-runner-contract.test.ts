@@ -27,7 +27,8 @@ test("M3 test runner requires own verified PG16, exact PR SHA and cleans only it
 });
 test("M3 partition subprocess uses exact registry files and strict TAP, not shell or fake evidence",()=>{
   assert.match(node,/validatePostgresPartitionRegistry\(\)/);
-  assert.match(node,/selected\.files\.map/);
+  assert.match(node,/selected\.files\.filter/);
+  assert.match(node,/\.\.\.files\.map\(f=>join\(root,"tests\/integration",f\.file\)\)/);
   assert.match(node,/shell:false/);
   assert.match(node,/parseStrictPartitionTap\(stdout,\{expectedTests\}\)/);
   assert.match(node,/writeFileSync\(resolve\(outDir,label\+"\.tap\.txt"\),stdout/);
