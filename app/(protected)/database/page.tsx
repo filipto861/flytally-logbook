@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { getDatabaseDataV164 as getDatabaseData } from "@/lib/data/database-v164";
-import { canonicalizeFlightAirportCodes,deleteAircraftWithResult,deleteRate,saveAircraftWithResult,saveAirport,saveRate,toggleAircraft,toggleAirport } from "./actions";
+import { canonicalizeFlightAirportCodes,deleteAircraftWithResult,deleteRate,saveAircraftWithResult,saveAirport,saveAirportElevation,saveRate,toggleAircraft,toggleAirport } from "./actions";
 import { DataQualityPanel } from "@/components/data-quality-panel";
 import { searchAirportCatalog } from "@/lib/airport-catalog";
+import { formatAirportElevationFt } from "@/lib/airport-elevation";
 import { AircraftManager } from "@/components/aircraft-manager";
 import { DatabaseWorkspaceNavigation,type DatabaseWorkspaceView } from "@/components/database-workspace-navigation";
 import { sql } from "@/lib/db";
@@ -16,7 +17,7 @@ import { supportedIsoCurrency } from "@/lib/iso4217-currency-registry";
 export const metadata={title:"Aircraft & airports | FlyTally"};
 
 const t=(value:unknown)=>String(value??"");
-type Params={view?:string;airportSearch?:string;airportPage?:string;imported?:string;ratesSkipped?:string};
+type Params={view?:string;airportSearch?:string;airportPage?:string;airportStatus?:string;imported?:string;ratesSkipped?:string};
 const resolveView=(value:unknown):DatabaseWorkspaceView=>value==="airports"||value==="health"?value:"aircraft";
 const airportHref=(query:string,page:number)=>`/database?${new URLSearchParams({view:"airports",airportSearch:query,airportPage:String(page)})}`;
 
@@ -46,6 +47,7 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
     {view==="airports"?<main className="u31-workspace">
       <section className="u31-workspace-heading"><div><p className="eyebrow">AIRPORTS</p><h2>Airport records</h2><p className="muted">Add only locations missing from FlyTally. Use the reference catalogue to check a code or airport without loading the whole catalogue into the everyday workspace.</p></div><div className="u31-counts"><span><b>{customAirportCount}</b> custom</span><span><b>{airportTotal.toLocaleString("en-GB")}</b> reference</span></div></section>
 
+      {params.airportStatus==="saved"?<p className="form-success" role="status">Airport elevation and details saved.</p>:params.airportStatus==="invalid-elevation"?<p className="form-error" role="alert">Enter a valid airport elevation in feet, or leave it blank if unknown.</p>:params.airportStatus==="invalid-code"?<p className="form-error" role="alert">An airport code is required.</p>:params.airportStatus==="not-found"?<p className="form-error" role="alert">This airport is not available for editing.</p>:null}
       <section className="panel u31-airport-panel">
         <div className="u31-panel-heading"><div><p className="eyebrow">YOUR LOCATIONS</p><h2>Custom airports</h2><p className="muted">For private strips, heliports or other locations not available in the built-in catalogue.</p></div></div>
         <form action={saveAirport} className="u31-airport-editor">
@@ -55,15 +57,25 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
           <label>Country<input name="iso_country" placeholder="CZ"/></label>
           <label>Latitude<input name="latitude_deg" type="number" step="any" placeholder="50.1234"/></label>
           <label>Longitude<input name="longitude_deg" type="number" step="any" placeholder="14.1234"/></label>
+          <label>Elevation (ft MSL)<input name="elevation_ft" type="number" step="any" placeholder="Unknown"/></label>
           <PendingActionButton className="primary-button" pendingLabel="Saving…">Add / update</PendingActionButton>
         </form>
-        {data.airports.length?<div className="table-scroll"><table><thead><tr><th>Code</th><th>Name</th><th>City</th><th>Country</th><th>Coordinates</th><th>Status</th></tr></thead><tbody>{data.airports.map(item=><tr key={t(item.id)}><td><strong>{t(item.ident)}</strong></td><td>{t(item.name)||"—"}</td><td>{t(item.municipality)||"—"}</td><td>{t(item.iso_country)||"—"}</td><td>{t(item.latitude_deg)}, {t(item.longitude_deg)}</td><td><form action={toggleAirport}><input type="hidden" name="id" value={t(item.id)}/><PendingActionButton className={Number(item.active)?"status-on":"status-off"} pendingLabel="Updating…">{Number(item.active)?"Active":"Inactive"}</PendingActionButton></form></td></tr>)}</tbody></table></div>:<div className="empty-state"><strong>No custom airports</strong><span>You only need one when a location is not available in FlyTally's reference catalogue.</span></div>}
+        {data.airports.length?<div className="table-scroll"><table><thead><tr><th>Code</th><th>Name</th><th>City</th><th>Country</th><th>Coordinates</th><th>Elevation</th><th>Status</th></tr></thead><tbody>{data.airports.map(item=><tr key={t(item.id)}><td><strong>{t(item.ident)}</strong></td><td>{t(item.name)||"—"}</td><td>{t(item.municipality)||"—"}</td><td>{t(item.iso_country)||"—"}</td><td>{t(item.latitude_deg)}, {t(item.longitude_deg)}</td><td>
+          <span>{formatAirportElevationFt(item.elevation_ft)}</span>
+          <details className="u31-airport-elevation-details"><summary>Edit elevation</summary>
+            <form action={saveAirportElevation} className="u31-airport-elevation-form">
+              <input type="hidden" name="id" value={t(item.id)}/>
+              <label>Elevation (ft MSL)<input name="elevation_ft" type="number" step="any" defaultValue={t(item.elevation_ft)} placeholder="Unknown"/></label>
+              <PendingActionButton className="secondary-button" pendingLabel="Saving…">Save</PendingActionButton>
+            </form>
+          </details>
+        </td><td><form action={toggleAirport}><input type="hidden" name="id" value={t(item.id)}/><PendingActionButton className={Number(item.active)?"status-on":"status-off"} pendingLabel="Updating…">{Number(item.active)?"Active":"Inactive"}</PendingActionButton></form></td></tr>)}</tbody></table></div>:<div className="empty-state"><strong>No custom airports</strong><span>You only need one when a location is not available in FlyTally's reference catalogue.</span></div>}
       </section>
 
       <section className="panel u31-airport-panel">
         <div className="u31-panel-heading"><div><p className="eyebrow">REFERENCE</p><h2>Airport catalogue</h2><p className="muted">Search when you need to verify a code, airport name, city or country.</p></div></div>
         <form method="get" className="airport-search u31-airport-search"><input type="hidden" name="view" value="airports"/><label>Search<input name="airportSearch" defaultValue={airportSearch} placeholder="LKPR, Letnany, Prague, CZ"/></label><button className="primary-button">Search</button>{airportSearch?<Link className="secondary-link" href="/database?view=airports">Clear</Link>:null}</form>
-        {catalog?<><div className="table-scroll"><table><thead><tr><th>ID / ICAO</th><th>Name</th><th>City</th><th>Country / region</th><th>Type</th><th>Coordinates</th></tr></thead><tbody>{catalog.rows.map(airport=><tr key={airport.ident}><td><strong>{airport.ident}</strong></td><td>{airport.name||"—"}</td><td>{airport.municipality||"—"}</td><td>{airport.country||"—"}<small>{airport.region}</small></td><td>{airport.type.replaceAll("_"," ")}</td><td>{airport.lat.toFixed(6)}, {airport.lon.toFixed(6)}</td></tr>)}{!catalog.rows.length?<tr><td colSpan={6} className="empty-state">No airports found.</td></tr>:null}</tbody></table></div><div className="pagination"><span>{catalog.total.toLocaleString("en-GB")} matches</span><Link aria-disabled={catalog.page<=1} href={airportHref(airportSearch,catalog.page-1)}>← Previous</Link><strong>{catalog.page} / {catalog.pages}</strong><Link aria-disabled={catalog.page>=catalog.pages} href={airportHref(airportSearch,catalog.page+1)}>Next →</Link></div></>:<div className="empty-state"><strong>Search the catalogue when needed</strong><span>The full worldwide catalogue stays out of the default page until you ask for results.</span></div>}
+        {catalog?<><div className="table-scroll"><table><thead><tr><th>ID / ICAO</th><th>Name</th><th>City</th><th>Country / region</th><th>Type</th><th>Coordinates</th><th>Elevation</th></tr></thead><tbody>{catalog.rows.map(airport=><tr key={airport.ident}><td><strong>{airport.ident}</strong></td><td>{airport.name||"—"}</td><td>{airport.municipality||"—"}</td><td>{airport.country||"—"}<small>{airport.region}</small></td><td>{airport.type.replaceAll("_"," ")}</td><td>{airport.lat.toFixed(6)}, {airport.lon.toFixed(6)}</td><td>{formatAirportElevationFt(airport.elevationFt)}</td></tr>)}{!catalog.rows.length?<tr><td colSpan={7} className="empty-state">No airports found.</td></tr>:null}</tbody></table></div><div className="pagination"><span>{catalog.total.toLocaleString("en-GB")} matches</span><Link aria-disabled={catalog.page<=1} href={airportHref(airportSearch,catalog.page-1)}>← Previous</Link><strong>{catalog.page} / {catalog.pages}</strong><Link aria-disabled={catalog.page>=catalog.pages} href={airportHref(airportSearch,catalog.page+1)}>Next →</Link></div></>:<div className="empty-state"><strong>Search the catalogue when needed</strong><span>The full worldwide catalogue stays out of the default page until you ask for results.</span></div>}
       </section>
     </main>:null}
 
