@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — chore/test(PR340 canonical PG bridge), NOT YET VERIFIED:** Introduced `tooling/pr340-owned-postgres-acceptance.mjs` trusted native Windows PG16 six-cluster executor and type declarations; wired explicit opt-in from disposable PR340 acceptance wrapper to canonical `verify-postgres.mjs` ledger. Enforces SHA/clean-tree/registry/current branch, six distinct owned targets, strict zero-skip TAP for 163 cases, actual v20 bootstrap, and exact work_mem 64MB shared-core benchmark only in fresh local DB. Updated release config identity and added fail-closed contract tests. No product SQL/migrations/limits changed. Previous owner-local Node/build and separate PG evidence remain valid for their earlier SHA only; new end-to-end test/build/PG/browser NOT RUN. No merge/deploy.
+
+
 **16 Oct 2026 — verification evidence (no runtime change):** Owner-local exact SHA `15e138e5` Node 1610/1610 PASS (no skips), Next production build PASS (41/41 static pages), PostgreSQL real-v20-catalog 2/2 PASS. Previous owner-local 38/38 other PG cases PASS on prior SHA, shared-core 123/123 diagnostic work_mem=64MB PASS on earlier SHA. Canonical full release/PG ledger and Playwright NOT RUN. Actual release verifier remains single-DB and must not inherit fabricated six-partition PASS; PR Draft / no merge / no deploy.
 
 
