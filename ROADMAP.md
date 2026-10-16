@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**16 Oct 2026 — PR340 follow-up on owner SHA `5b666f8c`:** Full owner-local release gate: source 257/257 PASS, domain 39/39 PASS, typecheck PASS, Node 1617/1617 PASS, Next production build PASS, PostgreSQL 163/163 PASS (shared-core explicit 64MB test work_mem), browser PARTIAL, release FAIL. Playwright failed module initialization: importing `lib/certification-integrity.ts` directly from `e2e/browser-db.mjs` did not preserve named exports in Playwright's loader. Staged correction moves canonical v8 signing/verification into a separate native Node `--experimental-strip-types` subprocess with isolated browser purpose guard; no duplicate hashing algorithm, signature checks unweakened. Browser fixture identity now includes its helper; source and executable tamper tests added. Exact-head local typecheck/targeted test/browser/full release NOT RUN on staged fix; PR remains Draft, no deploy.
+
+
 **16 Oct 2026 — PR340 scoped browser patch staged (LOCAL RECHECK PENDING):** Quick Add legacy non-null numeric rate compatibility is explicit, with absent v21 exact-money fields remaining NULL; test flight 9903 now signs and verifies a real canonical v8 fingerprint instead of a hardcoded placeholder. Two source guards added to registered tests. Previous PG163 and browser23/25 belong to earlier HEAD. Next: owner exact-head targeted tests/typecheck, risk browser and full release. No merge/deploy.
 
 
