@@ -1,5 +1,8 @@
 # FlyTally changelog
 
+**16 Oct 2026 — fix(PR340 TS fixture typing), awaiting owner recheck:** Change declared PR340 PG preflight/executor `env` argument to `Partial<NodeJS.ProcessEnv>` for intentionally missing-environment negative tests. Owner prior run 9/9 targeted tests PASS, typecheck 2 TS2741 failures before this fix. No change to runtime behavior, database or deployment.
+
+
 **16 Oct 2026 — chore/test(PR340 canonical PG bridge), NOT YET VERIFIED:** Introduced `tooling/pr340-owned-postgres-acceptance.mjs` trusted native Windows PG16 six-cluster executor and type declarations; wired explicit opt-in from disposable PR340 acceptance wrapper to canonical `verify-postgres.mjs` ledger. Enforces SHA/clean-tree/registry/current branch, six distinct owned targets, strict zero-skip TAP for 163 cases, actual v20 bootstrap, and exact work_mem 64MB shared-core benchmark only in fresh local DB. Updated release config identity and added fail-closed contract tests. No product SQL/migrations/limits changed. Previous owner-local Node/build and separate PG evidence remain valid for their earlier SHA only; new end-to-end test/build/PG/browser NOT RUN. No merge/deploy.
 
 
