@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**PR340 verification ergonomics (staged 16 Oct):** Windows full-release runner now runs fast non-destructive TypeScript and fixture/ledger source tests before creating disposable PostgreSQL clusters or starting any heavy checks. A failed cheap gate aborts early, without claiming release acceptance. Existing exact-candidate and fail-closed production protections remain unchanged. Local confirmation pending.
+
+
 **PR340 controlled browser recovery fixture (staged 16 Oct):** Certified browser fixture 9904 now uses the same source-derived canonical v8 fingerprint as fixture 9903, preserving strict recovery verification of the full account. Local exact-head retest pending; no shipped user-visible functionality changes from this test-only repair.
 
 
