@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS I2-B1 DeepSeek partial review → fail-closed correction (DRAFT / NOT TESTED)
+
+Owner supplied independent DeepSeek partial handoff-only review, verdict **FIX BEFORE ANY POSITIVE PROBE**; reviewer did not inspect source or run tests. Our actual GitHub source inspection confirmed untrusted `SystemRoot` path to PowerShell and missing PS5 AST parser coverage. Changed launcher to unconditional exit 1 (no spawn/environment transfer), added PS5.1 **parse-only** gate (parser negative control, does not execute inventory), renamed misleading `elevated` field to `adminRoleObserved` (advisory only, not Windows token proof), added two dynamic/source tests for forged env refusal and parse source contract. **Expected new targeted 22 cases, Node/TS and PS5 parse NOT RUN on new HEAD**. Historical 20/20 PASS belongs to older tested executable SHA `ae1eb81c`. No actual Windows inventory, SQL/RLS, PostgreSQL processes, Neon/real GPS, merge/deploy. [Exact finding disposition](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS native I2-B1 exact-SHA owner-local offline verification PASS (NOT RELEASED)
 
 Owner verified clean executable SHA `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8`. Both I2-B1 Node syntax checks PASS, combined native I1/I2-A/I2-B1 targeted **20/20 PASS** (0 failures/skips/cancelled/todo), `tsc --noEmit` PASS. **Not executed:** PowerShell 5.1 parse/positive host inventory, real token/ACL proof, initdb/pg_ctl/psql/SQL/RLS, full test/build/browser/CI, auth/Neon/real GPS, merge or deploy. Post-test source review flagged inherited `SystemRoot` as insufficiently verified executable root for a positive CLI invocation. Independent review/correction required before probing; no actual SQL/RLS release permission. Source and commit pins: [I2-B1 handoff](docs/product/GPS_DETECTION_2_0_I2B1_INDEPENDENT_REVIEW_HANDOFF_2026-10-17.md).
