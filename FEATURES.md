@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS 2.0 D2-B1 unattested provenance model locally VERIFIED (2026-10-17, RESEARCH ONLY):** clean exact `d4f1d7bf626f8b55e6d9d21c73f528faf6fbbf64`, **120/120 targeted Node PASS** (10 new negative tests) and TypeScript PASS, owner-local not CI. Model only validates input shape and emits privacy-limited diagnostic counts or `UNAVAILABLE`; even claimed `validated` and favorable source quality cannot unlock altitude, horizontal, event-time or whole-flight landing authority. No source-byte attestation or pilot-facing implementation. Legacy parser KNOWN UNSAFE defects remain open. [Bounded evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2B_UNTRUSTED_PROVENANCE_CONTRACT_2026-10-17.md).
+
+
 **GPS 2.0 R2.1c-D2-B1 diagnostic source provenance (2026-10-17, RESEARCH ONLY / NOT VERIFIED):** Runtime shape validation of caller-supplied normalized parser inspection, privacy-limited aggregate counts, and explicit `UNAVAILABLE` for all source/raw identity, transformation, vertical/horizontal/time pilot display, complete landing count and independently confirmed sensor facts. Forged `validated` values cannot elevate trust. 10 new synthetic tests authored, total **120 expected**, NOT RUN; no positive trusted-source path or production use. [D2-B1 contract](docs/product/GPS_DETECTION_2_0_R2_1C_D2B_UNTRUSTED_PROVENANCE_CONTRACT_2026-10-17.md).
 
 
