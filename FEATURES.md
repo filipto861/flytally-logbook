@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS 2.0 R2.1c-D2-A offline characterization ACCEPTED (2026-10-17; NOT PARSER SAFETY/RELEASE):** clean owner-tested source `80581f5bdd1311090e15fe5dce83c16ab37afe87`, 12 targeted Node files **110/110 PASS**, TypeScript PASS; ten new D2-A synthetic tests + pre-existing 100. Exactly reproduced three **KNOWN UNSAFE** source behaviors: blank CSV altitude coerces to zero; blank latitude/longitude coerces to zero; valid altitude zero excluded from statistics. Sorting/dedup, ft conversion and source identity loss also characterized. **Feature not released or production-corrected;** separate D2-B provenance and D2-C parser-fix gates. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2_SOURCE_PROVENANCE_PLAN_2026-10-17.md).
+
+
 **GPS 2.0 R2.1c-D2-A (2026-10-17, TEST-ONLY EXPERIMENT / NOT VERIFIED):** 10 new offline synthetic **characterization** tests exercise canonical parser missing-vs-zero altitude/coords, feet conversion, order/dedup, GPX/KML, bad times and source index/split metadata. Source-confirmed hazards are deliberately labelled KNOWN UNSAFE, never approved behavior. Expected historical 83 GPS + 17 existing track parser + 10 new = 110, **NOT RUN**; production parser untouched and Pilot Review UI NOT IMPLEMENTED. [D2 scope](docs/product/GPS_DETECTION_2_0_R2_1C_D2_SOURCE_PROVENANCE_PLAN_2026-10-17.md).
 
 
