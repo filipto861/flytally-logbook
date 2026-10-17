@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R2.1a Batch 5 exact-SHA owner-local 69/69 acceptance (DRAFT / NOT RELEASED)
+
+Owner checked out clean `test/gps-detection-r21-falsification` at `b6af89d586cd6264ff2549a29e80333b80c50e9b` and executed the predeclared combined targeted Node suite: **69 tests / 69 PASS / 0 FAIL / 0 SKIP / 0 CANCELLED / 0 TODO**, including six new A13 source-edge boundary-provenance cases; `npm run typecheck` / `tsc --noEmit` **PASS**, guarded PowerShell final marker reached. Local test evidence, **not CI**. Closes bounded research Batch 5; previous 63/63 is historical. Scope is offline synthetic T&G/stop-go candidates and negative provenance falsification, never physical touchdown confirmation, real-world precision/recall, independent holdout or certified landing counts. **NOT RUN** full Node/build/Playwright/DB/PG16 SQL/RLS, real owner GPS, production import, merge or deploy. Other R2.1a coverage gaps remain. [Batch 5 detailed ledger](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH5_BOUNDARY_PROVENANCE_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS Detection 2.0 R2.1a Batch 5 reason-coded invalid-edge provenance (DRAFT / NOT VERIFIED)
 
 In existing research PR #350: added `InvalidBoundaryEvidence` to candidate motion hypotheses with explicit invalid quality-edge index, side and `EdgeReason`; kept historical `gapAdjacent` Boolean for compatibility (true means any invalid boundary), suppressed precise timestamp near invalid/unknown boundary and recalculated during altitude-candidate merge. Extended offline scorecard to reject fabricated edge reason/side or inconsistent precise time. Six new synthetic regression tests include actual GAP, five non-GAP invalid reasons, unchanged valid patterns, crop behavior and deliberate evidence forgery; expected combined **69 targeted**, new Node/TypeScript **NOT RUN**. Previous exact `8b410f32` 63/63 + TypeScript PASS not inherited. No new aircraft thresholds, physical contact claim, production GPS integration, existing flight edits, private GPS, DB/Neon/SQL, merge or deploy. [Batch 5](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH5_BOUNDARY_PROVENANCE_2026-10-17.md).
