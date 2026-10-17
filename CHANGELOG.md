@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS D3 E1a independent implementation review packet (DOCS ONLY, NOT RELEASED)
+
+Read GitHub current stacked Draft PR #357 and reconciled ROADMAP/FEATURES/CHANGELOG source state with earlier clean owner-local `54ea8aeea4c848a4d79cfdf6f11fd5cdae4e242e` Node **34/34 PASS** and TypeScript PASS (prior syntax checks PASS on identical runner/guard source). Authored [pinned seven-file DeepSeek E1a implementation review packet](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_INDEPENDENT_REVIEW_PACKET_2026-10-17.md), including Docker `id` filter and tmpfs source docs, hypotheses on token/cleanup/host attestation and focused conditional GO vs fix-before-run decision. **New independent reviewer response NOT RECEIVED; no scripts/Node/TypeScript, Docker/PG SQL/RLS/CI/full suite/build/Playwright executed this cycle.** No executable source, production app, Neon/auth/data, migration, merge or deploy touched. P0-D3 RLS NOT RUN/OPEN; real GPS NO-GO; optional Docker provider only, not mandatory development dependency.
+
+
 ## 2026-10-17 — E1a corrected-SHA owner-local Node 34/34 + TypeScript PASS (DRAFT / NOT RELEASED)
 
 Owner fast-forwarded clean `fix/gps-r21-p0-d3-e1a-mock-docker` to exact `54ea8aeea4c848a4d79cfdf6f11fd5cdae4e242e` with empty `git status --short`. Targeted D3+E1a Node suite **34/34 PASS**, 0 fail/skip/cancelled; `npm run typecheck` / `tsc --noEmit` **PASS** with no diagnostics and PowerShell fail guards not triggered. Prior clean `850318d1` two `node --check` syntax checks PASS; not rerun on `54ea8aee`, but runner and guard files have no diff (one test typing line and docs only). This closes **E1a bounded local verification**, not PostgreSQL RLS. GitHub PR #357 stays Draft/unmerged. **Actual Docker/PG16 role/RLS NOT RUN / D3 security OPEN**; real GPS/Neon/login/production NO-GO; CI/full suite/build/Playwright/migration/deploy NOT RUN. [Exact pinned evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
