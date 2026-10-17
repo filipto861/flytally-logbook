@@ -1,6 +1,6 @@
 # FlyTally GPS Detection 2.0 — P0-D3 Native PostgreSQL 16 readiness
 
-**Date:** 2026-10-17. **Status:** Windows read-only discovery RECEIVED; native PG16 design proposal only; versions/service status not yet verified; no database started.
+**Date:** 2026-10-17. **Status:** Windows PG16 16.15 executable versions and existing PostgreSQL service inventory CONFIRMED; native provider design only; no new cluster/database started; SQL/RLS NOT RUN.
 **Repository:** filipto861/flytally-logbook; docs-only branch stacked on existing synthetic Draft PR #357. This is NOT a production, auth, database or training-repo change.
 
 ## 1. Exact owner discovery
@@ -17,7 +17,26 @@
 
 **Selected direction:** installed PostgreSQL **16**, invoked by absolute binary paths. Never use PG18, an existing PostgreSQL service, default port/socket or ambient database URL as a substitute. Historical clean E1b local code SHA e14bc91314e2439859f3ea381d93abb7c43a25cd has 35/35 targeted Node PASS plus TypeScript and syntax PASS; it is not native PG security evidence.
 
-## 2. Next non-invasive step
+## 2. Owner read-only version and service evidence — RECEIVED
+
+Owner Windows PowerShell transcript dated 2026-10-17, running each executable from the explicitly constructed PostgreSQL 16 Program Files bin directory with `--version` only:
+
+| Executable | Observed output |
+| --- | --- |
+| `initdb.exe` | `initdb (PostgreSQL) 16.15` |
+| `pg_ctl.exe` | `pg_ctl (PostgreSQL) 16.15` |
+| `psql.exe` | `psql (PostgreSQL) 16.15` |
+| `postgres.exe` | `postgres (PostgreSQL) 16.15` |
+| `pg_controldata.exe` | `pg_controldata (PostgreSQL) 16.15` |
+
+The same transcript showed **postgresql-x64-16 — Running**, **postgresql-x64-18 — Running**, and **17 postgres processes** in `Get-Process -Name postgres`. Process listing did not map PIDs to services/versions, data directories or listening ports; those remain **UNKNOWN**. No PostgreSQL service, configuration, cluster, SQL or database connection was changed or executed in this discovery.
+
+**Security consequence:** existing PG16 and PG18 clusters are live. Never direct the D3 fixture, CREATE ROLE or CREATE DATABASE to either installed service; never assume standard/default ports are free, and never use implicit psql connection defaults or ambient PG* settings. For any future native synthetic experiment, positively attest identity of a **different, newly initialized, script-owned PGDATA and pg_control system_identifier** before any synthetic DDL. A nondefault port is not proof of identity.
+
+**Read-only binary-version and service inventory COMPLETE**. Next gate is native design independent security review, not further commands to discover whether PostgreSQL is installed.
+
+## Original optional read-only checks (HISTORICAL, ALREADY EXECUTED)
+
 
 Owner checks actual --version output for PG16 initdb, pg_ctl, psql, postgres and pg_controldata, and reads service names/status with Get-Service filtering PostgreSQL. No service start/stop, TCP connection, SQL, registry change, install or files created. Do not print environment variable values, service arguments or any passwords.
 
@@ -44,8 +63,8 @@ Earlier independent E1a review addressed **Docker**, not this new native Windows
 
 | Gate | State |
 | --- | --- |
-| Owner PG16 binary path discovery | FILES FOUND; version not checked |
-| Read-only PG16 version and service inventory | PENDING |
+| Owner PG16 binaries | All five executed `--version` and returned **16.15** |
+| Read-only PG16 version and service inventory | **COMPLETE**: PG16/PG18 Windows services both RUNNING; 17 processes; endpoints unknown |
 | Native PG16 cluster architecture/security review | DESIGN ONLY / independent review pending |
 | Native isolated implementation | NOT STARTED |
 | Owner explicit approval for new PGDATA/SQL | NOT RECEIVED |
