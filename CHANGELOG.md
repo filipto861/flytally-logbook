@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R2.1b-P0 strict read-only owner isolation design (DOCUMENTATION ONLY; NOT RELEASED)
+
+Reconstructed actual `lib/auth/session.ts`, `lib/db.ts`, owner-filtered `lib/data/tracks.ts` and `lib/data/flight-track-review.ts` source against unchanged `main@6a67a024`. Added [R2.1b-P0 strict read-only execution architecture](docs/product/GPS_DETECTION_2_0_R2_1B_P0_STRICT_READ_ONLY_DESIGN_2026-10-17.md) comparing non-public operator-run with session endpoint/admin DB/export alternatives, defining independent consent/subject/database/output/retention boundaries, explicitly rejecting SQL owner filter alone as tenant security, and preregistering 17 **unexecuted** synthetic authorization/DB role/privacy tests. Added [independent second-AI P0 challenge](docs/product/GPS_DETECTION_2_0_R2_1B_P0_SECOND_AI_SECURITY_CHALLENGE_2026-10-17.md), review **NOT RUN**. No experimental code changed in this cycle; prior owner-local exact `8b410f32` research 63/63 targeted PASS and typecheck PASS remains valid for tested code. No real GPS accessed, owner permissions proven, SQL executed, roles/grants changed, migration, CI/build, merge or deploy.
+
+
 ## 2026-10-17 — R2.1b isolated code gates PASS after TS7006 correction (DRAFT / NOT RELEASED)
 
 Owner supplied single guarded PowerShell execution at exact clean `8b410f32d207adab54d3b84b340275153d4b1731`: target R2.1a/R2.1b/legacy tests **63/63 PASS**, no failed/skipped, `npm run typecheck` / `tsc --noEmit` **PASS**. Earlier `54146357` TS7006 typecheck FAIL preserved in historical record; narrow callback-typing correction is now verified. Updated [R2.1b observational plan](docs/product/GPS_DETECTION_2_0_R2_1B_OWNER_SCOPED_OBSERVATIONAL_PLAN_2026-10-17.md) and [independent security review reconciliation](docs/product/GPS_DETECTION_2_0_R2_1B_INDEPENDENT_SECURITY_REVIEW_RECONCILIATION_2026-10-17.md). This is local test evidence, **not CI or whole-app build**. No real flight points accessed or exported, no strict-read-only owner identity access path approved, no cross-user model training, no app/runtime/DB/schema modifications, no merge or production deployment.
