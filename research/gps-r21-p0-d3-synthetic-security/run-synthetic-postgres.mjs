@@ -62,7 +62,7 @@ const deny=(label,statement,role=ALPHA)=>{
 try{
   let ready=false;
   for(let i=0;i<25;i++){
-    if(docker(["exec",name,"pg_isready","-U","postgres","-d","r21_synthetic_lab"]).ok){ready=true;break;}
+    if(docker(["exec",name,"psql","-X","-qAt","-v","ON_ERROR_STOP=1","-U","postgres","-d","r21_synthetic_lab","-c","SELECT 1"]).ok){ready=true;break;}
     await new Promise(resolve=>setTimeout(resolve,400));
   }
   if(!ready)fail("Disposable Postgres not ready.");
