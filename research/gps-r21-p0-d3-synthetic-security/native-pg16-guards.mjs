@@ -7,7 +7,7 @@ import {win32 as path} from "node:path";
 
 export const EXPECTED_BINARIES=["initdb","pg_ctl","psql","postgres","pg_controldata"];
 export const EXPECTED_VERSION="16.15";
-export const ATTEST_SQL=String.raw\`SELECT json_build_object(
+export const ATTEST_SQL=String.raw`SELECT json_build_object(
  'data_directory',current_setting('data_directory'),
  'server_version_num',current_setting('server_version_num'),
  'listen_addresses',current_setting('listen_addresses'),
@@ -15,7 +15,7 @@ export const ATTEST_SQL=String.raw\`SELECT json_build_object(
  'server_port',inet_server_port(),
  'system_identifier',(pg_control_system()).system_identifier::text,
  'nonce',pg_read_file('r21_nonce.txt')
-)::text;\`;
+ )::text;`;
 
 const dangerousNames=new Set(["DATABASE_URL","DIRECT_URL","NEON_DATABASE_URL","DOCKER_HOST","DOCKER_CONTEXT"]);
 export function ambientConnectionOverrides(env){
@@ -68,11 +68,25 @@ export function validateNativeRunPaths({root,runDir,pgdata,ownerProfile,entries}
   const unsafe=/(?:^|\\)(?:public|program files|programdata|postgresql|github)(?:\\|$)/i;
   if(unsafe.test(cRoot))return false;
   if(!Array.isArray(entries)||entries.length<3)return false;
-  const allowed=new Set(entries.map(e=>canonicalWinPath(e?.path)));
-  if(allowed.has(null)||allowed.size!==entries.length||!allowed.has(cRoot)||
-      !allowed.has(cRun)||!allowed.has(canonicalWinPath(pgdata)))return false;
-  return entries.every(e=>e?.isReparsePoint===false&&e?.aclTrusted===true&&
-    e?.trustedOwner===true&&e?.exists===true);
+  // Require independently collected metadata for EVERY owner-profile
+  // ancestor, not merely the final PGDATA and run directory.
+  const required=[];
+  let cursor=canonicalWinPath(pgdata),owner=canonicalWinPath(ownerProfile);
+  if(!owner)return false;
+  while(cursor&&cursor!==owner){
+    required.push(cursor);
+    const up=canonicalWinPath(path.dirname(cursor));
+    if(!up||up===cursor)return false;
+    cursor=up;
+  }
+  required.push(owner);
+  const observed=new Map(entries.map(e=>[canonicalWinPath(e?.path),e]));
+  if(observed.has(null)||observed.size!==entries.length)return false;
+  return required.every(p=>{
+    const e=observed.get(p);
+    return e?.isReparsePoint===false&&e?.aclTrusted===true&&
+      e?.trustedOwner===true&&e?.exists===true;
+  });
 }
 
 /**
