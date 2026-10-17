@@ -37,7 +37,7 @@ export type FalsificationScorecard={
   findings:FixtureFinding[];
 };
 
-const REQUIRED_PATTERN_FIXTURES=["T09","T11"] as const;
+const REQUIRED_PATTERN_FIXTURES=[{id:"T09",type:"T_G_PATTERN_CANDIDATE"},{id:"T11",type:"STOP_GO_PATTERN_CANDIDATE"}] as const;
 
 export function createFalsificationScorecard(fixtures:readonly FalsificationCase[]):FalsificationScorecard{
   const ids=new Set<string>();
@@ -54,7 +54,7 @@ export function createFalsificationScorecard(fixtures:readonly FalsificationCase
     if(reference.kind==="EXPECTED_PATTERN"){positiveTotal++;if(matched)positiveCovered++;}
     else if(reference.kind==="EXPECTED_NO_PATTERN"){negativeTotal++;if(!unexpected)negativeClear++;}
     else unknownTotal++;
-    if(candidates.length===0){abstentions++;if(reference.kind==="EXPECTED_PATTERN")positiveAbstentions++;}
+    if(analysis.patternCount.status==="UNAVAILABLE"){abstentions++;if(reference.kind==="EXPECTED_PATTERN")positiveAbstentions++;}
     for(const candidate of candidates){
       if(candidate.physicalContactStatus!=="UNRESOLVED")errors.push("BARE_TRACK_CONTACT_ASSERTION");
       if(candidate.support.start>candidate.index||candidate.index>candidate.support.end||candidate.support.start>candidate.support.end)
@@ -66,7 +66,10 @@ export function createFalsificationScorecard(fixtures:readonly FalsificationCase
     if(errors.length)safetyViolations.push(...Array.from(new Set(errors),reason=>fixtureId+": "+reason));
     findings.push({fixtureId,reference,predictedPatterns:candidates.length,matchedExpectedPattern:matched,unexpectedPatternOnKnownNegative:unexpected,abstained:candidates.length===0,safetyViolations:[...new Set(errors)]});
   }
-  const missingOrUncovered=REQUIRED_PATTERN_FIXTURES.filter(id=>findings.find(f=>f.fixtureId===id)?.matchedExpectedPattern!==true);
+  const missingOrUncovered=REQUIRED_PATTERN_FIXTURES.filter(required=>{
+    const matchedFixture=fixtures.find(f=>f.fixtureId===required.id);
+    return matchedFixture?.reference.kind!=="EXPECTED_PATTERN"||matchedFixture.reference.eventType!==required.type||!matchedFixture.analysis.candidates.some(c=>c.type===required.type);
+  }).map(required=>required.id);
   return{
     scope:"SYNTHETIC_AND_LEGACY_REGRESSION_ONLY",
     physicalContactAccuracy:"UNAVAILABLE",
@@ -77,7 +80,7 @@ export function createFalsificationScorecard(fixtures:readonly FalsificationCase
     unlabeled:{total:unknownTotal,notScoredAsNegative:unknownTotal},
     abstentions:{total:abstentions,amongKnownPositives:positiveAbstentions},
     safety:{pass:safetyViolations.length===0,violations:safetyViolations},
-    hardUtility:{pass:missingOrUncovered.length===0,requiredIds:REQUIRED_PATTERN_FIXTURES,missingOrUncovered},
+    hardUtility:{pass:missingOrUncovered.length===0,requiredIds:["T09","T11"],missingOrUncovered},
     findings,
   };
 }
