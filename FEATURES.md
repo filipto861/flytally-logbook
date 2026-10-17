@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS R2.1c-D2-B2 small CSV lineage research prototype (2026-10-17; NOT TESTED / NOT RELEASED):** Strict four-column CSV subset tracks raw line and normalized index, source-header altitude unit/ft conversion, true null vs numeric zero; invalid/out-of-scope inputs unavailable. Source-unit trust remains header-declared, sensor datum/accuracy UNKNOWN, pilot event/count access UNAVAILABLE. 10 new synthetic tests (130 expected combined), owner retest outstanding. D2-C canonical parser fix and D3 advisory UI remain separate release gates. [D2-B2](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
+
+
 **GPS 2.0 D2-B1 unattested provenance model locally VERIFIED (2026-10-17, RESEARCH ONLY):** clean exact `d4f1d7bf626f8b55e6d9d21c73f528faf6fbbf64`, **120/120 targeted Node PASS** (10 new negative tests) and TypeScript PASS, owner-local not CI. Model only validates input shape and emits privacy-limited diagnostic counts or `UNAVAILABLE`; even claimed `validated` and favorable source quality cannot unlock altitude, horizontal, event-time or whole-flight landing authority. No source-byte attestation or pilot-facing implementation. Legacy parser KNOWN UNSAFE defects remain open. [Bounded evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2B_UNTRUSTED_PROVENANCE_CONTRACT_2026-10-17.md).
 
 
