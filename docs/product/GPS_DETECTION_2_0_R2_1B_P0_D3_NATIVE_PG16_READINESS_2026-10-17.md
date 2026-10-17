@@ -40,24 +40,47 @@ The same transcript showed **postgresql-x64-16 — Running**, **postgresql-x64-1
 
 Owner subsequently checked actual --version output for PG16 initdb, pg_ctl, psql, postgres and pg_controldata, and read service names/status with Get-Service filtering PostgreSQL; see recorded evidence in section 2. No service start/stop, TCP connection, SQL, registry change, install or files created. Do not print environment variable values, service arguments or any passwords.
 
-## 3. Frozen candidate native-provider safety contract (DESIGN ONLY)
+## 3. Native PG16 design — amended after independent source review (FIXED IN DESIGN ONLY)
 
-1. Verify installed binary paths and returned major version 16 for every program. The existing PG16/PG18 service installations remain out of scope. Use a non-elevated Windows account, never service registration or default connection values.
-2. Create a uniquely named, never-before-existing test root under an explicitly approved owner-controlled non-repository directory. Verify canonical path, no reparse point/junction, owner-only intended write permissions; create unique sentinel and initial cluster-identifier evidence. Nothing may delete an unknown or reused path.
-3. Run the exact PG16 initdb against that new PGDATA only; require generated bootstrap password and SCRAM-SHA-256 host authentication (never trust), restricted ephemeral credential file/ACL, no password/connection URI logging. Reject inherited PG*/DATABASE_URL/DIRECT_URL/NEON_DATABASE_URL.
-4. Windows uses TCP loopback by default, not the Docker networkless model. Start only with listen_addresses=127.0.0.1 and a nondefault, explicitly selected otherwise-free port, strict pg_hba.conf host rule for 127.0.0.1/32 and SCRAM authentication. Any port race or contradictory host/ACL configuration must fail, not connect to another server.
-5. Start/stop with PG16 pg_ctl bound to **exact newly created PGDATA**, not the existing Windows Service Manager. Before any CREATE DATABASE or fixture SQL, connect only to 127.0.0.1 + selected port with explicit role/database/password source, positively attest canonical SHOW data_directory, server_version_num major 16, expected port/address, and matching pg_control system_identifier against this newly created sandbox. Caller-settable marker/GUC and database name alone are insufficient.
-6. Only after proving the target is the new sandbox may the synthetic r21_synthetic_lab database and existing fake-role RLS fixture be created. Preserve the reviewed distinction between RLS row filtering (granted SELECT gamma / policy) and privilege-only denials. The Docker-only runner cannot be pointed at a Windows service and is not a native runner.
-7. Use try/finally and verified pg_ctl -D shutdown; confirm PID/process exited before removing the new sandbox. Stop/delete only artifacts identified as created by this run. If the server may still be alive, preserve the files for operator inspection, mark FAIL and do not delete recursively.
-8. A temporary local PostgreSQL host connection remains accessible to other local processes; SCRAM and HBA reduce, but do not eliminate, this risk. An actual synthetic RLS PASS does not approve production authorization, real LOGIN/Neon driver, owner GPS, privacy, consent, no-write transaction or wheel-contact truth.
+**Review provenance:** DeepSeek examined the seven summarized constraints and the embedded synthetic SQL/runner, **not** the full native readiness document. Its verdict was `FIX DESIGN FIRST` (NP16-01–15), **source/design only**. Original design already mentioned SCRAM host auth, non-reparse paths, loopback, cluster identity and safe shutdown, but left critical implementation predicates insufficiently explicit. The five high-priority areas are now specified here; **no native runner is implemented or tested**.
 
-**Implementation status:** no new executable native runner, no PGDATA directory, no credential, no server, no SQL. These are review requirements, not claims that an implementation meets them.
+### A. Windows preflight and new PGDATA ownership (NP16-02, NP16-07, NP16-13, NP16-14)
 
+- Pin all five executables to the observed `C:\Program Files\PostgreSQL\16\bin\` and verify each exact `--version` output **16.15** at execution. Reject version/PATH mismatch. Existing `postgresql-x64-16` and `postgresql-x64-18` remain **RUNNING and off-limits**; never use any service control action, default port or installed service PGDATA.
+- Check the effective Windows process token for **elevation**; reject elevated/admin execution. Group membership by itself is not proof of an elevated token (UAC); do not claim that parent-PID checks alone prove process ownership.
+- Use a pre-approved, owner-controlled private parent directory outside Git, Program Files, Public/ProgramData and service PGDATA; validate canonical paths, each existing ancestor's reparse-point status and effective write ACL. Reject if any untrusted principal can create/rewrite path entries. Generate a cryptographically unpredictable run UUID; create an exclusively new run directory/PGDATA atomically (fail if already present) with restricted ACL, then re-validate the path/ACL. No user-supplied custom PGDATA for execution and no recursive deletion of unrecognized paths.
+- Before `initdb`, record a run-bound marker and path ownership; after `initdb`, capture its `pg_controldata` **decimal system_identifier** as a string. Markers alone cannot attest an SQL server; system ID plus server data directory will.
+
+### B. SCRAM and secret lifecycle (NP16-01, NP16-06, NP16-08)
+
+- Use exact PG16 `initdb -D <owned-new-PGDATA> -U postgres -E UTF8 --auth=scram-sha-256 --pwfile=<restricted-owner-only-file>`; do **not** use only `--auth-host`, which leaves other rules potentially `trust`. Verify the generated HBA **before** any server start: require safe `local` lines, only intended IPv4-loopback `host` SCRAM rule for bootstrap role/database and explicit rejection of other hosts; reject `trust`, `peer`, `md5`, `password`, includes and unexpected wildcard lines. Never edit either service's HBA.
+- Generate a unique high-entropy temporary bootstrap password without stdout/argv logging. Password file exists only inside the run directory with verified owner-only ACL and is deleted directly after `initdb` (including error handling). A separate restricted temporary libpq password file may be used for attestation/SQL, then securely removed after stop; Windows file deletion does **not** guarantee secure erasure. Never print password, URL, process environment or unredacted connection errors.
+- Invoke client binaries with allowlisted inherited environment (no PG*, `DATABASE_URL`, `DIRECT_URL`, `NEON_DATABASE_URL`) and explicit `-h 127.0.0.1 -p <port> -U postgres -d postgres -X -w -v ON_ERROR_STOP=1`. Use explicit `PGPASSFILE` only for the just-generated credential, no reused login. If TLS is disabled on loopback, document that SCRAM is not local-host attestation and that untrusted local processes remain a residual risk.
+
+### C. Network startup and **positive server identity before mutation** (NP16-03, NP16-04, NP16-12, NP16-15)
+
+- Select a high, nondefault candidate loopback TCP port. Port availability checks are advisory and raceable: any bind conflict or unexpected startup output is **FAIL**; do not retry with default port or try another existing server.
+- Use absolute PG16 `pg_ctl start -D <owned-PGDATA> -w -t <bounded> -l <run-log> -o '-h 127.0.0.1 -p <port>'` only. Inspect bounded, run-local startup log for successful binding and no `could not bind`/fatal startup; no Windows service registration. `pg_ctl` wait success alone does not identify the server reached by a client.
+- **Only attestation SELECTs** may be issued at first. Positively compare independent local expected values with **server-reported** `current_setting('data_directory')` (canonical-owned PGDATA), `current_setting('server_version_num') = 160015`, `current_setting('listen_addresses') = 127.0.0.1`, `inet_server_addr() = '127.0.0.1'`, `inet_server_port() = <port>`, and `pg_control_system().system_identifier` against the separately captured `pg_controldata -D <owned-PGDATA>` value. Also write a fresh run-nonce file *inside* that owned PGDATA and require an exact `pg_read_file()` readback from the server. Compare decimal IDs as strings (no lossy JS Number). Any mismatch/SQL error/timeout aborts before `CREATE DATABASE`, roles or fixture.
+- A matching DB name, GUC like `r21.synthetic_only`, login name, CLI flags or a random port alone do **not** establish cluster identity. Never proceed if a foreign service answers the port or if the identity proof cannot be performed.
+
+### D. Synthetic-only SQL and proof boundary (NP16-09–11)
+
+- Only after full identity verification create `r21_synthetic_lab` and apply the reviewed fictional `schema.sql` plus one canonical set of D3 SQL assertions (do not silently fork the expected results). Preserve gamma's granted SELECT / no applicable policy test as actual default-deny RLS evidence and label unrelated-role/participant/SECDEF negative checks as **privilege-only**.
+- The original Docker runner and D3 PowerShell wrapper stay untouched. `SET SESSION AUTHORIZATION` of NOLOGIN roles simulates policy context only, **not** authenticated restricted LOGIN, Neon/driver, consent or real GPS authorization. Require real PG16 SQL results separately from offline mocked Node assertions.
+
+### E. Stop and deletion — protect both running PostgreSQL services (NP16-05)
+
+- Keep exact run ownership (UUID, canonical path, marker, system ID), initialized/started state and bounded log. Before **any** `pg_ctl stop -D <owned-PGDATA> -m fast -w`, verify the owned path still has no reparse points, `postmaster.pid` line 1 identifies the expected live postgres.exe process and line 2 canonical-matches owned PGDATA, and process executable/command line and start identity align with the recorded run. `pg_ctl status -D` can corroborate but is not identity proof. Do **not** require a long-lived parent relationship to `pg_ctl` on Windows; the launcher can exit after detaching the server.
+- On uncertain PID, path, executable or system ID: **never stop an unknown process or delete any directory**; mark fail and retain scoped evidence for manual inspection. Never call `Stop-Service`, `taskkill` or a wildcard stop against all postgres.exe processes.
+- After successful owned-process stop, verify no live postmaster for this exact PGDATA and matching recorded system_identifier/run marker before considering recursive deletion of **only** the exact exclusively created UUID run directory; on uncertainty preserve it. Ctrl+C/forced termination can bypass PowerShell `finally`; the next run must detect abandoned run directories and **refuse/refer for manual recovery**, not reuse or auto-delete them.
+
+**Acceptance boundary:** These are **design requirements, NOT implemented or runtime verified**. No PostgreSQL instance or SQL executed. Real GPS/Neon, full read-only driver proof, telemetry S20 and artifact S21 checks, source fidelity and touchdown ground truth remain NO-GO.
 ## 4. Independent reviewer handoff — required before implementing privileged native runner
 
 Review the Windows native PG16 disposable cluster design independently (DeepSeek/Claude): confirm nonadmin initdb constraints, PG16 binaries, host authentication and password file safety; OS-specific loopback, port collision and pg_hba scope; meaningful system_identifier/PGDATA/port identity binding before synthetic DDL; safe shutdown and Ctrl+C/orphan failure cleanup; minimal reuse of original D3 SQL probes; and how to test against a malicious preexisting local service without ever accessing one.
 Return GO TO IMPLEMENT / FIX DESIGN, prioritized blocking items, separate purely offline negative tests, runtime acceptance checks and any Windows pitfalls. No Docker/PG16 execution or real user data use requested of the reviewer.
-Earlier independent E1a review addressed **Docker**, not this new native Windows provider. Native review is currently **NOT RECEIVED**.
+Previous E1a review addressed Docker only. A distinct **partial native design review was RECEIVED** with verdict FIX DESIGN FIRST; its high-priority items are reconciled in section 3. The revised design has NOT been independently re-reviewed or implemented.
 
 ## 5. Decision ledger
 
@@ -65,7 +88,7 @@ Earlier independent E1a review addressed **Docker**, not this new native Windows
 | --- | --- |
 | Owner PG16 binaries | All five executed `--version` and returned **16.15** |
 | Read-only PG16 version and service inventory | **COMPLETE**: PG16/PG18 Windows services both RUNNING; 17 processes; endpoints unknown |
-| Native PG16 cluster architecture/security review | DESIGN ONLY / independent review pending |
+| Native PG16 cluster architecture/security review | **DeepSeek partial source/design review RECEIVED: FIX DESIGN FIRST**; five areas specified above; amended design not independently re-reviewed |
 | Native isolated implementation | NOT STARTED |
 | Owner explicit approval for new PGDATA/SQL | NOT RECEIVED |
 | Real PostgreSQL 16 RLS proof | NOT RUN / OPEN |
