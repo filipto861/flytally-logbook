@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection R2.1a Batch 3 owner-local PASS + evidence coverage audit (DRAFT / NOT SHIPPED)
+
+Verified from owner-supplied exact-clean-head Windows PowerShell: `9c0f423f1f924b40ded62f198226b338db91aa48` targeted GPS/legacy/scorecard suite **48/48 PASS**, zero fail/skip, `tsc --noEmit` **PASS**. This is **owner-local**, not CI and not event-level accuracy evidence. Added [R2.1a contract coverage audit](docs/product/GPS_DETECTION_2_0_R2_1A_COVERAGE_AUDIT_2026-10-17.md) distinguishing covered synthetic invariants from partial/open requirements: weak T10 missed-event assertion, T14 scoped count vs full-flight completeness ambiguity, unavailable A07/A08 type differentiation, missing metadata/provenance coverage. Updated PR #350 and roadmap/feature evidence, no application runtime, DB changes, real-track export, model training, merge or deploy. Subsequent audit/docs commits are not the test-executed SHA.
+
+
 ## 2026-10-17 — GPS Detection 2.0 R2.1a Batch 3 scorecard (DRAFT / NOT RELEASED)
 
 Owner-local Batch 2 on exact clean `862c620a`: **41/41 targeted PASS** and `npm run typecheck` PASS; evidence recorded in PR #350 and Batch 2 document. Added offline-only [Batch 3 scorecard](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH3_2026-10-17.md) and seven isolated tests to separate synthetic pattern positives/negatives, unscored observations, unavailable evidence and no-pattern results, pin T09/T11 expected candidate types and flag bogus source-contact/time/support assertions. **Batch 3 targeted tests/typecheck NOT RUN**, full app build/CI/DB/Playwright NOT RUN for this experiment. No production code, flight records, GPS parser, schema, user-data export, model training, merge or deploy changed.
