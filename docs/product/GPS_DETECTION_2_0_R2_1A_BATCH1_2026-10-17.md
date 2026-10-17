@@ -30,12 +30,13 @@ An altitude reversal plus horizontal movement is not proof of gear contact. Hori
 | Isolated local TypeScript 5.8 strict `tsc --noEmit` of detector | **PASS** | Standalone source file only; does **not** substitute for repository `npm run typecheck` |
 | Synthetic five-circuit diagnostic | **5 T_G_PATTERN_CANDIDATE** | Valid islands, still all `UNRESOLVED`; synthetic expected shape only |
 | Known-missed short rolling-T&G-shaped synthetic diagnostic | **1 T_G_PATTERN_CANDIDATE** | Exploratory observation; physical-contact truth not established by this run |
-| Legacy `v351` compatibility + new `shadow` tests | **NOT RUN** | Require full repository/unchanged legacy helper |
-| Production import boundary test in full checkout | **NOT RUN** | Repo tree is not available in local isolated test workspace |
-| Repo-wide TypeScript, full Node suite, build, Playwright, PostgreSQL, CI | **NOT RUN** | Await owner local checkout test run. DB/browser not needed for an offline-only experiment but record N/A only after gates scoped |
+| Legacy `v351` compatibility + new `shadow` tests | **PASS, owner-local full checkout** | 6 legacy regression tests + 2 shadow tests on exact PR #350 HEAD `eb5cde7c` |
+| Production import boundary test in full checkout | **PASS, owner-local full checkout** | 1/1 boundary test on exact PR #350 HEAD `eb5cde7c` |
+| Repository TypeScript | **PASS, owner-local full checkout** | `npm run typecheck`, `tsc --noEmit`, exit 0 on exact SHA `eb5cde7c` |
+| Full Node suite, build, Playwright, PostgreSQL, CI | **NOT RUN** | No claims of whole-repo or CI success; DB/browser may be N/A after scope review |
 | AI training / real-data accuracy benchmark / production smoke | **NOT RUN / NOT APPLICABLE** | No independent event-level labels, not a deployed feature |
 
-**Verification limitation:** A self-contained module test passing is not a verified complete PR. Do not mark this milestone DONE or merge PR on this basis alone.
+**Additional owner-local full-checkout evidence (2026-10-17):** exact clean branch HEAD `eb5cde7c91683bd23dafd0a179b8b7f237ace46f`; `npm run test:target` for 3 R2.1a test files plus `tests/v351-gps-tg-reliability.test.ts` **PASS 30/30, fail 0, skipped 0**, including 21 detector, 2 shadow, 1 import boundary, 6 legacy v351. `npm run typecheck` **PASS** with PowerShell exit-code assertions. All results are **owner-local**, not CI. Full Node suite, production build, Playwright/Postgres and full T/A falsification coverage remain **NOT RUN**. This verifies Batch 1 required local gates only; no model-superiority claim, no merge/deploy approval.
 
 ## 4. Next small batches, Do / Do Not
 
