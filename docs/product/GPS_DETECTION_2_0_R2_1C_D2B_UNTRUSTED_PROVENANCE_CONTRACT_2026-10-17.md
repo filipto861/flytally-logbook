@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-17  
 **Repo / branch:** `filipto861/flytally-logbook`, `test/gps-detection-r21-falsification`, Draft PR #350.  
-**Status:** RESEARCH-ONLY source + **10 NEW TESTS AUTHORED**, **NEW NODE + TYPESCRIPT NOT RUN**. No production code, real track read or database.  
+**Status:** D2-B1 RESEARCH-ONLY OWNER-LOCAL BOUNDED ACCEPTANCE — **120/120 targeted Node PASS + TypeScript PASS** at exact clean executable `d4f1d7bf626f8b55e6d9d21c73f528faf6fbbf64`. No production code, real track read or database. Earlier authored-only NOT RUN statements below are historical.  
 **Last owner-tested source:** clean `80581f5bdd1311090e15fe5dce83c16ab37afe87` (110/110 targeted Node tests + TypeScript PASS, owner-local). This does **not** certify D2-B1 source.
 
 ## D2-B1 — strict, limited evidence model
@@ -51,3 +51,13 @@ New file `tests/gps-detection-r21-d2b-provenance.test.ts`, **10** synthetic nega
 D2-B1 is only the **untrusted diagnostic side** of D2-B. D2-B2 needs a separate source-verified design with a first-party parser revision, raw bytes/record reference, explicit original-to-normalized sample mapping or `UNAVAILABLE`, dedup/sort/ft→m provenance, timestamp and coordinate-presence fidelity. It cannot simply add `sourceProvenanceStatus="VERIFIED"` or trust a `KNOWN` enum. External sensor accuracy/datum remains a different claim even after correct parsing. Conduct independent actual-source review before implementing privileged/trusted capability.
 
 **D2-C still OPEN, separate owner-scope decision:** actual correction to legacy `lib/track-processing.ts` for missing altitude/coordinates and zero-vs-null/metrics. No destructive rewrite of stored GPS or automatic pilot counts. **D3 Pilot Review research DTO only after D2-B evidence/review and frozen owner D1–D5.**
+
+## Owner-local bounded D2-B1 closeout — 2026-10-17
+
+**Exact executable SHA:** `d4f1d7bf626f8b55e6d9d21c73f528faf6fbbf64`, branch `test/gps-detection-r21-falsification`, clean owner Windows PowerShell checkout after `git fetch origin`, `git pull --ff-only`; empty `git status --porcelain`, exact `git rev-parse HEAD` guard passed. Combined thirteen explicitly named GPS/legacy/parser test files via `npm run test:target`: **120/120 Node PASS**, **0 fail, 0 cancelled, 0 skipped, 0 todo**. Included all ten D2-B1 cases alongside 110 prior GPS and parser tests. `npm run typecheck` (`tsc --noEmit`) **PASS**; explicit `$LASTEXITCODE` guards and final `GPS D2-B1 LOCAL GATES PASS` marker passed. **Owner-local, not CI.**
+
+**ACCEPTED ONLY:** D2-B1 source-unattested `TrackInspection` diagnostics. Well-shaped input remains `DIAGNOSTIC_ONLY`, malformed input `UNAVAILABLE`, forged validation cannot elevate trust, privacy-limited aggregate output, and **all pilot-facing vertical/horizontal/time/sample-mapping and GPS-only landing-count evidence remain `UNAVAILABLE`**; physical contact `UNRESOLVED`, canonical-write authority false. The passing suite also still reproduces three deliberately **KNOWN UNSAFE** production parser behaviors: blank CSV altitude -> 0; blank CSV lat/lon -> 0; valid zero altitude omitted in `trackStats`. Green characterization tests must **not** be counted as parser safety acceptance.
+
+**Status:** D2-B1 **CLOSED (bounded synthetic source-shape and fail-closed diagnostic evidence)**. This does not establish original source bytes, parser revision, raw sample identity, real sensor unit/datum/accuracy, independent contact labels or a production-ready Pilot Review. D2-B2 remains **OPEN** for independently evidenced parsing/normalization origin and trusted boundary design; D2-C canonical parser defects remain **OPEN pending separately scoped/approved review**. D3 pilot review DTO/UI not implemented. No P0-D3 real PG16 RLS, private owner GPS, DB/Neon, full Node/build/Playwright, migration, merge or deploy.
+
+**Documentation head may advance without new code tests:** the source SHA above is the **only** execution evidence for this milestone. Future docs-only commits are not additional Node or TypeScript runs.
