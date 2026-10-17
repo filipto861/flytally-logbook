@@ -108,7 +108,7 @@ test("P0-D3 missing Docker executable is a specific early no-database failure",(
     encoding:"utf8",timeout:5000,
     // A deliberately empty search path simulates 'docker' not found. This runs
     // no containers, has no database URL and uses only the absolute Node binary.
-    env:{SystemRoot:process.env.SystemRoot??"",PATH:"",Path:"",
+    env:{NODE_ENV:"test",SystemRoot:process.env.SystemRoot??"",PATH:"",Path:"",
       USERPROFILE:process.env.USERPROFILE??"",HOME:process.env.HOME??""}
   });
   assert.notEqual(run.status,0);
@@ -140,7 +140,7 @@ test("P0-D3 optional local wrapper pins exact SHA and rejects dirty/wrong branch
 
 test("P0-D3 PowerShell 5.1 runner has ASCII-only source and safe quote boundaries",()=>{
   const s=gates();
-  const invalid=[...s].filter(ch=>ch.codePointAt(0)>127);
+  const invalid=[...s].filter(ch=>(ch.codePointAt(0)??0)>127);
   assert.deepEqual(invalid,[],"Windows PowerShell 5.1 must not misdecode UTF-8 non-ASCII without BOM");
   assert.match(s,/Write-Host "PASS - synthetic Node tests and TypeScript/);
   assert.match(s,/Write-Host "NOT RUN - PostgreSQL role\/RLS tests/);
