@@ -47,7 +47,7 @@ const haversineKm=(a:SourceObservation,b:SourceObservation)=>{
   const v=Math.sin(dy/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dx/2)**2;
   return 12742.0176*Math.asin(Math.min(1,Math.sqrt(v)));
 };
-function edge(a:SourceObservation,b:SourceObservation,from:number):QualityEdge{
+function edge(a:SourceObservation,b:SourceObservation,from:number,allowMetricVertical:boolean):QualityEdge{
   const failed=(reason:EdgeReason,dtSeconds:number|null=null):QualityEdge=>({from,to:from+1,status:"UNAVAILABLE",reason,dtSeconds,speedKmh:null,verticalRateMps:null});
   if(!coordinatesOk(a)||!coordinatesOk(b))return failed("BAD_COORDINATES");
   const t0=timestamp(a.time),t1=timestamp(b.time);if(t0===null||t1===null)return failed("MISSING_TIME");
@@ -56,7 +56,7 @@ function edge(a:SourceObservation,b:SourceObservation,from:number):QualityEdge{
   const speedKmh=haversineKm(a,b)*3600/dtSeconds;
   if(speedKmh>R21_PARAMETERS.maxSpeedKmh)return failed("POSITION_JUMP",dtSeconds);
   let verticalRateMps:number|null=null;
-  if(a.alt!==null&&b.alt!==null&&Number.isFinite(a.alt)&&Number.isFinite(b.alt)){
+  if(allowMetricVertical&&a.alt!==null&&b.alt!==null&&Number.isFinite(a.alt)&&Number.isFinite(b.alt)){
     verticalRateMps=(b.alt-a.alt)/dtSeconds;
     if(Math.abs(verticalRateMps)>R21_PARAMETERS.maxVerticalRateMps)return failed("ALTITUDE_DISCONTINUITY",dtSeconds);
   }
@@ -180,7 +180,11 @@ export function assessSourceQuality(metadata?:SourceMetadata):SourceQualityAsses
 export function analyzeResearchTrack(points:readonly SourceObservation[],metadata?:SourceMetadata):ResearchAnalysis{
   // Source order is the persisted/acquired order, not a claim of event truth.
   const sourceQuality=assessSourceQuality(metadata);
-  const samples=[...points],edges=samples.slice(1).map((p,i)=>edge(samples[i],p,i));
+  const samples=[...points];
+  // A source-declared feet/clamped/unsupported altitude must not be fed into
+  // the metric vertical-rate discontinuity check either.
+  const allowMetricVertical=sourceQuality.vertical.status!=="UNAVAILABLE";
+  const edges=samples.slice(1).map((p,i)=>edge(samples[i],p,i,allowMetricVertical));
   const islands=signalIslands(samples,edges);
   // Invalid declared horizontal accuracy cannot be silently treated as UNKNOWN.
   const invalidHorizontal=sourceQuality.horizontalAccuracy.status==="INVALID";
