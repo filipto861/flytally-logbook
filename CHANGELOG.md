@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS R2.1c Pilot Review direction explicitly approved (DESIGN / NOT RELEASED)
+
+Product owner approved reuse of the existing GPS import inline, ephemeral advisory notes with default unresolved, hiding altitude/vertical-rate candidates when parser/unit/source provenance is unverified, no automatic Day/Night/total/starts modification or certification, and deferring separate post-flight review. A07/A08 semantic labels remain unavailable. Recorded frozen D1–D5 in design/roadmap. **This is product direction approval only**, not implementation authorization for real data, owner RLS, production V2 UI, migrations, merge or deploy. The prior owner clean `681c62d9` **83/83 targeted Node + TypeScript PASS** is historical Batch 6 executable evidence, not Pilot Review test. [Decisions](docs/product/GPS_DETECTION_2_0_R2_1C_PILOT_REVIEW_DESIGN_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS R2.1c DeepSeek PARTIAL review source-reconciled (DOCS ONLY / NOT RELEASED)
 
 Received DeepSeek FIX DESIGN FIRST report; reviewer had no GitHub code access, no source inspection and ran no tests. Independently inspected `detector.ts`, `track-processing.ts`, `gps-import-review-player.tsx`, canonical GPS form/actions, count contract and data review path at actual refs. Confirmed caller-declared `KNOWN` metadata untrusted; UNVERIFIED altitude still feeds research metric thresholds; canonical parser sorting/deduplication and CSV feet→meters conversion lack source→normalized provenance; blank CSV altitude can be parsed as numeric zero; player source renders missing alt/time-derived speed as zero. Preserved existing 83/83 local synthetic Batch 6 acceptance on older exact code SHA `681c62d9`; **NO new executable changes/tests**, no actual browser impact claimed. Authored independent finding disposition, parser-evidence/display/red-line P01–P13 acceptance and R2.1c phased D1→D5 recommendation. Owner D1–D5 choices unapproved, DTO code and flagged UI NOT RUN/NOT IMPLEMENTED. RLS, private GPS/Neon, migrations, production, merge/deploy untouched. [R2.1c reconciliation](docs/product/GPS_DETECTION_2_0_R2_1C_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
