@@ -74,7 +74,8 @@ test("E1a mock-Docker: HostConfig.Tmpfs options and sizes are fail-closed",()=>{
   for(const badValue of [
     "", "rw,suid,size=16m", "rw,nosuid,exec,size=16m",
     "rw,nosuid,size=0", "rw,nosuid,size=128m",
-    "rw,nosuid", "rw,nosuid,size=16m,size=16m"
+    "rw,nosuid", "rw,nosuid,size=16m,size=16m",
+    "rw,ro,nosuid,size=16m"
   ]){
     const cfg=good();
     cfg.HostConfig.Tmpfs["/tmp"]=badValue;
