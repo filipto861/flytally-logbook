@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS I2-B1 native Windows read-only inventory (DRAFT / NOT TESTED)
+
+New ASCII PowerShell 5.1 inventory (PG16.15 five binaries --version only, effective elevated admin check, existing PG16/PG18 service status, path existence/reparse/ACL readability), strict Node output validation, CLI and typed contract. Five new targeted offline negative tests authored; target now 20 including I1 12 and I2-A 3. **Node/TypeScript/PS5 actual execution NOT RUN** on this source. No file/db/server mutation, no approved native PG runtime, no SQL/RLS; no auth/Neon/real GPS access, no merge/deploy. I2-A 15/15 applies only to clean prior executable SHA. [I2-B1 record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I2B1_WINDOWS_INVENTORY_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS native I2-A exact-SHA owner-local verification (RESEARCH / NOT RELEASED)
 
 Owner ran clean branch at `eb02936be35e8c0590ab4de66cf4b781eeb515e2`, I2 module `node --check` PASS, targeted I1+I2-A Node 15/15 PASS (0 failure/skip), and `npm run typecheck` PASS. This closes bounded offline I2-A tests only; no independently measured Windows token/ACL/process facts and no native PG startup/SQL/RLS. Existing PG16 and PG18 services untouched; no merge/deploy/migration. Later documentation commits not covered by this exact-SHA test.
