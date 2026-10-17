@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Native PG16 I1 guards (2026-10-17; research only):** Owner clean `2c4219e3e3bbeb26852b05d9f394a66cf3954d04` native 12/12 dynamic Node PASS, 2 syntax PASS, TypeScript PASS. Pure identity/HBA/cleanup metadata predicates and `--offline-only` CLI verified locally; actual Windows ACL/process adapter and native database execution remain unimplemented, RLS NOT RUN/OPEN, existing PG16/18 services untouched. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md).
+
+
 **GPS Detection 2.0 Native PG16 I1 offline guards (2026-10-17; RESEARCH-ONLY DRAFT):** Pure Windows PostgreSQL 16.15 identity, SCRAM/HBA, path/ACL/reparse-attestation and cleanup guard APIs + offline-only refusal CLI added with 12 new dynamic tests authored (**NOT RUN on current HEAD**). Does not create/start/stop any PG server, connect or execute SQL; existing PG16/PG18 services untouched. [I1 contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md). Full native I2 runner NOT IMPLEMENTED; actual RLS OPEN, real GPS/Neon NO-GO.
 
 
