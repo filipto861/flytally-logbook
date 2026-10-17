@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 P0-D3 E1b (2026-10-17; RESEARCH-ONLY, NOT RELEASED):** Exact clean owner `e14bc91314e2439859f3ea381d93abb7c43a25cd` standalone Docker-free gated verification **35/35 targeted Node PASS**, two syntax checks PASS, TypeScript PASS. Automatically pins branch/full SHA, checks clean worktree and inherited PG/DB/Docker connection settings, runs both test files; historical D3 wrapper unchanged. This is not Docker/PG runtime proof. **Actual PostgreSQL RLS NOT RUN/OPEN**, real GPS/Neon/production NO-GO, #357 Draft/unmerged. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1B_PRE_RUNTIME_GATE_2026-10-17.md).
+
+
 **GPS Detection 2.0 D3 E1b local pre-runtime gate (2026-10-17, RESEARCH DRAFT / NOT RELEASED):** Independent E1a DeepSeek seven-file SOURCE-ONLY review **RECEIVED**, verdict conditional GO for future optional synthetic PG16 runtime *preparation* after two small items; no SQL/runtime authorization. Staged standalone branch/SHA/clean-tree guarded **Docker-free** PowerShell 5.1 script running two syntax checks, 35 expected targeted Node tests and TypeScript; preserved original D3 wrapper, clarified privilege-only SQL negatives versus gamma RLS, rejected contradictory `rw,ro` options. **New E1b Node/TS/PowerShell gate NOT RUN on current patch**, prior E1a owner 34/34 Node PASS + TS PASS at `54ea8aee`. D3 actual RLS NOT RUN / OPEN, real GPS/Neon/production NO-GO. [Scope/evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1B_PRE_RUNTIME_GATE_2026-10-17.md).
 
 
