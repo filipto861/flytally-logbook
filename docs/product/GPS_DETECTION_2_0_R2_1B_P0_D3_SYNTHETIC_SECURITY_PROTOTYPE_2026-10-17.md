@@ -89,6 +89,17 @@ if ($LASTEXITCODE -ne 0) { throw "Image missing: explicitly run docker pull post
 # Then and only then execute the isolated --synthetic-only runner.
 ```
 
+## Owner-local Windows PowerShell 5.1 parse failure and corrective fix (2026-10-17)
+
+**Owner exact clean checked out SHA: `a7dc905e980fe10bbb550512b5ba19f09c25d00d`.** `git fetch`, branch switch, `git pull --ff-only` and the preceding checkout completed. Attempt to invoke the newly added `run-local-gates.ps1 -ExpectedSha a7dc905e...` aborted at **PowerShell parse time before executing any script statements**:
+- Error: `ParserError MissingEndParenthesisInExpression` near the `Write-Host "PASS — ..."` statement at line 39 and cascading unexpected token diagnostics.
+- The script was stored as UTF-8 **without BOM** containing **9 non-ASCII em dashes**. Windows PowerShell 5.1 may decode no-BOM files using its local ANSI codepage, corrupting em dash bytes in double-quoted literals. This is a **script encoding compatibility defect**, not a proven missing parenthesis or DB/RLS failure.
+- **Tests, TypeScript, native PostgreSQL detection, and Docker/SQL all NOT RUN** on the attempted `a7dc905e` invocation. Historical **12/12 Node PASS + TypeScript PASS** on `820b211b` remains separate older evidence.
+
+**Minimal fix on research-only branch:** replaced all nine em dashes in `run-local-gates.ps1` with ordinary ASCII `-`; the whole PowerShell script is now **7-bit ASCII**, interoperable with default PowerShell 5.1 and newer shells independent of UTF-8 BOM configuration. Updated existing static test expecting the RLS-not-run marker to ASCII and added **one** regression requiring script ASCII-only, expected pass markers, and explicit RLS-not-run output. Current test file has **16 authored Node test cases**; **new HEAD 16 tests, TypeScript and PS5 script execution NOT RUN** at time of this documentation update.
+
+**Verification evidence of fix:** GitHub source-read check confirmed ASCII-only `.ps1`, expected messages and presence of corrected regression. No Windows PowerShell executable is available in the assistant environment, so PS5 runtime parse is **NOT locally executed** by ChatGPT. The owner needs to rerun the exact-HEAD script. **Default remains database-free**: even after Node/TypeScript PASS, RLS remains **NOT RUN / overall security gate OPEN**. No requirement to install Docker.
+
 ## Docker-optional operator workflow — decision update (2026-10-17)
 
 The owner does **not** want Docker added as a mandatory FlyTally development dependency. **Decision: accepted.** This overrides the older 'Required operator prerequisite' paragraph and Docker-first commands above for the **normal** local workflow. The Docker PostgreSQL runner remains an **explicitly optional** backend for future RLS proof, not a requirement to run Node or TypeScript.
