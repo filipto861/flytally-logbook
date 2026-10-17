@@ -121,7 +121,7 @@ test("P0-D3 default local check omits Docker and records unexecuted RLS separate
   const s=gates();
   assert.match(s,/\[string\] \$PostgresProvider = "none"/);
   assert.match(s,/if \(\$PostgresProvider -eq "none"\)/);
-  assert.match(s,/NOT RUN — PostgreSQL role\/RLS tests/);
+  assert.match(s,/NOT RUN - PostgreSQL role\/RLS tests/);
   assert.match(s,/OVERALL P0-D3 SECURITY GATE OPEN/);
   assert.match(s,/if \(-not \(Get-Command docker -ErrorAction SilentlyContinue\)\)/);
   assert.match(s,/Get-Command \$_ -ErrorAction SilentlyContinue/);
@@ -136,4 +136,13 @@ test("P0-D3 optional local wrapper pins exact SHA and rejects dirty/wrong branch
   assert.match(s,/if \(\$LASTEXITCODE -ne 0\) \{ throw "Repository TypeScript typecheck FAILED" \}/);
   assert.match(s,/run-synthetic-postgres\.mjs --synthetic-only/);
   assert.doesNotMatch(s,/docker pull|npm run test:postgres/);
+});
+
+test("P0-D3 PowerShell 5.1 runner has ASCII-only source and safe quote boundaries",()=>{
+  const s=gates();
+  const invalid=[...s].filter(ch=>ch.codePointAt(0)>127);
+  assert.deepEqual(invalid,[],"Windows PowerShell 5.1 must not misdecode UTF-8 non-ASCII without BOM");
+  assert.match(s,/Write-Host "PASS - synthetic Node tests and TypeScript/);
+  assert.match(s,/Write-Host "NOT RUN - PostgreSQL role\/RLS tests/);
+  assert.match(s,/OVERALL P0-D3 SECURITY GATE OPEN - missing real PostgreSQL RLS evidence/);
 });
