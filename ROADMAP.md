@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+
+**2026-10-17 — GPS Native PG16 I2-A OFFLINE CONTRACT AUTHORED / NOT TESTED.** Same Draft PR #359: added pure I2 Windows evidence boundary and 3 adversarial Node cases. All data remain caller-supplied, not independently measured Windows truth. Explicit runtime/stop/delete refusal. I2-B actual Windows adapter and disposable runner NOT IMPLEMENTED; PG16 SQL/RLS NOT RUN, existing PG16/18 services untouched. Next: exact-SHA local Node/TS verification, independent implementation security review, then implement independently attested OS collector and reviewed native runner. No initdb/pg_ctl/SQL without separate owner approval.
+
 **2026-10-17 — GPS P0-D3 NATIVE PG16 I1 OWNER-LOCAL ACCEPTED:** Exact clean `2c4219e3e3bbeb26852b05d9f394a66cf3954d04`, branch `docs/gps-r21-p0-d3-native-pg16-readiness`, empty Git status. Guard + offline preflight `node --check` **PASS**, targeted native Node **12/12 PASS (0 failed/skipped)** and `npm run typecheck` **PASS**, owner-local Windows not CI. [Pinned acceptance ledger](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md). **I1 bounded no-DB milestone CLOSED; actual PG16 SQL/RLS NOT RUN/OPEN**. Next bounded I2: implementation and mocked verification of native one-off cluster adapter, **no initdb/start/SQL without separate owner approval**, existing running PG16/18 services untouched. Real GPS/Neon/production and merge/deploy NO-GO. Follow-up docs-only HEAD not retested.
 
 
