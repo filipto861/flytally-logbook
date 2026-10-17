@@ -63,7 +63,7 @@ export function createFalsificationScorecard(fixtures:readonly FalsificationCase
         errors.push("SUPPORT_SPANS_INVALID_EDGE");
       if(candidate.gapAdjacent!== (candidate.invalidBoundaryEvidence.length>0))
         errors.push("INCONSISTENT_INVALID_BOUNDARY_FLAG");
-      if(candidate.invalidBoundaryEvidence.length>0&&candidate.time!==null)
+      if((candidate.gapAdjacent||candidate.invalidBoundaryEvidence.length>0)&&candidate.time!==null)
         errors.push("PRECISE_TIME_NEAR_INVALID_BOUNDARY");
       for(const observation of candidate.invalidBoundaryEvidence){
         const original=analysis.edges.find(e=>e.from===observation.edge.from&&e.to===observation.edge.to);
