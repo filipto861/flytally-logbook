@@ -1,3 +1,9 @@
+# FlyTally changelog
+
+## 2026-10-17 — GPS R2.1b-P0-D3 post-DeepSeek synthetic runner hardening (DRAFT / NOT RELEASED)
+
+Product owner supplied DeepSeek partial source-level F01–F14 security review; **no independent PostgreSQL execution**. Staged `fix/gps-r21-p0-d3-synthetic-runner-hardening` on top of D3 Draft PR #351: pin pre-inspected local Docker image by immutable ID and `--pull=never`; reject remote/TCP contexts and ambient PG* env; wrap startup/cleanup in try/finally and verify absence rather than silently ignore failed deletion; add intentionally granted-but-unpolicied synthetic gamma role, representative negative DDL/role/catalog/function-rights assertions, and six new Node static/mock/early-refusal tests. Existing PowerShell default no-Docker and production GPS code untouched. **22 authored Node tests, targeted execution NOT RUN; typecheck NOT RUN; actual Postgres RLS NOT RUN / overall gate OPEN; no CI/build/browser/Neon/DB/merge/deploy.** [D3 patch contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_POST_REVIEW_HARDENING_2026-10-17.md). D4 separate 17/17 Node + TypeScript PASS at exact prior SHA cannot substitute for D3. Review handoff received/source-reconciled but deeper driver/identity/consent remain NO-GO.
+
 ## 2026-10-17 - GPS P0-D3 Windows local no-Docker gate PASS (research-only / NOT RELEASED)
 
 Owner transcript on **clean exact SHA `3f9db21f3945a4abc72b5fe269bff528e7db5967`**: PowerShell 5.1 runner executed, **16/16 targeted Node synthetic/mock/static tests PASS** (0 fail, 0 skipped), `npm run typecheck` / `tsc --noEmit` **PASS**. Native `initdb`/`pg_ctl`/`psql` toolchain not fully detected; default flow intentionally did not start DB or Docker. **PostgreSQL role/RLS NOT RUN and overall P0-D3 security gate OPEN**. This completes only default local testing and PS encoding regression acceptance. No real GPS, authentication, production/Neon access, schema migration, merge, deployment or cross-owner training. Subsequent documentation commit has not been locally retested and does not alter executable test code.
@@ -6,7 +12,6 @@ Owner transcript on **clean exact SHA `3f9db21f3945a4abc72b5fe269bff528e7db5967`
 
 Owner Windows PowerShell 5.1 execution at clean `43e42f70d56723b57c40d7cbce2215d0b8835732` parsed and ran the ASCII wrapper; isolated Node security suite **16/16 PASS**, TypeScript **FAIL** (missing `NODE_ENV` in subprocess `env` and optional return from `codePointAt(0)`), so wrapper stopped before any optional PostgreSQL work. Test-only fix `9c48ae2b` sets `NODE_ENV: "test"` and handles the optional code point. Corrected HEAD **Node and typecheck NOT RUN** pending owner retest. PostgreSQL RLS **NOT RUN**, overall P0-D3 security gate OPEN. No real GPS, DB, runtime, merge or deploy.
 
-# FlyTally changelog
 
 ## 2026-10-17 — GPS P0-D3 Windows PowerShell 5.1 encoding parse fix (DRAFT / NOT RELEASED)
 
