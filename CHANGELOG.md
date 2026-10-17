@@ -1,4 +1,32 @@
+## 2026-10-17 - GPS P0-D3 Windows local no-Docker gate PASS (research-only / NOT RELEASED)
+
+Owner transcript on **clean exact SHA `3f9db21f3945a4abc72b5fe269bff528e7db5967`**: PowerShell 5.1 runner executed, **16/16 targeted Node synthetic/mock/static tests PASS** (0 fail, 0 skipped), `npm run typecheck` / `tsc --noEmit` **PASS**. Native `initdb`/`pg_ctl`/`psql` toolchain not fully detected; default flow intentionally did not start DB or Docker. **PostgreSQL role/RLS NOT RUN and overall P0-D3 security gate OPEN**. This completes only default local testing and PS encoding regression acceptance. No real GPS, authentication, production/Neon access, schema migration, merge, deployment or cross-owner training. Subsequent documentation commit has not been locally retested and does not alter executable test code.
+
+## 2026-10-17 - GPS P0-D3 owner-local PowerShell PASS, test-only TypeScript fix (DRAFT / NOT RELEASED)
+
+Owner Windows PowerShell 5.1 execution at clean `43e42f70d56723b57c40d7cbce2215d0b8835732` parsed and ran the ASCII wrapper; isolated Node security suite **16/16 PASS**, TypeScript **FAIL** (missing `NODE_ENV` in subprocess `env` and optional return from `codePointAt(0)`), so wrapper stopped before any optional PostgreSQL work. Test-only fix `9c48ae2b` sets `NODE_ENV: "test"` and handles the optional code point. Corrected HEAD **Node and typecheck NOT RUN** pending owner retest. PostgreSQL RLS **NOT RUN**, overall P0-D3 security gate OPEN. No real GPS, DB, runtime, merge or deploy.
+
 # FlyTally changelog
+
+## 2026-10-17 — GPS P0-D3 Windows PowerShell 5.1 encoding parse fix (DRAFT / NOT RELEASED)
+
+Owner checkout at exact clean `a7dc905e980fe10bbb550512b5ba19f09c25d00d` fast-forwarded but `run-local-gates.ps1` aborted at PowerShell parse time: UTF-8 without BOM plus non-ASCII em dashes generated `MissingEndParenthesisInExpression`/unexpected-token errors. **No test, TypeScript, Docker or RLS statements ran in that invocation.** Narrow research-only fix replaced **all nine em dashes** in `.ps1` with ASCII hyphens. Updated old output-marker test and added one regression requiring ASCII-only PS1 and honest RLS-not-run marker (**16 authored Node tests, NOT RUN on corrected HEAD**). GitHub source check confirmed ASCII and test literals; Windows PowerShell runtime not available to assistant. ROADMAP/FEATURES/[P0-D3 evidence doc](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md) synchronized. No production code, DB/Neon, user GPS, model training, merge or deploy.
+
+
+## 2026-10-17 — GPS R2.1b-P0-D3 Docker-optional local verification (DRAFT / NOT RELEASED)
+
+Per owner direction, removed Docker from the **default** development/test dependency. Added research-only `run-local-gates.ps1` with exact clean SHA/branch checks, offline-by-default targeted Node suite and repository `tsc --noEmit`, explicit **Postgres RLS NOT RUN / overall security milestone OPEN** without DB. Optional Docker provider remains explicit opt-in; native `initdb`, `pg_ctl`, `psql` presence is detected without creating/connecting to any cluster. Added two static tests, raising the isolated suite from 13 to **15 authored cases**; **new HEAD tests and typecheck NOT RUN**, original Docker RLS probe also NOT RUN. Prior exact owner run `820b211b` had 12/12 Node tests and TypeScript PASS but Docker executable unavailable. Updated [P0-D3 milestone docs](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md). No production/runtime code, real GPS/Neon read, DB role, migration, cross-user training, merge or deploy.
+
+
+## 2026-10-17 — GPS R2.1b-P0-D3 owner-local Node/TypeScript PASS; Docker unavailable, DB checks NOT RUN (DRAFT)
+
+Owner Windows PowerShell at exact clean `820b211b07c373d9123fa3c2ec023bc9909342f5`: **12/12 mock/static Node tests PASS, `npm run typecheck` PASS**, zero test failures/skips. `docker` failed with CommandNotFoundException; the isolated Postgres runner subsequently failed the local-context prerequisite without starting a DB. **No PostgreSQL RLS privileges tested, P0-D3 combined gate not met.** Hardened research-only runner with explicit Docker CLI availability preflight and added **1 new Docker-absent Node regression** (new head test/typecheck NOT RUN). Updated [P0-D3 evidence and Windows operator preflight](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md). No test DB instantiated, no GPS data/production DB accessed, no SQL schema updates outside source, no app/runtime change, merge or deploy.
+
+
+## 2026-10-17 — GPS R2.1b-P0-D3 synthetic PostgreSQL privilege prototype (DRAFT / UNVERIFIED / NOT RELEASED)
+
+Following explicit product-owner approval to implement **synthetic-only** security prototype, created separate `test/gps-r21-p0-d3-synthetic-security` branch from unchanged `main@6a67a024`. Added fictional `r21_lab` Postgres flights/tracks/participant records and enforced per-subject RLS based on CURRENT_USER, plus mock authorization source, disposable local Docker Postgres runner and 12 static/mock tests. Runner requires explicit synthetic flag, refuses production-like database variables and remote Docker endpoint, has no exposed ports/network and only ephemeral fixture storage, and attempts wrong-owner reads, write/DDL, role switch, privileged function, row_security and COPY checks. Added [P0-D3 source/limitations and verification matrix](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md). **New Node/static/TypeScript/Postgres privilege gates NOT RUN**; local container has no Docker/Postgres binary. Prior 63/63 owner-local PASS on PR #350 is not reusable as evidence for this milestone. No production data, SQL, credentials, migrations, user identity changes, flight writes, model training, merge or deploy.
+
 
 ## 2026-10-16 — Airport Elevation Phase 1 local acceptance and production schema confirmed (PR #346 DRAFT, NOT RELEASED)
 
