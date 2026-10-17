@@ -48,8 +48,24 @@ function parseCsv(source:string){
   const latIndex=at(["lat","latitude","latitudedeg","latitudedegrees"]),lonIndex=at(["lon","lng","long","longitude","longitudedeg","longitudedegrees"]),altIndex=at(["alt","altitude","elevation","ele","altm","altitudem","altitudemeters","altitudeft","altitudefeet","elevationft","elevationfeet","gpsaltitude"]),timeIndex=at(["time","timestamp","datetime","utc","utctime","dateandtime","gpstime"]),dateIndex=at(["date","utcdate","flightdate"]);
   if(latIndex<0||lonIndex<0)return[];
   const altitudeFeet=altIndex>=0&&/(ft|feet)$/.test(headers[altIndex]);
-  const number=(value:string|undefined)=>Number((value||"").trim().replace(",","."));
-  const points=lines.slice(1).map(line=>{const row=csvCells(line,delimiter),lat=number(row[latIndex]),lon=number(row[lonIndex]),rawAlt=altIndex>=0?number(row[altIndex]):null,time=timeIndex>=0?combineCsvTimestamp(dateIndex>=0?row[dateIndex]:undefined,row[timeIndex]):dateIndex>=0?combineCsvTimestamp(row[dateIndex],undefined):null;if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;const alt=rawAlt!==null&&Number.isFinite(rawAlt)?rawAlt*(altitudeFeet?.3048:1):null;return{lat,lon,alt,time}}).filter(Boolean) as KmlPoint[];
+  // Number("") is zero: do not turn absent CSV evidence into a GPS measurement.
+  const number=(value:string|undefined):number|null=>{
+    const token=value?.trim();
+    if(!token)return null;
+    const parsed=Number(token.replace(",","."));
+    return Number.isFinite(parsed)?parsed:null;
+  };
+  const points:KmlPoint[]=[];
+  for(const line of lines.slice(1)){
+    const row=csvCells(line,delimiter),lat=number(row[latIndex]),lon=number(row[lonIndex]);
+    // A missing/malformed coordinate invalidates this CSV rather than creating
+    // a false 0° fix or silently skipping the damaged source sample.
+    if(lat===null||lon===null||Math.abs(lat)>90||Math.abs(lon)>180)return[];
+    const rawAlt=altIndex>=0?number(row[altIndex]):null;
+    const time=timeIndex>=0?combineCsvTimestamp(dateIndex>=0?row[dateIndex]:undefined,row[timeIndex]):dateIndex>=0?combineCsvTimestamp(row[dateIndex],undefined):null;
+    const alt=rawAlt!==null?rawAlt*(altitudeFeet?.3048:1):null;
+    points.push({lat,lon,alt:Number.isFinite(alt)?alt:null,time});
+  }
   return normalize(points);
 }
 
@@ -230,7 +246,7 @@ export function touchAndGoEvents(points:KmlPoint[]):TouchAndGoEvent[]{
 }
 export function landingCount(points:KmlPoint[]){return Math.max(1,1+touchAndGoEvents(points).length)}
 export function splitPoints(points:KmlPoint[],indices:number[]){if(!indices.length)return[points];const parts:KmlPoint[][]=[];let start=0;for(const raw of indices){const index=Math.max(1,Math.min(points.length-2,raw)),part=points.slice(start,index+1);if(part.length>=2)parts.push(part);start=index+1}const tail=points.slice(start);if(tail.length>=2)parts.push(tail);return parts.length?parts:[points]}
-export function trackStats(points:KmlPoint[]){const alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&value!==0),timed=points.filter(point=>point.time);return{pointCount:points.length,distanceKm:points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),startUtc:timed[0]?.time??null,endUtc:timed.at(-1)?.time??null,minAlt:alts.length?Math.min(...alts):null,maxAlt:alts.length?Math.max(...alts):null}}
+export function trackStats(points:KmlPoint[]){const alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value)),timed=points.filter(point=>point.time);return{pointCount:points.length,distanceKm:points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),startUtc:timed[0]?.time??null,endUtc:timed.at(-1)?.time??null,minAlt:alts.length?Math.min(...alts):null,maxAlt:alts.length?Math.max(...alts):null}}
 export function overview(points:KmlPoint[],max=180){if(points.length<=max)return points;const step=Math.ceil(points.length/max),out=points.filter((_,index)=>index===0||index===points.length-1||index%step===0);if(out.at(-1)!==points.at(-1))out.push(points.at(-1)!);return out.slice(0,max)}
 export function localParts(iso:string|null){if(!iso)return null;const date=new Date(iso);if(Number.isNaN(date.getTime()))return null;const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).map(part=>[part.type,part.value]));return{date:`${parts.year}-${parts.month}-${parts.day}`,time:`${parts.hour}:${parts.minute}`}}
 
