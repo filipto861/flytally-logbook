@@ -2,8 +2,8 @@
 
 **Date:** 2026-10-17
 **Status:** **DESIGN / READ-ONLY ANALYSIS ONLY — NO PRODUCT APPROVAL, NO CODE IMPLEMENTATION, NO DEPLOY**
-**Repo:** filipto861/flytally-logbook only. Research Draft PR #350, branch \`test/gps-detection-r21-falsification\`. Canonical main source inspected at \`main@6a67a02475ab09c3271f8646427f7956ed6e590a\`.
-**Baseline:** research executable source clean \`681c62d90d21fdf1efd4aa3ada83383249ea857b\`: owner-local GPS/legacy targeted **83/83 PASS** and TypeScript PASS; subsequent docs-only HEAD \`3294760eef337985b96e79c29d856a95fa1380de\`. This is synthetic regression evidence, not wheel-contact truth.
+**Repo:** filipto861/flytally-logbook only. Research Draft PR #350, branch `test/gps-detection-r21-falsification`. Canonical main source inspected at `main@6a67a02475ab09c3271f8646427f7956ed6e590a`.
+**Baseline:** research executable source clean `681c62d90d21fdf1efd4aa3ada83383249ea857b`: owner-local GPS/legacy targeted **83/83 PASS** and TypeScript PASS; subsequent docs-only HEAD `3294760eef337985b96e79c29d856a95fa1380de`. This is synthetic regression evidence, not wheel-contact truth.
 
 ## 1. Existing product reality — do not build a duplicate workflow
 
@@ -11,22 +11,22 @@ Repository source inspection:
 
 | Main source | Existing behavior | Consequence |
 |---|---|---|
-| \`components/kml-import-form.tsx\` | Existing KML/GPX/CSV import; supports split review, full track playback, editable takeoff/landing/starts/day-night values, quality warnings and optional single-flight "Save & certify". Handles multiple reviewed flights as drafts. | Reuse this IA and form; don't add another canonical flight record flow or assume V2 can change saved counts. |
-| \`components/gps-import-review-player.tsx\` | Leaflet track + altitude/speed profile, timeline/markers, accessible event strip, scrubber. \`ImportReviewEvent.kind\` only allows takeoff/landing/touch-and-go/split; sample speed/alt presentation currently uses numerical fallbacks, including null altitude in chart/render. | Do **not** represent V2 unconfirmed motion patterns as existing confirmed-looking landing/T&G marker kinds. Add a separately styled advisory presentation only after provenance/render review. Missing altitude must not look like sea level. |
-| \`lib/flight-draft-candidate.ts\` | \`gpsFlightCandidate\` represents explicitly reviewed fields as \`GPS_REVIEW\` provenance and normalizes through canonical workflow; it has no dedicated V2 event authority. | A V2 candidate must never feed directly into this input, nor become a certified landing by serialized hidden field. |
-| \`app/(protected)/flights/actions.ts\` | \`importKmlFlight\` reads/parses uploaded file, rechecks selected aircraft and source-specific movement rules, verifies submitted counts and save intent, canonical normalizes and persists; single flight can subsequently certify, multi-flight draft-only. | Preserve server-side validation; no second "quick certify" endpoint. Browser-only candidate choice cannot bypass \`landingsDay+landingsNight=reviewedStarts\` or locked/certified protections. |
-| \`lib/data/flight-track-review.ts\` | Reads owned DB track and calculates legacy \`landingCount\` from first track (\`LIMIT 1\`); auth path / production DB privilege constraints remain unresolved for new analytics. | Not a safe foundation for V2 owner research access. Do not secretly call it or infer all-track coverage. |
-| \`research/gps-detection-r21/detector.ts\` | Only \`T_G_PATTERN_CANDIDATE\` and \`STOP_GO_PATTERN_CANDIDATE\`, \`physicalContactStatus=UNRESOLVED\`, reason-coded invalid boundaries, \`sourceQuality\` with declared-not-attested metadata. | V2 outputs remain hypotheses, never wheel-contact labels. |
-| \`research/gps-detection-r21/flight-count-contract.ts\` | Observed-island count is \`PATTERN_ONLY\`; bare GPS whole-flight landing count permanently \`UNAVAILABLE\`. | Never substitute pattern-count for flight-count or silently set Day/Night regulatory counts. |
+| `components/kml-import-form.tsx` | Existing KML/GPX/CSV import; supports split review, full track playback, editable takeoff/landing/starts/day-night values, quality warnings and optional single-flight "Save & certify". Handles multiple reviewed flights as drafts. | Reuse this IA and form; don't add another canonical flight record flow or assume V2 can change saved counts. |
+| `components/gps-import-review-player.tsx` | Leaflet track + altitude/speed profile, timeline/markers, accessible event strip, scrubber. `ImportReviewEvent.kind` only allows takeoff/landing/touch-and-go/split; sample speed/alt presentation currently uses numerical fallbacks, including null altitude in chart/render. | Do **not** represent V2 unconfirmed motion patterns as existing confirmed-looking landing/T&G marker kinds. Add a separately styled advisory presentation only after provenance/render review. Missing altitude must not look like sea level. |
+| `lib/flight-draft-candidate.ts` | `gpsFlightCandidate` represents explicitly reviewed fields as `GPS_REVIEW` provenance and normalizes through canonical workflow; it has no dedicated V2 event authority. | A V2 candidate must never feed directly into this input, nor become a certified landing by serialized hidden field. |
+| `app/(protected)/flights/actions.ts` | `importKmlFlight` reads/parses uploaded file, rechecks selected aircraft and source-specific movement rules, verifies submitted counts and save intent, canonical normalizes and persists; single flight can subsequently certify, multi-flight draft-only. | Preserve server-side validation; no second "quick certify" endpoint. Browser-only candidate choice cannot bypass `landingsDay+landingsNight=reviewedStarts` or locked/certified protections. |
+| `lib/data/flight-track-review.ts` | Reads owned DB track and calculates legacy `landingCount` from first track (`LIMIT 1`); auth path / production DB privilege constraints remain unresolved for new analytics. | Not a safe foundation for V2 owner research access. Do not secretly call it or infer all-track coverage. |
+| `research/gps-detection-r21/detector.ts` | Only `T_G_PATTERN_CANDIDATE` and `STOP_GO_PATTERN_CANDIDATE`, `physicalContactStatus=UNRESOLVED`, reason-coded invalid boundaries, `sourceQuality` with declared-not-attested metadata. | V2 outputs remain hypotheses, never wheel-contact labels. |
+| `research/gps-detection-r21/flight-count-contract.ts` | Observed-island count is `PATTERN_ONLY`; bare GPS whole-flight landing count permanently `UNAVAILABLE`. | Never substitute pattern-count for flight-count or silently set Day/Night regulatory counts. |
 
 ## 2. Proposed user workflow (NOT FROZEN)
 
-**Recommended smallest path: inline advisory panel inside existing \`Review GPS track\`, behind a default-OFF feature flag**, not a new page or second persisted GPS flight.
+**Recommended smallest path: inline advisory panel inside existing `Review GPS track`, behind a default-OFF feature flag**, not a new page or second persisted GPS flight.
 
 1. Pilot uploads/selects track using unchanged entry path; aircraft profile/split remain unchanged.
 2. Existing legacy map/events and canonical form remain intact. A separate, explicitly labeled **Experimental motion patterns — not confirmed landings** section may be shown only when data provenance/analysis prerequisites are actually satisfied and the product owner enables the flag.
 3. Compact status first: **Available (advisory)** / **Insufficient GPS evidence** / **Source quality not verified** / **Not applicable**. Avoid false green "confirmed" badges or invented per-event confidence/probability.
-4. For each supported candidate show **Possible rolling altitude reversal** or **Possible stop-and-go pattern**, plus supported interval/quality, the original source validity assessment, \`invalidBoundaryEvidence\` reason(s), and **time unavailable** where \`time=null\`. Do **not** label it "Landing 1", "Touchdown", "Go-around", "Low approach", "HIGH confidence" or "safe". Pilot can inspect the existing track playback position, provided the chart never invents missing altitude, and the index maps to the exact source/split sequence.
+4. For each supported candidate show **Possible rolling altitude reversal** or **Possible stop-and-go pattern**, plus supported interval/quality, the original source validity assessment, `invalidBoundaryEvidence` reason(s), and **time unavailable** where `time=null`. Do **not** label it "Landing 1", "Touchdown", "Go-around", "Low approach", "HIGH confidence" or "safe". Pilot can inspect the existing track playback position, provided the chart never invents missing altitude, and the index maps to the exact source/split sequence.
 5. Candidate review choices: **Reviewed / Not relevant / Leave unresolved** are *review notes only*, not aircraft-contact proof and **not canonical movement writes**. For the minimum first release, keep these ephemeral in the client; do not invent new DB table or retention promise. Navigation/file/split changes invalidate the notes and candidate list (unless a separately approved persistence contract exists).
 6. Pilot fills the **existing** Day/Night/total fields explicitly (as today). Those values alone go through canonical server validation. Review of an event suggestion must **not** auto-populate, silently change, increase, or certify any movement count.
 7. "Save draft" and existing explicit "Save & certify" are unchanged. Pilot must still review legally relevant evidence; the V2 panel cannot be a shortcut. Certification remains governed by stored canonical record and existing certification checks.
@@ -35,9 +35,9 @@ Repository source inspection:
 
 ## 3. Proposed in-memory, non-persisted DTO contract (DRAFT only)
 
-A future pure adapter under **research/** can transform an already-authorized \`ResearchAnalysis\` plus validated local source/split context into a DTO; no \`app/\` or \`lib/\` import at this milestone. Example shape (design, not compiled TS):
+A future pure adapter under **research/** can transform an already-authorized `ResearchAnalysis` plus validated local source/split context into a DTO; no `app/` or `lib/` import at this milestone. Example shape (design, not compiled TS):
 
-\`\`\`ts
+```ts
 type AdvisoryReview =
   | { status: "UNAVAILABLE"; reason:
       "SOURCE_NOT_VERIFIED" | "NO_VALID_ISLAND" |
@@ -56,9 +56,9 @@ type AdvisoryReview =
         pilotNote: "UNREVIEWED" | "REVIEWED" | "NOT_RELEVANT";
       }>;
     };
-\`\`\`
+```
 
-The eventual parser must validate union discriminators, sample indices, track/split identity and trusted/source-declared quality separately; no arbitrary \`sourceQuality: KNOWN\` flag can grant approval. This DTO must never carry persisted \`landings\`, \`takeoffs\`, \`flightId\`, \`certifiedAt\`, \`userId\`, names, registrations or a signal of approved touchdown. The design's bare index is **only** for in-memory same-upload review; it must not be serialized as cross-track identity. No private raw route upload/export to external reviewers. No automatic UTC inference.
+The eventual parser must validate union discriminators, sample indices, track/split identity and trusted/source-declared quality separately; no arbitrary `sourceQuality: KNOWN` flag can grant approval. This DTO must never carry persisted `landings`, `takeoffs`, `flightId`, `certifiedAt`, `userId`, names, registrations or a signal of approved touchdown. The design's bare index is **only** for in-memory same-upload review; it must not be serialized as cross-track identity. No private raw route upload/export to external reviewers. No automatic UTC inference.
 
 ## 4. Explicit invalidation and state transitions
 
@@ -79,7 +79,7 @@ Persisted flight evidence: unchanged. No cross-user or shared-flight assumption.
 
 **D2 — Meaning of "Reviewed":** recommend acknowledgment of seeing advisory evidence, **not confirmation of ground contact**. Only manually reviewed canonical numeric fields, on the existing save authority path, can represent pilot movement evidence.
 
-**D3 — Show candidate with source unknown?** Current research still emits some altitude patterns when metadata is \`UNVERIFIED\` to preserve synthetic T09 utility. Recommend **fail closed for pilot-facing altitude display** until source meaning (unit/mode) can be attested or a product-approved explicit "unverified research only" display mode is defined. Source \`KNOWN\` declaration is not authority.
+**D3 — Show candidate with source unknown?** Current research still emits some altitude patterns when metadata is `UNVERIFIED` to preserve synthetic T09 utility. Recommend **fail closed for pilot-facing altitude display** until source meaning (unit/mode) can be attested or a product-approved explicit "unverified research only" display mode is defined. Source `KNOWN` declaration is not authority.
 
 **D4 — Persist review notes?** Recommend **ephemeral for initial exploration**, no DB migration. Durable review evidence/retention requires separate schema, privacy and audit design.
 
