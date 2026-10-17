@@ -3,7 +3,7 @@
 **Date:** 2026-10-17
 **Repo:** `filipto861/flytally-logbook`
 **Branch:** `test/gps-detection-r21-falsification`, [Draft PR #350](https://github.com/filipto861/flytally-logbook/pull/350).
-**Status:** SOURCE + **14** SYNTHETIC TESTS AUTHORED / NEW CHECKOUT GATES **NOT RUN**.
+**Status:** BOUNDED OWNER-LOCAL ACCEPTANCE: **83/83 targeted Node PASS + TypeScript PASS** on clean exact source `681c62d90d21fdf1efd4aa3ada83383249ea857b`; pre-execution snapshot details retained below.
 **Prior accepted owner-local baseline:** clean exact `b6af89d586cd6264ff2549a29e80333b80c50e9b`: GPS targeted **69/69 PASS**, TypeScript PASS; does not certify the Batch 6 changes.
 
 ## Intent & decision
@@ -30,14 +30,26 @@ Address a bounded T19/A02/A03 evidence gap without inventing source precision, a
 
 ## Bounded acceptance
 
-**Expected targeted suite 83 tests**: previously owner-verified **69** plus new **14**. These are not 82 independent ground-contact truth labels. The following are **NOT RUN for this changed source**: targeted Node suite, `npm run typecheck`, full Node, production build, Playwright, PostgreSQL RLS, real-track accuracy, CI and deploy.
+**Expected targeted suite 83 tests**: previously owner-verified **69** plus new **14**. These are not 83 independent ground-contact truth labels. The following are **NOT RUN for this changed source**: targeted Node suite, `npm run typecheck`, full Node, production build, Playwright, PostgreSQL RLS, real-track accuracy, CI and deploy.
 
 After updating to the exact clean current branch commit, run the same nine GPS/legacy test files as Batch 5 **plus** `tests/gps-detection-r21-batch6-source-quality.test.ts` and `npm run typecheck`. No production secrets, DB or GPS uploads are required.
 
-**Acceptance:** (1) 82/82 targeted PASS, 0 fail/skip, strict TypeScript PASS; (2) previous T09/T11 utility and A13 reason-coded boundary evidence remain intact; (3) mismatch cases abstain/suppress vertical hypotheses instead of pretending source-valid MSL/AGL; (4) no `app/`, `lib/`, `server/`, DB, auth or production changes; (5) documentation records exact owner tested SHA with limitations.
+**Acceptance:** (1) 83/83 targeted PASS, 0 fail/skip, strict TypeScript PASS; (2) previous T09/T11 utility and A13 reason-coded boundary evidence remain intact; (3) mismatch cases abstain/suppress vertical hypotheses instead of pretending source-valid MSL/AGL; (4) no `app/`, `lib/`, `server/`, DB, auth or production changes; (5) documentation records exact owner tested SHA with limitations.
 
 **Not full T19 / A02 / A03 closure:** source parser fidelity, altitude quantization precision, independent sensor accuracy, actual reference-surface contradiction and runway geometry are **still unverified**. Do not upgrade these 35-case matrix rows to full COVERED or assert superior real-world touchdown recognition.
 
 **NO-GO retained:** P0-D3 real PostgreSQL RLS and independent owner-identity / strict no-write / consent gates OPEN; no owner/private tracks, Neon/production DB queries, migrations, trained models, GPS runtime/Logbook auto counts, user UI switch, merge/deploy or edits to `flytally-training`.
 
 **Next after owner-local PASS:** independently source-review metadata semantics with DeepSeek, then specify an advisory pilot-review DTO and promotion boundaries (read-only suggestions, no automatic certified flight mutation). Do not bypass P0 security by treating a purely in-memory experiment as user-data authorization.
+
+## Owner-local Batch 6 acceptance and evidence (2026-10-17)
+
+**PASS — LIMITED SYNTHETIC RESEARCH ONLY.** Owner ran the predeclared test command on the clean exact checked-out branch `test/gps-detection-r21-falsification` at `681c62d90d21fdf1efd4aa3ada83383249ea857b`. `git fetch origin`, `git pull --ff-only`, `git status --porcelain` (empty) and strict `git rev-parse HEAD` guard succeeded. Ten targeted GPS R2.1a/R2.1b/legacy test files were executed through `npm run test:target`: **83/83 Node PASS**, **0 fail, 0 skipped, 0 cancelled, 0 todo**, including all fourteen new Batch 6 source-quality cases. `npm run typecheck` (`tsc --noEmit`) returned successfully, the following explicit `$LASTEXITCODE` check passed, and PowerShell printed `GPS BATCH 6 LOCAL GATES PASS`. **This is owner-local, not CI.**
+
+Earlier `NOT RUN` statements above reflect the initial authored-only snapshot and are superseded **only for the exact tested code SHA**. Subsequent documentation-only commits do not establish a new executable test SHA. Historical 69/69 at clean `b6af89d5` remains separate earlier Batch 5 evidence.
+
+**Bounded acceptance:** negative and positive synthetic tests for altitude source mode/unit, unsupported feet/clamped altitude in metric-reversal/vertical-rate checks, unverified datum, malformed known H/V accuracy, preserved horizontal evidence, source-quality scorecard forgery, original T09/T11 utility and earlier A13 provenance are green. This is **not** evidence that any real-world recording has accurate source units, independent sensor provenance, effective vertical datum, runway contact, go-around/low approach type or actual touchdown; the physical contact field remains `UNRESOLVED`, whole-flight bare-GPS landing counts remain `UNAVAILABLE`. T19/A02/A03 remain PARTIAL in the overall 35-case falsification contract; passing these 14 cases does not close all of those clauses.
+
+**NOT RUN / NO-GO:** full Node suite, production build, browser/Playwright, actual PostgreSQL native RLS, strictly authorized no-write owner data access, real GPS/independent labels, ML/model validation, certified flight edits, migrations, PR merge, deployment or production release. Existing PG16/PG18 services and `flytally-training` untouched. PR #350 remains Draft.
+
+**NEXT:** independent actual changed-source semantic review (especially source-metadata interpretation), then a separately designed advisory pilot-review DTO with an explicit boundary against automatic promotion into canonical/certified flights. No private GPS access or production integration until the P0-D3 security and product approval gates are separately satisfied.
