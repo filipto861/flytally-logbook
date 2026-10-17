@@ -96,6 +96,14 @@ test("A13: scorecard rejects fabricated reason and contradictory precision flag"
   assert.ok(score.safety.violations.some(x=>x.includes("UNSUPPORTED_INVALID_BOUNDARY_PROVENANCE")));
   assert.ok(score.safety.violations.some(x=>x.includes("INCONSISTENT_INVALID_BOUNDARY_FLAG")));
   assert.ok(score.safety.violations.some(x=>x.includes("PRECISE_TIME_NEAR_INVALID_BOUNDARY")));
+  const wrongSide:ResearchAnalysis={...result,candidates:result.candidates.map((c,i)=>
+    i===index?{...c,invalidBoundaryEvidence:c.invalidBoundaryEvidence.map(e=>({
+      ...e,side:"BEFORE_ISLAND" as const
+    }))}:c
+  )};
+  const sideScore=createFalsificationScorecard([{fixtureId:"A13-WRONG-SIDE",reference:{kind:"UNLABELED"},analysis:wrongSide}]);
+  assert.equal(sideScore.safety.pass,false);
+  assert.ok(sideScore.safety.violations.some(x=>x.includes("UNSUPPORTED_INVALID_BOUNDARY_PROVENANCE")));
 });
 
 test("A13: cropped motion without an invalid quality edge must not gain gap provenance",()=>{
