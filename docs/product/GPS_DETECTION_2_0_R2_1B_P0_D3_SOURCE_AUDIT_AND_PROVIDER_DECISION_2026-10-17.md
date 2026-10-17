@@ -1,7 +1,9 @@
 # GPS Detection 2.0 — R2.1b-P0-D3 source audit and Docker-optional provider decision
 
 **Date:** 2026-10-17
-**Status:** INTERNAL SOURCE REVIEW / INDEPENDENT SECOND-AI REVIEW PENDING / RLS EXECUTION NOT RUN
+
+**Later independent review (superseding only the earlier PENDING status):** DeepSeek's owner-forwarded F01–F14 code review was received, assessed and recorded in [D3 reviewer reconciliation](GPS_DETECTION_2_0_R2_1B_P0_D3_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md). The reviewer performed no DB tests. This original audit below remains as a timestamped prereview record. The approved narrow runner/code implementation was staged in separate [Draft PR #354](https://github.com/filipto861/flytally-logbook/pull/354); new code not verified locally yet. PostgreSQL RLS NOT RUN, gate OPEN.
+**Status:** INTERNAL SOURCE REVIEW + INDEPENDENT PARTIAL SOURCE-ONLY REVIEW RECEIVED/RECONCILED / RLS EXECUTION NOT RUN
 **Repository:** `filipto861/flytally-logbook` only.
 **Source baseline:** isolated D3 Draft PR #351, exact source revision `3517cde1f5e000128c75b1298594a55764ab5f31`. This document is on a separate documentation-only branch stacked on D3, not on `main` or D4.
 **Current evidence:** owner Windows PowerShell 5.1 clean `3f9db21f3945a4abc72b5fe269bff528e7db5967`: 16/16 Node mock/static tests PASS and `tsc --noEmit` PASS; **actual PostgreSQL SQL/role/RLS NOT RUN**, no complete native PostgreSQL toolchain on owner PATH. Later D3 documentation-only HEAD not runtime tested. D4 research robustness accepted on its **separate** clean `749dc45932df462e37b3c34cbd50db04c9661bec`: 17/17 targeted Node PASS + typecheck PASS; it is **not** DB security proof.
