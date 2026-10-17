@@ -3,7 +3,7 @@
 **Read-only adversarial consultation request for DeepSeek/Claude.**  
 **Date:** 2026-10-17  
 **Repo:** `filipto861/flytally-logbook`, baseline `main@6a67a02475ab09c3271f8646427f7956ed6e590a`, experiment `test/gps-detection-r21-falsification`, Draft PR #350.  
-**Source docs:** [R2.1b owner-scoped observational plan](GPS_DETECTION_2_0_R2_1B_OWNER_SCOPED_OBSERVATIONAL_PLAN_2026-10-17.md) and R1/R2/R2.1a decisions in Draft PR #349. **Review status: NOT RUN**; do not imply another AI responded.
+**Source docs:** [R2.1b owner-scoped observational plan](GPS_DETECTION_2_0_R2_1B_OWNER_SCOPED_OBSERVATIONAL_PLAN_2026-10-17.md) and R1/R2/R2.1a decisions in Draft PR #349. **Review status: RECEIVED / DOCUMENT-ONLY** (independent DeepSeek response supplied by owner). Full evaluation is in [security review reconciliation](GPS_DETECTION_2_0_R2_1B_INDEPENDENT_SECURITY_REVIEW_RECONCILIATION_2026-10-17.md). Reviewer did not inspect repo/code/SQL/tests; no implementation or live-data permission was granted.
 **Allowed task:** criticize design/source evidence without code changes, DB access, credentials, user data or production operations.
 
 ## Confirmed code facts to challenge against exact repository
