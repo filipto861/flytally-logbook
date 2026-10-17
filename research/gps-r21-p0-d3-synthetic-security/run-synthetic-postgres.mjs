@@ -72,6 +72,31 @@ try{
     "--tmpfs","/tmp:rw,nosuid,size=16m",
     "-e","POSTGRES_PASSWORD=SYNTHETIC_NOT_A_SECRET","-e","POSTGRES_DB=r21_synthetic_lab",image.output]);
   if(!start.ok)fail("Could not start isolated synthetic DB: "+start.error.slice(0,200));
+  if(!/^[a-f0-9]{64}$/.test(start.output))
+    fail("Disposable container ID was not verified; no SQL executed.");
+  // Verify the EFFECTIVE Docker configuration, not merely authored run flags.
+  // A mismatch aborts before even SELECT 1 or schema.sql. The inspect payload
+  // (including environment) is never printed or retained.
+  const inspected=docker(["container","inspect","--format","{{json .}}",name]);
+  let cfg=null;
+  if(inspected.ok){
+    try{cfg=JSON.parse(inspected.output);}catch{cfg=null;}
+  }
+  const tmpfsPaths=["/var/lib/postgresql/data","/var/run/postgresql","/tmp"];
+  const host=cfg?.HostConfig;
+  const isolationVerified=
+    cfg?.Id===start.output&&cfg?.Name==="/"+name&&cfg?.Image===image.output&&
+    cfg?.State?.Running===true&&
+    cfg?.Config?.Labels?.["flytally.purpose"]==="synthetic-rls-research"&&
+    host?.NetworkMode==="none"&&host?.PublishAllPorts===false&&
+    host?.Privileged===false&&
+    (host?.Binds==null||(Array.isArray(host.Binds)&&host.Binds.length===0))&&
+    host?.PortBindings!=null&&Object.keys(host.PortBindings).length===0&&
+    host?.Tmpfs!=null&&tmpfsPaths.every(path=>Object.hasOwn(host.Tmpfs,path))&&
+    Array.isArray(cfg?.Mounts)&&cfg.Mounts.length===tmpfsPaths.length&&
+    cfg.Mounts.every(m=>m.Type==="tmpfs"&&tmpfsPaths.includes(m.Destination));
+  if(!inspected.ok||!isolationVerified)
+    fail("Disposable Docker isolation configuration not verified; no SQL executed.");
   let ready=false;
   for(let i=0;i<25;i++){
     if(docker(["exec",name,"psql","-X","-qAt","-v","ON_ERROR_STOP=1","-U","postgres","-d","r21_synthetic_lab","-c","SELECT 1"]).ok){ready=true;break;}
