@@ -53,7 +53,8 @@ function exactMounts(mounts){
 }
 
 export function validateSyntheticContainer(cfg,{id,name,imageId}){
-  if(!validContainerId(id)||!validContainerId(imageId.slice(7))||
+  if(!validContainerId(id)||typeof imageId!=="string"||
+      !/^sha256:[a-f0-9]{64}$/.test(imageId)||
       typeof name!=="string"||!/^flytally-r21-synthetic-[a-f0-9]{12}$/.test(name)||
       !cfg||typeof cfg!=="object"||Array.isArray(cfg))return false;
   const host=cfg.HostConfig;
