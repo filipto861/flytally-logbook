@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS D2-C consumer audit and minimal parser fix scope (DOCS ONLY / NOT IMPLEMENTED)
+
+Mapped existing `parseTrackFile` consumers `components/kml-import-form.tsx`, `app/(protected)/flights/actions.ts`, `trackStats`, `landingCount`, source D2-A unsafe tests, legacy parser cases and null-alt renderer. Defined owner-go/no-go scope: blank CSV alt -> null, missing coordinates -> fail file (proposed), measured zero preserved in stats, no changed T&G thresholds or normalized order, no DB/migration or persisted re-write; verify feature-flag-OFF, client/server parity and independent source-level review. [D2-C scope](docs/product/GPS_DETECTION_2_0_R2_1C_D2C_PARSER_FIX_SCOPE_2026-10-17.md). **No parser/source changes or D2-C test/build/Playwright run**. D2-B2 research 130/130 PASS remains exact prior SHA only.
+
+
 ## 2026-10-17 — GPS R2.1c-D2-B2 clean exact-source 130/130 owner-local PASS (RESEARCH / NOT RELEASED)
 
 Owner fast-forwarded clean branch `test/gps-detection-r21-falsification` to `25d0efdb9b46cf096b01f7191ed645d7a09d620b`; guarded Node run 14 named GPS/parser suites **130/130 PASS**, zero failed/skipped/cancelled/todo (including 10 D2-B2 CSV lineage cases); `npm run typecheck` (`tsc --noEmit`) **PASS**, final guarded PowerShell success marker. This is owner-local, NOT CI. Bounded CSV subset source-line mapping / UTC / ft conversion / true zero and missing parsing only; caller-supplied input or header is not independently trusted sensor provenance. Production `lib/track-processing.ts`, GPS Import UI, known unsafe semantics, canonical data, DB and deployment unchanged. Full Node/build/Playwright/PG16 RLS/real owner GPS NOT RUN/NO-GO. D2-C minimal legacy integrity fix needs independently reviewed consumer impact and separate owner authorization; D3 pilot advisory still not implemented. [D2-B2 evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
