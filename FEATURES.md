@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 R2.1a Batch 5 owner-local accepted (2026-10-17; RESEARCH, NOT RELEASED):** clean exact `b6af89d586cd6264ff2549a29e80333b80c50e9b` targeted Node **69/69 PASS** (63 baseline + six new reason-coded A13 boundary provenance tests), TypeScript **PASS**, no failures/skips. Research candidates expose invalid-edge reason/index/island side, suppress unsupported precise timing and remain `physicalContactStatus=UNRESOLVED`; source scorecard rejects forged edge provenance. **Not** independently validated touchdown or a full T/A matrix pass. No production imports, private tracks, SQL/RLS, migrations, training, deploy. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH5_BOUNDARY_PROVENANCE_2026-10-17.md).
+
+
 **GPS Detection 2.0 R2.1a Batch 5 (2026-10-17, DRAFT / NOT TESTED):** Research-only additive per-candidate typed invalid-quality-edge provenance (`BEFORE_ISLAND/AFTER_ISLAND`, source index/reason); continued physical contact `UNRESOLVED`, invalid-adjacent `time=null`, supported islands/legacy `gapAdjacent` preserved. Scorecard flags mismatched boundary provenance. Six new synthetic A13 tests authored; total 69 expected with pre-existing 63, NOT RUN on new SHA. No go-around/low-approach classifier, GPS UI runtime, DB/Neon, merge or deploy. [Batch 5](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH5_BOUNDARY_PROVENANCE_2026-10-17.md).
 
 
