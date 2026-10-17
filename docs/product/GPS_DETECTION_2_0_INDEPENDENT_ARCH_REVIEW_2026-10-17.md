@@ -32,7 +32,7 @@ The assistant produced a **provisional** [R2 temporal architecture and falsifica
 
 External authoritative evidence: OGC KML `altitudeMode` defaults to clampToGround and can encode altitude relative to ground or sea level; persisted `KmlPoint` cannot reliably recover those semantics. [OGC 12-007r2](https://docs.ogc.org/is/12-007r2/12-007r2.html). The HMM phase identification paper (~97% FDR median phase accuracy) must **not** be claimed as FlyTally T&G accuracy. [JOAS (2024)](https://journals.open.tudelft.nl/joas/article/view/7269).
 
-**Independent consultation PARTIAL (17 Oct 2026):** a DeepSeek adversarial response has been received and source-reconciled, but the reviewer explicitly lacked both full R1 and R2 documents and repository access. Complete document review **NOT RUN**. The next reviewer must check the actual R1/R2 documents and challenge the post-review changes instead of assuming the first partial response covered them.
+**Independent consultation status (17 Oct 2026):** the **first** DeepSeek response was PARTIAL, because it lacked full R1/R2 documents and repository access. A **second** review received R1, R2, R2.1 and reconciliation in full and issued **conditional approval for an isolated falsification/regression design only**; the reviewer did not inspect repo/code, run tests or SQL. [Second-review reconciliation](GPS_DETECTION_2_0_R2_1_SECOND_REVIEW_RECONCILIATION_2026-10-17.md) records all additional gates. A new review need not be invented merely to reopen R2.1; the next decision is the owner's explicit approval/revision of the now strengthened contract.
 
 ## Proposed design (challenge it)
 
