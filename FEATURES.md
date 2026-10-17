@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS 2.0 R2.1c Pilot Review (2026-10-17, PROPOSED ONLY / NOT IMPLEMENTED):** Proposed reuse of existing GPS import/review player rather than parallel canonical flow; separate candidate motion-hypothesis view, source uncertainty and invalid-edge reasons, ephemeral pilot notes only, never auto-promote to landing counts or certify. Flag OFF legacy unchanged; flag ON behavior and any source-trust gating require independent review + final product decision first. No new UI/DTO runtime, storage, production GPS, real DB owner reads or migration. [Design draft](docs/product/GPS_DETECTION_2_0_R2_1C_PILOT_REVIEW_DESIGN_2026-10-17.md) · [read-only DeepSeek review packet](docs/product/GPS_DETECTION_2_0_R2_1C_INDEPENDENT_REVIEW_HANDOFF_2026-10-17.md).
+
+
 **GPS Detection 2.0 R2.1a Batch 6 bounded local acceptance (2026-10-17, RESEARCH ONLY):** owner clean exact `681c62d90d21fdf1efd4aa3ada83383249ea857b` **83/83 targeted Node PASS** (including 14 new T19/A02/A03 source-quality tests), TypeScript PASS, 0 failures/skips. Declared source-unit/mode and accuracy now constrain altitude-reversal and metric vertical-rate edge evidence, with metadata still unverified; no inferred AGL/runway/touchdown. T19/A02/A03 still PARTIAL. Not CI, no production integration, real GPS, P0-D3 RLS, merge/deploy. [Batch 6 verification ledger](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH6_SOURCE_QUALITY_2026-10-17.md).
 
 
