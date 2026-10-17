@@ -182,3 +182,93 @@ test("touch-and-go detection is recalculated independently after a manual split"
   assert.deepEqual(parts.map(part=>touchAndGoEvents(part).length),[0,0]);
   assert.deepEqual(parts.map(landingCount),[1,1]);
 });
+
+
+/** D2-C: desired safety behavior (not D2-A's historical KNOWN UNSAFE characterization). */
+test("D2-C CSV blank altitude is null while an explicit measured zero is preserved",()=>{
+  const input=[
+    "Latitude,Longitude,Altitude Meters,UTC Time",
+    "50,14,,2026-10-17T08:00:00Z",
+    "50.01,14.01,0,2026-10-17T08:01:00Z",
+    "50.02,14.02,-12,2026-10-17T08:02:00Z",
+    "50.03,14.03,340,2026-10-17T08:03:00Z"
+  ].join("\n");
+  const points=parseTrackFile(input,"synthetic.csv");
+  assert.equal(points.length,4);
+  assert.deepEqual(points.map(point=>point.alt),[null,0,-12,340]);
+  const inspection=inspectTrackFile(input,"synthetic.csv");
+  assert.deepEqual(inspection.points,points);
+  assert.equal(inspection.quality.altitudeCoverage,.75);
+});
+
+test("D2-C blank, malformed and invalid CSV coordinates reject the entire file",()=>{
+  const header="lat,lon,altitude,time";
+  const valid=["50,14,100,2026-10-17T08:00:00Z","50.1,14.1,200,2026-10-17T08:01:00Z"];
+  const damaged=[
+    ",14,123,2026-10-17T08:00:30Z",
+    "50,,123,2026-10-17T08:00:30Z",
+    "bad,14,123,2026-10-17T08:00:30Z",
+    "50,Infinity,123,2026-10-17T08:00:30Z",
+    "91,14,123,2026-10-17T08:00:30Z",
+    "50,181,123,2026-10-17T08:00:30Z",
+    "50,14,123",
+    "50,14",
+  ];
+  for(const row of damaged){
+    const input=[header,valid[0],row,valid[1]].join("\n");
+    assert.deepEqual(parseTrackFile(input,"synthetic.csv"),[],row);
+    assert.deepEqual(inspectTrackFile(input,"synthetic.csv").points,[],row);
+  }
+});
+
+test("D2-C an explicit CSV zero coordinate is valid, not confused with a blank",()=>{
+  const input=[
+    "lat,lon,altitude,time",
+    "0,0,0,2026-10-17T08:00:00Z",
+    "0.01,0.01,1,2026-10-17T08:01:00Z"
+  ].join("\n");
+  const points=parseTrackFile(input,"synthetic.csv");
+  assert.equal(points.length,2);
+  assert.deepEqual([points[0].lat,points[0].lon,points[0].alt],[0,0,0]);
+});
+
+test("D2-C valid zero altitude participates in min/max and missing altitude is excluded",()=>{
+  const stats=trackStats([
+    {lat:50,lon:14,alt:null,time:"2026-10-17T08:00:00Z"},
+    {lat:50.01,lon:14.01,alt:0,time:"2026-10-17T08:01:00Z"},
+    {lat:50.02,lon:14.02,alt:150,time:"2026-10-17T08:02:00Z"}
+  ]);
+  assert.equal(stats.minAlt,0);
+  assert.equal(stats.maxAlt,150);
+  const allZero=trackStats([{lat:50,lon:14,alt:0,time:null}]);
+  assert.equal(allZero.minAlt,0);
+  assert.equal(allZero.maxAlt,0);
+  const unavailable=trackStats([{lat:50,lon:14,alt:null,time:null}]);
+  assert.equal(unavailable.minAlt,null);
+  assert.equal(unavailable.maxAlt,null);
+});
+
+test("D2-C feet conversion preserves blank vs zero without changing supported SkyDemon CSV",()=>{
+  const input=[
+    "Latitude,Longitude,Altitude ft,UTC Date,UTC Time,Note",
+    '50.0000,14.0000,,2026-10-17,08:00:00Z,"start, apron"',
+    '50.0100,14.0100,0,2026-10-17,08:01:00Z,"zero"',
+    '50.0200,14.0200,1000,2026-10-17,08:02:00Z,"flight"'
+  ].join("\n");
+  const points=parseTrackFile(input,"SkyDemon_track.csv");
+  assert.equal(points.length,3);
+  assert.equal(points[0].alt,null);
+  assert.equal(points[1].alt,0);
+  assert.ok(Math.abs((points[2].alt??NaN)-304.8)<1e-9);
+  assert.equal(points[0].time,"2026-10-17T08:00:00Z");
+});
+
+test("D2-C malformed nonempty altitude stays unavailable instead of becoming measured zero",()=>{
+  const input=[
+    "lat,lon,altitude,time",
+    "50,14,bad,2026-10-17T08:00:00Z",
+    "50.01,14.01,,2026-10-17T08:01:00Z",
+    "50.02,14.02,0,2026-10-17T08:02:00Z"
+  ].join("\n");
+  assert.deepEqual(parseTrackFile(input,"synthetic.csv").map(p=>p.alt),[null,null,0]);
+});
