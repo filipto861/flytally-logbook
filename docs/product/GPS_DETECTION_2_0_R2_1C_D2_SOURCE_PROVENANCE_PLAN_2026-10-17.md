@@ -3,7 +3,7 @@
 **Date:** 2026-10-17  
 **Repository:** `filipto861/flytally-logbook`; branch `test/gps-detection-r21-falsification`; Draft PR #350.  
 **Owner-approved direction:** inline existing GPS import only; ephemeral unresolved advisory notes; no V2 auto-count or certification; no vertical/metric candidate display without verified source; separate post-flight review deferred. See [frozen D1–D5](GPS_DETECTION_2_0_R2_1C_PILOT_REVIEW_DESIGN_2026-10-17.md).  
-**Scope status:** D2-A **10 CHARACTERIZATION TESTS AUTHORED / OWNER LOCAL TESTS NOT RUN**. These are regression observations, not parser safety acceptance. Production parser, UI, DB and deployment are unchanged.  
+**Scope status:** D2-A **OWNER-LOCAL EXACT-SHA CHARACTERIZATION PASS: 110/110 targeted Node + TypeScript PASS** (clean 80581f5bdd1311090e15fe5dce83c16ab37afe87). **Three known unsafe parser behaviors reproduced; safety acceptance remains FAILED/OPEN for those behaviors.** These are regression observations, not parser safety acceptance. Production parser, UI, DB and deployment are unchanged.  
 **Last owner-tested research executable:** `681c62d90d21fdf1efd4aa3ada83383249ea857b`: 83/83 targeted Node PASS + TypeScript PASS **owner-local**, not CI; unrelated to new D2 acceptance.  
 
 ## D2-A — Characterization BEFORE modification (RECONSTRUCT + FALSIFY)
@@ -56,3 +56,13 @@ D2-A reuses the actual existing `parseTrackFile`, `inspectTrackFile`, `splitPoin
 **Expected owner-target test inventory (count pending actual execution):** historical GPS R2.1a/R2.1b targeted **83** + existing `tests/track-processing.test.ts` source-listed **17** + 10 newly authored characterization tests = **110 expected**. TypeScript `npm run typecheck` separately. Historical 83/83 is from clean `681c62d9` and cannot be presented as test proof for the new HEAD. The number 110 is a source-count **expectation, NOT RUN evidence**.
 
 **No release approval:** Current parser ambiguities (empty altitude → 0; empty coordinates → 0; zero excluded in `trackStats`) remain **OPEN**. Do not merge production GPS parser fix, migrate stored GPS, read owner tracks, or build pilot-facing V2 candidate UI before source semantics/owner approval are independently established. D2-B and D3 remain **NOT STARTED**.
+
+## D2-A owner-local exact-SHA verification — 2026-10-17
+
+**Execution:** owner clean `test/gps-detection-r21-falsification` checkout at exact tested executable SHA `80581f5bdd1311090e15fe5dce83c16ab37afe87`. Fetch and fast-forward completed, clean `git status --porcelain`, strict HEAD guard matched. Twelve targeted GPS/legacy/parser Node files: **110/110 PASS**, **0 fail, 0 skipped, 0 cancelled, 0 todo** (83 GPS/legacy + 17 existing track parser + 10 new D2-A). `npm run typecheck` / `tsc --noEmit` **PASS** with explicit exit guard. PowerShell final `GPS D2-A LOCAL TESTS PASS` marker printed. **Owner-local, NOT CI.** Subsequent docs-only commits are not new tested code SHAs.
+
+**Critical distinction:** D2-A01 **KNOWN UNSAFE** reproduces blank CSV altitude -> numeric 0, indistinguishable from explicit 0 after parsing. D2-A09 **KNOWN UNSAFE** reproduces blank CSV latitude/longitude -> coordinate 0. D2-A10 **KNOWN SEMANTIC LOSS** reproduces exclusion of actual altitude 0 in `trackStats` min/max. A green characterization test **demonstrates a hazard; it does not certify data integrity**. D2-A02–A08 additionally establish observed feet conversion, sorting/deduplication without source-row mapping, GPX/KML absent vs zero semantics, untrusted caller `KNOWN`, missing time/bad coordinates, split-local reindexing.
+
+**D2-A CLOSEOUT:** bounded synthetic parser characterization **CLOSED** on exact tested SHA. **D2-B NEXT:** define a strict research-only source/provenance contract separating parser observation, normalization/transforms and independently supported sensor/units/mode/accuracy. A caller-provided `validated:true` cannot approve V2 vertical display. **D2-C OPEN / SEPARATE APPROVAL REQUIRED:** minimal canonical parser corrections for missing vs zero and raw-source lineage; first inventory affected consumers and get an independent code-level review. Do not overwrite or reinterpret persisted records without original source evidence.
+
+**Still NOT RUN / NO-GO:** full Node suite/build/browser, production parser fix, independent physical touchdown, real GPS/Neon/PG16 RLS/consent and no-write, migrations, merge/deploy. Approved D1–D5 product direction stays frozen; no authority to use private GPS.
