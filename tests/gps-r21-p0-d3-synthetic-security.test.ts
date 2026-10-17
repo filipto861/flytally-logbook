@@ -146,3 +146,65 @@ test("P0-D3 PowerShell 5.1 runner has ASCII-only source and safe quote boundarie
   assert.match(s,/Write-Host "NOT RUN - PostgreSQL role\/RLS tests/);
   assert.match(s,/OVERALL P0-D3 SECURITY GATE OPEN - missing real PostgreSQL RLS evidence/);
 });
+
+
+test("P0-D3 reviewer F05 image is pinned to a local immutable ID and never implicitly pulled",()=>{
+  const s=runner();
+  assert.match(s,/image","inspect",IMAGE,"--format","\\{\\{\\.Id\\}\\}"/);
+  assert.match(s,/\\^sha256:\\[a-f0-9\\]\\{64\\}\\$/);
+  assert.match(s,/"--pull=never"/);
+  assert.match(s,/POSTGRES_DB=r21_synthetic_lab",image\\.output\\]/);
+  assert.doesNotMatch(s,/POSTGRES_DB=r21_synthetic_lab",IMAGE\\]/);
+});
+
+test("P0-D3 reviewer F06 cleanup cannot falsely PASS if absence is unverified",()=>{
+  const s=runner();
+  assert.match(s,/const removed=docker\\(\\["rm","-f",name\\]\\)/);
+  assert.match(s,/const remaining=docker\\(\\["ps","-aq","--filter"/);
+  assert.match(s,/if\\(!remaining\\.ok\\|\\|remaining\\.output!==""\\)/);
+  assert.match(s,/container absence not verified/);
+  assert.match(s,/container already absent; absence verified/);
+});
+
+test("P0-D3 reviewer F04 policy actually differentiates authorized SELECT from RLS row filtering",()=>{
+  const sql=schema(),s=runner();
+  assert.match(sql,/CREATE ROLE r21_subject_gamma NOLOGIN NOINHERIT NOBYPASSRLS/);
+  assert.match(sql,/GRANT USAGE ON SCHEMA r21_lab TO r21_subject_alpha,r21_subject_beta,r21_subject_gamma/);
+  assert.match(sql,/GRANT SELECT ON r21_lab\\.flights,r21_lab\\.tracks TO r21_subject_alpha,r21_subject_beta,r21_subject_gamma/);
+  assert.match(sql,/FOR SELECT TO r21_subject_alpha,r21_subject_beta/);
+  assert.doesNotMatch(sql,/FOR SELECT TO [^\\n]*r21_subject_gamma/);
+  assert.match(s,/S05 gamma has object SELECT permission/);
+  assert.match(s,/S05 gamma granted SELECT but default-denied by RLS/);
+  assert.match(s,/has_table_privilege\\(current_user/);
+});
+
+test("P0-D3 reviewer F08 TCP Docker contexts are rejected, not mistaken for local",()=>{
+  const s=runner();
+  assert.match(s,/LOCAL_DOCKER_ENDPOINT/);
+  assert.match(s,/LOCAL_DOCKER_ENDPOINT\\.test\\(context\\.output\\)/);
+  assert.doesNotMatch(s,/tcp:\\\/\\\//);
+  assert.match(s,/Docker context is not demonstrably local/);
+});
+
+test("P0-D3 reviewer F10 checks actual role catalog and representative DDL denials",()=>{
+  const s=runner();
+  for(const marker of [
+    "pg_auth_members","NOT rolbypassrls",
+    "S06 ALTER TABLE denied","S06 DROP TABLE denied",
+    "S06 CREATE TEMP TABLE denied","S07 GRANT role beta denied",
+    "S07 ALTER ROLE beta BYPASSRLS denied",
+    "S19 definer EXECUTE privilege revoked for subject"
+  ])assert.ok(s.includes(marker),marker);
+});
+
+test("P0-D3 reviewer F12 refuses PGOPTIONS before executing any Docker binary",()=>{
+  const run=spawnSync(process.execPath,[join(dir,"run-synthetic-postgres.mjs"),"--synthetic-only"],{
+    encoding:"utf8",timeout:5000,
+    env:{NODE_ENV:"test",SystemRoot:process.env.SystemRoot??"",PATH:"",Path:"",
+      USERPROFILE:process.env.USERPROFILE??"",HOME:process.env.HOME??"",
+      PGOPTIONS:"-c statement_timeout=0"}
+  });
+  assert.notEqual(run.status,0);
+  assert.match(String(run.stderr),/Ambient PGOPTIONS set/);
+  assert.doesNotMatch(String(run.stderr),/Docker CLI unavailable on PATH/);
+});
