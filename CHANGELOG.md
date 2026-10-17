@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS I2-B1 Windows 21/22 Node failure and bounded test-only correction (NOT VERIFIED)
+
+Owner clean `9dfde4b8441ce51be785484dca9a8ed05f0ef76e`: 2 Node `--check` PASS, **21/22 targeted Node PASS, 1 FAIL** (I2-B1 positive-mode-refusal subprocess exit **134**, expected **1**); TypeScript PASS and real Windows PowerShell 5.1 AST parse of both scripts + invalid-syntax negative control PASS. Green final message was unconditional despite Node failure. Exact failed environment variant unknown. Updated only `tests/gps-r21-p0-d3-native-pg16-i2b1-inventory.test.ts`: no more overwriting child `SystemRoot`/`PATH`, assert no launcher process-env/spawn access, retain child refusal and leak checks with non-OS-critical probes. **Corrected 22-case suite and TypeScript NOT RUN**. Positive inventory still unconditionally disabled. No DB/runtime, actual RLS, Neon/real GPS, migrations, merge/deploy. [Evidence ledger](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS I2-B1 DeepSeek partial review → fail-closed correction (DRAFT / NOT TESTED)
 
 Owner supplied independent DeepSeek partial handoff-only review, verdict **FIX BEFORE ANY POSITIVE PROBE**; reviewer did not inspect source or run tests. Our actual GitHub source inspection confirmed untrusted `SystemRoot` path to PowerShell and missing PS5 AST parser coverage. Changed launcher to unconditional exit 1 (no spawn/environment transfer), added PS5.1 **parse-only** gate (parser negative control, does not execute inventory), renamed misleading `elevated` field to `adminRoleObserved` (advisory only, not Windows token proof), added two dynamic/source tests for forged env refusal and parse source contract. **Expected new targeted 22 cases, Node/TS and PS5 parse NOT RUN on new HEAD**. Historical 20/20 PASS belongs to older tested executable SHA `ae1eb81c`. No actual Windows inventory, SQL/RLS, PostgreSQL processes, Neon/real GPS, merge/deploy. [Exact finding disposition](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
