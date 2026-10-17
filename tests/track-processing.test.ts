@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { airportCandidateScore,flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
+import { airportCandidateScore,flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackEndpointCandidates,trackQuality,trackStats,type KmlPoint } from "../lib/track-processing.ts";
 
 const point=(time:string,lat=50,lon=14):KmlPoint=>({lat,lon,alt:300,time});
 
@@ -211,8 +211,8 @@ test("D2-C blank, malformed and invalid CSV coordinates reject the entire file",
     "50,Infinity,123,2026-10-17T08:00:30Z",
     "91,14,123,2026-10-17T08:00:30Z",
     "50,181,123,2026-10-17T08:00:30Z",
-    "50,14,123",
-    "50,14",
+    "50",
+    "50,",
   ];
   for(const row of damaged){
     const input=[header,valid[0],row,valid[1]].join("\n");
