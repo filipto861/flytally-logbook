@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 — Native Windows PG16.15 RLS provider (2026-10-17, DESIGN ONLY):** Owner checked full PG16 16.15 executable set and discovered existing Windows services **PG16 and PG18 both running** (17 postgres processes total). Docker not required; future source-controlled disposable PGDATA, loopback SCRAM, positive system-ID and directory attestation, safe shutdown, no existing service/DB access. [Read-only environment evidence and design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md); [native independent reviewer handoff](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_INDEPENDENT_REVIEW_PACKET_2026-10-17.md). Native review PENDING, no runner written/cluster created/SQL executed; actual RLS OPEN, real GPS/Neon NO-GO, not released.
+
+
 **GPS Detection 2.0 P0-D3 native PG16 provider discovery (2026-10-17; DESIGN ONLY, NOT RELEASED):** Owner read-only Windows inventory found PostgreSQL 16 and 18 initdb/pg_ctl/psql/postgres executables under Program Files despite absence on PATH; Docker not detected. Prefer PG16 and a unique disposable native test cluster over installing Docker; version/service inventory still pending, independent native-provider security review pending. [Native PG16 decision and strict no-existing-DB design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md). **No native runner implemented/DB started, actual PG16 RLS NOT RUN/OPEN, real GPS/Neon NO-GO.**
 
 
