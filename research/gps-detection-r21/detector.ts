@@ -16,7 +16,12 @@ export type EdgeReason="MISSING_TIME"|"NON_MONOTONIC_TIME"|"BAD_COORDINATES"|"GA
 export type QualityEdge={from:number;to:number;status:"VALID"|"UNAVAILABLE";reason:EdgeReason|null;dtSeconds:number|null;speedKmh:number|null;verticalRateMps:number|null};
 export type SignalIsland={start:number;end:number};
 export type EventType="T_G_PATTERN_CANDIDATE"|"STOP_GO_PATTERN_CANDIDATE";
-export type PatternCandidate={type:EventType;index:number;support:{start:number;end:number};time:string|null;gapAdjacent:boolean;physicalContactStatus:"UNRESOLVED";evidence:"ALTITUDE_REVERSAL"|"SPEED_DIP"};
+/** Evidence about the nearby unusable GPS edge; not proof of physical contact. */
+export type InvalidBoundaryEvidence={side:"BEFORE_ISLAND"|"AFTER_ISLAND";edge:{from:number;to:number};reason:EdgeReason};
+export type PatternCandidate={type:EventType;index:number;support:{start:number;end:number};time:string|null;
+/** Legacy field name: true for ANY nearby invalid edge, not only a temporal GAP. */
+gapAdjacent:boolean;invalidBoundaryEvidence:InvalidBoundaryEvidence[];
+physicalContactStatus:"UNRESOLVED";evidence:"ALTITUDE_REVERSAL"|"SPEED_DIP"};
 export type AdvisoryPatternCount={kind:"PATTERN_ONLY";status:"AVAILABLE";scope:"OBSERVED_VALID_ISLANDS_ONLY";value:number}|{kind:"PATTERN_ONLY";status:"UNAVAILABLE";reason:"INSUFFICIENT_OBSERVATIONS"|"NO_VALID_SPAN"};
 export type ResearchAnalysis={edges:QualityEdge[];islands:SignalIsland[];candidates:PatternCandidate[];patternCount:AdvisoryPatternCount};
 
@@ -69,10 +74,20 @@ function signalIslands(points:SourceObservation[],edges:QualityEdge[]):SignalIsl
 /** Conservative boundary guard: unsupported edges break temporal evidence. An event
  * within the existing evidence lookback horizon of a broken island boundary
  * cannot have a precise time, even if its support does not touch that edge. */
-function nearInvalidBoundary(points:SourceObservation[],island:SignalIsland,support:{start:number;end:number},seconds:number):boolean{
-  const nearStart=island.start>0?elapsed(points[island.start],points[support.start]):null;
-  const nearEnd=island.end<points.length-1?elapsed(points[support.end],points[island.end]):null;
-  return(nearStart!==null&&nearStart>=0&&nearStart<=seconds)||(nearEnd!==null&&nearEnd>=0&&nearEnd<=seconds);
+function nearbyInvalidBoundaryEvidence(points:SourceObservation[],edges:QualityEdge[],island:SignalIsland,support:{start:number;end:number},seconds:number):InvalidBoundaryEvidence[]{
+  const found:InvalidBoundaryEvidence[]=[];
+  const append=(side:InvalidBoundaryEvidence["side"],at:number,delta:number|null)=>{
+    const edge=edges[at];
+    if(edge?.status!=="UNAVAILABLE"||edge.reason===null)return;
+    // If the temporal distance itself is unprovable, suppress a precise time.
+    if(delta===null||(delta>=0&&delta<=seconds))
+      found.push({side,edge:{from:edge.from,to:edge.to},reason:edge.reason});
+  };
+  if(island.start>0)
+    append("BEFORE_ISLAND",island.start-1,elapsed(points[island.start],points[support.start]));
+  if(island.end<points.length-1)
+    append("AFTER_ISLAND",island.end,elapsed(points[support.end],points[island.end]));
+  return found;
 }
 function altitudeCandidates(points:SourceObservation[],edges:QualityEdge[],island:SignalIsland):PatternCandidate[]{
   const results:PatternCandidate[]=[];
@@ -88,10 +103,16 @@ function altitudeCandidates(points:SourceObservation[],edges:QualityEdge[],islan
     if(left<0||right<0)continue;
     const sustained=points.slice(i+1,right).some(p=>p.alt!==null&&p.alt>center.alt!+1&&p.alt<center.alt!+R21_PARAMETERS.altitudeReversalM);
     if(!sustained)continue;
+    const invalidBoundaryEvidence=nearbyInvalidBoundaryEvidence(points,edges,island,{start:left,end:right},R21_PARAMETERS.altitudeWindowSeconds);
+    const gapAdjacent=invalidBoundaryEvidence.length>0;
     const previous=results.at(-1),delta=previous?elapsed(points[previous.index],center):null;
-    if(previous&&delta!==null&&delta<=R21_PARAMETERS.mergeSeconds){if(points[previous.index].alt!>center.alt)results[results.length-1]={...previous,index:i,time:center.time,support:{start:left,end:right}};continue}
-    const gapAdjacent=nearInvalidBoundary(points,island,{start:left,end:right},R21_PARAMETERS.altitudeWindowSeconds);
-    results.push({type:"T_G_PATTERN_CANDIDATE",index:i,support:{start:left,end:right},time:gapAdjacent?null:center.time,gapAdjacent,physicalContactStatus:"UNRESOLVED",evidence:"ALTITUDE_REVERSAL"});
+    if(previous&&delta!==null&&delta<=R21_PARAMETERS.mergeSeconds){
+      if(points[previous.index].alt!>center.alt)
+        results[results.length-1]={...previous,index:i,time:gapAdjacent?null:center.time,
+          support:{start:left,end:right},gapAdjacent,invalidBoundaryEvidence};
+      continue;
+    }
+    results.push({type:"T_G_PATTERN_CANDIDATE",index:i,support:{start:left,end:right},time:gapAdjacent?null:center.time,gapAdjacent,invalidBoundaryEvidence,physicalContactStatus:"UNRESOLVED",evidence:"ALTITUDE_REVERSAL"});
   }
   return results;
 }
@@ -108,8 +129,10 @@ function speedDipCandidates(points:SourceObservation[],edges:QualityEdge[],islan
     for(let j=i-1;j>=island.start;j--){const dt=elapsed(points[j],points[i]);if(dt===null||dt>R21_PARAMETERS.speedWindowSeconds)break;if(speeds[j]!==null&&speeds[j]!>=R21_PARAMETERS.fastSpeedKmh){left=j;break}}
     for(let j=last+1;j<=island.end;j++){const dt=elapsed(points[last],points[j]);if(dt===null||dt>R21_PARAMETERS.speedWindowSeconds)break;if(speeds[j]!==null&&speeds[j]!>=R21_PARAMETERS.fastSpeedKmh){right=j;break}}
     if(left>=0&&right>=0){
-      const index=Math.floor((i+last)/2),gapAdjacent=nearInvalidBoundary(points,island,{start:left,end:right},R21_PARAMETERS.speedWindowSeconds);
-      results.push({type:"STOP_GO_PATTERN_CANDIDATE",index,support:{start:left,end:right},time:gapAdjacent?null:points[index].time,gapAdjacent,physicalContactStatus:"UNRESOLVED",evidence:"SPEED_DIP"});
+      const index=Math.floor((i+last)/2);
+      const invalidBoundaryEvidence=nearbyInvalidBoundaryEvidence(points,edges,island,{start:left,end:right},R21_PARAMETERS.speedWindowSeconds);
+      const gapAdjacent=invalidBoundaryEvidence.length>0;
+      results.push({type:"STOP_GO_PATTERN_CANDIDATE",index,support:{start:left,end:right},time:gapAdjacent?null:points[index].time,gapAdjacent,invalidBoundaryEvidence,physicalContactStatus:"UNRESOLVED",evidence:"SPEED_DIP"});
     }
     i=last+1;
   }
