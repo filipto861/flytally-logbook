@@ -1,4 +1,4 @@
-# R2.1b P0-D3 local security checks — Docker-optional, SYNTHETIC ONLY.
+# R2.1b P0-D3 local security checks - Docker-optional, SYNTHETIC ONLY.
 # Run from FlyTally Logbook repo root, e.g.:
 # & .\research\gps-r21-p0-d3-synthetic-security\run-local-gates.ps1 -ExpectedSha <full-SHA>
 # Default runs NO database, creates NO containers and uses NO secrets.
@@ -36,19 +36,19 @@ if ($LASTEXITCODE -ne 0) { throw "Synthetic Node/static security tests FAILED" }
 & npm run typecheck
 if ($LASTEXITCODE -ne 0) { throw "Repository TypeScript typecheck FAILED" }
 
-Write-Host "PASS — synthetic Node tests and TypeScript (owner-local; not CI)"
+Write-Host "PASS - synthetic Node tests and TypeScript (owner-local; not CI)"
 
 if ($PostgresProvider -eq "none") {
     $nativeTools = @("initdb", "pg_ctl", "psql")
     $nativeFound = @($nativeTools | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue })
     if ($nativeFound.Count -eq 3) {
-        Write-Host "DISCOVERED — native PostgreSQL tools on PATH, but no independently verified disposable native cluster."
-        Write-Host "NOT RUN — native PostgreSQL RLS (requires a separately reviewed safe ephemeral-cluster runner)."
+        Write-Host "DISCOVERED - native PostgreSQL tools on PATH, but no independently verified disposable native cluster."
+        Write-Host "NOT RUN - native PostgreSQL RLS (requires a separately reviewed safe ephemeral-cluster runner)."
     } else {
-        Write-Host "NOT DETECTED — complete native PostgreSQL initdb/pg_ctl/psql toolchain on PATH."
+        Write-Host "NOT DETECTED - complete native PostgreSQL initdb/pg_ctl/psql toolchain on PATH."
     }
-    Write-Host "NOT RUN — PostgreSQL role/RLS tests: no isolated DB provider selected."
-    Write-Host "OVERALL P0-D3 SECURITY GATE OPEN — missing real PostgreSQL RLS evidence."
+    Write-Host "NOT RUN - PostgreSQL role/RLS tests: no isolated DB provider selected."
+    Write-Host "OVERALL P0-D3 SECURITY GATE OPEN - missing real PostgreSQL RLS evidence."
     return
 }
 
@@ -70,5 +70,5 @@ if ($LASTEXITCODE -ne 0) { throw "Local test image missing; RLS NOT RUN" }
 & node research/gps-r21-p0-d3-synthetic-security/run-synthetic-postgres.mjs --synthetic-only
 if ($LASTEXITCODE -ne 0) { throw "Isolated synthetic PostgreSQL RLS proof FAILED" }
 
-Write-Host "PASS — optional isolated synthetic PostgreSQL RLS probes"
-Write-Host "R2.1b-P0-D3 SYNTHETIC LOCAL GATES PASS — NOT production/Neon authorization"
+Write-Host "PASS - optional isolated synthetic PostgreSQL RLS probes"
+Write-Host "R2.1b-P0-D3 SYNTHETIC LOCAL GATES PASS - NOT production/Neon authorization"
