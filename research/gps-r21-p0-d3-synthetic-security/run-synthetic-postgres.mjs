@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+/**
+ * R2.1b P0-D3: disposable synthetic PostgreSQL RLS falsification ONLY.
+ * NEVER loads an existing DB or any real user GPS.
+ * Uses local Docker image postgres:16-alpine, with --network none and no ports.
+ * SET SESSION AUTHORIZATION models role privileges, NOT real authentication.
+ */
+import {spawnSync} from "node:child_process";
+import {readFileSync} from "node:fs";
+import {dirname,join} from "node:path";
+import {fileURLToPath} from "node:url";
+import {randomUUID} from "node:crypto";
+const ROOT=dirname(fileURLToPath(import.meta.url));
+const IMAGE="postgres:16-alpine",ALPHA="r21_subject_alpha",BETA="r21_subject_beta",OTHER="r21_unrelated";
+const fail=(message)=>{throw new Error(message)};
+if(process.argv.slice(2).join(" ")!=="--synthetic-only")fail("Explicit --synthetic-only acknowledgement required. Nothing ran.");
+for(const key of ["DATABASE_URL","DIRECT_URL","NEON_DATABASE_URL","PGHOST","PGSERVICE","PGPORT","PGUSER","PGPASSWORD"]){
+  if(process.env[key])fail("Ambient "+key+" set; refusing synthetic DB proof.");
+}
+function docker(args,input){
+  const r=spawnSync("docker",args,{encoding:"utf8",input,timeout:30000,maxBuffer:2*1024*1024,
+    env:{PATH:process.env.PATH,SystemRoot:process.env.SystemRoot,HOME:process.env.HOME,
+      USERPROFILE:process.env.USERPROFILE,DOCKER_HOST:process.env.DOCKER_HOST}});
+  return{ok:r.status===0&&!r.error,output:String(r.stdout??"").trim(),
+    error:r.error?.message??String(r.stderr??"").trim()};
+}
+const image=docker(["image","inspect",IMAGE,"--format","{{.Id}}"]);
+if(!image.ok)fail("Docker image postgres:16-alpine not locally available. Manually pull first; no DB touched.");
+if(!docker(["info","--format","{{.ServerVersion}}"]).ok)fail("Docker daemon unavailable.");
+const name="flytally-r21-synthetic-"+randomUUID().slice(0,12);
+const start=docker(["run","-d","--rm","--network","none","--name",name,
+  "--label","flytally.purpose=synthetic-rls-research",
+  "--tmpfs","/var/lib/postgresql/data:rw,nosuid,noexec,size=256m",
+  "--tmpfs","/var/run/postgresql:rw,nosuid,size=16m",
+  "--tmpfs","/tmp:rw,nosuid,size=16m",
+  "-e","POSTGRES_PASSWORD=SYNTHETIC_NOT_A_SECRET",IMAGE]);
+if(!start.ok)fail("Could not start isolated synthetic DB: "+start.error.slice(0,200));
+let pass=0,failed=0;
+const record=(name,ok,detail="")=>{
+  if(ok)pass++;else failed++;
+  process.stdout.write((ok?"PASS ":"FAIL ")+name+(detail?" — "+detail:"")+"\n");
+};
+function sql(command,role=null){
+  const prefix=role?"SET SESSION AUTHORIZATION "+role+";\n":"";
+  return docker(["exec","-i",name,"psql","-X","-qAt","-v","ON_ERROR_STOP=1",
+    "-v","VERBOSITY=sqlstate","-U","postgres","-d","postgres"],prefix+command+"\n");
+}
+const value=(label,statement,expected,role=ALPHA)=>{
+  const r=sql(statement,role);
+  record(label,r.ok&&r.output===String(expected),r.ok?"bounded synthetic output":"unexpected database error");
+};
+const deny=(label,statement,role=ALPHA)=>{
+  const r=sql(statement,role);
+  record(label,!r.ok&&/(?:42501|permission denied|query would be affected by row-level security)/i.test(r.error),
+    r.ok?"unexpectedly permitted":"expected privilege denial");
+};
+try{
+  let ready=false;
+  for(let i=0;i<25;i++){
+    if(docker(["exec",name,"pg_isready","-U","postgres","-d","postgres"]).ok){ready=true;break;}
+    await new Promise(resolve=>setTimeout(resolve,400));
+  }
+  if(!ready)fail("Disposable Postgres not ready.");
+  const created=sql(readFileSync(join(ROOT,"schema.sql"),"utf8"));
+  if(!created.ok)fail("Synthetic SQL schema failed: "+created.error.slice(0,330));
+  if(sql("SELECT current_database();").output!=="postgres")fail("Unexpected database target.");
+  process.stdout.write("SYNTHETIC ONLY: local isolated PostgreSQL, no production credentials, no ports.\n");
+  value("S05 alpha unfiltered SELECT remains scoped","SELECT count(*) FROM r21_lab.tracks;",2);
+  value("S05 beta unfiltered SELECT remains scoped","SELECT count(*) FROM r21_lab.tracks;",1,BETA);
+  value("S05 alpha WHERE beta cannot read beta","SELECT count(*) FROM r21_lab.tracks WHERE owner_role='r21_subject_beta';",0);
+  value("S05 beta WHERE alpha cannot read alpha","SELECT count(*) FROM r21_lab.tracks WHERE owner_role='r21_subject_alpha';",0,BETA);
+  value("S05 WHERE TRUE still scoped","SELECT count(*) FROM r21_lab.tracks WHERE TRUE;",2);
+  value("S22 shared-flight participant lacks source ownership","SELECT count(*) FROM r21_lab.tracks WHERE flight_id=201;",0);
+  value("S07 both tables have forced RLS","SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='r21_lab' AND c.relname IN ('tracks','flights') AND c.relrowsecurity AND c.relforcerowsecurity;",2,null);
+  value("S11 null altitude remains distinguishable from zero","SELECT count(*) FROM r21_lab.tracks WHERE payload->0->>'alt' IS NULL;",1);
+  value("S23 fresh beta session not contaminated by alpha","SELECT count(*) FROM r21_lab.tracks;",1,BETA);
+  deny("S06 INSERT denied","INSERT INTO r21_lab.tracks(id,flight_id,owner_role,payload) VALUES(999,101,'r21_subject_alpha','[]');");
+  deny("S06 UPDATE denied","UPDATE r21_lab.tracks SET payload='[]' WHERE id=1001;");
+  deny("S06 DELETE denied","DELETE FROM r21_lab.tracks WHERE id=1001;");
+  deny("S06 TRUNCATE denied","TRUNCATE r21_lab.tracks;");
+  deny("S06 CREATE TABLE denied","CREATE TABLE r21_lab.injected(id integer);");
+  deny("S06 sequence nextval denied","SELECT nextval('r21_lab.internal_sequence');");
+  deny("S07 SET ROLE beta denied","SET ROLE r21_subject_beta;");
+  deny("S07 unrelated role denied","SELECT count(*) FROM r21_lab.tracks;",OTHER);
+  deny("S07 participant relation denied","SELECT count(*) FROM r21_lab.participants;");
+  deny("S19 SECURITY DEFINER call denied","SELECT r21_lab.admin_count();");
+  deny("S14 row_security off cannot bypass policy","SET row_security=off; SELECT count(*) FROM r21_lab.tracks;");
+  const copy=sql("COPY (SELECT id FROM r21_lab.tracks ORDER BY id) TO STDOUT;",ALPHA);
+  record("S06 COPY may emit authorized IDs only",copy.ok&&copy.output==="1001\n1002");
+  const count=sql("SELECT count(*) FROM r21_lab.tracks;");
+  record("S06 no source track mutation",count.ok&&count.output==="3");
+  if(failed)fail(String(failed)+" of "+String(failed+pass)+" synthetic DB assertions FAILED.");
+  process.stdout.write("SYNTHETIC DB ROLE CHECKS PASS: "+String(pass)+" assertions; NOT full S01–S23 or real Neon proof.\n");
+}finally{
+  const removed=docker(["rm","-f",name]);
+  if(!removed.ok){process.stderr.write("FAIL: synthetic container cleanup, manually inspect Docker.\n");process.exitCode=1;}
+  else process.stdout.write("Disposable synthetic PostgreSQL container removed.\n");
+}
