@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS I2-B1 post-review retest pending (2026-10-17):** previous clean `9dfde4b8` returned Node **21/22 FAIL**, TypeScript + actual Windows PS5.1 two-file AST + malformed-syntax negative control PASS. New source-only + child-refusal **test-only** fix removes unsafe forged Windows `SystemRoot`/`PATH` child environment; authoring is not test acceptance. Positive inventory/PG16 RLS and release still NO-GO.
+
+
 **GPS I2-B1 post-review fail-closed patch (2026-10-17; NEW CODE NOT TESTED):** Positive Node host-inventory launch hard-disabled (including `--read-only-inventory`), separate PS5 parse-only self-falsifying syntax gate, advisory admin role semantics clarified (`adminRoleObserved`; not token attestation), two authored new Node security cases (expect 22 combined). All Windows ACL/process trust, PG startup, PostgreSQL RLS, real GPS integration OPEN. [Reviewer reconciliation](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
 
 
