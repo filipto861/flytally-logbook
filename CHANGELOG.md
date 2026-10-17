@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 - GPS R2.1b-P0-D4 owner-local targeted acceptance PASS (PR #352 DRAFT; NOT RELEASED)
+
+**Exact owner-verified source candidate:** `749dc45932df462e37b3c34cbd50db04c9661bec` on clean `test/gps-r21-p0-d4-offline-robustness`. PowerShell transcript shows **17/17 Node tests PASS**, 0 failed/skipped/cancelled: 8 D4 offline malformed/budget/gap/null-vs-zero/island/aggregate assertions, 8 previously existing observational aggregation tests and 1 source-boundary no-research-import test. `npm run typecheck` (`tsc --noEmit`) **PASS** without diagnostic output. This closes **D4 limited targeted local verification** at the pinned source, not full GPS accuracy, cross-owner security, CI, full suite, build or browser acceptance. P0-D3 PostgreSQL role/RLS proof remains **NOT RUN** and combined security gate **OPEN**; no Docker or DB was used for D4. No app runtime/legacy detector, actual tracks, model training, Neon/production database, schema/migration, merged branch or deployment touched. Following acceptance, a documentation-only GitHub commit was made; **that docs HEAD has not been locally re-tested**. Separate real-data research remains NO-GO.
+
+
 ## 2026-10-17 - GPS R2.1b-P0-D4 offline falsification batch (DRAFT / NOT RELEASED)
 
 Created isolated research branch `test/gps-r21-p0-d4-offline-robustness` from Draft PR #350, not P0-D3 and not `main`. `research/gps-detection-r21/observational-aggregate.ts` now preflights dense arrays and finite numeric coordinates/altitudes, catches malformed getter errors before computing a cohort, and checks overlong tracks before traversing them; finite out-of-range coordinates remain reason-coded `BAD_COORDINATES` edges. Added eight synthetic Node tests in `tests/gps-detection-r21-d4-offline-robustness.test.ts`. **8 authored, NOT RUN**; regression/TypeScript/build/Playwright/DB NOT RUN for this head. Existing R2.1a/D3 PASS evidence does not transfer to D4. No app/runtime GPS path, persistent data, auth, Neon/Postgres, migration, real-track read, training, merge or deploy changed. P0-D3 PostgreSQL RLS remains NOT RUN and the combined security milestone remains OPEN.
