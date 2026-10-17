@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS R2.1c-D2-B2 clean exact-source 130/130 owner-local PASS (RESEARCH / NOT RELEASED)
+
+Owner fast-forwarded clean branch `test/gps-detection-r21-falsification` to `25d0efdb9b46cf096b01f7191ed645d7a09d620b`; guarded Node run 14 named GPS/parser suites **130/130 PASS**, zero failed/skipped/cancelled/todo (including 10 D2-B2 CSV lineage cases); `npm run typecheck` (`tsc --noEmit`) **PASS**, final guarded PowerShell success marker. This is owner-local, NOT CI. Bounded CSV subset source-line mapping / UTC / ft conversion / true zero and missing parsing only; caller-supplied input or header is not independently trusted sensor provenance. Production `lib/track-processing.ts`, GPS Import UI, known unsafe semantics, canonical data, DB and deployment unchanged. Full Node/build/Playwright/PG16 RLS/real owner GPS NOT RUN/NO-GO. D2-C minimal legacy integrity fix needs independently reviewed consumer impact and separate owner authorization; D3 pilot advisory still not implemented. [D2-B2 evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS D2-B2 limited raw CSV row-lineage experiment (DRAFT, NEW TESTS NOT RUN)
 
 Research-only strict CSV analyzer in `research/gps-detection-r21/csv-lineage.ts`: source-line→normalized index, UTC sort, explicit `altitudeFt` 0.3048 conversion, missing vs real zero, fail closed on invalid rows/coordinates/time, duplicates and unsupported syntax. Ten new synthetic tests; **130 combined target EXPECTED / NODE AND TS NOT RUN** (prior owner D2-B1 120/120 PASS exact `d4f1d7bf` only). No trusted source/sensor identity or pilot landing authority. Existing parser `lib/track-processing.ts`, existing 3 unsafe semantics, app/auth/DB/Neon, private tracks, migration, prod/merge/deploy UNCHANGED. Owner speed direction: get exact local test evidence, separately authorize minimal D2-C canonical integrity fix, then D3 Pilot Review. [D2-B2 scope](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
