@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS D3 E1 independent security-review handoff prepared (DOCS ONLY / NOT RELEASED)
+
+From stacked E1 Draft PR #355 pinned `83eaec732b5a6190a959b0dfd356006939e70edf`, re-read actual synthetic Docker/Postgres runner, Node source assertions, SQL and PowerShell default guard. Compared `--tmpfs` `Mounts` map/array behavior against official Docker docs; authored [source preassessment](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_INDEPENDENT_REVIEW_PREASSESSMENT_2026-10-17.md) and [full pinned four-file DeepSeek security packet](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_DEEPSEEK_INDEPENDENT_SOURCE_REVIEW_PACKET_2026-10-17.md). **Independent E1 review NOT RECEIVED**. Flagged dynamic behavior unknowns (effective mounts/options, context/cleanup, timestamp of Postgres entrypoint init, lack of mocked Docker parser/denial tests) as questions rather than confirmed exploits. **No executable source changed**, no new Node/TS/SQL/CI/browser/build tests run at this documentation-only HEAD, no Docker/PG/Neon/production DB access. Prior owner E1 exact `2e362aee` Node 24/24, TypeScript and syntax PASS preserved with proper source lineage; actual Postgres RLS NOT RUN/OPEN, real GPS remains NO-GO; no merge/deploy.
+
+
 ## 2026-10-17 — GPS D3 E1 owner-local targeted verification PASS (PR #355 DRAFT; NOT RELEASED)
 
 Owner-provided clean Windows PowerShell run at exact `2e362aeeafe7d816c53c74c61d4c761927d56a22`: `node --check research/gps-r21-p0-d3-synthetic-security/run-synthetic-postgres.mjs` **PASS**, D3 targeted Node **24 tests PASS / 0 FAIL / 0 SKIP**, `npm run typecheck` (`tsc --noEmit`) **PASS** with no diagnostics. Two E1 structural tests exercise source-level pre-SQL inspect ordering and containment of inspect data; not an execution of Docker or actual PostgreSQL RLS. [D3 E1 exact-SHA acceptance record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_CONTAINER_ATTESTATION_2026-10-17.md). No full suite/build/Playwright/CI/DB/Neon/migration/merge/deploy executed. PostgreSQL RLS **NOT RUN / overall D3 security gate OPEN**, real GPS owner data NO-GO. Following documentation-only commits are not re-tested on new HEAD.
