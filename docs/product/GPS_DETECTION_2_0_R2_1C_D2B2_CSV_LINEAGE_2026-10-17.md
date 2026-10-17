@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-17  
 **Branch:** `test/gps-detection-r21-falsification`, [Draft PR #350](https://github.com/filipto861/flytally-logbook/pull/350).  
-**Status:** **SOURCE AND TEN SYNTHETIC TESTS AUTHORED; NOT RUN.** Previous exact owner-tested research code SHA `d4f1d7bf626f8b55e6d9d21c73f528faf6fbbf64`: 120/120 targeted Node + TypeScript PASS. This evidence **does not cover D2-B2**.
+**Status:** **BOUNDED OWNER-LOCAL ACCEPTANCE: 130/130 targeted Node PASS + TypeScript PASS** on clean exact executable `25d0efdb9b46cf096b01f7191ed645d7a09d620b`. Old NOT RUN sections below are earlier pre-execution snapshots; no full release, sensor attestation or production tests are implied.
 
 ## Explicit scope — small, release-directed
 
@@ -44,3 +44,10 @@ Accepted grammar is deliberately narrow, **not legacy parser parity**:
 **P0 security separately:** native PG16 RLS, strict owner consent and no-write evidence remain NO-GO for any real saved/private GPS integration. Do not use PG16/PG18/Neon, migrations or production until authorized and tested.
 
 **No claims:** no source-sensor accuracy, no real ground contact, no source file signature, no KML/GPX support from this prototype, no browser/CI/full suite/build/deploy. Product choices D1–D5 remain frozen.
+
+
+## D2-B2 exact owner-local verification — 2026-10-17
+
+Owner Windows checkout `test/gps-detection-r21-falsification` fast-forwarded and passed clean-worktree plus exact HEAD SHA guard at `25d0efdb9b46cf096b01f7191ed645d7a09d620b`. `npm run test:target` across fourteen explicitly named GPS/legacy/parser files: **130/130 Node PASS**, **0 FAIL/SKIP/CANCELLED/TODO**, including all ten D2-B2 tests. `npm run typecheck` / `tsc --noEmit` **PASS**, explicit PowerShell exit guards passed and `GPS D2-B2 LOCAL GATES PASS` printed. This is **owner-local, not CI**. Any later docs-only HEAD is not a new executable test SHA.
+
+**CLOSED (bounded, synthetic only):** exact four-column CSV subset with explicit input-row -> sorted-normalized-index evidence, original header-declared unit and ft-to-m conversion, blank versus measured zero, refusal on duplicate/non-UTC/invalid/unsupported data. **NOT** complete CSV/GPX/KML provenance, actual validated input identity, real sensor altitude datum/accuracy, confirmed wheel contact or a production parser fix. V2 pilot availability remains UNAVAILABLE. Existing `lib/track-processing.ts` defects documented by D2-A remain KNOWN UNSAFE. D2-C consumer inventory, independently reviewed minimal canonical parser correction and explicit owner approval NEXT. D3 Pilot Review + P0-D3 real RLS still OPEN; no app/DB change, migration, merge or deploy.
