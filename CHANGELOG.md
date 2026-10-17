@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — Native PG16 I1 offline guard implementation (DRAFT / NOT RELEASED)
+
+Added `native-pg16-guards.mjs` and typed declaration: pure version-16.15, PG* override, Windows owner-run PGDATA path/reparse/ACL evidence, single-rule SCRAM IPv4-loopback HBA, startup bind log, server-side identity PGDATA/version/port/system_identifier/nonce, postmaster PID and cleanup evidence validators. New `run-native-pg16-preflight.mjs` accepts only `--offline-only` and refuses any database-start option. Added 12 dynamic native guard/refusal tests, **AUTHORED NOT RUN via Node**; internal isolated V8 parse and seven predicate spot checks PASS (not CI/TypeScript). No actual Windows OS metadata integration, initdb, pg_ctl, SQL, DB, Neon, production, auth, migrations, browser/build/CI, merge or deploy. Two installed PG16/PG18 services remain untouched; P0-D3 actual PostgreSQL RLS NOT RUN/OPEN. [Detailed I1 scope and later I2 prerequisites](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md).
+
+
 ## 2026-10-17 — D3 native PG16 independent review reconciled in design (DOCS ONLY)
 
 Received independent DeepSeek **partial source/design-only** native PG16 review (the full earlier readiness doc was not supplied to reviewer); verdict `FIX DESIGN FIRST`. Documented exact predicates for five high-priority native safety risks in [existing PR #359 design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md): SCRAM initdb + HBA verification, exclusive ACL/reparse-safe PGDATA, verified loopback bind, server/data-directory/system-ID/nonce attestation before DDL, identity-bound shutdown and deletion refusal on uncertainty. Corrected overstrict reviewer assumption about lasting pg_ctl parent process on Windows. **No native runner code, new PostgreSQL cluster, SQL execution, RLS test, installation, migrations, CI, build, browser, merge or deploy.** Existing Windows PG16/PG18 services remain running/untouched; actual D3 RLS OPEN, real GPS/Neon NO-GO. E1b 35/35 owner-local test proof is unaffected, not native PG runtime evidence.
