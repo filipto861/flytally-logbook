@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS native I2-A offline contract owner-local acceptance (2026-10-17):** exact clean `eb02936be35e8c0590ab4de66cf4b781eeb515e2` targeted I1+I2-A Node 15/15 PASS, module syntax PASS and TypeScript PASS. Bounded offline-only checks; OS truth and SQL/RLS remain unverified. Native I2-B/C unimplemented/unreleased.
+
+
 
 **GPS Native PG16 I2-A research prototype (2026-10-17, NOT TESTED):** Pure Windows-evidence consistency contract, typed declaration and 3 negative Node tests staged on Draft PR #359. No actual Windows ACL/token/process collection; no runtime authorization, native PG runner, DB startup, SQL/RLS, deployment or changes to PG16/PG18 services. I2-B/C pending.
 
