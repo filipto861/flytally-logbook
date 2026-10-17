@@ -27,7 +27,7 @@ try {
         }
     }
     $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
-    $elevated = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $adminRole = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     $profile = [Environment]::GetFolderPath('UserProfile')
     $appdata = Join-Path $profile 'AppData'
     $local = [Environment]::GetFolderPath('LocalApplicationData')
@@ -62,7 +62,7 @@ try {
         runtimeAuthorization = $false
         permitsClusterMutation = $false
         effectiveToken = @{
-            elevated = [bool]$elevated
+            adminRoleObserved = [bool]$adminRole
             source = 'WindowsPrincipal.IsInRole'
             identityAttested = $false
         }
