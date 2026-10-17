@@ -1,0 +1,79 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {evaluateSyntheticGrant,withSyntheticAuthorization,type MockGrant,type MockRequest} from "../research/gps-r21-p0-d3-synthetic-security/mock-authorization.ts";
+
+const grant:MockGrant={subject:"r21_subject_alpha",trackIds:[1001,1002],expiresAtMs:2000,revoked:false};
+const req:MockRequest={principal:"r21_subject_alpha",trackId:1001,trackOwner:"r21_subject_alpha",nowMs:1000};
+const denied={status:"DENY",reason:"NOT_AUTHORIZED"};
+
+test("S01 mock authorization missing principal or grant fails before any read",()=>{
+  let reads=0;
+  assert.deepEqual(withSyntheticAuthorization(null,req,()=>++reads),denied);
+  assert.deepEqual(withSyntheticAuthorization(grant,{...req,principal:null},()=>++reads),denied);
+  assert.equal(reads,0);
+});
+test("S02 S09 revoked or expired mock grant never accesses synthetic source",()=>{
+  let reads=0;
+  for(const g of [{...grant,revoked:true},{...grant,expiresAtMs:1000}]){
+    assert.deepEqual(withSyntheticAuthorization(g,req,()=>++reads),denied);
+  }
+  assert.deepEqual(withSyntheticAuthorization(grant,{...req,nowMs:2000},()=>++reads),denied);
+  assert.equal(reads,0);
+});
+test("S03 wrong mock subject, swapped grant or track owner returns opaque deny",()=>{
+  let reads=0;
+  const wrong:MockRequest={...req,principal:"r21_subject_beta"};
+  assert.deepEqual(withSyntheticAuthorization(grant,wrong,()=>++reads),denied);
+  assert.deepEqual(withSyntheticAuthorization(grant,{...req,trackOwner:"r21_subject_beta"},()=>++reads),denied);
+  assert.deepEqual(withSyntheticAuthorization({...grant,subject:"r21_subject_beta"},req,()=>++reads),denied);
+  assert.equal(reads,0);
+});
+test("S04 S22 a fictional shared-flight participant does not own another's track",()=>{
+  let reads=0;
+  assert.deepEqual(withSyntheticAuthorization(grant,{...req,trackId:2001,trackOwner:"r21_subject_beta"},()=>++reads),denied);
+  assert.equal(reads,0);
+});
+test("S01 scoped, non-expired fictional grant invokes selector exactly once",()=>{
+  let reads=0;
+  assert.deepEqual(withSyntheticAuthorization(grant,req,()=>++reads),{status:"ALLOW",result:1});
+  assert.equal(reads,1);
+});
+test("S18 malformed, unlisted or fractional synthetic track id fails closed",()=>{
+  for(const id of [9999,Number.NaN,1001.5,Number.MAX_SAFE_INTEGER+1]){
+    assert.deepEqual(evaluateSyntheticGrant(grant,{...req,trackId:id}),denied);
+  }
+});
+const dir=join(process.cwd(),"research","gps-r21-p0-d3-synthetic-security");
+const schema=()=>readFileSync(join(dir,"schema.sql"),"utf8");
+const runner=()=>readFileSync(join(dir,"run-synthetic-postgres.mjs"),"utf8");
+test("P0-D3 fixture is synthetic, force-enables RLS on both owner relations",()=>{
+  const s=schema();
+  assert.match(s,/CREATE ROLE r21_subject_alpha NOLOGIN NOINHERIT NOBYPASSRLS/);
+  assert.match(s,/CREATE ROLE r21_subject_beta NOLOGIN NOINHERIT NOBYPASSRLS/);
+  assert.match(s,/ALTER TABLE r21_lab\.tracks FORCE ROW LEVEL SECURITY/);
+  assert.match(s,/ALTER TABLE r21_lab\.flights FORCE ROW LEVEL SECURITY/);
+  assert.match(s,/owner_role = CURRENT_USER::name/);
+  assert.match(s,/REVOKE ALL ON FUNCTION r21_lab\.admin_count\(\) FROM PUBLIC/);
+});
+test("P0-D3 operator runner isolates Docker without ports, mounts or existing credentials",()=>{
+  const s=runner();
+  assert.match(s,/--network","none"/);
+  assert.match(s,/--rm/);
+  assert.match(s,/--tmpfs/);
+  assert.match(s,/DATABASE_URL/);
+  assert.match(s,/--synthetic-only/);
+  assert.match(s,/image","inspect/);
+  assert.match(s,/rm","-f",name/);
+  assert.doesNotMatch(s,/lib\/db|requireUser|DATABASE_URL\)\s*\\?\\?/);
+});
+test("P0-D3 test inventory includes omitted-WHERE and physical denial probes",()=>{
+  const s=runner();
+  for(const item of ["S05 alpha unfiltered SELECT","S06 INSERT denied","S06 UPDATE denied",
+    "S06 DELETE denied","S06 TRUNCATE denied","S07 SET ROLE beta denied",
+    "S19 SECURITY DEFINER call denied","S22 shared-flight participant",
+    "S14 row_security off cannot bypass policy"]){
+    assert.ok(s.includes(item),item);
+  }
+});
