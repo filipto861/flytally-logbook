@@ -92,7 +92,7 @@ test("I2-B1: positive host inventory CLI is now a hard fail-closed review hold",
   // the caller's environment. Never poison Windows bootstrap variables when
   // launching the *test's own* Node subprocess: Node may terminate before JS.
   assert.doesNotMatch(source,/node:child_process|spawnSync|execFileSync|execSync|powershell\.exe/);
-  assert.doesNotMatch(source,/\\bprocess\\.env\\b|\\bprocess\\.execPath\\b/);
+  assert.doesNotMatch(source,/\bprocess\.env\b|\bprocess\.execPath\b/);
   for(const extraEnv of [
     {},
     {PGHOST:"localhost",DIRECT_URL:"synthetic-should-not-be-printed"},
