@@ -82,3 +82,36 @@ test("I2-B1: unsupported CLI modes always refuse before Windows/PG probing",()=>
     assert.doesNotMatch(run.stdout,/OBSERVED/);
   }
 });
+
+test("I2-B1: positive host inventory CLI is now a hard fail-closed review hold",()=>{
+  const entry=join(process.cwd(),"research","gps-r21-p0-d3-synthetic-security",
+    "run-native-pg16-i2b1-inventory.mjs");
+  const source=readFileSync(entry,"utf8");
+  assert.doesNotMatch(source,/node:child_process|spawnSync|execFileSync|execSync|powershell\.exe/);
+  for(const extraEnv of [
+    {},
+    {SystemRoot:String.raw`C:\\fake-system-root`},
+    {SystemRoot:String.raw`\\\\attacker\\share`,PATH:String.raw`C:\\attacker`},
+    {PGHOST:"localhost",DIRECT_URL:"synthetic-should-not-be-printed"}
+  ]){
+    const run=spawnSync(process.execPath,[entry,"--read-only-inventory"],{
+      encoding:"utf8",timeout:4000,env:{...process.env,...extraEnv}
+    });
+    assert.equal(run.status,1);
+    assert.match(run.stderr,/DISABLED pending independent security review/);
+    assert.match(run.stderr,/RLS NOT RUN/);
+    assert.doesNotMatch(run.stdout,/OBSERVED|PG16/);
+    assert.doesNotMatch(run.stderr,/synthetic-should-not-be-printed|attacker/);
+  }
+});
+
+test("I2-B1: separate PS 5.1 source gate only parses and exercises broken syntax",()=>{
+  const dir=join(process.cwd(),"research","gps-r21-p0-d3-synthetic-security");
+  const source=readFileSync(join(dir,"check-native-pg16-i2b1-ps51-parse.ps1"),"utf8");
+  assert.ok([...source].every(c=>(c.codePointAt(0)??999)<128));
+  assert.match(source,/ParseOnly/);
+  assert.match(source,/Language\.Parser\]::ParseFile/);
+  assert.match(source,/Language\.Parser\]::ParseInput/);
+  assert.match(source,/Windows PowerShell 5\.1 required/);
+  assert.doesNotMatch(source,/Start-Service|Stop-Service|pg_ctl|initdb(?:\.exe)?|psql(?:\.exe)?|&\s*\$candidate/);
+});
