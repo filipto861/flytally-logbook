@@ -1,6 +1,6 @@
 # GPS Detection 2.0 - R2.1b-P0-D4 offline robustness/falsification
 
-**Status:** ACTIVE - implementation and exact-head owner-local verification pending.
+**Status:** IMPLEMENTED IN ISOLATED RESEARCH BRANCH / OWNER-LOCAL VERIFICATION NOT RUN.
 **Repository:** `filipto861/flytally-logbook`; isolated branch `test/gps-r21-p0-d4-offline-robustness` based on research Draft PR #350 (`test/gps-detection-r21-falsification`).
 **Decision:** Product owner directed continuation of the previously proposed offline synthetic milestone. No approval for real GPS retrieval or production changes.
 **Dependency boundary:** P0-D3 synthetic PostgreSQL security proof remains independently OPEN (16/16 mock/static tests and TypeScript passed on an earlier D3 exact SHA; Postgres RLS NOT RUN). D4 cannot close or bypass that gate.
