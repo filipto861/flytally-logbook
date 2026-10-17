@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-17. **Repository:** `filipto861/flytally-logbook`.
 **Branch:** `test/gps-detection-r21-falsification`, [Draft PR #350](https://github.com/filipto861/flytally-logbook/pull/350), unmerged.
-**Status:** SOURCE + 6 SYNTHETIC TESTS AUTHORED; NEW TESTS / TYPECHECK **NOT RUN**.
+**Status:** OWNER-LOCAL BOUNDED ACCEPTANCE: **69/69 Node PASS + TypeScript PASS** on exact clean `b6af89d586cd6264ff2549a29e80333b80c50e9b`; historical pre-execution NOT RUN snapshot remains in earlier sections.
 
 ## Goal and frozen design
 
@@ -42,3 +42,13 @@ npm run typecheck
 ```
 
 **Next after PASS:** review reason-coded provenance against the frozen R2.1a contract, then address one of the remaining T/A falsification gaps and specify pilot-review DTO without authority promotion. `A07/A08` classification needs separate approved design; no real private track access until P0-D3 RLS and owner/driver/consent gate proven. No merge or deploy.
+
+## Owner-local Batch 5 closeout — exact tested source (2026-10-17)
+
+**ACCEPTED for BOUNDED OFFLINE SYNTHETIC RESEARCH.** Owner Windows clean `test/gps-detection-r21-falsification` at exact SHA `b6af89d586cd6264ff2549a29e80333b80c50e9b`. `git fetch` and `git pull --ff-only` completed; empty `git status --porcelain` and exact SHA guard passed. All nine named GPS/legacy targeted test files ran through `npm run test:target`: **69/69 PASS**, **0 fail**, **0 skipped**, **0 cancelled**, **0 todo**. Included all six new Batch 5 A13 provenance cases and pre-existing T09/T11 utility/legacy regressions. `npm run typecheck` / `tsc --noEmit` completed with no diagnostics and the explicit PowerShell exit check passed. This is **owner-local**, not CI.
+
+The original authored-only `NOT RUN` statements above describe the earlier pre-execution snapshot and are **superseded only for this exact tested SHA**. Subsequent docs-only commits do not constitute execution at a new SHA.
+
+**Scope of acceptance:** quality-edge index/side/reason provenance for synthetic motion-pattern candidates, protected event-time uncertainty near invalid boundaries, negative scorecard checks against fabricated evidence, and no regression in the targeted legacy comparison. Passing six A13 regressions does not prove all A13/T13 contract conditions or every T01–T20/A01–A15 scenario. Event truth/physical gear contact, independent holdout, source-native provenance, real-world accuracy/precision/recall, production performance, full test suite, build, Playwright, PostgreSQL RLS and real owner GPS remain **UNVERIFIED / NOT RUN**. `physicalContactStatus=UNRESOLVED`, GPS-only whole-flight landings `UNAVAILABLE`; no user/private-track read or write.
+
+**Next:** one bounded source-only synthetic falsification batch targeting previously open T19 and source-quality A02/A03 without tuning thresholds to fixed regression fixtures; separately design pilot-confirmation UI contracts. A07/A08 require separate product decision. No DB/Neon/PG16 access, deployment, release, merge or `flytally-training` changes.
