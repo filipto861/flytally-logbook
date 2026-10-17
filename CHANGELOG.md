@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — D3 E1a first owner-local run: 34/34 Node PASS, TypeScript TS2322 FAIL; test-only fix (NOT RELEASED)
+
+Owner confirmed clean exact SHA `850318d16051eee123057e2d466f5f9b0254ab7f` and ran E1a: `node --check` for guard and runner **PASS**; targeted Node **34/34 PASS**, 0 failures/skips; `npm run typecheck` **FAIL TS2322** in `tests/gps-r21-p0-d3-e1a-fake-docker.test.ts:98` because `good().HostConfig.Binds` was inferred as `null` but the negative test assigns `string[]`. Small fix `d121671cfaced650e3ead1d2dfcb295db995ebf7` widens only fixture TypeScript type to `string[] | null` with runtime default `null`; no SQL/runner/guard/production code changed. **Node/TS retest NOT RUN on fix/docs HEAD**, so E1a overall targeted acceptance remains OPEN. Actual Docker/PG RLS NOT RUN, no real GPS/Neon, CI/build/browser/migration/merge/deploy. [Detailed provenance](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS D3 E1a ID-bound cleanup and injected fake-Docker falsification (DRAFT / NOT RELEASED)
 
 Received owner-forwarded DeepSeek E1 source-only F01–F10 (no Docker/PG executed). Narrow research-only code on branch `fix/gps-r21-p0-d3-e1a-mock-docker` stacked on E1 PR #355: extracted pure container guards + TypeScript declaration, replaced name-based cleanup confirmation with immutable created-ID check, enforced complete unique tmpfs Mounts set and effective HostConfig.Tmpfs options/size, refused malformed inspect, adapted prior source contract tests and authored ten dynamic fake-Docker negative/positive tests. `docker run` remains synthetic-only; preflight is before **runner-issued** psql, not before official Postgres entrypoint startup. Targeted **34 Node cases AUTHORED / NOT RUN** on new SHA; TypeScript, `node --check`, Docker/PG/RLS, full suite, CI/build/browser NOT RUN; no real GPS/production/Neon/DB/migration/merge/deploy. [E1a contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
