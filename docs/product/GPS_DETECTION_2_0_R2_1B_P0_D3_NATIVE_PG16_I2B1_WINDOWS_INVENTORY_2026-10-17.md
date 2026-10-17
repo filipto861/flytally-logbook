@@ -1,6 +1,18 @@
 # GPS Detection 2.0 — I2-B1 read-only Windows host inventory
 
-**Date:** 2026-10-17. **Repo:** `filipto861/flytally-logbook`. **PR:** #359 (Draft, unmerged). **Status:** CODE AND 5 NEGATIVE TESTS AUTHORED — owner Windows and repo typecheck NOT RUN on this new HEAD.
+**Date:** 2026-10-17. **Repo:** `filipto861/flytally-logbook`. **PR:** #359 (Draft, unmerged). **Status:** I2-B1 offline Node/TypeScript **OWNER-LOCAL 20/20 PASS on exact tested executable SHA**; actual Windows PowerShell probe/OS attestation **NOT RUN**. Historical authored-only status preserved below.
+
+## Owner-local exact-SHA I2-B1 verification (2026-10-17)
+
+**EXECUTED ON OWNER WINDOWS HOST, VERIFIED BOUNDED SCOPE** — full clean tested HEAD `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8`. Both I2-B1 `node --check` validations PASS; targeted Node **20/20 PASS** (I1 12 + I2-A 3 + I2-B1 5), 0 failed/skipped/cancelled/todo; `npm run typecheck` / `tsc --noEmit` PASS. These were owner-local, **not CI**. The GitHub branch equals that exact SHA before the documentation follow-up.
+
+**OPEN / NOT EXECUTED:** Windows PowerShell 5.1 positive parser/CLI execution, actual read-only Windows observations, independent token/ACL proof, PostgreSQL cluster creation/start/stop, SQL/RLS assertions, browser/build/full Node suites, real owner GPS, migrations, merge and production release.
+
+**Post-acceptance source concern:** The Node launcher builds the path of the PowerShell binary from inherited `SystemRoot`, merely checking it is an absolute Windows non-UNC path. This is not strong executable identity/pinning. Do **not** run `--read-only-inventory` until this launch-path trust issue and PS5 compatibility receive independent review and, if necessary, a small correction with fresh local verification.
+
+Independent reviewer packet, exact file blob hashes and constraints: [I2-B1 source review](GPS_DETECTION_2_0_I2B1_INDEPENDENT_REVIEW_HANDOFF_2026-10-17.md). The file contents after this section's addition are docs-only changes; they are **not new executable acceptance evidence**.
+
+---
 
 ## Intended boundary
 
