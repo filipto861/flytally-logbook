@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS D3 E1 pre-SQL effective Docker container attestation (DRAFT / NOT RELEASED)
+
+Added isolated post-#354 research-only preflight `docker container inspect` validation of actual randomly named disposable container state before `psql` or `schema.sql`: container/image ID, running, purpose label, network none, no ports/host mounts/privileges, only three exact tmpfs paths; fail closed with existing cleanup verification, never print Docker inspect JSON. Added two Node static/ordering cases (24 authored in D3 targeted suite); **new exact-head tests, TypeScript, Docker, PostgreSQL, RLS, CI and build NOT RUN**. Prior 22/22 Node + TypeScript PASS remains pinned to older `4514274a`, not transferred to E1. User-facing default no-Docker unchanged; no production GPS, DB, auth, migration, merge or deploy. [E1 contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_CONTAINER_ATTESTATION_2026-10-17.md).
+
+
 ## 2026-10-17 - D3 post-DeepSeek hardening owner-local Node/TypeScript acceptance (DRAFT / NOT RELEASED)
 
 At clean full commit `4514274a90f300360d485eed4cb6d31530eff349` on `fix/gps-r21-p0-d3-synthetic-runner-hardening`, owner ran D3 targeted Node suite: **22 tests PASS, 0 FAIL/SKIP/CANCELLED**, and `npm run typecheck` (`tsc --noEmit`) **PASS**, with working tree clean and no diagnostic output. Six new code/source negative regressions added to 16 earlier mock/static checks. Evidence is **owner-local, NOT CI**. Earlier D3 results remain independently pinned. **Actual PostgreSQL SQL, role isolation and RLS NOT RUN**, overall security gate OPEN; no Docker/native PG required for ordinary testing. Full regression/build/Playwright/CI NOT RUN; no real GPS, auth/Neon/production DB access, schema migration, merge or deploy. Updated [hardening acceptance record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_POST_REVIEW_HARDENING_2026-10-17.md); subsequent docs-only commit not a new runtime-verification SHA.
