@@ -24,6 +24,11 @@ function docker(args,input){
   return{ok:r.status===0&&!r.error,output:String(r.stdout??"").trim(),
     error:r.error?.message??String(r.stderr??"").trim()};
 }
+if(process.env.DOCKER_HOST)fail("DOCKER_HOST override refused: local Docker context only.");
+const context=docker(["context","inspect","--format","{{.Endpoints.docker.Host}}"]);
+if(!context.ok||!(/^(?:npipe:\/\/\/\/\.\/pipe\/|unix:\/\/|tcp:\/\/(?:localhost|127\.0\.0\.1):)/).test(context.output)){
+  fail("Docker context is not demonstrably local; refusing even synthetic DB creation.");
+}
 const image=docker(["image","inspect",IMAGE,"--format","{{.Id}}"]);
 if(!image.ok)fail("Docker image postgres:16-alpine not locally available. Manually pull first; no DB touched.");
 if(!docker(["info","--format","{{.ServerVersion}}"]).ok)fail("Docker daemon unavailable.");
