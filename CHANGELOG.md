@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+
+## 2026-10-17 — GPS native PG16 I2-A offline evidence boundary (DRAFT / NOT TESTED)
+
+Added `native-pg16-i2-offline.mjs`, `.d.mts`, and `tests/gps-r21-p0-d3-native-pg16-i2-offline.test.ts` (3 new tests). Evaluates externally supplied token/path/binary/service assertions but never promotes caller-supplied booleans to real OS trust. Runtime/stop/delete prohibited; no native OS collection, initdb, pg_ctl, SQL, actual RLS, service changes or deploy. **New Node/TypeScript tests NOT RUN; current code SHA not accepted.** Owner I1 12/12 applies only to previous pinned SHA. Next exact-SHA owner-local targeted acceptance and independent review before any privileged implementation.
+
 ## 2026-10-17 — Native PG16 I1 clean-source local verification 12/12 PASS (RESEARCH DRAFT)
 
 Owner verified exact clean `2c4219e3e3bbeb26852b05d9f394a66cf3954d04` on native PG16 readiness branch. Both `node --check` checks **PASS**, `npm run test:target -- tests/gps-r21-p0-d3-native-pg16-guards.test.ts` **12/12 PASS** (no failure/skip), `npm run typecheck` / `tsc --noEmit` **PASS** without diagnostics; PowerShell exit guards passed. [Evidence record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md). No Docker, `initdb`, `pg_ctl`, `psql`, PG16 SQL/RLS, CI/full suite/build/browser/migrations/production/Neon/merge/deploy. Existing PG16/18 services untouched. Future docs-only or I2 commits not covered by this pinned owner test. P0-D3 actual PostgreSQL RLS OPEN; real GPS NO-GO.
