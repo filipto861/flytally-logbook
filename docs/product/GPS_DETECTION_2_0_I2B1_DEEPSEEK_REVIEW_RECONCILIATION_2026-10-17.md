@@ -32,6 +32,16 @@ The observational token field `elevated` was misleading because `WindowsPrincipa
 | I2B1-09 LOW handles | Old code used `spawnSync`, `shell:false`, bounded timeout and `maxBuffer`, but executable identity incomplete. | No spawned process in revised CLI. |
 | I2B1-10 LOW evidence | Prior 20 tests = I1 12 + I2-A 3 + I2-B1 5, not 20 independent risk boundaries. | Keep totals and scope explicit; new expected target 22 (5 + 2 I2-B1), not execution evidence yet. |
 
+## Owner-local post-review attempt and bounded test-harness correction (2026-10-17)
+
+**Failed exact clean SHA:** `9dfde4b8441ce51be785484dca9a8ed05f0ef76e`. Owner ran two JS `node --check` steps **PASS**; combined targeted Node suite **21/22 PASS, 1 FAIL, 0 skipped**; `npm run typecheck` **PASS**; actual Windows PowerShell 5.1 AST `Parser.ParseFile` on both `.ps1` files **PASS**, with broken `ParseInput('if (')` negative control **PASS**. Terminal's later `I2-B1 POST-REVIEW OFFLINE GATES PASS` was an unconditional print after a genuine Node failure, so **combined gate FAIL**. Actual inventory and PG SQL/RLS **NOT RUN**.
+
+**Observed sole failure:** `tests/gps-r21-p0-d3-native-pg16-i2b1-inventory.test.ts:101`, in the new positive-mode refusal test: expected child `run.status === 1`, observed **134**. That assertion belongs to a loop launching Node with four environment variants; transcript does not identify which variant produced 134, so specific causal attribution is **NOT PROVEN**. Other child-launch tests passed.
+
+**Small test-only correction:** keep the unchanged production-disabled launcher, but do not launch the **test child Node runtime** with forged Windows bootstrap values `SystemRoot` or `PATH`. Verify that launcher source lacks subprocess imports/spawns and `process.env` access; run refusal subprocess tests with the normal inherited Windows environment and limited, non-OS-critical `PGHOST`, `DIRECT_URL` or `FLYTALLY_I2B1_TEST_SENTINEL`. Also explicitly check child spawn errors, signals, exit `1`, secret non-disclosure and no claimed observations. The changed static regex is a source guard, **not** a general sandbox or Windows executable attestation.
+
+**Current status:** new test code **AUTHORED, NOT OWNER-RUN** at changed HEAD. Expected **22/22 targeted PASS** if the failure is resolved. Previous code's 21/22 failure must remain in history; TypeScript and PS5 AST successes were independently supported on prior exact SHA only. No positive inventory, trusted ACL/token, RLS, Neon, real GPS, migration or deploy.
+
 ## Required verification for this patch
 
 1. Owner exact clean source SHA (to be printed after final docs and executable change), `node --check` on touched `.mjs`, combined targeted Node I1/I2-A/I2-B1 expected **22** cases, `npm run typecheck`. No skipped cases or hidden failures.
