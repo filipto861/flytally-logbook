@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
+import {spawnSync} from "node:child_process";
 import {evaluateSyntheticGrant,withSyntheticAuthorization,type MockGrant,type MockRequest} from "../research/gps-r21-p0-d3-synthetic-security/mock-authorization.ts";
 
 const grant:MockGrant={subject:"r21_subject_alpha",trackIds:[1001,1002],expiresAtMs:2000,revoked:false};
@@ -76,4 +77,28 @@ test("P0-D3 test inventory includes omitted-WHERE and physical denial probes",()
     "S14 row_security off cannot bypass policy"]){
     assert.ok(s.includes(item),item);
   }
+});
+
+test("runner does not start Docker or DB without explicit --synthetic-only flag",()=>{
+  const run=spawnSync(process.execPath,[join(dir,"run-synthetic-postgres.mjs")],{
+    encoding:"utf8",timeout:5000,
+    env:{...process.env,DATABASE_URL:"",DIRECT_URL:"",NEON_DATABASE_URL:"",PGHOST:"",PGSERVICE:"",PGUSER:"",PGPASSWORD:""}
+  });
+  assert.notEqual(run.status,0);
+  assert.match(String(run.stderr),/Explicit --synthetic-only acknowledgement required/);
+});
+test("runner rejects any ambient production-like DATABASE_URL before Docker operation",()=>{
+  const run=spawnSync(process.execPath,[join(dir,"run-synthetic-postgres.mjs"),"--synthetic-only"],{
+    encoding:"utf8",timeout:5000,
+    env:{...process.env,DATABASE_URL:"postgresql://example.invalid/forbidden",
+      DIRECT_URL:"",NEON_DATABASE_URL:"",PGHOST:"",PGSERVICE:"",PGUSER:"",PGPASSWORD:""}
+  });
+  assert.notEqual(run.status,0);
+  assert.match(String(run.stderr),/Ambient DATABASE_URL set/);
+});
+test("SQL fixtures reject execution without the disposable sandbox marker and DB name",()=>{
+  assert.match(schema(),/current_database\(\) <> 'r21_synthetic_lab'/);
+  assert.match(schema(),/current_setting\('r21\.synthetic_only',true\)/);
+  assert.match(runner(),/POSTGRES_DB=r21_synthetic_lab/);
+  assert.match(runner(),/DOCKER_HOST override refused/);
 });
