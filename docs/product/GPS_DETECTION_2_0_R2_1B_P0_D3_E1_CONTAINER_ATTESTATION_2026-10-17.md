@@ -2,8 +2,26 @@
 
 **Date:** 2026-10-17
 **Repo:** `filipto861/flytally-logbook`; branch `fix/gps-r21-p0-d3-container-attestation` stacked on synthetic D3 hardening Draft PR #354, **not** main or D4.
-**Status:** SOURCE PATCH AUTHORED / **24** D3 Node cases expected (**NOT RUN on this branch**) / TypeScript **NOT RUN** / real PostgreSQL SQL/RLS **NOT RUN / OPEN**.
+**Status:** E1 targeted owner-local Node 24/24 PASS + TypeScript PASS + Node syntax PASS on pinned SHA; Docker/SQL/RLS NOT RUN / OPEN.
 **Decision:** Owner directed continuation after earlier local clean `4514274a90f300360d485eed4cb6d31530eff349` confirmed D3 post-review **22/22 Node PASS + TypeScript PASS**. Those results are historical and do not transfer to E1 source changes.
+
+## Owner-local acceptance — exact clean source (2026-10-17)
+
+**Verdict: E1 targeted local gates PASS at exact source `2e362aeeafe7d816c53c74c61d4c761927d56a22`; this is NOT Docker/PostgreSQL runtime acceptance.**
+
+Owner-supplied Windows PowerShell transcript from `C:\Users\filip\Documents\GitHub\Logbook`: `git fetch origin`, checkout `fix/gps-r21-p0-d3-container-attestation`, `git pull --ff-only` reported `Already up to date`, `git status --short` empty, and `git rev-parse HEAD` exactly `2e362aeeafe7d816c53c74c61d4c761927d56a22`.
+
+| Check | Observed evidence | Status |
+| --- | --- | --- |
+| `node --check research/gps-r21-p0-d3-synthetic-security/run-synthetic-postgres.mjs` | Exit code 0; PowerShell explicit `$LASTEXITCODE` guard did not throw | **PASS (owner-local)** |
+| `npm run test:target -- tests/gps-r21-p0-d3-synthetic-security.test.ts` | **24/24 PASS**, 0 fail/skipped/cancelled/todo; includes two E1 inspection/ordering tests | **PASS (owner-local)** |
+| `npm run typecheck` | `tsc --noEmit`, no diagnostics; explicit exit-code guard did not throw | **PASS (owner-local)** |
+| PostgreSQL 16 SQL, Docker effective inspect/runtime and RLS | Not invoked | **NOT RUN / OPEN** |
+| Full Node suite, build, browser, CI, production smoke, DB migrations, deploy | Not invoked | **NOT RUN** |
+
+GitHub scoped compare of PR #355 to #354 found only E1 research runner and two source/test assertions plus ROADMAP, FEATURES, CHANGELOG and this evidence document. **No production app/auth/db/training changes.** Owner acceptance on `2e362aeeafe7d816c53c74c61d4c761927d56a22` is tied to this exact executable source revision; any following docs-only commits are **not** individually runtime tested.
+
+**Disposition:** E1 limited Node/TS/syntax acceptance **CLOSED**; external E1-specific independent security review **PENDING**. PostgreSQL RLS D3 overall gate remains **OPEN** and real GPS remains **NO-GO**. Draft PR #355 remains open and not merged/deployed. Passing source/static checks cannot establish actual container isolation or actual RLS enforcement.
 
 ## Reason for a separate narrow E1 batch
 
