@@ -25,6 +25,8 @@ function docker(args,input){
     error:r.error?.message??String(r.stderr??"").trim()};
 }
 if(process.env.DOCKER_HOST)fail("DOCKER_HOST override refused: local Docker context only.");
+const cli=docker(["--version"]);
+if(!cli.ok)fail("Docker CLI unavailable on PATH. Install/start Docker Desktop before retrying; no database accessed.");
 const context=docker(["context","inspect","--format","{{.Endpoints.docker.Host}}"]);
 if(!context.ok||!(/^(?:npipe:\/\/\/\/\.\/pipe\/|unix:\/\/|tcp:\/\/(?:localhost|127\.0\.0\.1):)/).test(context.output)){
   fail("Docker context is not demonstrably local; refusing even synthetic DB creation.");
