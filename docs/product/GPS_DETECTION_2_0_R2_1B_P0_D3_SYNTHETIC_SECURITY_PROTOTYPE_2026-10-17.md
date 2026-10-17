@@ -62,6 +62,33 @@ All statuses below indicate **IMPLEMENTED or DEFERRED**, **not execution PASS**.
 
 **Notably, S01–S23 are NOT declared fully satisfied**, and no real-data research phase is approved by this prototype.
 
+## Owner-local first run and Docker prerequisite failure (2026-10-17)
+
+Owner provided a complete Windows PowerShell transcript for **exact clean SHA `820b211b07c373d9123fa3c2ec023bc9909342f5`** (branch fast-forward and SHA/worktree guards completed).
+- `npm run test:target -- tests/gps-r21-p0-d3-synthetic-security.test.ts` → **12/12 PASS**, zero failed or skipped.
+- `npm run typecheck` → `tsc --noEmit` **PASS** (no diagnostics).
+- `docker image inspect postgres:16-alpine` → PowerShell **CommandNotFoundException**: `docker` executable not found on host.
+- Subsequent runner `node .../run-synthetic-postgres.mjs --synthetic-only` → rejected before a container or query was started: **Docker context is not demonstrably local**. This is an environment prerequisite failure, **not an RLS test failure**.
+- **PostgreSQL role/RLS checks: NOT RUN; combined P0-D3 gates NOT PASS.** No real DB or user track was accessed.
+- The original PowerShell script used `$LASTEXITCODE` after a **PowerShell command-not-found** exception; this can retain an earlier successful native command's exit code, permitting unintended continuation. Must check `Get-Command docker` **before** any Docker invocation.
+
+**Minimal, scoped follow-up change:** `run-synthetic-postgres.mjs` now verifies `docker --version` before checking the context and returns a precise `Docker CLI unavailable on PATH` fail-closed message. Added one focused mocked-no-Docker Node regression, so **new expected Node test count = 13**, with fresh exact-SHA execution **NOT RUN yet**. No fixture RLS policy, privilege assertions, production code, SQL schema or authorization model changed.
+
+**Required operator prerequisite:** install/start Docker Desktop (Linux containers) following the official Windows setup instructions, and explicitly obtain the official `postgres:16-alpine` image locally. Do not reuse any configured FlyTally/Neon/Postgres `DATABASE_URL` or run SQL manually against an existing database. If Docker is unavailable, stop and record **NOT RUN**.
+
+**Revised guarded preflight** (PowerShell; example only, pin actual new HEAD from PR #351 first):
+
+```powershell
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+    throw "Docker CLI not available. Install/start Docker Desktop before running synthetic PostgreSQL tests."
+}
+docker version --format '{{.Server.Version}}'
+if ($LASTEXITCODE -ne 0) { throw "Docker engine unavailable or not running" }
+docker image inspect postgres:16-alpine *> $null
+if ($LASTEXITCODE -ne 0) { throw "Image missing: explicitly run docker pull postgres:16-alpine" }
+# Then and only then execute the isolated --synthetic-only runner.
+```
+
 ## 3. Verification plan and runtime controls
 
 **Local environment observation by ChatGPT:** its environment currently has Node but **does not have Docker or PostgreSQL binaries**. Therefore this isolated Postgres runner **has not executed**; no synthetic PostgreSQL role test PASS is claimed.
