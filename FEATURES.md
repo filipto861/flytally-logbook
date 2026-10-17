@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+
+**GPS Native PG16 I2-A research prototype (2026-10-17, NOT TESTED):** Pure Windows-evidence consistency contract, typed declaration and 3 negative Node tests staged on Draft PR #359. No actual Windows ACL/token/process collection; no runtime authorization, native PG runner, DB startup, SQL/RLS, deployment or changes to PG16/PG18 services. I2-B/C pending.
+
 **GPS Native PG16 I1 guards (2026-10-17; research only):** Owner clean `2c4219e3e3bbeb26852b05d9f394a66cf3954d04` native 12/12 dynamic Node PASS, 2 syntax PASS, TypeScript PASS. Pure identity/HBA/cleanup metadata predicates and `--offline-only` CLI verified locally; actual Windows ACL/process adapter and native database execution remain unimplemented, RLS NOT RUN/OPEN, existing PG16/18 services untouched. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md).
 
 
