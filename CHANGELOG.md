@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS P0-D3 Windows PowerShell 5.1 encoding parse fix (DRAFT / NOT RELEASED)
+
+Owner checkout at exact clean `a7dc905e980fe10bbb550512b5ba19f09c25d00d` fast-forwarded but `run-local-gates.ps1` aborted at PowerShell parse time: UTF-8 without BOM plus non-ASCII em dashes generated `MissingEndParenthesisInExpression`/unexpected-token errors. **No test, TypeScript, Docker or RLS statements ran in that invocation.** Narrow research-only fix replaced **all nine em dashes** in `.ps1` with ASCII hyphens. Updated old output-marker test and added one regression requiring ASCII-only PS1 and honest RLS-not-run marker (**16 authored Node tests, NOT RUN on corrected HEAD**). GitHub source check confirmed ASCII and test literals; Windows PowerShell runtime not available to assistant. ROADMAP/FEATURES/[P0-D3 evidence doc](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md) synchronized. No production code, DB/Neon, user GPS, model training, merge or deploy.
+
+
 ## 2026-10-17 — GPS R2.1b-P0-D3 Docker-optional local verification (DRAFT / NOT RELEASED)
 
 Per owner direction, removed Docker from the **default** development/test dependency. Added research-only `run-local-gates.ps1` with exact clean SHA/branch checks, offline-by-default targeted Node suite and repository `tsc --noEmit`, explicit **Postgres RLS NOT RUN / overall security milestone OPEN** without DB. Optional Docker provider remains explicit opt-in; native `initdb`, `pg_ctl`, `psql` presence is detected without creating/connecting to any cluster. Added two static tests, raising the isolated suite from 13 to **15 authored cases**; **new HEAD tests and typecheck NOT RUN**, original Docker RLS probe also NOT RUN. Prior exact owner run `820b211b` had 12/12 Node tests and TypeScript PASS but Docker executable unavailable. Updated [P0-D3 milestone docs](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md). No production/runtime code, real GPS/Neon read, DB role, migration, cross-user training, merge or deploy.
