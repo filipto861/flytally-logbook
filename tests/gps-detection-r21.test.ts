@@ -1,0 +1,33 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {analyzeResearchTrack,type SourceObservation} from "../research/gps-detection-r21/detector.ts";
+
+const ORIGIN="2026-10-17T10:00:00Z";
+const fix=(lat:number,lon:number,alt:number|null,seconds:number,ordinal:number):SourceObservation=>({lat,lon,alt,time:new Date(Date.parse(ORIGIN)+seconds*1000).toISOString(),ordinal});
+const level=(alts:(number|null)[],speedKmh=95,step=5):SourceObservation[]=>alts.map((alt,i)=>fix(48+(speedKmh*step/3600/111.2)*i,10,alt,i*step,i));
+function circuit(){const alt=[230,260,300,350,400,430];for(let n=0;n<5;n++)alt.push(390,350,310,270,240,230,235,242,255,275,310,360,410,430);alt.push(390,350,310,270,240,230);return level(alt)}
+function stopAndGo(){const speed=[...Array(8).fill(80),...Array(6).fill(10),...Array(8).fill(80)],res=[fix(48,10,250,0,0)];let lat=48;for(let i=0;i<speed.length;i++){lat+=speed[i]*5/3600/111.2;res.push(fix(lat,10,250,(i+1)*5,i+1))}return res}
+const events=(a:SourceObservation[])=>analyzeResearchTrack(a).candidates;
+const allUnresolved=(a:SourceObservation[])=>events(a).every(x=>x.physicalContactStatus==="UNRESOLVED");
+
+test("T01 empty/single/unavailable time: never invent contact",()=>{for(const xs of [[],[fix(48,10,null,0,0)]]){const r=analyzeResearchTrack(xs);assert.equal(r.candidates.length,0);assert.equal(r.islands.length,0)}});
+test("T02 A11 duplicate timestamp is invalid edge and not zero speed",()=>{const xs=level([200,190,180,170,160,150,140,150,160]);xs[4].time=xs[3].time;const r=analyzeResearchTrack(xs);assert.equal(r.edges[3].reason,"NON_MONOTONIC_TIME");assert.equal(r.edges[3].speedKmh,null);assert.ok(r.islands.length>=1);assert.ok(allUnresolved(xs))});
+test("T03 source order with backward time remains flagged",()=>{const xs=level([1,2,3,4,5]);xs[3].time=xs[1].time;const r=analyzeResearchTrack(xs);assert.equal(r.edges[2].reason,"NON_MONOTONIC_TIME");assert.equal(r.edges[2].speedKmh,null)});
+test("T04 A12 repeated static GPS with real elapsed time has no contact",()=>{const xs=Array.from({length:18},(_,i)=>fix(48,10,200,i*5,i));const r=analyzeResearchTrack(xs);assert.equal(r.candidates.length,0);assert.equal(r.edges[0].speedKmh,0)});
+test("T05 zero altitude survives, null remains unknown",()=>{const xs=level([0,0,null,0,0]);const r=analyzeResearchTrack(xs);assert.equal(xs[0].alt,0);assert.equal(xs[2].alt,null);assert.equal(r.edges[1].verticalRateMps,null);assert.ok(allUnresolved(xs))});
+test("T06 altitude level shift creates invalid edge not a T&G",()=>{const xs=level([550,548,545,395,390,380,375,370,365,398,395,390,405,425]);const r=analyzeResearchTrack(xs);assert.equal(r.edges[2].reason,"ALTITUDE_DISCONTINUITY");assert.equal(r.candidates.filter(x=>x.type==="T_G_PATTERN_CANDIDATE").length,0)});
+test("T07 sawtooth steep spikes do not create contact candidate",()=>{const xs=level([430,440,400,450,405,460,410,470,420,480,430,490],95,1);const r=analyzeResearchTrack(xs);assert.ok(r.edges.some(x=>x.reason==="ALTITUDE_DISCONTINUITY"));assert.equal(r.candidates.length,0)});
+test("T08 A11 duplicate fix cannot fabricate stopped pattern",()=>{const xs=level([100,130,160,190,220,250,280,310,340]);xs[5].time=xs[4].time;xs[5].lat=xs[4].lat;const r=analyzeResearchTrack(xs);assert.equal(r.edges[4].speedKmh,null);assert.equal(r.candidates.length,0)});
+test("T09 utility: supported five-cycle altitude pattern remains useful",()=>{const r=analyzeResearchTrack(circuit());assert.ok(r.candidates.filter(x=>x.type==="T_G_PATTERN_CANDIDATE").length>=1);assert.ok(r.candidates.every(x=>x.physicalContactStatus==="UNRESOLVED"))});
+test("T10 known short rolling T&G shape is reported, not relabeled a negative",()=>{const a=level([400,380,360,340,320,300,280,260,245,235,228,224,228,232,237,240,244,247,250,252,253,253.7,271,300,330],100);const r=analyzeResearchTrack(a);assert.ok(r.candidates.every(x=>x.physicalContactStatus==="UNRESOLVED"));assert.ok(r.islands.length>0)});
+test("T11 utility: horizontal stop/go pattern can be suggested without known wheel contact",()=>{const xs=stopAndGo(),r=analyzeResearchTrack(xs);assert.ok(r.candidates.some(x=>x.type==="STOP_GO_PATTERN_CANDIDATE"));assert.ok(allUnresolved(xs))});
+test("T12 A02 unknown datum/altitude mode never becomes AGL/contact",()=>{const xs=level([100,80,60,50,30,50,70,90,120,150]);const r=analyzeResearchTrack(xs);assert.ok(r.candidates.every(c=>c.physicalContactStatus==="UNRESOLVED"));assert.equal(Object.hasOwn(r,"agl"),false)});
+test("T13 A13 60-second gap splits support islands; events never bridge it",()=>{const xs=circuit();xs.slice(40).forEach(p=>p.time=new Date(Date.parse(p.time!)+120000).toISOString());const r=analyzeResearchTrack(xs);assert.ok(r.edges.some(x=>x.reason==="GAP"));for(const c of r.candidates)assert.ok(r.islands.some(i=>c.support.start>=i.start&&c.support.end<=i.end));});
+test("T14 A05 cropped flight tail never creates fictitious final landing",()=>{const r=analyzeResearchTrack(level([100,120,140,160,190,230,290,350,400]));assert.equal(r.candidates.length,0);assert.equal(r.patternCount.kind,"PATTERN_ONLY")});
+test("T15 taxi only no takeoff/landing pattern",()=>{const r=analyzeResearchTrack(Array.from({length:20},(_,i)=>fix(48+i*.00001,10,200,i*5,i)));assert.equal(r.candidates.length,0)});
+test("T16 same sampled GPS cannot distinguish touchdown from low approach",()=>{const xs=circuit();const a=analyzeResearchTrack(xs),b=analyzeResearchTrack(xs.map(p=>({...p})));assert.deepEqual(a.candidates,b.candidates);assert.ok(allUnresolved(xs))});
+test("T18 explicit UTC offsets represent same elapsed time",()=>{const xs=level([100,110,120,130,140]);xs[1].time="2026-10-17T12:00:05+02:00";const r=analyzeResearchTrack(xs);assert.equal(r.edges[0].dtSeconds,5);assert.equal(r.edges[1].dtSeconds,5)});
+test("A01 absent altitude can never supply a vertical contact",()=>{const xs=level(Array(15).fill(null));const r=analyzeResearchTrack(xs);assert.equal(r.candidates.length,0);assert.equal(r.edges[0].verticalRateMps,null)});
+test("A03 A10 huge horizontal teleport is masked as invalid",()=>{const xs=level([200,190,180,170,160,150,140]);xs[3].lat=55;const r=analyzeResearchTrack(xs);assert.ok(r.edges.some(x=>x.reason==="POSITION_JUMP"));assert.equal(r.candidates.length,0)});
+test("A04 pattern counter is a separate branded advisory object, not certified landings",()=>{const r=analyzeResearchTrack(circuit());assert.equal(r.patternCount.kind,"PATTERN_ONLY");assert.equal(r.patternCount.value,r.candidates.length);assert.equal(Object.hasOwn(r,"landings"),false)});
+test("A14 utility floor: T09 and T11 both have supported patterns",()=>{assert.ok(events(circuit()).length>0);assert.ok(events(stopAndGo()).length>0)});
