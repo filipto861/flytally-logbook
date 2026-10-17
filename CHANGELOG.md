@@ -1,3 +1,7 @@
+## 2026-10-17 - GPS P0-D3 owner-local PowerShell PASS, test-only TypeScript fix (DRAFT / NOT RELEASED)
+
+Owner Windows PowerShell 5.1 execution at clean `43e42f70d56723b57c40d7cbce2215d0b8835732` parsed and ran the ASCII wrapper; isolated Node security suite **16/16 PASS**, TypeScript **FAIL** (missing `NODE_ENV` in subprocess `env` and optional return from `codePointAt(0)`), so wrapper stopped before any optional PostgreSQL work. Test-only fix `9c48ae2b` sets `NODE_ENV: "test"` and handles the optional code point. Corrected HEAD **Node and typecheck NOT RUN** pending owner retest. PostgreSQL RLS **NOT RUN**, overall P0-D3 security gate OPEN. No real GPS, DB, runtime, merge or deploy.
+
 # FlyTally changelog
 
 ## 2026-10-17 — GPS P0-D3 Windows PowerShell 5.1 encoding parse fix (DRAFT / NOT RELEASED)
