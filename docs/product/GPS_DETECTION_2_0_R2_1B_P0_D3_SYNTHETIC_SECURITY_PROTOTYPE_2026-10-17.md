@@ -1,3 +1,7 @@
+## Owner-local PowerShell parsing PASS; strict TypeScript correction pending (2026-10-17)
+
+Owner successfully invoked the default no-Docker `run-local-gates.ps1` on exact clean `43e42f70d56723b57c40d7cbce2215d0b8835732` in Windows PowerShell 5.1. **16/16 synthetic Node tests PASS, 0 failures/skips**; the prior script-encoding parse blocker is resolved in this run. Repository `tsc --noEmit` **FAIL** with TS2769 (`spawnSync` test-only environment missing required `NODE_ENV`) and TS2532 (`codePointAt(0)` possibly undefined), both in `tests/gps-r21-p0-d3-synthetic-security.test.ts`. Minimal test-only fix at `9c48ae2b`: explicit `NODE_ENV: "test"` and nullish-handled codepoint. **Retest on updated full HEAD NOT RUN**; PostgreSQL RLS NOT RUN, security milestone OPEN. No production/real GPS or DB activity.
+
 # GPS Detection 2.0 — R2.1b-P0-D3 synthetic PostgreSQL isolation prototype
 
 **Date:** 2026-10-17  
