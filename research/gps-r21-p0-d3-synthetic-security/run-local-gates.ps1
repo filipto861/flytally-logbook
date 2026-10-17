@@ -39,6 +39,14 @@ if ($LASTEXITCODE -ne 0) { throw "Repository TypeScript typecheck FAILED" }
 Write-Host "PASS — synthetic Node tests and TypeScript (owner-local; not CI)"
 
 if ($PostgresProvider -eq "none") {
+    $nativeTools = @("initdb", "pg_ctl", "psql")
+    $nativeFound = @($nativeTools | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue })
+    if ($nativeFound.Count -eq 3) {
+        Write-Host "DISCOVERED — native PostgreSQL tools on PATH, but no independently verified disposable native cluster."
+        Write-Host "NOT RUN — native PostgreSQL RLS (requires a separately reviewed safe ephemeral-cluster runner)."
+    } else {
+        Write-Host "NOT DETECTED — complete native PostgreSQL initdb/pg_ctl/psql toolchain on PATH."
+    }
     Write-Host "NOT RUN — PostgreSQL role/RLS tests: no isolated DB provider selected."
     Write-Host "OVERALL P0-D3 SECURITY GATE OPEN — missing real PostgreSQL RLS evidence."
     return
