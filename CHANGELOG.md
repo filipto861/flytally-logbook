@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R1 data/label feasibility and independent review packet (DRAFT, research only)
+
+Performed **read-only, anonymous aggregate** inspection of existing production GPS point shape, timing cadence, missingness and altitude-edge diagnostics. No routes, user data or flight rows were exported. Reconciled weak-label leakage: legacy GPS import pre-fills flight movement suggestions; recorded/certified flight-level counts do not independently establish event-level runway contact. Added [R1 feasibility/benchmark design](docs/product/GPS_DETECTION_2_0_R1_FEASIBILITY_BENCHMARK_2026-10-17.md), [independent AI architecture challenge](docs/product/GPS_DETECTION_2_0_INDEPENDENT_ARCH_REVIEW_2026-10-17.md) and updated research/roadmap/features state. Decision: **GO** offline time-based quality-aware baseline research; **NO-GO** supervised event-contact model claims pending permissions and independent ground truth. No production code, migration, user records, model training, benchmarks, tests/build or deploy changed/run.
+
 ## 2026-10-17 — GPS Detection 2.0 R0/R1 research opened (documentation only)
 
 Created public-scope [Issue #348](https://github.com/filipto861/flytally-logbook/issues/348) and [R0/R1 research contract](docs/product/GPS_DETECTION_2_0_R0_R1_EXISTING_DATA_RESEARCH_2026-10-17.md). Read-only inspection of GPS code, existing fault/regression docs, database schema and **private aggregate** production track metadata confirmed feasibility of further research but **not** independent touchdown-event labels or authorization to train across accounts. Scope is restricted to existing legitimately usable data; flight-level counts cannot supply ground-truth contact times. Updated ROADMAP and FEATURES accordingly. **Implementation, AI training, measured benchmark, tests/build, migrations, merger and deploy: NOT RUN; no production data mutations or exported private routes.**
