@@ -1,3 +1,5 @@
+**GPS Detection 2.0 research verification (2026-10-17):** Owner-local clean commit `3f9db21f3945a4abc72b5fe269bff528e7db5967` completed the default Windows PowerShell 5.1 no-Docker gate: 16/16 synthetic/static Node tests PASS and TypeScript PASS. PostgreSQL RLS NOT RUN and overall security gate remains OPEN. This is research test evidence, not production GPS authentication/RLS capability or release.
+
 **GPS Detection 2.0 P0-D3 verification (2026-10-17):** Synthetic research fixture has 16/16 Node tests verified owner-locally at `43e42f70`; TypeScript gate failed on two test-only typing issues. Narrow correction committed (`9c48ae2b`), exact updated HEAD retest pending. PostgreSQL RLS remains NOT RUN, security milestone OPEN; no real GPS access or release.
 
 # FlyTally Logbook — FEATURE LIST
