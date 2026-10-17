@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS 2.0 R2.1a Batch 6 — source quality / T19 research prototype (2026-10-17, UNVERIFIED):** New research-only `SourceQualityAssessment` with vertical UNVERIFIED/RELATIVE_CHANGE_ONLY/UNAVAILABLE and declared-but-not-attested H-accuracy/datum. Suppresses incompatible clamped/feet/nonfinite vertical hypotheses; malformed known H accuracy causes `PATTERN_ONLY UNAVAILABLE`; runway proximity always unavailable, contact always unresolved. Falsification scorecard rejects forged source claims. 13 offline synthetic cases authored; expected 82 with prior verified 69, **new tests NOT RUN**. No runtime, DB, private tracks, A07/A08, certified count changes or release. [Batch 6 contract](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH6_SOURCE_QUALITY_2026-10-17.md).
+
+
 **GPS Detection 2.0 R2.1a Batch 5 owner-local accepted (2026-10-17; RESEARCH, NOT RELEASED):** clean exact `b6af89d586cd6264ff2549a29e80333b80c50e9b` targeted Node **69/69 PASS** (63 baseline + six new reason-coded A13 boundary provenance tests), TypeScript **PASS**, no failures/skips. Research candidates expose invalid-edge reason/index/island side, suppress unsupported precise timing and remain `physicalContactStatus=UNRESOLVED`; source scorecard rejects forged edge provenance. **Not** independently validated touchdown or a full T/A matrix pass. No production imports, private tracks, SQL/RLS, migrations, training, deploy. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH5_BOUNDARY_PROVENANCE_2026-10-17.md).
 
 
