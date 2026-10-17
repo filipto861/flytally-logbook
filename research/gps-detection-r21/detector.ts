@@ -153,10 +153,11 @@ export function assessSourceQuality(metadata?:SourceMetadata):SourceQualityAsses
   const datum=metadata?.verticalDatum?.status==="KNOWN"?"DECLARED_NOT_VERIFIED" as const:"UNKNOWN" as const;
   const h=metadata?.horizontalAccuracyM;
   const hKnown=h?.status==="KNOWN";
-  const hValid=hKnown&&typeof h.value==="number"&&Number.isFinite(h.value)&&h.value>=0;
+  const hValue=h?.status==="KNOWN"?h.value:null;
+  const hValid=typeof hValue==="number"&&Number.isFinite(hValue)&&hValue>=0;
   const horizontalAccuracy:SourceQualityAssessment["horizontalAccuracy"]=!hKnown?
     {status:"UNKNOWN",declaredMeters:null}:hValid?
-    {status:"DECLARED_NOT_VERIFIED",declaredMeters:h.value}:{status:"INVALID",declaredMeters:null};
+    {status:"DECLARED_NOT_VERIFIED",declaredMeters:hValue}:{status:"INVALID",declaredMeters:null};
   const make=(status:SourceQualityAssessment["vertical"]["status"],reason:VerticalEvidenceReason):SourceQualityAssessment=>({
     vertical:{status,reason,datum},horizontalAccuracy,runwayProximity:"UNAVAILABLE"
   });
