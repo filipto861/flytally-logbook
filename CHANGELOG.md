@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — E1a corrected-SHA owner-local Node 34/34 + TypeScript PASS (DRAFT / NOT RELEASED)
+
+Owner fast-forwarded clean `fix/gps-r21-p0-d3-e1a-mock-docker` to exact `54ea8aeea4c848a4d79cfdf6f11fd5cdae4e242e` with empty `git status --short`. Targeted D3+E1a Node suite **34/34 PASS**, 0 fail/skip/cancelled; `npm run typecheck` / `tsc --noEmit` **PASS** with no diagnostics and PowerShell fail guards not triggered. Prior clean `850318d1` two `node --check` syntax checks PASS; not rerun on `54ea8aee`, but runner and guard files have no diff (one test typing line and docs only). This closes **E1a bounded local verification**, not PostgreSQL RLS. GitHub PR #357 stays Draft/unmerged. **Actual Docker/PG16 role/RLS NOT RUN / D3 security OPEN**; real GPS/Neon/login/production NO-GO; CI/full suite/build/Playwright/migration/deploy NOT RUN. [Exact pinned evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
+
+
 ## 2026-10-17 — D3 E1a first owner-local run: 34/34 Node PASS, TypeScript TS2322 FAIL; test-only fix (NOT RELEASED)
 
 Owner confirmed clean exact SHA `850318d16051eee123057e2d466f5f9b0254ab7f` and ran E1a: `node --check` for guard and runner **PASS**; targeted Node **34/34 PASS**, 0 failures/skips; `npm run typecheck` **FAIL TS2322** in `tests/gps-r21-p0-d3-e1a-fake-docker.test.ts:98` because `good().HostConfig.Binds` was inferred as `null` but the negative test assigns `string[]`. Small fix `d121671cfaced650e3ead1d2dfcb295db995ebf7` widens only fixture TypeScript type to `string[] | null` with runtime default `null`; no SQL/runner/guard/production code changed. **Node/TS retest NOT RUN on fix/docs HEAD**, so E1a overall targeted acceptance remains OPEN. Actual Docker/PG RLS NOT RUN, no real GPS/Neon, CI/build/browser/migration/merge/deploy. [Detailed provenance](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
