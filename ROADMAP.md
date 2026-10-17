@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**2026-10-17 - GPS Detection 2.0 R2.1b-P0-D4 OFFLINE ACCEPTANCE COMPLETE (research only, PR #352 DRAFT):** Owner Windows PowerShell clean branch at **exact `749dc45932df462e37b3c34cbd50db04c9661bec`**: targeted Node **17/17 PASS**, 0 failures/skips (8 new D4 negatives + 8 existing observational regressions + 1 production research-import boundary); `npm run typecheck` / `tsc --noEmit` **PASS** (no diagnostics). Scope diff confined to research validation, tests, ROADMAP/FEATURES/CHANGELOG and D4 evidence. **D4 offline targeted acceptance DONE for that SHA**, not deployed/merged; doc-only follow-up SHA is not independently retested. **P0-D3 synthetic PostgreSQL RLS NOT RUN / security gate OPEN; real GPS, production identity, Neon, DB writes, migrations, CI, full test suite, build and browser NOT RUN/NO-GO where applicable.** NEXT: independent review of remaining source/authorization/DB barriers before any real-track plan; RLS test remains separate, no Docker requirement for offline research. [D4 evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D4_OFFLINE_ROBUSTNESS_2026-10-17.md).
+
+
 **2026-10-17 - GPS Detection 2.0 R2.1b-P0-D4 offline falsification (ACTIVE / NO REAL DATA):** Following owner approval to continue the offline plan, started isolated `test/gps-r21-p0-d4-offline-robustness` from Draft PR #350 research source (not P0-D3 branch). Scope: input-shape and resource-boundary falsification, temporal-gap/null-vs-zero safety tests, unchanged production/legacy behavior; targeted Node + TS exact-head verification required. [D4 contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D4_OFFLINE_ROBUSTNESS_2026-10-17.md). **New tests NOT RUN; RLS gate still OPEN/NOT RUN; no application/DB/Neon/real GPS/merge/deploy.**
 
 
