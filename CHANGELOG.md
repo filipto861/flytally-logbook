@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS R2.1b-P0-D3 Docker-optional local verification (DRAFT / NOT RELEASED)
+
+Per owner direction, removed Docker from the **default** development/test dependency. Added research-only `run-local-gates.ps1` with exact clean SHA/branch checks, offline-by-default targeted Node suite and repository `tsc --noEmit`, explicit **Postgres RLS NOT RUN / overall security milestone OPEN** without DB. Optional Docker provider remains explicit opt-in; native `initdb`, `pg_ctl`, `psql` presence is detected without creating/connecting to any cluster. Added two static tests, raising the isolated suite from 13 to **15 authored cases**; **new HEAD tests and typecheck NOT RUN**, original Docker RLS probe also NOT RUN. Prior exact owner run `820b211b` had 12/12 Node tests and TypeScript PASS but Docker executable unavailable. Updated [P0-D3 milestone docs](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md). No production/runtime code, real GPS/Neon read, DB role, migration, cross-user training, merge or deploy.
+
+
 ## 2026-10-17 — GPS R2.1b-P0-D3 owner-local Node/TypeScript PASS; Docker unavailable, DB checks NOT RUN (DRAFT)
 
 Owner Windows PowerShell at exact clean `820b211b07c373d9123fa3c2ec023bc9909342f5`: **12/12 mock/static Node tests PASS, `npm run typecheck` PASS**, zero test failures/skips. `docker` failed with CommandNotFoundException; the isolated Postgres runner subsequently failed the local-context prerequisite without starting a DB. **No PostgreSQL RLS privileges tested, P0-D3 combined gate not met.** Hardened research-only runner with explicit Docker CLI availability preflight and added **1 new Docker-absent Node regression** (new head test/typecheck NOT RUN). Updated [P0-D3 evidence and Windows operator preflight](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md). No test DB instantiated, no GPS data/production DB accessed, no SQL schema updates outside source, no app/runtime change, merge or deploy.
