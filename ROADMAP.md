@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**2026-10-17 — GPS I2-B1 READ-ONLY WINDOWS HOST INVENTORY AUTHORED / UNTESTED.** Same Draft PR #359 implements only a Windows PowerShell 5.1 read-only version/service/token/path inventory probe plus a Node shape/ambient/flag denial boundary and 5 targeted falsification tests. All ACL signals are intentionally untrusted; no created PGDATA, process ownership, system ID, RLS, SQL, existing-service connection or process/service mutation. **Node/TypeScript/PowerShell NOT RUN on this HEAD.** Next: owner exact-clean SHA targeted test + TypeScript, independent second-AI syntax/security review, only then consider separately approved I2-B2 runtime adapter. [I2-B1 evidence scope](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I2B1_WINDOWS_INVENTORY_2026-10-17.md). GPS release remains blocked pending real-data rights and proven detection utility; P0-D3 RLS OPEN.
+
+
 **2026-10-17 — GPS Native PG16 I2-A owner-local VERIFIED (limited offline scope).** Clean exact `eb02936be35e8c0590ab4de66cf4b781eeb515e2`: Node target I1+I2-A **15/15 PASS** (0 fail/skip), I2-A `node --check` PASS, TypeScript `tsc --noEmit` PASS. No actual Windows OS identity/ACL adapter, PostgreSQL startup/SQL/RLS, DB/service changes or deployment. I2-A bounded offline contract CLOSED; I2-B OS adapter / native runner OPEN. P0-D3 security gate OPEN.
 
 
