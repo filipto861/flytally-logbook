@@ -55,9 +55,19 @@ Airport Elevation Phase 1 has enabled nullable airport reference elevation `elev
 - No changes to `flytally-training`. Old detector stays canonical until a separate reviewed, feature-flagged and benchmarked replacement, if any.
 - New development requires explicit product decision, isolated experiments, independent second-AI architecture review, versioned evidence, acceptance gates and ROADMAP / FEATURES / CHANGELOG reconciliation.
 
+## R1 feasibility checkpoint — empirical metadata audit (2026-10-17)
+
+A read-only, privacy-minimizing assessment of the existing production track store is complete at the **aggregate/data-structure** level; the new findings and benchmark proposal are recorded in [R1 feasibility & benchmark design](GPS_DETECTION_2_0_R1_FEASIBILITY_BENCHMARK_2026-10-17.md). Raw routes, precise sample locations, user IDs and individual flight records were not retrieved or committed.
+
+**Decision:** existing data support quality-aware time-series research and controlled offline comparisons, **not currently a supervised physical-ground-contact classifier with proven independent event labels**. The current import form initializes starts/takeoffs using `landingCount`, which creates potential circularity if recorded flight totals are treated as ground-truth labels.
+
+Time interval analysis found both duplicate/nonpositive deltas and heterogeneous cadence; index-based `±10 points` evidence neighborhoods cannot represent a uniform elapsed-time span. Database JSON shape/field completeness alone does not verify GNSS accuracy/datum or runway contact. Calibration of confidence and event-level precision/recall remain **NOT RUN / UNAVAILABLE** without independent labels.
+
+Independent read-only adversarial review handoff: [GPS Detection 2.0 architecture challenge](GPS_DETECTION_2_0_INDEPENDENT_ARCH_REVIEW_2026-10-17.md). **Second AI review NOT RUN**. No production code or saved-flight mutations.
+
 ## Deliverables, acceptance and status
 
 - R0 output: verified source and consumer inventory, event taxonomy, ambiguity contract and risks. **PARTIAL: preliminary source inventory done; full contract pending.**
-- R1 output: private authorized-data assessment of label quality and sampling plus reproducible anonymous baseline/metrics plan. **PARTIAL: read-only aggregate storage inventory done; label quality analysis and benchmark NOT RUN.**
+- R1 output: private read-only aggregate timestamp/altitude/cadence assessment and reproducible benchmark/label-risk contract. **DESIGN CHECKPOINT COMPLETE: structural and timing audit performed; supervised label gate NO-GO; independent annotation validation and actual model benchmark NOT RUN.**
 - Model comparison, empirical accuracy, calibrated thresholds, independent second-AI review, rollout proposal, tests, build, browser, PostgreSQL mutation tests, PR merge, deploy: **NOT RUN / NOT APPROVED**.
 - This document is a scoped research draft; it **does not** assert completed model research, successful training or accuracy gains.
