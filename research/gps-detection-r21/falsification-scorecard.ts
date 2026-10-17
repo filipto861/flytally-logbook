@@ -63,7 +63,7 @@ export function createFalsificationScorecard(fixtures:readonly FalsificationCase
         errors.push("SUPPORT_SPANS_INVALID_EDGE");
       if(candidate.gapAdjacent&&candidate.time!==null)errors.push("PRECISE_TIME_NEAR_INVALID_BOUNDARY");
     }
-    if(errors.length)safetyViolations.push(...new Set(errors).values().map(reason=>fixtureId+": "+reason));
+    if(errors.length)safetyViolations.push(...Array.from(new Set(errors),reason=>fixtureId+": "+reason));
     findings.push({fixtureId,reference,predictedPatterns:candidates.length,matchedExpectedPattern:matched,unexpectedPatternOnKnownNegative:unexpected,abstained:candidates.length===0,safetyViolations:[...new Set(errors)]});
   }
   const missingOrUncovered=REQUIRED_PATTERN_FIXTURES.filter(id=>findings.find(f=>f.fixtureId===id)?.matchedExpectedPattern!==true);
