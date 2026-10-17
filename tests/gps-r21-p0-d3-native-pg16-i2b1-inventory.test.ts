@@ -29,7 +29,7 @@ test("I2-B1: read-only valid host inventory is not runtime attestation",()=>{
   });
   assert.equal(validateOfflineWindowsEvidence(v).ok,false);
 });
-test("I2-B1: reject elevated, reparse and environment override signals",()=>{
+test("I2-B1: reject administrator-role hint, reparse and environment overrides",()=>{
   const elevated=good();elevated.effectiveToken.adminRoleObserved=true;
   assert.deepEqual(evaluateReadOnlyInventory(elevated),{
     accepted:false,reason:"admin-role-observed",permitsRuntime:false
@@ -43,6 +43,7 @@ test("I2-B1: refuse fabricated trust, privileges, versions and service inventory
     x=>x.runtimeAuthorization=true,
     x=>x.permitsClusterMutation=true,
     x=>x.effectiveToken.identityAttested=true,
+    x=>{delete x.effectiveToken.adminRoleObserved;x.effectiveToken.elevated=false;},
     x=>x.effectiveToken.source="self-report",
     x=>x.binVersions.postgres="postgres (PostgreSQL) 18.1",
     x=>delete x.binVersions.psql,
