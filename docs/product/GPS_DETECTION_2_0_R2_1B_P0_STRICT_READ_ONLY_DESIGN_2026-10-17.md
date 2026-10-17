@@ -7,6 +7,16 @@
 **Previous local gate:** owner-verified exact `8b410f32d207adab54d3b84b340275153d4b1731` **63/63 targeted PASS** and TypeScript PASS. No empirical real-flight contact truth.  
 **This milestone:** repository architecture research/documentation ONLY. **No connection, account/role creation, queries, raw owner points, migrations, app endpoint, run, merge or deployment.**
 
+## Post-review design correction (2026-10-17; supersedes conditional production recommendation)
+
+The independent **DeepSeek second review was PARTIAL**, not a full repo review: it received this P0 design and the owner-scoped plan but lacked the earlier security reconciliation and did not inspect source/SQL/tests. ChatGPT separately rechecked `main` and research code, and recorded the complete [second-review reconciliation](GPS_DETECTION_2_0_R2_1B_P0_SECOND_REVIEW_RECONCILIATION_2026-10-17.md).
+
+**Production private operator Option A remains NO-GO** under the current no-production-DB-changes scope: no existing DB-enforced one-owner role, verified principal, truly zero-write session path or actual effective grant/transaction evidence has been demonstrated. Existing owner predicates in application SQL **do not** independently restrict a DB credential. A new RLS policy, role, SECURITY DEFINER function or security-barrier view would be privileged production work needing separate migration/governance/owner authorization; it is **not** a small follow-up to this design.
+
+The **only conditional next implementation** is an explicitly approved **disposable synthetic Postgres-only security falsification prototype** with mock subjects, synthetic GPS records, zero real credentials and no production branch cloning. Its **S01–S23** acceptance matrix is now expanded below and in the reconciliation. It cannot establish full future Neon HTTP-driver parity or consent. **No synthetic role tests have run yet.** The previously executed owner-local **63/63 targeted PASS and TypeScript PASS** apply to the in-memory GPS research module, not database access security.
+
+**Do not treat cohort 5–50 as anonymization.** No public aggregate, per-track/private route output, temporary production research endpoint, other users' GPS scan, model training, merge or deploy is authorized. No owner-controlled full-fidelity export was verified; fallback is conditional on discovering and reviewing a real existing capability, not inventing one.
+
 ## 1. Security goal, trust boundary and threat model
 
 **Only permitted future result:** for one **specifically authorized owner** and a **pre-authorized bounded set of existing persisted GPS tracks**, privately compute descriptive, aggregate-only post-normalization quality/legacy-vs-research candidate disagreement. No actual runway contact is declared, no certified movement counts inferred, no stored flight facts altered.
@@ -130,6 +140,21 @@ The `:...` placeholders are **deliberately not executable** and the example does
 | S17 | New endpoint/action/import research into app | Forbidden; research branch/production boundary test catches change |
 
 **P0 statuses:** S01–S17 are **DESIGNED / NOT EXECUTED**. Existing local 63/63 TypeScript-pass suite is for the in-memory research module only and **does not satisfy S01–S17 live DB privilege testing**.
+
+## Additional independent-review security cases S18–S23 (DESIGNED / NOT RUN)
+
+| ID | Synthetic-only negative / threat probe | Fail-closed acceptance |
+|---|---|---|
+| S18 | Unsafe SQL parameter binding or injection against owner and allowed track IDs | Cannot broaden authorized data scope; no raw identifiers printed |
+| S19 | SECURITY DEFINER, RLS-bypassing view, mutable function and `search_path` exploitation | No access to another subject's rows, no write side effects |
+| S20 | Driver/ORM logs, tracing, exception/crash monitoring on query failure | No route, location, timestamp, ID or credentials exposed |
+| S21 | CI/workspace artifacts and temporary debug files | No real private tracks, zero sensitive persisted artifacts |
+| S22 | Shared-flight participant presented as track owner / revoked consent | Reject before source query; no existence leak |
+| S23 | Pooled connection / prepared statement reused across two synthetic subjects | Prior subject's identity/RLS scope cannot leak |
+
+**Nuance for S06:** Denying `COPY` from an otherwise SELECT-authorized object is **not a guaranteed property of read-only privileges**. `COPY (SELECT ...) TO STDOUT` can return the same *authorized* rows a caller may SELECT. Therefore the experiment must prove **DB-enforced record scope** and trusted in-boundary execution/output handling, not promise a blanket anti-exfiltration SQL prohibition.
+
+All earlier S01–S17 and these S18–S23 require actual targeted execution and evidence on a fully synthetic isolated database before claiming any security gate PASS. Even then, **real-owner processing remains blocked**.
 
 ## 8. Implementation milestones and stop/go gates
 
