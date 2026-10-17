@@ -1,8 +1,16 @@
 # GPS Detection 2.0 D3 E1 — pre-independent-review source assessment
 
-**2026-10-17. Status: CHATGPT SOURCE AUDIT DONE / DEEPSEEK REVIEW REQUEST PACKET READY / DEEPSEEK RESPONSE NOT RECEIVED.**
+**2026-10-17. Status: CHATGPT SOURCE AUDIT DONE / DEEPSEEK E1 SOURCE REVIEW RECEIVED AND RECONCILED (FOLLOW-UP BELOW) / POST-REVIEW CODE NOT TESTED.**
 **Pinned code:** PR #355 source on `83eaec732b5a6190a959b0dfd356006939e70edf` (last recorded docs-only E1 HEAD).
 **Independent review packet:** [self-contained DeepSeek source review](GPS_DETECTION_2_0_R2_1B_P0_D3_E1_DEEPSEEK_INDEPENDENT_SOURCE_REVIEW_PACKET_2026-10-17.md), with four exact source files and Git blob SHAs. This preassessment is **not** an independent second-AI opinion.
+
+## Review response received (2026-10-17; supersedes earlier PENDING status)
+
+Product owner forwarded DeepSeek's **PARTIAL SOURCE-ONLY E1 review** of the four pinned files. Reviewer executed **NO Docker, PostgreSQL, SQL, Neon, Node, PowerShell or live GPS**. This preassessment below remains the historical pre-review analysis; the independent response is **RECEIVED** and its E1-F01–F10 findings were reconciled in the separate [E1a code/hardening contract on Draft PR #357](https://github.com/filipto861/flytally-logbook/pull/357).
+
+**Accepted blockers before any real Docker run:** F01 cleanup must be verified by *created full container ID*, not name regex; F02 `Mounts` array must be exact nonduplicate set of all required destinations; F03 `HostConfig.Tmpfs` options/size were previously unchecked; F08 dynamic fake-Docker denial cases were absent. These were implemented as **code + synthetic tests AUTHORED, new HEAD NOT RUN** on isolated Draft PR #357, stacked on #355. Other findings: F04 inspect is only before runner-issued SQL, not before official Postgres image startup; F05 privilege denial != RLS; F06 local image ID != trusted authenticity; F07 local socket != physical-host trust. F09 platform hardening remains deferred; F10 `DOCKER_CONTEXT` is not passed in current subprocess allowlist. No actual runtime validation by either model.
+
+**Truth/evidence boundary:** prior E1 clean `2e362aee` owner-local **24/24 Node+TS+syntax PASS**; new E1a expected **34 authored Node tests** + typecheck/syntax **NOT RUN**. PostgreSQL actual RLS **NOT RUN / D3 SECURITY OPEN**; no real GPS access, no migrations/production/Neon or merge/deploy. Docker stays optional.
 
 ## Evidence and scope
 
