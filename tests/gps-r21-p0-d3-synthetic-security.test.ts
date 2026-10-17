@@ -209,3 +209,32 @@ test("P0-D3 reviewer F12 refuses PGOPTIONS before executing any Docker binary",(
   assert.match(String(run.stderr),/Ambient PGOPTIONS set/);
   assert.doesNotMatch(String(run.stderr),/Docker CLI unavailable on PATH/);
 });
+
+
+test("P0-D3 E1 effective container configuration is checked before any SQL",()=>{
+  const s=runner();
+  const inspected=s.indexOf('const inspected=docker(["container","inspect","--format","{{json .}}",name]);');
+  const ready=s.indexOf("let ready=false;");
+  const fixture=s.indexOf('readFileSync(join(ROOT,"schema.sql"),"utf8")');
+  assert.ok(inspected>=0&&ready>inspected&&fixture>ready,"inspect must precede readiness probe and fixture");
+  for(const field of [
+    "cfg?.Id===start.output","cfg?.Name","cfg?.Image===image.output",
+    "cfg?.State?.Running===true","synthetic-rls-research",
+    'host?.NetworkMode==="none"','host?.PublishAllPorts===false',
+    "host?.Privileged===false","host?.Binds==null",
+    "host?.PortBindings","host?.Tmpfs",
+    "m?.Type","m.Destination","mountsVerified"
+  ])assert.ok(s.includes(field),field);
+  assert.ok(s.includes('fail("Disposable Docker isolation configuration not verified; no SQL executed.")'));
+});
+
+test("P0-D3 E1 pre-SQL inspection must neither print Docker config nor skip cleanup",()=>{
+  const s=runner();
+  assert.ok(s.includes("try{cfg=JSON.parse(inspected.output);}catch{cfg=null;}"));
+  assert.ok(s.includes("if(!inspected.ok||!isolationVerified)"));
+  assert.ok(s.indexOf("const inspected=docker(")>s.indexOf("try{\n  // --pull=never"));
+  assert.ok(s.includes('const removed=docker(["rm","-f",name]);'));
+  assert.ok(s.includes('if(!remaining.ok||remaining.output!=="")'));
+  assert.ok(!s.includes("console.log(inspected.output)"));
+  assert.ok(!s.includes("process.stdout.write(inspected.output)"));
+});
