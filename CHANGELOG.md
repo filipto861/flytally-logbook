@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — Native PG16 I1 clean-source local verification 12/12 PASS (RESEARCH DRAFT)
+
+Owner verified exact clean `2c4219e3e3bbeb26852b05d9f394a66cf3954d04` on native PG16 readiness branch. Both `node --check` checks **PASS**, `npm run test:target -- tests/gps-r21-p0-d3-native-pg16-guards.test.ts` **12/12 PASS** (no failure/skip), `npm run typecheck` / `tsc --noEmit` **PASS** without diagnostics; PowerShell exit guards passed. [Evidence record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md). No Docker, `initdb`, `pg_ctl`, `psql`, PG16 SQL/RLS, CI/full suite/build/browser/migrations/production/Neon/merge/deploy. Existing PG16/18 services untouched. Future docs-only or I2 commits not covered by this pinned owner test. P0-D3 actual PostgreSQL RLS OPEN; real GPS NO-GO.
+
+
 ## 2026-10-17 — Native PG16 I1 offline guard implementation (DRAFT / NOT RELEASED)
 
 Added `native-pg16-guards.mjs` and typed declaration: pure version-16.15, PG* override, Windows owner-run PGDATA path/reparse/ACL evidence, single-rule SCRAM IPv4-loopback HBA, startup bind log, server-side identity PGDATA/version/port/system_identifier/nonce, postmaster PID and cleanup evidence validators. New `run-native-pg16-preflight.mjs` accepts only `--offline-only` and refuses any database-start option. Added 12 dynamic native guard/refusal tests, **AUTHORED NOT RUN via Node**; internal isolated V8 parse and seven predicate spot checks PASS (not CI/TypeScript). No actual Windows OS metadata integration, initdb, pg_ctl, SQL, DB, Neon, production, auth, migrations, browser/build/CI, merge or deploy. Two installed PG16/PG18 services remain untouched; P0-D3 actual PostgreSQL RLS NOT RUN/OPEN. [Detailed I1 scope and later I2 prerequisites](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md).
