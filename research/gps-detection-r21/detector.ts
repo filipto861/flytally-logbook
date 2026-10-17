@@ -70,9 +70,9 @@ function signalIslands(points:SourceObservation[],edges:QualityEdge[]):SignalIsl
  * within the existing evidence lookback horizon of a broken island boundary
  * cannot have a precise time, even if its support does not touch that edge. */
 function nearInvalidBoundary(points:SourceObservation[],island:SignalIsland,support:{start:number;end:number},seconds:number):boolean{
-  const nearStart=island.start>0&&elapsed(points[island.start],points[support.start]);
-  const nearEnd=island.end<points.length-1&&elapsed(points[support.end],points[island.end]);
-  return(nearStart!==null&&nearStart!==false&&nearStart>=0&&nearStart<=seconds)||(nearEnd!==null&&nearEnd!==false&&nearEnd>=0&&nearEnd<=seconds);
+  const nearStart=island.start>0?elapsed(points[island.start],points[support.start]):null;
+  const nearEnd=island.end<points.length-1?elapsed(points[support.end],points[island.end]):null;
+  return(nearStart!==null&&nearStart>=0&&nearStart<=seconds)||(nearEnd!==null&&nearEnd>=0&&nearEnd<=seconds);
 }
 function altitudeCandidates(points:SourceObservation[],edges:QualityEdge[],island:SignalIsland):PatternCandidate[]{
   const results:PatternCandidate[]=[];
