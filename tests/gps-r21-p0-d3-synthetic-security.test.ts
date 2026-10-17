@@ -102,3 +102,16 @@ test("SQL fixtures reject execution without the disposable sandbox marker and DB
   assert.match(runner(),/POSTGRES_DB=r21_synthetic_lab/);
   assert.match(runner(),/DOCKER_HOST override refused/);
 });
+
+test("P0-D3 missing Docker executable is a specific early no-database failure",()=>{
+  const run=spawnSync(process.execPath,[join(dir,"run-synthetic-postgres.mjs"),"--synthetic-only"],{
+    encoding:"utf8",timeout:5000,
+    // A deliberately empty search path simulates 'docker' not found. This runs
+    // no containers, has no database URL and uses only the absolute Node binary.
+    env:{SystemRoot:process.env.SystemRoot??"",PATH:"",Path:"",
+      USERPROFILE:process.env.USERPROFILE??"",HOME:process.env.HOME??""}
+  });
+  assert.notEqual(run.status,0);
+  assert.match(String(run.stderr),/Docker CLI unavailable on PATH/);
+  assert.doesNotMatch(String(run.stderr),/Docker context is not demonstrably local/);
+});
