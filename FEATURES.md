@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 — D3 E1a dynamic fake-Docker hardening (2026-10-17, RESEARCH-ONLY DRAFT):** DeepSeek E1 source-only review F01–F10 RECEIVED, findings F01–F08 reconciled with scope limits. New pure Docker guard enforces ID-bound cleanup, unique exact tmpfs paths and HostConfig.Tmpfs options/size, real runtime inspecting via injected Docker callback before **runner-issued** SQL; 10 new adversarial fake-Docker dynamic tests (targeted D3 total **34 authored / NOT RUN**) plus 24 inherited tests adapted. TypeScript, syntax, actual Docker, Postgres role/RLS all **NOT RUN** on new HEAD. No real GPS, auth/Neon/production changes or mandatory Docker; [E1a test/evidence contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
+
+
 **GPS Detection 2.0 D3 E1 container attestation (2026-10-17; RESEARCH-ONLY, NOT SHIPPED):** Effective Docker container inspection is authored before SQL in optional isolated runner. Owner clean `2e362aeeafe7d816c53c74c61d4c761927d56a22` **Node targeted 24/24 PASS**, `node --check` PASS, TypeScript PASS; these checks validate source structure and early-denial behavior, **not** a running Docker container or PG RLS. E1 targeted local verification completed; actual PostgreSQL role/RLS NOT RUN/OPEN, no real GPS/production DB exposure, Draft PR #355 unmerged. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_CONTAINER_ATTESTATION_2026-10-17.md).
 
 
