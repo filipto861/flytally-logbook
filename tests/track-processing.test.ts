@@ -272,3 +272,12 @@ test("D2-C malformed nonempty altitude stays unavailable instead of becoming mea
   ].join("\n");
   assert.deepEqual(parseTrackFile(input,"synthetic.csv").map(p=>p.alt),[null,null,0]);
 });
+
+
+test("D2-C internal empty CSV row is not silently skipped; trailing newline remains valid",()=>{
+  const header="lat,lon,altitude,time";
+  const one="50,14,100,2026-10-17T08:00:00Z";
+  const two="50.01,14.01,200,2026-10-17T08:01:00Z";
+  assert.deepEqual(parseTrackFile([header,one,"",two].join("\n"),"synthetic.csv"),[]);
+  assert.equal(parseTrackFile([header,one,two,""].join("\n"),"synthetic.csv").length,2);
+});
