@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {
   validateSyntheticContainer,inspectSyntheticContainer,cleanupSyntheticContainer,
   type DockerCall
@@ -148,4 +150,30 @@ test("E1a mock-Docker: invalid start ID cannot produce a verified cleanup",()=>{
   const fake:DockerCall=args=>{calls.push(args);return{ok:true,output:""};};
   assert.deepEqual(cleanupSyntheticContainer(fake,{id:null,name}),{verified:false,removed:true});
   assert.deepEqual(calls,[["rm","-f",name]]);
+});
+
+test("E1a no-Docker PowerShell gate pins branch/SHA and includes both suites",()=>{
+  const ps=readFileSync(join(process.cwd(),"research","gps-r21-p0-d3-synthetic-security","run-local-gates-e1a.ps1"),"utf8");
+  assert.deepEqual([...ps].filter(c=>(c.codePointAt(0)??0)>127),[],"PowerShell 5.1 source must be ASCII");
+  for(const x of [
+    "ValidatePattern('^[0-9a-fA-F]{40}$')",
+    'fix/gps-r21-p0-d3-e1a-mock-docker',
+    'git branch --show-current',
+    'git rev-parse HEAD',
+    'git status --porcelain --untracked-files=all',
+    'Get-ChildItem Env:',
+    '^PG[A-Z0-9_]*$',
+    'DATABASE_URL','DIRECT_URL','NEON_DATABASE_URL','DOCKER_CONTEXT','DOCKER_HOST',
+    'node --check research/gps-r21-p0-d3-synthetic-security/container-guards.mjs',
+    'node --check research/gps-r21-p0-d3-synthetic-security/run-synthetic-postgres.mjs',
+    'tests/gps-r21-p0-d3-synthetic-security.test.ts tests/gps-r21-p0-d3-e1a-fake-docker.test.ts',
+    'npm run typecheck',
+    'NOT RUN - Docker, PostgreSQL SQL, role/RLS or any external database',
+    'OVERALL P0-D3 SECURITY GATE OPEN'
+  ])assert.ok(ps.includes(x),x);
+  assert.ok(ps.indexOf("git status --porcelain")<ps.indexOf("node --check"));
+  assert.ok(ps.indexOf("Get-ChildItem Env:")<ps.indexOf("npm run test:target"));
+  assert.doesNotMatch(ps,/&\s+docker\b|run-synthetic-postgres\.mjs\s+--synthetic-only|\bPostgresProvider\b/);
+  assert.ok(ps.includes('if ($LASTEXITCODE -ne 0) { throw "E1a targeted Node tests FAILED" }'));
+  assert.ok(ps.includes('if ($LASTEXITCODE -ne 0) { throw "E1a TypeScript typecheck FAILED" }'));
 });
