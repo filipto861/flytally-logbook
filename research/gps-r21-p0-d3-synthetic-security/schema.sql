@@ -3,11 +3,19 @@
 -- The runner runs this only in its own --network none, no-ports Docker container.
 -- IDs, roles, and GPS payloads are fictitious; no actual flight data.
 \set ON_ERROR_STOP on
+DO $r21_guard$
+BEGIN
+  IF current_database() <> 'r21_synthetic_lab' OR
+     current_setting('r21.synthetic_only',true) IS DISTINCT FROM 'NO_NETWORK_TEST_CONTAINER' THEN
+    RAISE EXCEPTION 'Synthetic-only PostgreSQL fixture: runner marker missing';
+  END IF;
+END
+$r21_guard$;
 CREATE SCHEMA r21_lab;
 CREATE ROLE r21_subject_alpha NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE r21_subject_beta NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE r21_unrelated NOLOGIN NOINHERIT NOBYPASSRLS;
-REVOKE TEMPORARY ON DATABASE postgres FROM PUBLIC;
+REVOKE TEMPORARY ON DATABASE r21_synthetic_lab FROM PUBLIC;
 CREATE TABLE r21_lab.flights (
   id integer PRIMARY KEY,
   owner_role name NOT NULL,
