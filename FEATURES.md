@@ -1,3 +1,5 @@
+**GPS Detection 2.0 P0-D3 verification (2026-10-17):** Synthetic research fixture has 16/16 Node tests verified owner-locally at `43e42f70`; TypeScript gate failed on two test-only typing issues. Narrow correction committed (`9c48ae2b`), exact updated HEAD retest pending. PostgreSQL RLS remains NOT RUN, security milestone OPEN; no real GPS access or release.
+
 # FlyTally Logbook — FEATURE LIST
 
 **R2.1b-P0-D3 Windows PowerShell 5.1 compatibility (2026-10-17; TESTING ONLY):** Default Docker-free `run-local-gates.ps1` initially **failed to parse** at clean owner SHA `a7dc905e` because UTF-8-without-BOM em dashes were mangled by Windows PowerShell. Fixed script to **ASCII-only** and added regression; **16 Node tests authored, corrected HEAD NOT RUN**. Earlier `820b211b` had 12/12 Node PASS + TypeScript PASS. PostgreSQL RLS permission validation remains **NOT RUN**, synthetic security milestone not closed, real-track access remains NO-GO. [Evidence/retrospective](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md).
