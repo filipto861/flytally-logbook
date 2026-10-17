@@ -34,6 +34,35 @@ Verified against unchanged `main@6a67a024`:
 
 **P0 finding:** the existing app proves **owner-scoped access patterns exist**, but does **not** expose a verified, full-resolution, research-authorized in-boundary aggregation endpoint. The map DTO and first-track review helper are **not suitable shortcuts**. A new minimal authorized read-only processing path would require a separately reviewed security contract and owner signoff **before** any private track data retrieval. **No owner identity guessed, no raw GPS selected, no database query executed in this P0 source audit.**
 
+## R2.1b-P0 critical discovery — authentication is NOT strictly read-only (2026-10-17)
+
+Verified directly against unchanged `main`:
+
+- `lib/auth/require-user.ts` delegates to `lib/auth/session.ts::getSession()`.
+- `getSession()` **calls `ensureDatabaseOptimizations()`** before fetching a valid session. The implementation in `lib/db-optimization.ts` may create or update schema and migration registry when a migration is pending, even if the caller intended only to read.
+- `getSession()` also schedules **`UPDATE auth_sessions SET last_seen_at=NOW()`** when its 15-minute recency condition is met. Therefore ordinary app `requireUser()` cannot currently be described as a **strictly zero-write** authentication path. This is an existing runtime behavior, not an R2.1b defect or authorization to change the app.
+- Using the existing authenticated app UI may incidentally update session metadata even if our analytic query is read-only. A future research workflow must distinguish **(a) absolutely no database writes in its whole request** from **(b) no writes to flight/track/user evidence**. These are not equivalent. This milestone currently requires **(a)** for research execution unless the owner explicitly approves a narrower definition and verifies consequences.
+- **FAIL CLOSED:** do not launch a production session-backed research endpoint on the assumption that calling `requireUser()` is SELECT-only. Do not disable auth, bypass tenant access, forge session or guess user identity to avoid this complication.
+
+**Required architecture/security decision before any private trace scan:**
+
+1. Choose a source of verified owner identity whose security properties match or exceed the current session model, and account for incidental auth/migration writes. An authorized server-side, explicitly reviewed **strict-read-only identity resolver** or an independently proven scoped subject with scoped read-only credentials are design candidates only.
+2. Enforce owner scoping in each query (`flight_tracks.user_id = verified_subject` **AND** same-owner flight join), including authorization of any shared-flight evidence. Never trust an arbitrary client-provided user ID even if it happens to match.
+3. Execute data access under PostgreSQL **SELECT-only privileges** and read-only transaction/session settings where the connector supports them, with no opportunistic migrations, no stored procedure mutations, no production seed/reset and no implicit flight writes. Validate actual driver/Neon transaction semantics; do not assume `sql.transaction` always applies a single read-only transaction across all statements.
+4. Separate public production app code from the experiment and require an owner-approved deployment/security review for any production endpoint. Never write a live route merely to expose research summaries without approval.
+
+**P0 determination:** a safe source code path for ownership-filtered reads exists, but **a proven strictly read-only, identity-authorized full-resolution execution path does NOT yet exist**. No such execution has been performed.
+
+## R2.1b-P0 pure in-memory aggregate prototype (security boundary still missing)
+
+An isolated, dependency-minimal `research/gps-detection-r21/observational-aggregate.ts` now supports processing **already authorized in-memory** sequences with unchanged legacy and research phase/pattern algorithms. No DB, auth, file, network or user lookup calls exist in the module.
+
+Its result carries **aggregate-only** track and point counts, invalid-edge reasons, available-island coverage and a **four-way legacy-versus-research T&G-pattern disagreement breakdown**. It never returns coordinates, routes, users, timestamps, per-flight IDs, event windows, physical-contact predictions or inferred landing totals. `physicalContactTruth=UNAVAILABLE`, `independentEventLabels=false`, `preprocessingConfound=NOT_ISOLATED` are explicit.
+
+**Research guardrails:** bounded cohort (5–50 tracks), capped individual/total points, suppression of smaller cohort outputs and rejection of malformed inputs. **The cohort floor is a provisional minimization measure, NOT a privacy-anonymization guarantee**; an authorized analyst could still reidentify sparse or unique trajectories by context. No public output is authorized. Caller must establish owner authorization before passing input; this module itself **does not authenticate or authorize users**. These are testable building blocks, **not** proof R2.1b real-data execution is approved.
+
+Eight new isolated synthetic tests in `tests/gps-detection-r21-observational.test.ts` exercise suppression, limits, missing/null altitude, invalid time/location, reporting denominators and the absence of raw route metadata. **New tests/typecheck NOT RUN** on latest branch HEAD; earlier 55/55 evidence applies only to Batch 4 SHA `325fc921`. Implementation remains research-only, with zero live-data access.
+
 ## 3. Source and comparison contract
 
 Data input per authorized track:
