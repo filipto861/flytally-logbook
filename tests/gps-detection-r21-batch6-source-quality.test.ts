@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   analyzeResearchTrack, assessSourceQuality,
-  type SourceMetadata,type SourceObservation
+  type SourceMetadata,type SourceObservation,type ResearchAnalysis
 } from "../research/gps-detection-r21/detector.ts";
+import {createFalsificationScorecard} from "../research/gps-detection-r21/falsification-scorecard.ts";
 
 // Generated synthetic shapes. Numeric altitude alone never proves a datum,
 // reference surface, runway alignment or physical wheel contact.
@@ -156,3 +157,39 @@ test("A02: source unknown is distinct from zero, missing and explicit incompatib
     status:"DECLARED_NOT_VERIFIED",declaredMeters:0
   });
 });
+
+test("T19: scorecard refuses forged altitude candidate where source units were incompatible",()=>{
+  const declaredFeet=metadata();
+  declaredFeet.altitudeMode={status:"KNOWN",value:"absolute"};
+  declaredFeet.altitudeUnit={status:"KNOWN",value:"ft"};
+  const denied=cases(declaredFeet),reference=candidatesFixture();
+  const candidate=reference.candidates.find(c=>c.type==="T_G_PATTERN_CANDIDATE");
+  assert.ok(candidate,"reference motion hypothesis is required for non-vacuous forgery test");
+  const forged:ResearchAnalysis={...denied,candidates:[candidate]};
+  const card=createFalsificationScorecard([{
+    fixtureId:"T19-FORGED-ALT",reference:{kind:"UNLABELED"},analysis:forged
+  }]);
+  assert.equal(card.safety.pass,false);
+  assert.ok(card.safety.violations.some(v=>v.includes("VERTICAL_CANDIDATE_WITH_UNAVAILABLE_SOURCE")));
+  assert.equal(card.physicalContactAccuracy,"UNAVAILABLE");
+});
+
+test("A03: scorecard refuses tampered source quality and ghost candidate",()=>{
+  const malformed=metadata();malformed.horizontalAccuracyM={status:"KNOWN",value:-5};
+  const denied=cases(malformed),candidate=candidatesFixture().candidates[0];
+  assert.ok(candidate);
+  const forged:ResearchAnalysis={...denied,candidates:[candidate]};
+  const bad=createFalsificationScorecard([{
+    fixtureId:"A03-FORGED",reference:{kind:"UNLABELED"},analysis:forged
+  }]);
+  assert.equal(bad.safety.pass,false);
+  assert.ok(bad.safety.violations.some(v=>v.includes("CANDIDATES_WITH_INVALID_HORIZONTAL_METADATA")));
+  const missing={...cases(),sourceQuality:undefined} as unknown as ResearchAnalysis;
+  const missingScore=createFalsificationScorecard([{
+    fixtureId:"T19-UNKNOWN-QUALITY",reference:{kind:"UNLABELED"},analysis:missing
+  }]);
+  assert.equal(missingScore.safety.pass,false);
+  assert.ok(missingScore.safety.violations.some(v=>v.includes("MISSING_SOURCE_QUALITY_ASSESSMENT")));
+});
+
+function candidatesFixture(){return cases();}
