@@ -3,16 +3,16 @@
 **Date:** 2026-10-17. **Status:** Windows PG16 16.15 executable versions and existing PostgreSQL service inventory CONFIRMED; native provider design only; no new cluster/database started; SQL/RLS NOT RUN.
 **Repository:** filipto861/flytally-logbook; docs-only branch stacked on existing synthetic Draft PR #357. This is NOT a production, auth, database or training-repo change.
 
-## 1. Exact owner discovery
+## 1. First owner discovery (historical; later version/service verification in section 2)
 
 | Item | Observed evidence | Meaning |
 | --- | --- | --- |
 | Docker CLI and Docker Desktop standard path/service | NOT ON PATH, FALSE, NOT FOUND | No Docker provider discovered; none is required |
 | initdb/pg_ctl/psql CLI on PATH | all absent | PATH absence, not installation absence |
-| C:\Program Files\PostgreSQL\16\bin | initdb.exe, pg_ctl.exe, psql.exe, postgres.exe all exist | PG16 binary files detected; versions and runtime NOT checked |
+| C:\Program Files\PostgreSQL\16\bin | initdb.exe, pg_ctl.exe, psql.exe, postgres.exe all exist | Binary files detected in first pass; **16.15 verified in section 2** |
 | C:\Program Files\PostgreSQL\18\bin | same four files exist | PG18 available but not the intended test target |
 | Ambient PG*, database URLs and Docker host/context overrides | none set | applies to owner discovery time only |
-| Existing PostgreSQL Windows services or connections | NOT CHECKED | never assume installed databases are absent |
+| Existing PostgreSQL Windows services or connections | Not checked in first pass | **Both PG16 and PG18 Running in section 2; no connection made** |
 | Docker startup, cluster creation, PG16 SQL/RLS | NOT RUN | overall D3 gate OPEN |
 
 **Selected direction:** installed PostgreSQL **16**, invoked by absolute binary paths. Never use PG18, an existing PostgreSQL service, default port/socket or ambient database URL as a substitute. Historical clean E1b local code SHA e14bc91314e2439859f3ea381d93abb7c43a25cd has 35/35 targeted Node PASS plus TypeScript and syntax PASS; it is not native PG security evidence.
@@ -38,7 +38,7 @@ The same transcript showed **postgresql-x64-16 — Running**, **postgresql-x64-1
 ## Original optional read-only checks (HISTORICAL, ALREADY EXECUTED)
 
 
-Owner checks actual --version output for PG16 initdb, pg_ctl, psql, postgres and pg_controldata, and reads service names/status with Get-Service filtering PostgreSQL. No service start/stop, TCP connection, SQL, registry change, install or files created. Do not print environment variable values, service arguments or any passwords.
+Owner subsequently checked actual --version output for PG16 initdb, pg_ctl, psql, postgres and pg_controldata, and read service names/status with Get-Service filtering PostgreSQL; see recorded evidence in section 2. No service start/stop, TCP connection, SQL, registry change, install or files created. Do not print environment variable values, service arguments or any passwords.
 
 ## 3. Frozen candidate native-provider safety contract (DESIGN ONLY)
 
