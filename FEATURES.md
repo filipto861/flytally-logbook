@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 P0-D3 native PG16 provider discovery (2026-10-17; DESIGN ONLY, NOT RELEASED):** Owner read-only Windows inventory found PostgreSQL 16 and 18 initdb/pg_ctl/psql/postgres executables under Program Files despite absence on PATH; Docker not detected. Prefer PG16 and a unique disposable native test cluster over installing Docker; version/service inventory still pending, independent native-provider security review pending. [Native PG16 decision and strict no-existing-DB design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md). **No native runner implemented/DB started, actual PG16 RLS NOT RUN/OPEN, real GPS/Neon NO-GO.**
+
+
 **GPS Detection 2.0 P0-D3 E1b (2026-10-17; RESEARCH-ONLY, NOT RELEASED):** Exact clean owner `e14bc91314e2439859f3ea381d93abb7c43a25cd` standalone Docker-free gated verification **35/35 targeted Node PASS**, two syntax checks PASS, TypeScript PASS. Automatically pins branch/full SHA, checks clean worktree and inherited PG/DB/Docker connection settings, runs both test files; historical D3 wrapper unchanged. This is not Docker/PG runtime proof. **Actual PostgreSQL RLS NOT RUN/OPEN**, real GPS/Neon/production NO-GO, #357 Draft/unmerged. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1B_PRE_RUNTIME_GATE_2026-10-17.md).
 
 
