@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS 2.0 D2-B2 narrow CSV lineage offline research verified (2026-10-17, NOT RELEASED):** clean exact `25d0efdb9b46cf096b01f7191ed645d7a09d620b`, **130/130 targeted Node PASS + TypeScript PASS** (10 new D2-B2 cases), owner-local not CI. Strict CSV subset preserves sourceLine→normalizedIndex and header-declared ft conversion and missing/zero distinctions; does not prove sensor units/accuracy or pilot-contact; all pilot-facing outputs UNAVAILABLE. Three production legacy parser issues remain open. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
+
+
 **GPS R2.1c-D2-B2 small CSV lineage research prototype (2026-10-17; NOT TESTED / NOT RELEASED):** Strict four-column CSV subset tracks raw line and normalized index, source-header altitude unit/ft conversion, true null vs numeric zero; invalid/out-of-scope inputs unavailable. Source-unit trust remains header-declared, sensor datum/accuracy UNKNOWN, pilot event/count access UNAVAILABLE. 10 new synthetic tests (130 expected combined), owner retest outstanding. D2-C canonical parser fix and D3 advisory UI remain separate release gates. [D2-B2](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
 
 
