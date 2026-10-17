@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-17
 **Repository:** `filipto861/flytally-logbook`, isolated `fix/gps-r21-p0-d3-e1a-mock-docker`, stacked on Draft PR #355, based on its docs-only `83eaec732b5a6190a959b0dfd356006939e70edf`. Other D3/D4 repos/PRs are separate.
-**Status:** FIRST CLEAN E1a SOURCE: 34/34 NODE + 2 SYNTAX PASS, TYPESCRIPT TS2322 FAIL; NARROW TEST-TYPING FIX AUTHORED / NEW EXACT-HEAD RETEST PENDING. Docker / PostgreSQL / role-RLS **NOT RUN / OPEN**. No merge/deploy.
+**Status:** E1a targeted corrected-source NODE **34/34 PASS** + TypeScript **PASS** at exact owner-clean SHA; runner/guard syntax PASS in prior round with unchanged source. Docker / PostgreSQL / role-RLS **NOT RUN / OPEN**. No merge/deploy.
 **Input:** product-owner-supplied DeepSeek E1 independent **PARTIAL SOURCE-ONLY** review. The reviewer did not execute Docker, PostgreSQL, Neon, Node, SQL or PowerShell. E1 prior clean `2e362aeeafe7d816c53c74c61d4c761927d56a22` owner-local: **24/24 targeted Node + TypeScript + Node syntax PASS**, which does not transfer to this E1a code.
 
 ## Independent E1 findings (E1-F01–F10) and decisions
@@ -42,7 +42,20 @@ S20 telemetry/error output and S21 artifacts remain security-design cases withou
 
 **Correction authored as isolated test-only code commit `d121671cfaced650e3ead1d2dfcb295db995ebf7`:** the `good()` fixture explicitly types its `Binds` member as `string[] | null` while retaining runtime `null`. No Docker guard, runner, SQL, configuration, permissions or application source changed. This addresses the observed TS2322 without suppressing it through an unsafe cast. **New exact-head tests and TypeScript are NOT RUN until owner retests.** Previous 34/34 PASS remains pinned to the old SHA.
 
-## Local no-Docker acceptance procedure (PENDING)
+## Owner-local verification round 2 — corrected source ACCEPTED (2026-10-17)
+
+**Exact clean owner source SHA:** `54ea8aeea4c848a4d79cfdf6f11fd5cdae4e242e`; branch `fix/gps-r21-p0-d3-e1a-mock-docker`. Owner's Windows PowerShell `git pull --ff-only` fast-forwarded from `850318d1` to the expected source, `git status --short` was empty and `git rev-parse HEAD` returned the full pinned SHA.
+
+- `npm run test:target -- tests/gps-r21-p0-d3-synthetic-security.test.ts tests/gps-r21-p0-d3-e1a-fake-docker.test.ts`: **34/34 PASS (owner-local)**, 0 failed, 0 skipped/cancelled/todo, including ten dynamic injected fake-Docker falsification cases. PowerShell `$LASTEXITCODE` fail guard did not throw.
+- `npm run typecheck` / `tsc --noEmit`: **PASS (owner-local)**, no TypeScript diagnostics. PowerShell exit-code guard did not throw. This demonstrates resolution of round-1 `TS2322`.
+- **Two `node --check` syntax commands:** were **PASS in verification round 1** at `850318d16051eee123057e2d466f5f9b0254ab7f`. They were **NOT RERUN in round 2**; GitHub compared the two revisions and confirmed the only executable-file difference was one TypeScript-only test fixture annotation, with `container-guards.mjs` and `run-synthetic-postgres.mjs` untouched.
+- **GitHub diff lineage:** from round-1 `850318d1` to round-2 `54ea8aee` only one line of `tests/gps-r21-p0-d3-e1a-fake-docker.test.ts` and four documentation paths changed. No runtime guard, Postgres runner, SQL, app, database/auth code was altered.
+- **Docker execution, Docker inspect runtime, PostgreSQL role/RLS SQL, Neon, production accounts/real GPS, CI, full suite, browser/build, migration, merge/deploy:** **NOT RUN**. Actual D3 RLS **OPEN**; real owner or cross-owner track access **NO-GO**.
+- **Acceptance:** Close **E1a limited Node/TypeScript + prior unchanged Node syntax code verification** on the pinned revised source. Keep PR #357 DRAFT / unmerged. Follow-up docs-only GitHub commits are not independently exact-HEAD retested.
+
+**Next planned gate:** separate independent review of E1a corrections and only then explicit approval of a properly disposable PostgreSQL runtime if one is available; no mandatory Docker. Mock-Docker PASS is not actual Docker configuration/RLS PASS.
+
+## Local no-Docker acceptance procedure (historical preregistered contract; verification now accepted above)
 
 Verify clean exact HEAD, then:
 ```powershell
