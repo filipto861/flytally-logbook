@@ -15,7 +15,7 @@ const signal=()=>({exists:true,reparsePoint:false,aclReadable:true,aclTrusted:fa
 const good=()=>({
   format:"flytally-i2b1-windows-inventory-v1",platform:"win32",
   readOnly:true,runtimeAuthorization:false,permitsClusterMutation:false,
-  effectiveToken:{elevated:false,source:"WindowsPrincipal.IsInRole",identityAttested:false},
+  effectiveToken:{adminRoleObserved:false,source:"WindowsPrincipal.IsInRole",identityAttested:false},
   binVersions:{...version},
   serviceStatus:{"postgresql-x64-16":"Running","postgresql-x64-18":"Running"},
   pathObservations:{userProfile:signal(),appData:signal(),localAppData:signal(),
@@ -30,9 +30,9 @@ test("I2-B1: read-only valid host inventory is not runtime attestation",()=>{
   assert.equal(validateOfflineWindowsEvidence(v).ok,false);
 });
 test("I2-B1: reject elevated, reparse and environment override signals",()=>{
-  const elevated=good();elevated.effectiveToken.elevated=true;
+  const elevated=good();elevated.effectiveToken.adminRoleObserved=true;
   assert.deepEqual(evaluateReadOnlyInventory(elevated),{
-    accepted:false,reason:"elevated-process",permitsRuntime:false
+    accepted:false,reason:"admin-role-observed",permitsRuntime:false
   });
   const reparse=good();reparse.pathObservations.localAppData.reparsePoint=true;
   assert.equal(evaluateReadOnlyInventory(reparse).accepted,false);
