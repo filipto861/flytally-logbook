@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection R2.1a Batch 4 count integrity and historical T10 comparator (DRAFT / NOT RELEASED)
+
+User delegated T10/T14 product decision. Added isolated, pure TypeScript `research/gps-detection-r21/flight-count-contract.ts` (distinguishes observed quality-island pattern count from **unavailable GPS-only physical whole-flight landing count**) and `research/gps-detection-r21/legacy-pattern-comparison.ts` (bounded fixture-only comparison with legacy, an explicit T10 known-miss category, no independent physical-contact accuracy claims, and preprocessing-confound disclosure). Added **7 synthetic Batch 4 tests** in `tests/gps-detection-r21-batch4.test.ts` and [scope/evidence documentation](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH4_2026-10-17.md); reconciled prior [coverage audit](docs/product/GPS_DETECTION_2_0_R2_1A_COVERAGE_AUDIT_2026-10-17.md). Previously owner-local tested Batch 3 exact SHA `9c0f423f` **48/48 targeted PASS + typecheck PASS**; **new Batch 4 tests/typecheck NOT RUN**. No production GPS logic, flights, DB/schema, Training repo, model training, merge or deploy changed.
+
+
+
 ## 2026-10-17 — GPS Detection R2.1a Batch 3 owner-local PASS + evidence coverage audit (DRAFT / NOT SHIPPED)
 
 Verified from owner-supplied exact-clean-head Windows PowerShell: `9c0f423f1f924b40ded62f198226b338db91aa48` targeted GPS/legacy/scorecard suite **48/48 PASS**, zero fail/skip, `tsc --noEmit` **PASS**. This is **owner-local**, not CI and not event-level accuracy evidence. Added [R2.1a contract coverage audit](docs/product/GPS_DETECTION_2_0_R2_1A_COVERAGE_AUDIT_2026-10-17.md) distinguishing covered synthetic invariants from partial/open requirements: weak T10 missed-event assertion, T14 scoped count vs full-flight completeness ambiguity, unavailable A07/A08 type differentiation, missing metadata/provenance coverage. Updated PR #350 and roadmap/feature evidence, no application runtime, DB changes, real-track export, model training, merge or deploy. Subsequent audit/docs commits are not the test-executed SHA.
