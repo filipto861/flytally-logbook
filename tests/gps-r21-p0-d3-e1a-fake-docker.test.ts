@@ -25,7 +25,7 @@ const good=()=>({
   Config:{Labels:{"flytally.purpose":"synthetic-rls-research"}},
   HostConfig:{
     NetworkMode:"none",PublishAllPorts:false,Privileged:false,
-    Binds:null,PortBindings:null,Tmpfs:{...tmpfs},
+    Binds:null as string[] | null,PortBindings:null,Tmpfs:{...tmpfs},
     Mounts:null,VolumesFrom:null
   },
   Mounts:paths.map(Destination=>({Type:"tmpfs",Destination}))
