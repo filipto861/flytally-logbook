@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R2.1b owner-scope security audit + in-memory research diagnostic (DRAFT / NOT DEPLOYED)
+
+Audited `main` authorization: `requireUser` → `getSession` may indirectly write via database optimization/migration and session `last_seen_at` heartbeat, therefore is **not a strict no-write identity resolver**. Confirmed existing map/first-track review cannot deliver an unmodified all-tracks research corpus. Added top-level `research/gps-detection-r21/observational-aggregate.ts` (in-memory, no DB/network/auth; cohort-only quality/legacy-vs-research disagreement, no route/user/timestamps) and **8 new synthetic tests**; no test execution/typecheck on latest HEAD yet. Hardened [R2.1b observational plan](docs/product/GPS_DETECTION_2_0_R2_1B_OWNER_SCOPED_OBSERVATIONAL_PLAN_2026-10-17.md) with strict read-only auth blocker and added [second-AI security review packet](docs/product/GPS_DETECTION_2_0_R2_1B_SECURITY_REVIEW_HANDOFF_2026-10-17.md), consultation **NOT RUN**. Prior exact Batch 4 local suite `325fc921` 55/55 PASS and TypeScript PASS; no new real GPS access, training, source export, production code, schema, DB writes, merge or deploy.
+
+
+
 ## 2026-10-17 — GPS R2.1a Batch 4 owner-local PASS; R2.1b observational research plan (DOCS ONLY / NOT RELEASED)
 
 Owner provided clean exact-SHA `325fc9216b027e7910b549dfcd72aa43ba4df231` Windows PowerShell: **55/55 targeted PASS**, no fail/skip, `npm run typecheck` PASS (**local**, not CI). Recorded full evidence in PR #350 and added Batch 4 verification closeout. Formalized next [R2.1b owner-scoped read-only observational protocol](docs/product/GPS_DETECTION_2_0_R2_1B_OWNER_SCOPED_OBSERVATIONAL_PLAN_2026-10-17.md) and source access audit: current `getFlightTracks` map DTO can downsample and coerce missing altitude to 0; `getFlightTrackReview` reads only first raw track, so neither is an authorized full-data offline benchmark input as-is. Protocol requires validated tenant access, minimal in-boundary processing and aggregate-only outputs; **no real tracks accessed/queried/exported, no training or benchmark performed**. Existing detector and certified flights remain unchanged; no DB/schema changes, merge or deploy. Future full source/test/CI gates remain outstanding.
