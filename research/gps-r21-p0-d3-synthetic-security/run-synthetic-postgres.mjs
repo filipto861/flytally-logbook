@@ -84,6 +84,15 @@ try{
   }
   const tmpfsPaths=["/var/lib/postgresql/data","/var/run/postgresql","/tmp"];
   const host=cfg?.HostConfig;
+  // Docker inspect can represent --tmpfs paths as a map or mount records.
+  // Accept only the three expected disposable paths and no host/volume mounts.
+  const observedMounts=cfg?.Mounts;
+  const mountsVerified=Array.isArray(observedMounts)
+    ? observedMounts.length===tmpfsPaths.length&&
+      observedMounts.every(m=>m?.Type==="tmpfs"&&tmpfsPaths.includes(m.Destination))
+    : observedMounts!==null&&typeof observedMounts==="object"&&
+      Object.keys(observedMounts).length===tmpfsPaths.length&&
+      tmpfsPaths.every(path=>Object.hasOwn(observedMounts,path));
   const isolationVerified=
     cfg?.Id===start.output&&cfg?.Name==="/"+name&&cfg?.Image===image.output&&
     cfg?.State?.Running===true&&
@@ -91,10 +100,10 @@ try{
     host?.NetworkMode==="none"&&host?.PublishAllPorts===false&&
     host?.Privileged===false&&
     (host?.Binds==null||(Array.isArray(host.Binds)&&host.Binds.length===0))&&
-    host?.PortBindings!=null&&Object.keys(host.PortBindings).length===0&&
-    host?.Tmpfs!=null&&tmpfsPaths.every(path=>Object.hasOwn(host.Tmpfs,path))&&
-    Array.isArray(cfg?.Mounts)&&cfg.Mounts.length===tmpfsPaths.length&&
-    cfg.Mounts.every(m=>m.Type==="tmpfs"&&tmpfsPaths.includes(m.Destination));
+    (host?.PortBindings==null||Object.keys(host.PortBindings).length===0)&&
+    host?.Tmpfs!=null&&Object.keys(host.Tmpfs).length===tmpfsPaths.length&&
+    tmpfsPaths.every(path=>Object.hasOwn(host.Tmpfs,path))&&
+    mountsVerified;
   if(!inspected.ok||!isolationVerified)
     fail("Disposable Docker isolation configuration not verified; no SQL executed.");
   let ready=false;
