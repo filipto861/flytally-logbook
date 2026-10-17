@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — D3 E1 DeepSeek review received and E1a follow-up recorded (DOCS ONLY)
+
+Owner supplied DeepSeek's complete E1 partial source-only findings E1-F01–F10; external Docker/PostgreSQL/SQL/Node/Neon **NOT EXECUTED**. Reconciled blocking name-based cleanup, duplicate/unchecked tmpfs mounts, missing dynamic fake-Docker tests and pre-`psql` versus entrypoint startup wording in [E1 review disposition](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_INDEPENDENT_REVIEW_PREASSESSMENT_2026-10-17.md). Narrow code and 10 dynamic test cases authored in separate stacked [Draft PR #357](https://github.com/filipto861/flytally-logbook/pull/357), not merged; new Node/typecheck NOT RUN. PR #356 itself remains docs-only, preserves earlier E1 24/24 owner PASS at pinned prior SHA, Docker/PG RLS NOT RUN/OPEN, no real GPS, Neon, production or deploy.
+
+
 ## 2026-10-17 — GPS D3 E1 independent security-review handoff prepared (DOCS ONLY / NOT RELEASED)
 
 From stacked E1 Draft PR #355 pinned `83eaec732b5a6190a959b0dfd356006939e70edf`, re-read actual synthetic Docker/Postgres runner, Node source assertions, SQL and PowerShell default guard. Compared `--tmpfs` `Mounts` map/array behavior against official Docker docs; authored [source preassessment](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_INDEPENDENT_REVIEW_PREASSESSMENT_2026-10-17.md) and [full pinned four-file DeepSeek security packet](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_DEEPSEEK_INDEPENDENT_SOURCE_REVIEW_PACKET_2026-10-17.md). **Independent E1 review NOT RECEIVED**. Flagged dynamic behavior unknowns (effective mounts/options, context/cleanup, timestamp of Postgres entrypoint init, lack of mocked Docker parser/denial tests) as questions rather than confirmed exploits. **No executable source changed**, no new Node/TS/SQL/CI/browser/build tests run at this documentation-only HEAD, no Docker/PG/Neon/production DB access. Prior owner E1 exact `2e362aee` Node 24/24, TypeScript and syntax PASS preserved with proper source lineage; actual Postgres RLS NOT RUN/OPEN, real GPS remains NO-GO; no merge/deploy.
