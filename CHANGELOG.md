@@ -1,3 +1,7 @@
+## 2026-10-17 - GPS P0-D3 Windows local no-Docker gate PASS (research-only / NOT RELEASED)
+
+Owner transcript on **clean exact SHA `3f9db21f3945a4abc72b5fe269bff528e7db5967`**: PowerShell 5.1 runner executed, **16/16 targeted Node synthetic/mock/static tests PASS** (0 fail, 0 skipped), `npm run typecheck` / `tsc --noEmit` **PASS**. Native `initdb`/`pg_ctl`/`psql` toolchain not fully detected; default flow intentionally did not start DB or Docker. **PostgreSQL role/RLS NOT RUN and overall P0-D3 security gate OPEN**. This completes only default local testing and PS encoding regression acceptance. No real GPS, authentication, production/Neon access, schema migration, merge, deployment or cross-owner training. Subsequent documentation commit has not been locally retested and does not alter executable test code.
+
 ## 2026-10-17 - GPS P0-D3 owner-local PowerShell PASS, test-only TypeScript fix (DRAFT / NOT RELEASED)
 
 Owner Windows PowerShell 5.1 execution at clean `43e42f70d56723b57c40d7cbce2215d0b8835732` parsed and ran the ASCII wrapper; isolated Node security suite **16/16 PASS**, TypeScript **FAIL** (missing `NODE_ENV` in subprocess `env` and optional return from `codePointAt(0)`), so wrapper stopped before any optional PostgreSQL work. Test-only fix `9c48ae2b` sets `NODE_ENV: "test"` and handles the optional code point. Corrected HEAD **Node and typecheck NOT RUN** pending owner retest. PostgreSQL RLS **NOT RUN**, overall P0-D3 security gate OPEN. No real GPS, DB, runtime, merge or deploy.
