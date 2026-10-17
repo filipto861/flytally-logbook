@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R2 temporal architecture candidate (RESEARCH ONLY; NOT RELEASED)
+
+Added [R2 fail-closed architecture and falsification plan](docs/product/GPS_DETECTION_2_0_R2_PROPOSED_ARCHITECTURE_2026-10-17.md) after inspecting exact legacy GPS time, speed, altitude, quality and review consumers. Documented zero-vs-null, invalid Δt and ordering hazards, KML altitude-mode provenance, empirical labels gap, proposed hypothesis/event DTO and synthetic metamorphic tests. Expanded [independent review packet](docs/product/GPS_DETECTION_2_0_INDEPENDENT_ARCH_REVIEW_2026-10-17.md) to challenge these conclusions and HMM domain transfer. **Second AI review and benchmark/model tests NOT RUN**; no runtime code, database, external track exports, merge or deployment.
+
 ## 2026-10-17 — GPS Detection 2.0 R1 data/label feasibility and independent review packet (DRAFT, research only)
 
 Performed **read-only, anonymous aggregate** inspection of existing production GPS point shape, timing cadence, missingness and altitude-edge diagnostics. No routes, user data or flight rows were exported. Reconciled weak-label leakage: legacy GPS import pre-fills flight movement suggestions; recorded/certified flight-level counts do not independently establish event-level runway contact. Added [R1 feasibility/benchmark design](docs/product/GPS_DETECTION_2_0_R1_FEASIBILITY_BENCHMARK_2026-10-17.md), [independent AI architecture challenge](docs/product/GPS_DETECTION_2_0_INDEPENDENT_ARCH_REVIEW_2026-10-17.md) and updated research/roadmap/features state. Decision: **GO** offline time-based quality-aware baseline research; **NO-GO** supervised event-contact model claims pending permissions and independent ground truth. No production code, migration, user records, model training, benchmarks, tests/build or deploy changed/run.
