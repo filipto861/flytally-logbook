@@ -21,7 +21,9 @@ function validTmpfsOptions(value,mib,noexec){
   if(parts.some(x=>!x)||new Set(parts).size!==parts.length)return false;
   if(!parts.includes("rw")||!parts.includes("nosuid"))return false;
   if(noexec&&!parts.includes("noexec"))return false;
-  if(parts.includes("suid")||parts.includes("exec")||parts.includes("dev"))return false;
+  // Contradictory rw+ro must never be accepted as an effective writable mount.
+  // Other unknown Docker option tokens are not independently attested here.
+  if(parts.includes("ro")||parts.includes("suid")||parts.includes("exec")||parts.includes("dev"))return false;
   const sizes=parts.filter(x=>x.startsWith("size="));
   if(sizes.length!==1)return false;
   const raw=sizes[0].slice(5);
