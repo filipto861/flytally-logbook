@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS D3 E1 independent DeepSeek source review RECEIVED (2026-10-17; NOT A RELEASED FEATURE):** E1-F01–F10 source findings reconciled; no SQL/Docker executed. Critical guard repairs isolated in [Draft PR #357](https://github.com/filipto861/flytally-logbook/pull/357), tests authored but not executed. Actual Docker/Postgres/Neon RLS **NOT RUN**, real GPS/access NO-GO, default no Docker. [Review record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_INDEPENDENT_REVIEW_PREASSESSMENT_2026-10-17.md).
+
+
 **GPS D3 E1 pre-SQL attestation — EXTERNAL REVIEW PENDING (2026-10-17; NOT A RELEASED FEATURE):** [Source preassessment](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_INDEPENDENT_REVIEW_PREASSESSMENT_2026-10-17.md) and [four-file DeepSeek review packet](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_DEEPSEEK_INDEPENDENT_SOURCE_REVIEW_PACKET_2026-10-17.md) prepared at pinned `83eaec732b5a6190a959b0dfd356006939e70edf`; independently reviewed Docker tmpfs map/array behavior from vendor documentation, but **E1 second-AI response NOT RECEIVED** and actual Docker/PG16 RLS NOT RUN. E1 owner-local static/mocked Node 24/24 PASS + TS/syntax PASS at earlier clean SHA; source/daemon assurance and real account access **not established**. Ordinary development stays Docker-free.
 
 
