@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS D3 Native Windows PG16.15 test provider (2026-10-17, DESIGN-ONLY RESEARCH):** DeepSeek partial native design review **RECEIVED: FIX DESIGN FIRST**; reconciled five High-category specification gaps within [PR #359 existing native design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md) (SCRAM/HBA, ACL/reparse, bind, server identity and safe stop/cleanup). This is a **design amendment**, not implemented or runtime-validated. Existing PG16+PG18 services must remain untouched. Native SQL/RLS NOT RUN/OPEN; real GPS/Neon/auth NO-GO.
+
+
 **GPS Detection 2.0 — Native Windows PG16.15 RLS provider (2026-10-17, DESIGN ONLY):** Owner checked full PG16 16.15 executable set and discovered existing Windows services **PG16 and PG18 both running** (17 postgres processes total). Docker not required; future source-controlled disposable PGDATA, loopback SCRAM, positive system-ID and directory attestation, safe shutdown, no existing service/DB access. [Read-only environment evidence and design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md); [native independent reviewer handoff](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_INDEPENDENT_REVIEW_PACKET_2026-10-17.md). Native review PENDING, no runner written/cluster created/SQL executed; actual RLS OPEN, real GPS/Neon NO-GO, not released.
 
 
