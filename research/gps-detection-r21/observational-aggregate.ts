@@ -74,7 +74,7 @@ export function aggregatePreauthorizedTracks(tracks:readonly (readonly KmlPoint[
   let legacyTgCandidates=0,bothHaveTgPattern=0,legacyOnlyTgPattern=0,researchOnlyTgPattern=0,neitherHasTgPattern=0,unavailablePatternCountTracks=0;
   try{
     for(const points of tracks){
-      const research=analyzeResearchTrack(points.map((p,ordinal)=>({...p,ordinal})));
+      const research=analyzeResearchTrack(points.map((p:KmlPoint,ordinal:number)=>({...p,ordinal})));
       const legacy=touchAndGoEvents([...points]);
       if(research.islands.length)tracksWithValidIslands++;
       else tracksWithNoValidIslands++;
