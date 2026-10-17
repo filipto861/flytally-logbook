@@ -1,9 +1,22 @@
 # GPS Detection 2.0 - R2.1b-P0-D4 offline robustness/falsification
 
-**Status:** IMPLEMENTED IN ISOLATED RESEARCH BRANCH / OWNER-LOCAL VERIFICATION NOT RUN.
+**Status:** D4 TARGETED OWNER-LOCAL VERIFICATION PASS on pinned source SHA / DRAFT and NOT RELEASED.
 **Repository:** `filipto861/flytally-logbook`; isolated branch `test/gps-r21-p0-d4-offline-robustness` based on research Draft PR #350 (`test/gps-detection-r21-falsification`).
 **Decision:** Product owner directed continuation of the previously proposed offline synthetic milestone. No approval for real GPS retrieval or production changes.
 **Dependency boundary:** P0-D3 synthetic PostgreSQL security proof remains independently OPEN (16/16 mock/static tests and TypeScript passed on an earlier D3 exact SHA; Postgres RLS NOT RUN). D4 cannot close or bypass that gate.
+
+## Acceptance evidence - owner-local, exact revision (2026-10-17)
+
+**D4 offline verification: PASS for the targeted acceptance scope at clean source SHA `749dc45932df462e37b3c34cbd50db04c9661bec`.** Owner ran from `C:\\Users\\filip\\Documents\\GitHub\\Logbook` after `git fetch origin`, checking out `test/gps-r21-p0-d4-offline-robustness`, `git pull --ff-only` (up to date), empty `git status --short`, and exact SHA confirmation.
+
+- `npm run test:target -- tests/gps-detection-r21-d4-offline-robustness.test.ts tests/gps-detection-r21-observational.test.ts tests/gps-detection-r21-boundary.test.ts`: **17 tests, 17 PASS, 0 FAIL, 0 SKIP, 0 CANCELLED** (8 new D4 + 8 observational + 1 import boundary). This confirms controlled source-shape failure cases, resources and temporal quality evidence on synthetic fixtures only.
+- `npm run typecheck` (`tsc --noEmit`): **PASS**, no TypeScript diagnostics.
+- GitHub branch source diff was independently inspected against research base `test/gps-detection-r21-falsification`; changed paths restricted to research aggregator, independent synthetic tests and D4 governance documentation; no production files modified.
+- **NOT RUN:** full Node suite, production build, Playwright, CI, PostgreSQL RLS/driver/DB operations, Neon, deployment, production smoke. No claims of a complete release gate. This is **local**, not CI.
+- **P0-D3 security remains OPEN:** 16/16 historical Node/mock checks were separately verified, but actual PostgreSQL RLS was not exercised. No real owner GPS access, authorized subject identity, full-fidelity source quality or physical wheel-contact truth has been demonstrated. D4 does not unblock real data.
+- Documentation amendments after this exact source SHA do **not** inherit fresh exact-head runtime test evidence; source-code diffs remain unchanged. PR #352 stays DRAFT, not merged or deployed.
+
+**Disposition:** D4 research-only negative-test/TypeScript acceptance is CLOSED at `749dc45932df462e37b3c34cbd50db04c9661bec`; downstream security, provenance and empirical validation are DEFERRED / NO-GO. The original planning/checklist below is retained as preregistered scope and historical status.
 
 ## Reconstructed source inventory
 
