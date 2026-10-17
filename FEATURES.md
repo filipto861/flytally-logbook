@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS 2.0 Pilot Review R2.1c OWNER-APPROVED DIRECTION (2026-10-17; NOT IMPLEMENTED):** reuse existing import's `Review GPS track`, optional ephemeral `Leave unresolved` advisory notes, no auto-count/auto-certify or separate saved-flight review, hide vertical candidates without independently proven unit/mode/parser provenance; unverified `KNOWN` cannot approve display. Default-OFF legacy parity. **Product choices D1–D5 frozen, implementation/security/testing gates OPEN.** [Approval record](docs/product/GPS_DETECTION_2_0_R2_1C_PILOT_REVIEW_DESIGN_2026-10-17.md).
+
+
 **GPS R2.1c Pilot Review independent-review reconciliation (2026-10-17, DESIGN ONLY):** DeepSeek source-uninspected PARTIAL verdict FIX DESIGN FIRST reconciled with actual research and canonical main files. No V2 pilot-facing altitude hypotheses from unknown/unattested units; parser observations/transformations must not impersonate external sensor truth. Existing parser sorts/deduplicates, converts CSV feet and may coerce missing altitude to zero; player displays missing altitude as zero: tracked as source-backed test/design prerequisites, not a released feature or proven runtime regression. V2 inline advisory, ephemeral notes, default-OFF flag are proposed, owner decisions pending. [Reconciliation](docs/product/GPS_DETECTION_2_0_R2_1C_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md). No executable new code/tests, owner GPS/DB, merge or deploy.
 
 
