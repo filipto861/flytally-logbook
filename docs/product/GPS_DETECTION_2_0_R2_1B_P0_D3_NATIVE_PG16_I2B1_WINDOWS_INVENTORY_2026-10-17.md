@@ -2,6 +2,18 @@
 
 **Date:** 2026-10-17. **Repo:** `filipto861/flytally-logbook`. **PR:** #359 (Draft, unmerged). **Status:** I2-B1 offline Node/TypeScript **OWNER-LOCAL 20/20 PASS on exact tested executable SHA**; actual Windows PowerShell probe/OS attestation **NOT RUN**. Historical authored-only status preserved below.
 
+## Post-DeepSeek independent review / fail-closed correction (2026-10-17)
+
+Owner forwarded a **PARTIAL handoff-only** security review: **FIX BEFORE ANY POSITIVE PROBE**. Reviewer did **not** access GitHub source, run Node or Windows PowerShell. Independent GitHub source reconstruction confirmed the former Node positive CLI was resolving `powershell.exe` from untrusted `SystemRoot` and that the targeted 20 Node tests did not parse the PowerShell source.
+
+**New revised behavior:** the Node `run-native-pg16-i2b1-inventory.mjs` CLI now unconditionally refuses every invocation, including `--read-only-inventory`; it cannot launch any executable. The staged inventory `.ps1` is **not approved to execute**. New `check-native-pg16-i2b1-ps51-parse.ps1` is a *separate parse-only* Windows PowerShell 5.1 AST gate including an intentionally invalid in-memory negative control. The observational `IsInRole(Administrator)` result is named `adminRoleObserved`, never elevation/security attestation. Two more Node tests are authored; **22 expected total** (I1 12 + I2-A 3 + I2-B1 7).
+
+**Testing on this new code:** Node syntax **NOT RUN**, 22 targeted **NOT RUN**, TypeScript **NOT RUN**, PS5 AST parser **NOT RUN**, actual inventory **NOT RUN**, PostgreSQL RLS **NOT RUN**. Historical 20/20 owner-local PASS remains pinned to older code SHA `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8`; it cannot be attributed to the modified source.
+
+**OPEN:** trusted executable/script-path origin, ACL/reparse ancestors, actual process token/elevation/ownership, positive host probe and identity-bound PostgreSQL operations. None is authorized by parse-only PASS. [Full independent-review reconciliation and remaining gates](GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+---
+
 ## Owner-local exact-SHA I2-B1 verification (2026-10-17)
 
 **EXECUTED ON OWNER WINDOWS HOST, VERIFIED BOUNDED SCOPE** — full clean tested HEAD `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8`. Both I2-B1 `node --check` validations PASS; targeted Node **20/20 PASS** (I1 12 + I2-A 3 + I2-B1 5), 0 failed/skipped/cancelled/todo; `npm run typecheck` / `tsc --noEmit` PASS. These were owner-local, **not CI**. The GitHub branch equals that exact SHA before the documentation follow-up.
