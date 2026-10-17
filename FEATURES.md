@@ -1,8 +1,14 @@
+# FlyTally Logbook — FEATURE LIST
+
+**GPS Detection 2.0 - D3 synthetic hardening local acceptance (2026-10-17, DRAFT / NOT SHIPPED):** Owner verified clean exact `4514274a90f300360d485eed4cb6d31530eff349` targeted synthetic Node **22/22 PASS** and TypeScript **PASS**. Hardening of optional disposable DB runner, grant-vs-RLS gamma fixture and source checks is staged, **not a deployed feature**. These are mock/static/early-refusal tests, **not actual SQL/RLS execution**. P0-D3 PostgreSQL gate remains NOT RUN/OPEN; native/Neon principal and real GPS access NO-GO. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_POST_REVIEW_HARDENING_2026-10-17.md).
+
+
+**GPS Detection 2.0 R2.1b-P0-D3 synthetic security hardening (2026-10-17, DRAFT / NOT RELEASED):** Post-DeepSeek source-only review branch adds local image-ID/no-pull, strict Docker-context/cleanup refusal, PG-env fail-closed guards, gamma grant-vs-RLS fixture and selected negative rights probes. **22 targeted mock/static Node cases authored / NOT RUN on new HEAD**, TypeScript NOT RUN; PostgreSQL RLS STILL NOT RUN/OPEN. Docker-free ordinary development unchanged; no real subject login, deployed GPS, production DB or release evidence. [Scope and gates](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_POST_REVIEW_HARDENING_2026-10-17.md).
+
 **GPS Detection 2.0 research verification (2026-10-17):** Owner-local clean commit `3f9db21f3945a4abc72b5fe269bff528e7db5967` completed the default Windows PowerShell 5.1 no-Docker gate: 16/16 synthetic/static Node tests PASS and TypeScript PASS. PostgreSQL RLS NOT RUN and overall security gate remains OPEN. This is research test evidence, not production GPS authentication/RLS capability or release.
 
 **GPS Detection 2.0 P0-D3 verification (2026-10-17):** Synthetic research fixture has 16/16 Node tests verified owner-locally at `43e42f70`; TypeScript gate failed on two test-only typing issues. Narrow correction committed (`9c48ae2b`), exact updated HEAD retest pending. PostgreSQL RLS remains NOT RUN, security milestone OPEN; no real GPS access or release.
 
-# FlyTally Logbook — FEATURE LIST
 
 **R2.1b-P0-D3 Windows PowerShell 5.1 compatibility (2026-10-17; TESTING ONLY):** Default Docker-free `run-local-gates.ps1` initially **failed to parse** at clean owner SHA `a7dc905e` because UTF-8-without-BOM em dashes were mangled by Windows PowerShell. Fixed script to **ASCII-only** and added regression; **16 Node tests authored, corrected HEAD NOT RUN**. Earlier `820b211b` had 12/12 Node PASS + TypeScript PASS. PostgreSQL RLS permission validation remains **NOT RUN**, synthetic security milestone not closed, real-track access remains NO-GO. [Evidence/retrospective](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_SYNTHETIC_SECURITY_PROTOTYPE_2026-10-17.md).
 
