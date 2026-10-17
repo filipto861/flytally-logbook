@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R2.1a offline falsification Batch 1 (UNMERGED / NOT RELEASED)
+
+With owner approval of an isolated research experiment, created `test/gps-detection-r21-falsification` from `main@6a67a024` and added standalone, production-unreferenced `research/gps-detection-r21/detector.ts` (quality-masked monotonic time, gap islands, altitude/speed pattern candidates always contact-unresolved), unchanged legacy shadow comparator and research import-boundary tests. Local authored-copy Node 22.16 21/21 synthetic tests PASS and strict source-only tsc 5.8 PASS; whole-repository targeted test, legacy shadow/boundary execution, typecheck/build/Playwright/PostgreSQL CI NOT RUN. Predeclared parameters not tuned after fixture runs. No app runtime, GPS import, certified logbook data, DB/schema, aircraft, ML model training, deploy or Training repository changes. [Detailed Batch 1 evidence and open gates](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH1_2026-10-17.md).
+
+
 ## 2026-10-16 — Airport Elevation Phase 1 local acceptance and production schema confirmed (PR #346 DRAFT, NOT RELEASED)
 
 Exact clean source SHA `c37ae3ba9f2d69d8972ca23d61291a1f9d62266f` verified **owner-locally**: source 257/257, direct domain 20/20, typecheck PASS, full Node **1,630/1,630 PASS** (0 skipped), six owned disposable PG16 groups **163/163 PASS**, Next production build PASS and Playwright browser-risk **27/27 desktop + 26/26 mobile PASS**, all exit 0. Browser and PG16 fixtures were isolated and cleaned up; no production SQL writes. Vercel `logbook` production `DATABASE_URL` endpoint maps to Neon project `muddy-dust-14049657`, **production** branch `br-raspy-fog-b1btvu5t`; read-only schema check confirms nullable double-precision `public.airports.elevation_ft` and unique owner/ident constraint, **migration N/A**. Legacy production `updated_at` remains text (test fixture timestamp); no modification/backfill. This final documentation amendment creates a new HEAD whose formal canonical release result is **NOT RUN** and must not inherit the earlier SHA PASS automatically. No merge, deployment, or GPS Detection logic change.
