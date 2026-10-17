@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-17
 **Repository:** `filipto861/flytally-logbook`, isolated `fix/gps-r21-p0-d3-e1a-mock-docker`, stacked on Draft PR #355, based on its docs-only `83eaec732b5a6190a959b0dfd356006939e70edf`. Other D3/D4 repos/PRs are separate.
-**Status:** SOURCE PATCH + TESTS AUTHORED; new exact-SHA Node / TypeScript / syntax **NOT RUN**. Docker / PostgreSQL / role-RLS **NOT RUN / OPEN**. No merge/deploy.
+**Status:** FIRST CLEAN E1a SOURCE: 34/34 NODE + 2 SYNTAX PASS, TYPESCRIPT TS2322 FAIL; NARROW TEST-TYPING FIX AUTHORED / NEW EXACT-HEAD RETEST PENDING. Docker / PostgreSQL / role-RLS **NOT RUN / OPEN**. No merge/deploy.
 **Input:** product-owner-supplied DeepSeek E1 independent **PARTIAL SOURCE-ONLY** review. The reviewer did not execute Docker, PostgreSQL, Neon, Node, SQL or PowerShell. E1 prior clean `2e362aeeafe7d816c53c74c61d4c761927d56a22` owner-local: **24/24 targeted Node + TypeScript + Node syntax PASS**, which does not transfer to this E1a code.
 
 ## Independent E1 findings (E1-F01–F10) and decisions
@@ -29,6 +29,18 @@ S20 telemetry/error output and S21 artifacts remain security-design cases withou
 3. Update prior D3 source/ordering assertions to follow extracted guard logic. Keep 24 original tests authored; add **10** dynamic malicious fake-Docker response cases in `tests/gps-r21-p0-d3-e1a-fake-docker.test.ts`. Expected targeted total **34 tests**, but **NOT RUN**.
 4. No production `app/`, `components/`, `lib/`, auth, persisted GPS, DB migrations, Neon, shared data, external file exports, cross-account training, runtime feature flag or deployment.
 5. Unchanged `run-local-gates.ps1` pins original standalone D3 branch. On E1a stacked branch **use direct pinned local Node/TS commands**, never bypass the PowerShell identity/branch guard for an operational DB run.
+
+## Owner-local verification round 1 and narrow type correction (2026-10-17)
+
+**Exact clean owner source SHA:** `850318d16051eee123057e2d466f5f9b0254ab7f`. Owner on Windows PowerShell checked out `fix/gps-r21-p0-d3-e1a-mock-docker`, confirmed empty `git status --short`, correct full SHA, and ran the requested checks:
+
+- `node --check research/gps-r21-p0-d3-synthetic-security/container-guards.mjs` **PASS** (exit guard no exception).
+- `node --check research/gps-r21-p0-d3-synthetic-security/run-synthetic-postgres.mjs` **PASS**.
+- `npm run test:target -- tests/gps-r21-p0-d3-synthetic-security.test.ts tests/gps-r21-p0-d3-e1a-fake-docker.test.ts`: **34/34 PASS, 0 FAIL / 0 SKIP / 0 CANCELLED**.
+- `npm run typecheck`: **FAIL (TS2322)** at `tests/gps-r21-p0-d3-e1a-fake-docker.test.ts:98` — `good().HostConfig.Binds` inferred as literal `null`, but the intended malicious bind-mount negative test assigns `string[]`. PowerShell exit guard threw `TypeScript FAILED`. **Do not report E1a TypeScript or overall targeted acceptance PASS on this source SHA.**
+- Docker, PostgreSQL SQL/RLS, real login/Neon, production GPS, CI/full suite/build/browser/deploy: **NOT RUN / NO-GO as applicable**.
+
+**Correction authored as isolated test-only code commit `d121671cfaced650e3ead1d2dfcb295db995ebf7`:** the `good()` fixture explicitly types its `Binds` member as `string[] | null` while retaining runtime `null`. No Docker guard, runner, SQL, configuration, permissions or application source changed. This addresses the observed TS2322 without suppressing it through an unsafe cast. **New exact-head tests and TypeScript are NOT RUN until owner retests.** Previous 34/34 PASS remains pinned to the old SHA.
 
 ## Local no-Docker acceptance procedure (PENDING)
 
