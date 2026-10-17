@@ -48,12 +48,18 @@ const blankReasons=():Record<AggregateQualityReason,number>=>({
   GAP:0,POSITION_JUMP:0,ALTITUDE_DISCONTINUITY:0,
 });
 function validShape(points:unknown):points is readonly KmlPoint[]{
-  return Array.isArray(points)&&points.every(p=>
-    p!==null&&typeof p==="object"&&
-    typeof p.lat==="number"&&typeof p.lon==="number"&&
-    (p.alt===null||typeof p.alt==="number")&&
-    (p.time===null||typeof p.time==="string")
-  );
+  if(!Array.isArray(points))return false;
+  for(let i=0;i<points.length;i++){
+    // Array.every skips holes. Missing point slots must never become implicit fixes.
+    if(!Object.hasOwn(points,i))return false;
+    const p:unknown=points[i];
+    if(p===null||typeof p!=="object")return false;
+    const item=p as Partial<KmlPoint>;
+    if(!Number.isFinite(item.lat)||!Number.isFinite(item.lon)||
+      !(item.alt===null||Number.isFinite(item.alt))||
+      !(item.time===null||typeof item.time==="string"))return false;
+  }
+  return true;
 }
 
 /** Called only with already-authorized input. NO source access, output identities,
@@ -63,11 +69,17 @@ export function aggregatePreauthorizedTracks(tracks:readonly (readonly KmlPoint[
   if(tracks.length<OBSERVATIONAL_LIMITS.minimumCohortTracks)return{status:"UNAVAILABLE",reason:"COHORT_TOO_SMALL"};
   if(tracks.length>OBSERVATIONAL_LIMITS.maximumCohortTracks)return{status:"UNAVAILABLE",reason:"COHORT_TOO_LARGE"};
   let totalPoints=0;
-  for(const points of tracks){
-    if(!validShape(points))return{status:"UNAVAILABLE",reason:"INVALID_INPUT"};
-    if(points.length>OBSERVATIONAL_LIMITS.maximumPointsPerTrack)return{status:"UNAVAILABLE",reason:"TRACK_TOO_LARGE"};
-    totalPoints+=points.length;
-    if(totalPoints>OBSERVATIONAL_LIMITS.maximumTotalPoints)return{status:"UNAVAILABLE",reason:"TOTAL_POINTS_EXCEEDED"};
+  try{
+    for(const points of tracks){
+      if(!Array.isArray(points))return{status:"UNAVAILABLE",reason:"INVALID_INPUT"};
+      if(points.length>OBSERVATIONAL_LIMITS.maximumPointsPerTrack)return{status:"UNAVAILABLE",reason:"TRACK_TOO_LARGE"};
+      if(!validShape(points))return{status:"UNAVAILABLE",reason:"INVALID_INPUT"};
+      totalPoints+=points.length;
+      if(totalPoints>OBSERVATIONAL_LIMITS.maximumTotalPoints)return{status:"UNAVAILABLE",reason:"TOTAL_POINTS_EXCEEDED"};
+    }
+  }catch{
+    // Malformed input/getters must fail before any aggregate is computed.
+    return{status:"UNAVAILABLE",reason:"INVALID_INPUT"};
   }
   const invalidEdges=blankReasons();
   let tracksWithValidIslands=0,tracksWithNoValidIslands=0,altitudeReversal=0,speedDip=0;
