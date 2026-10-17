@@ -1,5 +1,65 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS I2-B1 clean owner-local 22/22 retest PASS (DRAFT / NOT RELEASED)
+
+Owner executed clean exact `1f77ea6e16973db2888d245ab69a9114433dca61` on `docs/gps-r21-p0-d3-native-pg16-readiness`, matched HEAD, empty porcelain; I1 12 + I2-A 3 + I2-B1 7 targeted **22/22 Node PASS**, 0 failure/skip/cancelled/todo; `npm run typecheck` (`tsc --noEmit`) **PASS**. Two prior JS syntax checks, and Windows PS5.1 AST parsing of both unchanged scripts with an intentionally malformed syntax negative control were PASS on previous code; no rerun of PS parser on this SHA. Historic `9dfde4b8` 21/22 failure retained. Only test fixture was changed between these executable commits; positive inventory launcher remains unconditionally disabled. **Not run:** actual positive Windows probe, ACL/token/executable attestation, `initdb`, `pg_ctl`, `psql`, SQL/RLS, full Node/build/browser/CI, Neon/real GPS, DB migration, merge or deploy. [Evidence](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+
+## 2026-10-17 — GPS I2-B1 Windows 21/22 Node failure and bounded test-only correction (NOT VERIFIED)
+
+Owner clean `9dfde4b8441ce51be785484dca9a8ed05f0ef76e`: 2 Node `--check` PASS, **21/22 targeted Node PASS, 1 FAIL** (I2-B1 positive-mode-refusal subprocess exit **134**, expected **1**); TypeScript PASS and real Windows PowerShell 5.1 AST parse of both scripts + invalid-syntax negative control PASS. Green final message was unconditional despite Node failure. Exact failed environment variant unknown. Updated only `tests/gps-r21-p0-d3-native-pg16-i2b1-inventory.test.ts`: no more overwriting child `SystemRoot`/`PATH`, assert no launcher process-env/spawn access, retain child refusal and leak checks with non-OS-critical probes. **Corrected 22-case suite and TypeScript NOT RUN**. Positive inventory still unconditionally disabled. No DB/runtime, actual RLS, Neon/real GPS, migrations, merge/deploy. [Evidence ledger](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+
+## 2026-10-17 — GPS I2-B1 DeepSeek partial review → fail-closed correction (DRAFT / NOT TESTED)
+
+Owner supplied independent DeepSeek partial handoff-only review, verdict **FIX BEFORE ANY POSITIVE PROBE**; reviewer did not inspect source or run tests. Our actual GitHub source inspection confirmed untrusted `SystemRoot` path to PowerShell and missing PS5 AST parser coverage. Changed launcher to unconditional exit 1 (no spawn/environment transfer), added PS5.1 **parse-only** gate (parser negative control, does not execute inventory), renamed misleading `elevated` field to `adminRoleObserved` (advisory only, not Windows token proof), added two dynamic/source tests for forged env refusal and parse source contract. **Expected new targeted 22 cases, Node/TS and PS5 parse NOT RUN on new HEAD**. Historical 20/20 PASS belongs to older tested executable SHA `ae1eb81c`. No actual Windows inventory, SQL/RLS, PostgreSQL processes, Neon/real GPS, merge/deploy. [Exact finding disposition](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+
+## 2026-10-17 — GPS native I2-B1 exact-SHA owner-local offline verification PASS (NOT RELEASED)
+
+Owner verified clean executable SHA `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8`. Both I2-B1 Node syntax checks PASS, combined native I1/I2-A/I2-B1 targeted **20/20 PASS** (0 failures/skips/cancelled/todo), `tsc --noEmit` PASS. **Not executed:** PowerShell 5.1 parse/positive host inventory, real token/ACL proof, initdb/pg_ctl/psql/SQL/RLS, full test/build/browser/CI, auth/Neon/real GPS, merge or deploy. Post-test source review flagged inherited `SystemRoot` as insufficiently verified executable root for a positive CLI invocation. Independent review/correction required before probing; no actual SQL/RLS release permission. Source and commit pins: [I2-B1 handoff](docs/product/GPS_DETECTION_2_0_I2B1_INDEPENDENT_REVIEW_HANDOFF_2026-10-17.md).
+
+
+## 2026-10-17 — GPS I2-B1 native Windows read-only inventory (DRAFT / NOT TESTED)
+
+New ASCII PowerShell 5.1 inventory (PG16.15 five binaries --version only, effective elevated admin check, existing PG16/PG18 service status, path existence/reparse/ACL readability), strict Node output validation, CLI and typed contract. Five new targeted offline negative tests authored; target now 20 including I1 12 and I2-A 3. **Node/TypeScript/PS5 actual execution NOT RUN** on this source. No file/db/server mutation, no approved native PG runtime, no SQL/RLS; no auth/Neon/real GPS access, no merge/deploy. I2-A 15/15 applies only to clean prior executable SHA. [I2-B1 record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I2B1_WINDOWS_INVENTORY_2026-10-17.md).
+
+
+## 2026-10-17 — GPS native I2-A exact-SHA owner-local verification (RESEARCH / NOT RELEASED)
+
+Owner ran clean branch at `eb02936be35e8c0590ab4de66cf4b781eeb515e2`, I2 module `node --check` PASS, targeted I1+I2-A Node 15/15 PASS (0 failure/skip), and `npm run typecheck` PASS. This closes bounded offline I2-A tests only; no independently measured Windows token/ACL/process facts and no native PG startup/SQL/RLS. Existing PG16 and PG18 services untouched; no merge/deploy/migration. Later documentation commits not covered by this exact-SHA test.
+
+
+
+## 2026-10-17 — GPS native PG16 I2-A offline evidence boundary (DRAFT / NOT TESTED)
+
+Added `native-pg16-i2-offline.mjs`, `.d.mts`, and `tests/gps-r21-p0-d3-native-pg16-i2-offline.test.ts` (3 new tests). Evaluates externally supplied token/path/binary/service assertions but never promotes caller-supplied booleans to real OS trust. Runtime/stop/delete prohibited; no native OS collection, initdb, pg_ctl, SQL, actual RLS, service changes or deploy. **New Node/TypeScript tests NOT RUN; current code SHA not accepted.** Owner I1 12/12 applies only to previous pinned SHA. Next exact-SHA owner-local targeted acceptance and independent review before any privileged implementation.
+
+## 2026-10-17 — Native PG16 I1 clean-source local verification 12/12 PASS (RESEARCH DRAFT)
+
+Owner verified exact clean `2c4219e3e3bbeb26852b05d9f394a66cf3954d04` on native PG16 readiness branch. Both `node --check` checks **PASS**, `npm run test:target -- tests/gps-r21-p0-d3-native-pg16-guards.test.ts` **12/12 PASS** (no failure/skip), `npm run typecheck` / `tsc --noEmit` **PASS** without diagnostics; PowerShell exit guards passed. [Evidence record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md). No Docker, `initdb`, `pg_ctl`, `psql`, PG16 SQL/RLS, CI/full suite/build/browser/migrations/production/Neon/merge/deploy. Existing PG16/18 services untouched. Future docs-only or I2 commits not covered by this pinned owner test. P0-D3 actual PostgreSQL RLS OPEN; real GPS NO-GO.
+
+
+## 2026-10-17 — Native PG16 I1 offline guard implementation (DRAFT / NOT RELEASED)
+
+Added `native-pg16-guards.mjs` and typed declaration: pure version-16.15, PG* override, Windows owner-run PGDATA path/reparse/ACL evidence, single-rule SCRAM IPv4-loopback HBA, startup bind log, server-side identity PGDATA/version/port/system_identifier/nonce, postmaster PID and cleanup evidence validators. New `run-native-pg16-preflight.mjs` accepts only `--offline-only` and refuses any database-start option. Added 12 dynamic native guard/refusal tests, **AUTHORED NOT RUN via Node**; internal isolated V8 parse and seven predicate spot checks PASS (not CI/TypeScript). No actual Windows OS metadata integration, initdb, pg_ctl, SQL, DB, Neon, production, auth, migrations, browser/build/CI, merge or deploy. Two installed PG16/PG18 services remain untouched; P0-D3 actual PostgreSQL RLS NOT RUN/OPEN. [Detailed I1 scope and later I2 prerequisites](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md).
+
+
+## 2026-10-17 — D3 native PG16 independent review reconciled in design (DOCS ONLY)
+
+Received independent DeepSeek **partial source/design-only** native PG16 review (the full earlier readiness doc was not supplied to reviewer); verdict `FIX DESIGN FIRST`. Documented exact predicates for five high-priority native safety risks in [existing PR #359 design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md): SCRAM initdb + HBA verification, exclusive ACL/reparse-safe PGDATA, verified loopback bind, server/data-directory/system-ID/nonce attestation before DDL, identity-bound shutdown and deletion refusal on uncertainty. Corrected overstrict reviewer assumption about lasting pg_ctl parent process on Windows. **No native runner code, new PostgreSQL cluster, SQL execution, RLS test, installation, migrations, CI, build, browser, merge or deploy.** Existing Windows PG16/PG18 services remain running/untouched; actual D3 RLS OPEN, real GPS/Neon NO-GO. E1b 35/35 owner-local test proof is unaffected, not native PG runtime evidence.
+
+
+## 2026-10-17 — D3 PG16.15 Windows versions and running services confirmed (DOCS ONLY / NOT RELEASED)
+
+Owner read-only PowerShell returned **16.15** for explicit Program Files PG16 `initdb`, `pg_ctl`, `psql`, `postgres` and `pg_controldata`. Windows services **postgresql-x64-16 Running**, **postgresql-x64-18 Running**, and **17** postgres processes detected; no service-to-PID mapping, ports or PGDATA was queried. Discovery did not connect, start/stop services, initialize a cluster or execute SQL. Reconciled [native PG16 isolated provider design](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md) and prepared [pinned source native security review packet](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_INDEPENDENT_REVIEW_PACKET_2026-10-17.md) for DeepSeek/Claude: loopback SCRAM, separate unique PGDATA, verified data_directory/system_identifier, no accidental existing service target and safe teardown. No runner implementation or DB, CI/full suite/build/browser/Neon/migration/merge/deploy. P0-D3 RLS NOT RUN/OPEN, real GPS NO-GO, E1b clean Node 35/35 + TS/syntax remains separate evidence.
+
+
+## 2026-10-17 — GPS D3 read-only native PostgreSQL 16 discovery and provider design (DOCS ONLY / NOT RELEASED)
+
+Owner's safe Windows command output established both PG16 and PG18 complete binary filename sets installed under Program Files, though not on PATH; Docker standard install path and service not found; no PG*/DB URL/Docker overrides. Selected **PG16 for planning**, preserving all existing services and installed clusters. Authored [native disposable-cluster safety contract and review handoff](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_READINESS_2026-10-17.md) with absolute binary paths, unique PGDATA, loopback SCRAM, target identity attestation, strict teardown and explicit owner runtime approval. **Read-only version/service validation pending. No native runner coded, no initdb/pg_ctl/psql executed or cluster started; no SQL/RLS/CI/build/browser/Neon/DB/migration/merge/deploy.** Prior clean E1b 35/35 Node + TS/syntax PASS remains pinned to older executable SHA; P0-D3 actual RLS NOT RUN/OPEN and real GPS NO-GO.
+
+
 ## 2026-10-17 — GPS D3 E1b standalone Docker-free local acceptance (DRAFT / NOT RELEASED)
 
 Owner ran E1a/E1b PowerShell gate from clean `fix/gps-r21-p0-d3-e1a-mock-docker` at exact `e14bc91314e2439859f3ea381d93abb7c43a25cd`, confirmed by empty `git status --short` and full `git rev-parse HEAD`. Script validated its expected branch and SHA; two Node syntax checks **PASS**, targeted `npm run test:target` **35/35 PASS** (0 fail/skip/cancel), `npm run typecheck` (`tsc --noEmit`) **PASS**. Wrapper printed `NOT RUN - Docker, PostgreSQL SQL, role/RLS or any external database` and `OVERALL P0-D3 SECURITY GATE OPEN`. This closes **bounded E1b local Node/TS/syntax proof only**, not actual PostgreSQL RLS, auth/driver, consent, GPS source or safety validation. Independent DeepSeek E1a source review previously yielded conditional GO for *preparation* of a separate opt-in disposable PG experiment; actual environment and execution remain unapproved/unrun. Full tests/CI/build/browser/Neon/DB/migration/merge/deploy NOT RUN. No production GPS or training changes. [Full pinned owner-evidence record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1B_PRE_RUNTIME_GATE_2026-10-17.md); following docs commits not runtime-tested.
