@@ -1,10 +1,32 @@
 # GPS Detection 2.0 - R2.1b-P0-D3 post-DeepSeek synthetic runner hardening
 
-**Status:** SOURCE PATCH AUTHORED / EXACT-HEAD NODE + TYPECHECK NOT RUN / SQL RLS NOT RUN
+**Status:** TARGETED OWNER-LOCAL NODE 22/22 PASS + TYPECHECK PASS AT PINNED SHA / SQL RLS NOT RUN
 **Date:** 2026-10-17
 **Repo / branch:** `filipto861/flytally-logbook` / `fix/gps-r21-p0-d3-synthetic-runner-hardening`, stacked on standalone D3 Draft PR #351. Separate from D4 Draft PR #352 and DeepSeek reconciliation docs PR #353.
 **Review input:** Owner supplied DeepSeek's partial source-level F01-F14 review of all five D3 source files. Reviewer executed no Docker/PostgreSQL/SQL/Node/PowerShell and did not inspect production. Independent review feedback **RECEIVED (SOURCE ONLY)**, not runtime proof.
 **Prior owner evidence:** clean D3 `3f9db21f3945a4abc72b5ba19f09c25d00d`: 16/16 original Node/mock/static PASS + TypeScript PASS. Actual PostgreSQL RLS NOT RUN, remains OPEN. New source changes cannot inherit that earlier PASS.
+
+## Owner-local acceptance - pinned source (2026-10-17)
+
+**Acceptance verdict:** `PASS` for the limited **D3 post-review mock/static Node + TypeScript hardening gate** on an exact clean working tree at source SHA `4514274a90f300360d485eed4cb6d31530eff349`. **Not PostgreSQL/RLS acceptance.**
+
+**Owner-supplied PowerShell transcript:** `git fetch origin`; `git switch fix/gps-r21-p0-d3-synthetic-runner-hardening`; `git pull --ff-only` returned "Already up to date"; `git status --short` returned empty; `git rev-parse HEAD` returned the full pinned SHA above. Commands executed:
+
+```powershell
+npm run test:target -- tests/gps-r21-p0-d3-synthetic-security.test.ts
+if ($LASTEXITCODE -ne 0) { throw "D3 Node tests FAILED" }
+npm run typecheck
+if ($LASTEXITCODE -ne 0) { throw "TypeScript FAILED" }
+```
+
+- **Node:** 22 tests, 22 PASS, 0 FAIL, 0 skipped/cancelled/todo (16 prior mock/static/early-refusal plus 6 new F04/F05/F06/F08/F10/F12 hardening regressions); test command completed with zero exit, guard did not throw.
+- **TypeScript:** `tsc --noEmit` PASS with no diagnostics; exit guard did not throw.
+- **Repository source review:** isolated D3 SQL runner/fixture + synthetic test file and governance docs only, via GitHub comparison against D3 Draft PR #351; no production `app/`, `lib/`, authentication, migration or Training files changed.
+- **Execution classifications:** Node mock/static tests `PASS (OWNER-LOCAL)`; TypeScript `PASS (OWNER-LOCAL)`. **Docker NOT RUN; actual PostgreSQL statements/roles/RLS NOT RUN; CI NOT RUN; full Node suite NOT RUN; build NOT RUN; browser NOT RUN; deployment NOT RUN**.
+- **Security conclusion:** a static test can confirm that the string `--pull=never` or the synthetic gamma SQL probe is authored, but not that Docker or PostgreSQL actually enforce them. No actual LOGIN principal/Neon driver/no-write isolation proven. PostgreSQL RLS/overall D3 security milestone remain **OPEN / NO-GO for real GPS**.
+- **Follow-up docs-only HEAD:** any later documentation commit is not a separately executed exact-SHA test. The runtime source remains the acceptance-pinned version unless a separate code change is made.
+
+**Disposition:** Close only the limited *hardening Node/TypeScript verification batch* on pinned SHA. Keep Draft PR #354 open and unmerged pending code review, safe optional disposable-Postgres runtime proof (when available), and explicit future owner decision. No Docker requirement for ordinary development.
 
 ## Decision and accepted findings
 
