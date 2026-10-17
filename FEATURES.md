@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 D3 E1 container attestation (2026-10-17; RESEARCH-ONLY, NOT SHIPPED):** Effective Docker container inspection is authored before SQL in optional isolated runner. Owner clean `2e362aeeafe7d816c53c74c61d4c761927d56a22` **Node targeted 24/24 PASS**, `node --check` PASS, TypeScript PASS; these checks validate source structure and early-denial behavior, **not** a running Docker container or PG RLS. E1 targeted local verification completed; actual PostgreSQL role/RLS NOT RUN/OPEN, no real GPS/production DB exposure, Draft PR #355 unmerged. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_CONTAINER_ATTESTATION_2026-10-17.md).
+
+
 **GPS Detection 2.0 D3 E1 effective disposable Docker attestation (2026-10-17; DRAFT/NOT RELEASED):** Research-only runner now checks inspected container ID/name/image/running state, `network=none`, no published ports, no binds/unexpected volumes, and exact three tmpfs paths **before** any SQL readiness or fixture. Two additional static/ordering regressions authored (D3 targeted total **24 cases**, **NOT RUN**), TypeScript NOT RUN; actual Docker/PG RLS NOT RUN, overall security gate OPEN. No real GPS/production/Neon or mandatory Docker. [D3 E1 contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_CONTAINER_ATTESTATION_2026-10-17.md).
 
 
