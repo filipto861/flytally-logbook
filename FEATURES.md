@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 D3 E1a fake-Docker hardening (2026-10-17, RESEARCH-ONLY DRAFT):** Owner exact clean `54ea8aeea4c848a4d79cfdf6f11fd5cdae4e242e` **34/34 targeted synthetic Node tests PASS + TypeScript PASS** after test-fixture TS2322 fix; 2 runner/guard syntax checks PASS in earlier unchanged-source round. ID-bound cleanup, exact tmpfs destination/options check and 10 dynamic fake-Docker negative scenarios are source-verified only, **not Docker/PG execution**. D3 actual RLS NOT RUN/OPEN, real GPS/Neon NO-GO, PR #357 not merged/deployed. [E1a record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
+
+
 **GPS Detection 2.0 D3 E1a (2026-10-17; SYNTHETIC RESEARCH, NOT RELEASED):** Owner clean `850318d16051eee123057e2d466f5f9b0254ab7f` 34/34 targeted Node PASS, two Node syntax PASS; **TypeScript TS2322 FAIL** in fake-Docker test fixture. Correction `d121671cfaced650e3ead1d2dfcb295db995ebf7` types `Binds: string[] | null` with unchanged runtime `null`, **new commit not yet retested**. No change to effective guard/SQL behavior, no actual Docker/PG RLS. [D3 E1a verification record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
 
 
