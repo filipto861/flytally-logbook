@@ -2,6 +2,8 @@
 
 **Date:** 2026-10-17
 **Status:** **DESIGN / READ-ONLY ANALYSIS ONLY — NO PRODUCT APPROVAL, NO CODE IMPLEMENTATION, NO DEPLOY**
+**Post-review status:** **FIX DESIGN FIRST** (DeepSeek independent PARTIAL/handoff-only, then GitHub source reconciliation by ChatGPT); **live Pilot Review BLOCKED**. This document was the initial proposal; the [source-verified reconciliation and provenance/display contract](GPS_DETECTION_2_0_R2_1C_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md) supersede any implication that the initial DTO can be implemented or displayed based only on `SourceMetadata.status="KNOWN"`.
+
 **Repo:** filipto861/flytally-logbook only. Research Draft PR #350, branch `test/gps-detection-r21-falsification`. Canonical main source inspected at `main@6a67a02475ab09c3271f8646427f7956ed6e590a`.
 **Baseline:** research executable source clean `681c62d90d21fdf1efd4aa3ada83383249ea857b`: owner-local GPS/legacy targeted **83/83 PASS** and TypeScript PASS; subsequent docs-only HEAD `3294760eef337985b96e79c29d856a95fa1380de`. This is synthetic regression evidence, not wheel-contact truth.
 
@@ -98,3 +100,16 @@ Owner is final product decision maker. These are proposals, **not frozen impleme
 **Implementation gate (separate milestone after owner decision):** feature flag OFF preserves legacy; pure DTO builder with malformed/null/wrong-track negative tests; source/split/algorithm invalidation tests; explicit no-count/no-write boundary; mobile/iPad portrait/landscape/night UX; Playwright+full targeted+build+DB gate as applicable; affected ROADMAP/FEATURES/CHANGELOG and source-coded test evidence. Do not introduce a silent global GPS mode switch.
 
 **Not run:** no code/UI/feature flag, no data migration, no PostgreSQL/Neon, no real tracks, no synthetic UI runtime/browser tests, no second-AI verdict for this new design, no merge/deploy.
+
+## 7. Reconciled high-risk design corrections — 2026-10-17
+
+**External review status:** DeepSeek verdict **FIX DESIGN FIRST**, reviewer unable to inspect GitHub source. Our own source inspection confirmed the central issues; see [line-by-line source evidence and P01–P13 negative test matrix](GPS_DETECTION_2_0_R2_1C_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+- **Parser transform reality:** `lib/track-processing.ts::normalize` can sort/deduplicate points; `parseCsv` converts recognized `ft/feet` altitude headers by 0.3048 without returning transformation metadata. The source-array index has no general raw-file identity. A CSV missing altitude cell may become numeric zero via `Number("")`; this requires targeted falsification before future V2 data use.
+- **Parser-observed versus attested:** extracting an altitude unit/mode or source-provided `KNOWN` accuracy is not independent sensor provenance, reference datum verification or aircraft-contact truth. An arbitrary `sourceProvenanceStatus:"VALIDATED"` provided by a caller cannot enable V2 display. Design a validated evidence boundary, with explicit version/transform/order/unit/accuracy distinctions, before implementing any adapter that surfaces altitude/vertical-rate candidates.
+- **Display gate:** when actual source interpretation is unresolved, V2 pilot-facing altitude/vertical-rate hypotheses are `UNAVAILABLE(SOURCE_NOT_VERIFIED)`; existing research T09 behavior remains isolated and must never be used as a pilot approval flag. Even attested metric interpretation cannot establish AGL/runway alignment or touchdown. A stop-go horizontal hypothesis requires its own independently supported position/time evidence and must not inherit altitude approval.
+- **UI and wording:** candidate `Reviewed` can be confused with legal flight evidence. Prefer `Advisory note` and `Leave unresolved`. Do not create legacy-shaped `touch-and-go` or `landing` markers, hidden movement fields or V2 auto-prefill.
+- **Renderer:** missing altitude and invalid Δt currently have zero fallbacks in the legacy player. Source code confirms the fallback, not actual runtime visual impact; a future display-only patch must be verified separately and must not change legacy count semantics.
+- **Sequencing:** design reconciliation (now) → standalone parser/provenance red-line tests and trusted capability contract (not yet run) → pure offline DTO test adapter → only with owner-frozen decisions and complete P0-D3 security source authority consider an actual flagged integration. No production/DB actions or release approvals in this milestone.
+
+**Owner choices D1–D5 in §5 remain PENDING**. The proposed feature flag, memory-only notes and inline UX are recommendations, not authorization.
