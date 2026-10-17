@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS R2.1c-D2-A source/parser characterization tests authored (DRAFT / NOT VERIFIED)
+
+Research Draft PR #350: new `tests/gps-detection-r21-d2a-parser-characterization.test.ts` with **10 synthetic current-behavior cases**. Evaluates actual unchanged KML/GPX/CSV parser, sort/dedup and split index, ft/feet→m transform, unknown metadata and malformed GPS, plus newly characterized empty CSV coordinate `Number("")→0` and `trackStats` excluding numeric zero altitude. Several assertions explicitly reproduce **KNOWN UNSAFE** behavior; a future PASS is **NOT parser security acceptance**, and a parser fix requires rebaselined negative safety assertions. **NOT RUN** on new executable test HEAD: expected combined 110 (prior 83 GPS + 17 legacy parser + 10 new), typecheck NOT RUN. No `lib/`, UI, app/server, auth, DB/Neon, PG16/18, private track, migrations, merge or deploy changes. [D2 falsification plan and evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2_SOURCE_PROVENANCE_PLAN_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS R2.1c Pilot Review direction explicitly approved (DESIGN / NOT RELEASED)
 
 Product owner approved reuse of the existing GPS import inline, ephemeral advisory notes with default unresolved, hiding altitude/vertical-rate candidates when parser/unit/source provenance is unverified, no automatic Day/Night/total/starts modification or certification, and deferring separate post-flight review. A07/A08 semantic labels remain unavailable. Recorded frozen D1–D5 in design/roadmap. **This is product direction approval only**, not implementation authorization for real data, owner RLS, production V2 UI, migrations, merge or deploy. The prior owner clean `681c62d9` **83/83 targeted Node + TypeScript PASS** is historical Batch 6 executable evidence, not Pilot Review test. [Decisions](docs/product/GPS_DETECTION_2_0_R2_1C_PILOT_REVIEW_DESIGN_2026-10-17.md).
