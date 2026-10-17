@@ -88,21 +88,26 @@ test("I2-B1: positive host inventory CLI is now a hard fail-closed review hold",
   const entry=join(process.cwd(),"research","gps-r21-p0-d3-synthetic-security",
     "run-native-pg16-i2b1-inventory.mjs");
   const source=readFileSync(entry,"utf8");
+  // This CLI cannot look up SystemRoot/PATH or spawn anything, independent of
+  // the caller's environment. Never poison Windows bootstrap variables when
+  // launching the *test's own* Node subprocess: Node may terminate before JS.
   assert.doesNotMatch(source,/node:child_process|spawnSync|execFileSync|execSync|powershell\.exe/);
+  assert.doesNotMatch(source,/\\bprocess\\.env\\b|\\bprocess\\.execPath\\b/);
   for(const extraEnv of [
     {},
-    {SystemRoot:String.raw`C:\\fake-system-root`},
-    {SystemRoot:String.raw`\\\\attacker\\share`,PATH:String.raw`C:\\attacker`},
-    {PGHOST:"localhost",DIRECT_URL:"synthetic-should-not-be-printed"}
+    {PGHOST:"localhost",DIRECT_URL:"synthetic-should-not-be-printed"},
+    {FLYTALLY_I2B1_TEST_SENTINEL:"untrusted-test-input"}
   ]){
     const run=spawnSync(process.execPath,[entry,"--read-only-inventory"],{
       encoding:"utf8",timeout:4000,env:{...process.env,...extraEnv}
     });
+    assert.equal(run.error,undefined);
+    assert.equal(run.signal,null);
     assert.equal(run.status,1);
     assert.match(run.stderr,/DISABLED pending independent security review/);
     assert.match(run.stderr,/RLS NOT RUN/);
     assert.doesNotMatch(run.stdout,/OBSERVED|PG16/);
-    assert.doesNotMatch(run.stderr,/synthetic-should-not-be-printed|attacker/);
+    assert.doesNotMatch(run.stderr,/synthetic-should-not-be-printed|untrusted-test-input/);
   }
 });
 
