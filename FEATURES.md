@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 offline research robustness - D4 VERIFIED OWNER-LOCALLY (2026-10-17; PR #352 DRAFT, NOT SHIPPED):** Finite numeric/dense-array aggregate ingress guard and eight new synthetic negative test cases exist only in isolated GPS research code. Owner clean **`749dc45932df462e37b3c34cbd50db04c9661bec`** targeted Node **17/17 PASS** (8 D4 + 8 earlier observational + boundary), TypeScript PASS; docs-only follow-up not retested. Existing legacy production detector and auth/db untouched. This is **not** a real contact detector validation, not a released app feature, and not a substitute for P0-D3 Postgres RLS (**NOT RUN / OPEN**). [D4 record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D4_OFFLINE_ROBUSTNESS_2026-10-17.md).
+
+
 **GPS Detection 2.0 D4 offline robustness (2026-10-17, DRAFT / NOT RELEASED):** Research-only preauthorized in-memory aggregate has a staged strict numeric/dense-point validation guard, and eight authored synthetic regressions for nonfinite/sparse/malformed sources, point budgets, temporal gaps, null-vs-zero altitude, island boundaries and aggregate-only outputs. Targeted Node/TS **NOT RUN on new HEAD**; no empirical contact validation. P0-D3 SQL RLS NOT RUN / real GPS NO-GO. See [D4 plan](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D4_OFFLINE_ROBUSTNESS_2026-10-17.md).
 
 
