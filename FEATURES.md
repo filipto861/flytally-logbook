@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 E1a independent security review (2026-10-17; RESEARCH ONLY, NOT SHIPPED):** [Seven-source pinned review packet](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_INDEPENDENT_REVIEW_PACKET_2026-10-17.md) prepared on docs-only stacked branch; new implementation review **PENDING**. Proven owner-local E1a 34/34 Node PASS plus TS PASS at exact `54ea8aee`; Docker effective sandbox, PostgreSQL SQL/RLS, real LOGIN/driver/consent remain NOT RUN/NO-GO. No production features, mandatory Docker or DB operations introduced.
+
+
 **GPS Detection 2.0 D3 E1a fake-Docker hardening (2026-10-17, RESEARCH-ONLY DRAFT):** Owner exact clean `54ea8aeea4c848a4d79cfdf6f11fd5cdae4e242e` **34/34 targeted synthetic Node tests PASS + TypeScript PASS** after test-fixture TS2322 fix; 2 runner/guard syntax checks PASS in earlier unchanged-source round. ID-bound cleanup, exact tmpfs destination/options check and 10 dynamic fake-Docker negative scenarios are source-verified only, **not Docker/PG execution**. D3 actual RLS NOT RUN/OPEN, real GPS/Neon NO-GO, PR #357 not merged/deployed. [E1a record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
 
 
