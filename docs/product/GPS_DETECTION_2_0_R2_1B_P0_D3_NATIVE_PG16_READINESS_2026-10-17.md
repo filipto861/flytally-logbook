@@ -76,6 +76,13 @@ Owner subsequently checked actual --version output for PG16 initdb, pg_ctl, psql
 - After successful owned-process stop, verify no live postmaster for this exact PGDATA and matching recorded system_identifier/run marker before considering recursive deletion of **only** the exact exclusively created UUID run directory; on uncertainty preserve it. Ctrl+C/forced termination can bypass PowerShell `finally`; the next run must detect abandoned run directories and **refuse/refer for manual recovery**, not reuse or auto-delete them.
 
 **Acceptance boundary:** These are **design requirements, NOT implemented or runtime verified**. No PostgreSQL instance or SQL executed. Real GPS/Neon, full read-only driver proof, telemetry S20 and artifact S21 checks, source fidelity and touchdown ground truth remain NO-GO.
+## 3F. Native I1 implementation update (2026-10-17; NO RUNTIME)
+
+First limited source batch has been AUTHORED in this same PR: `native-pg16-guards.mjs` / `.d.mts`, `run-native-pg16-preflight.mjs` and 12 dynamic offline tests. These are **pure evidence validators** and an **offline-only CLI**; the CLI rejects `--synthetic-only`, `--run` and all other non-`--offline-only` arguments. No Windows ACL adapter, initdb, PGDATA, pg_ctl, psql, native SQL assertions, server/port access or cleanup actions have been implemented.
+
+An internal isolated V8 syntax/spot check passed seven small predicates, but actual target Node 12/12 and `npm run typecheck` have **NOT RUN**. Passing pure predicates given fabricated metadata does not attest the actual Windows OS or running Postgres. Preserve all five corrected High-review contract requirements for I2, and require exact clean SHA verification of I1 before I2.
+
+[Exact I1 contract](GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I1_GUARDS_2026-10-17.md). Existing PG16/PG18 services untouched and actual RLS NOT RUN/OPEN.
 ## 4. Independent reviewer handoff — required before implementing privileged native runner
 
 Review the Windows native PG16 disposable cluster design independently (DeepSeek/Claude): confirm nonadmin initdb constraints, PG16 binaries, host authentication and password file safety; OS-specific loopback, port collision and pg_hba scope; meaningful system_identifier/PGDATA/port identity binding before synthetic DDL; safe shutdown and Ctrl+C/orphan failure cleanup; minimal reuse of original D3 SQL probes; and how to test against a malicious preexisting local service without ever accessing one.
