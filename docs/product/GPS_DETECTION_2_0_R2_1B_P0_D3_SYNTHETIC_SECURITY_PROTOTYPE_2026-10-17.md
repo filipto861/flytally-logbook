@@ -89,6 +89,33 @@ if ($LASTEXITCODE -ne 0) { throw "Image missing: explicitly run docker pull post
 # Then and only then execute the isolated --synthetic-only runner.
 ```
 
+## Docker-optional operator workflow — decision update (2026-10-17)
+
+The owner does **not** want Docker added as a mandatory FlyTally development dependency. **Decision: accepted.** This overrides the older 'Required operator prerequisite' paragraph and Docker-first commands above for the **normal** local workflow. The Docker PostgreSQL runner remains an **explicitly optional** backend for future RLS proof, not a requirement to run Node or TypeScript.
+
+**New single-entry local wrapper:** `research/gps-r21-p0-d3-synthetic-security/run-local-gates.ps1`, from repo root, requires a full expected clean HEAD SHA.
+
+| Mode | Invoked by | Executed | Explicit result |
+|---|---|---|---|
+| Default, **no Docker** | `-ExpectedSha <full SHA>` | Existing `npm run test:target` on P0-D3 Node fixture + full `npm run typecheck`; detect native `initdb/pg_ctl/psql` availability without opening a DB | PASS for Node/TypeScript if green; **RLS NOT RUN; overall security gate OPEN** |
+| Optional Docker | `-ExpectedSha <full SHA> -PostgresProvider docker` | Same Node/TypeScript + explicit local Docker image/daemon preflight + disposable offline Postgres RLS runner | Full **SYNTHETIC** gate PASS only if all checks actually succeed |
+| Native PostgreSQL alternative | **No executable provider yet** | Local native toolchain presence is diagnostic only | **NOT RUN** until independently reviewed disposable `initdb/pg_ctl/psql` lifecycle and safe isolation are implemented, never an existing database |
+| GitHub Actions/CI | **Not configured/authorized for this milestone** | No hosted DB tests | NOT RUN; do not assume credits/service or report CI PASS |
+
+**Reason for not immediately invoking a native local `psql`:** a `psql` executable does not create an isolated empty cluster or prove a safe target. Passing an existing `PGHOST` / `DATABASE_URL` or using `npm run test:postgres` would bypass the approved synthetic-only test scope. Native execution requires a separate controlled `initdb`, ephemeral data directory, independent local endpoint and force-cleanup verification; no silent fallback is permitted.
+
+The wrapper validates the exact branch, 40-character SHA, clean working tree, exit codes and prints **different terminal statuses**. The offline default cannot legitimately print `ALL SYNTHETIC GATES PASS` because PostgreSQL permissions were not exercised. It uses only repository Node/TypeScript prerequisites already available to the owner and runs **no Docker**, no `PG*` database commands and no SQL.
+
+**New test evidence:** Added two static contract tests for the wrapper's default offline behavior and exact-SHA/no-fallback checks. Total `tests/gps-r21-p0-d3-synthetic-security.test.ts` now has **15 authored test cases** (prior 12 owner-local PASS at `820b211b`, plus missing-Docker regression and these two new tests). **New head 15 tests/typecheck NOT RUN; RLS NOT RUN.** A count of 15 is not a PASS assertion.
+
+**Next normal local invocation** (replace `<CURRENT_FULL_SHA>` with current PR #351 HEAD; run from clean repo root):
+
+```powershell
+& .\research\gps-r21-p0-d3-synthetic-security\run-local-gates.ps1 -ExpectedSha "<CURRENT_FULL_SHA>"
+```
+
+**Do not install Docker or PostgreSQL solely to continue other FlyTally/GPS work.** RLS remains a distinct open security gate before any actual owner GPS data access; an unrun gate must not be relabeled PASS or N/A.
+
 ## 3. Verification plan and runtime controls
 
 **Local environment observation by ChatGPT:** its environment currently has Node but **does not have Docker or PostgreSQL binaries**. Therefore this isolated Postgres runner **has not executed**; no synthetic PostgreSQL role test PASS is claimed.
