@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**2026-10-17 — GPS Native PG16 I2-A owner-local VERIFIED (limited offline scope).** Clean exact `eb02936be35e8c0590ab4de66cf4b781eeb515e2`: Node target I1+I2-A **15/15 PASS** (0 fail/skip), I2-A `node --check` PASS, TypeScript `tsc --noEmit` PASS. No actual Windows OS identity/ACL adapter, PostgreSQL startup/SQL/RLS, DB/service changes or deployment. I2-A bounded offline contract CLOSED; I2-B OS adapter / native runner OPEN. P0-D3 security gate OPEN.
+
+
 
 **2026-10-17 — GPS Native PG16 I2-A OFFLINE CONTRACT AUTHORED / NOT TESTED.** Same Draft PR #359: added pure I2 Windows evidence boundary and 3 adversarial Node cases. All data remain caller-supplied, not independently measured Windows truth. Explicit runtime/stop/delete refusal. I2-B actual Windows adapter and disposable runner NOT IMPLEMENTED; PG16 SQL/RLS NOT RUN, existing PG16/18 services untouched. Next: exact-SHA local Node/TS verification, independent implementation security review, then implement independently attested OS collector and reviewed native runner. No initdb/pg_ctl/SQL without separate owner approval.
 
