@@ -68,6 +68,30 @@ Names are provisional. Keep research under a top-level `research/` directory, **
 
 Fixtures T06–T11 should **reuse the semantic pattern** of `tests/v351-gps-tg-reliability.test.ts` with independently authored synthetic positions, or explicitly cite the already checked-in and anonymized existing fixture without copying any private tracks into the new public repo. No exact GPS coordinates or sensitive source data from production.
 
+### Additional adversarial fixtures required by complete independent review (A01–A15)
+
+| ID | Scenario | Predeclared contract / assertion |
+|---|---|---|
+| A01 | Track has lat/lon/time but **no altitude** | May offer horizontal advisory pattern only with supporting quality evidence; no AGL calculation, no contact claim |
+| A02 | Identical altitude numbers but `clampToGround` vs `absolute` | Preserve differing source modes and mark unverified datum; **no invented AGL or physical contact** |
+| A03 | Near-runway GPS with explicitly poor horizontal accuracy | No claim that track proves runway vicinity/alignment; contradictory accuracy reason retained |
+| A04 | Several takeoffs/landings in one trace | Count **pattern hypotheses only** under a distinct type; no legacy minimum-one final landing or certification count |
+| A05 | Takeoff-only or cropped start | No invented landing, missing boundary => advisory count `UNAVAILABLE` when coverage insufficient |
+| A06 | Landing-only or cropped end | No invented takeoff, missing boundary => advisory count `UNAVAILABLE` when coverage insufficient |
+| A07 | Explicit go-around pattern | May propose `GO_AROUND_PATTERN_CANDIDATE`, **contact unresolved**, no false confirmed T&G |
+| A08 | Explicit low pass | `LOW_APPROACH_PATTERN_CANDIDATE` where supported; indistinguishability must not become asserted touchdown |
+| A09 | Negative numeric altitude, unknown vertical reference | Preserve negative value (not missing/ground); flag datum/elevation contradiction when appropriate |
+| A10 | Horizontal teleport | Invalid edge; do not compute meaningful ground speed or event hypothesis from teleport |
+| A11 | Coarse/quantized timestamps causing repeated times | `Δt <= 0` unavailable, never interpreted as measured zero-speed dwell or contact |
+| A12 | Valid-time repeated stationary position | Possible stationary phase but **no T&G/landing/contact claim** for ground-only track |
+| A13 | Pattern window adjacent to and potentially spanning a gap | Split by valid-island boundaries; never span gap, set `GAP_ADJACENT` and event time `UNAVAILABLE` when affected |
+| A14 | All-unknown predictor on checked-in positive-pattern fixtures | **Hard utility FAIL** on T09 or T11; report supported candidates, eligible fixtures, missed hypotheses and abstention separately |
+| A15 | Same physical trajectory under benign resampling | Record supported candidate-window overlap/count stability and abstention changes; no new confirmed contacts or false superiority claim |
+
+**Fixture input restrictions:** These are synthetic-only tests or uses of already checked-in anonymized regressions where permission/provenance is explicit. No actual production routes, registrations, identity-linked coordinates, raw database JSON, KML file names, or private owner breakdowns may be copied to the public repo, model provider or review service. HMM-specific T20 is a documented future gate, not executed as an R2.1a model test.
+
+**Coverage/failure semantics:** T09 and T11 are **legacy pattern positives**, not independently proven wheel-contact truths. Their utility assertions are required for this experiment; if a conservative algorithm cannot produce a safe candidate, it must report **utility FAIL**, not relax the fixture or invent a contact. A10–A13 and T02/T13 are safety invariants. Every test status and denominator must be reported separately, with `NOT RUN` when no runnable fixture exists.
+
 ## 4. Scorecard (do not conflate truth and suggestions)
 
 For each fixture, record:
