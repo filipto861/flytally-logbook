@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R2.1a Batch 1 locally verified; Batch 2 synthetic falsification extension (DRAFT, NOT RELEASED)
+
+Owner executed exact-clean-head local tests on `eb5cde7c`: **30/30 PASS** (research, shadow, import boundary and existing v351 regressions), repository TypeScript PASS, exit guards respected; not CI. Next isolated Batch 2 research-only change makes hypotheses near invalid signal-island edges time-uncertain (no precise timestamp), adds 11 synthetic A/T checks covering source metadata, 60s gap and gap adjacency, invalid fix/time, resampling, cropped track and two positive-utility controls; records [Batch 2 evidence/limitations](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH2_2026-10-17.md). **New Batch 2 targeted tests, full suite and typecheck on latest SHA NOT RUN.** No change to existing GPS runtime, logbook flight facts, DB/schema, aircraft Training, model training or production deploy.
+
+
 ## 2026-10-17 — GPS Detection 2.0 R2.1a offline falsification Batch 1 (UNMERGED / NOT RELEASED)
 
 With owner approval of an isolated research experiment, created `test/gps-detection-r21-falsification` from `main@6a67a024` and added standalone, production-unreferenced `research/gps-detection-r21/detector.ts` (quality-masked monotonic time, gap islands, altitude/speed pattern candidates always contact-unresolved), unchanged legacy shadow comparator and research import-boundary tests. Local authored-copy Node 22.16 21/21 synthetic tests PASS and strict source-only tsc 5.8 PASS; whole-repository targeted test, legacy shadow/boundary execution, typecheck/build/Playwright/PostgreSQL CI NOT RUN. Predeclared parameters not tuned after fixture runs. No app runtime, GPS import, certified logbook data, DB/schema, aircraft, ML model training, deploy or Training repository changes. [Detailed Batch 1 evidence and open gates](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH1_2026-10-17.md).
