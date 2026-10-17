@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS D2-B2 limited raw CSV row-lineage experiment (DRAFT, NEW TESTS NOT RUN)
+
+Research-only strict CSV analyzer in `research/gps-detection-r21/csv-lineage.ts`: source-line→normalized index, UTC sort, explicit `altitudeFt` 0.3048 conversion, missing vs real zero, fail closed on invalid rows/coordinates/time, duplicates and unsupported syntax. Ten new synthetic tests; **130 combined target EXPECTED / NODE AND TS NOT RUN** (prior owner D2-B1 120/120 PASS exact `d4f1d7bf` only). No trusted source/sensor identity or pilot landing authority. Existing parser `lib/track-processing.ts`, existing 3 unsafe semantics, app/auth/DB/Neon, private tracks, migration, prod/merge/deploy UNCHANGED. Owner speed direction: get exact local test evidence, separately authorize minimal D2-C canonical integrity fix, then D3 Pilot Review. [D2-B2 scope](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS D2-B1 owner-local exact-clean-SHA 120/120 acceptance (DRAFT / NOT RELEASED)
 
 Owner checked clean `test/gps-detection-r21-falsification` at `d4f1d7bf626f8b55e6d9d21c73f528faf6fbbf64` and executed 13 targeted GPS/legacy/parser Node files: **120/120 PASS**, 0 FAIL/SKIP/CANCELLED/TODO, including ten D2-B1 negative tests; `npm run typecheck` / `tsc --noEmit` **PASS**, explicit PowerShell guards and final marker reached. **Owner-local only, not CI**. Closes bounded research D2-B1 unattested normalized-inspection diagnostics and forged approval rejection; **does not validate original source bytes, sensor metadata, raw sample mapping, real GPS or confirmed touch-downs**. Previous 110/110 PASS includes deliberately green tests documenting three KNOWN UNSAFE production parser behaviors, still unfixed. Full suite, build/browser, native PostgreSQL RLS, real GPS consent, migrations, merge/deploy NOT RUN/NO-GO. [D2-B1 evidence ledger](docs/product/GPS_DETECTION_2_0_R2_1C_D2B_UNTRUSTED_PROVENANCE_CONTRACT_2026-10-17.md).
