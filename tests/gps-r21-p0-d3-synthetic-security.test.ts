@@ -115,3 +115,25 @@ test("P0-D3 missing Docker executable is a specific early no-database failure",(
   assert.match(String(run.stderr),/Docker CLI unavailable on PATH/);
   assert.doesNotMatch(String(run.stderr),/Docker context is not demonstrably local/);
 });
+
+const gates=()=>readFileSync(join(dir,"run-local-gates.ps1"),"utf8");
+test("P0-D3 default local check omits Docker and records unexecuted RLS separately",()=>{
+  const s=gates();
+  assert.match(s,/\[string\] \$PostgresProvider = "none"/);
+  assert.match(s,/if \(\$PostgresProvider -eq "none"\)/);
+  assert.match(s,/NOT RUN — PostgreSQL role\/RLS tests/);
+  assert.match(s,/OVERALL P0-D3 SECURITY GATE OPEN/);
+  assert.match(s,/if \(-not \(Get-Command docker -ErrorAction SilentlyContinue\)\)/);
+  assert.match(s,/Get-Command \$_ -ErrorAction SilentlyContinue/);
+  assert.ok(s.indexOf('if ($PostgresProvider -eq "none")') < s.indexOf('Get-Command docker'));
+});
+test("P0-D3 optional local wrapper pins exact SHA and rejects dirty/wrong branch",()=>{
+  const s=gates();
+  assert.match(s,/\[ValidatePattern\('\^\[0-9a-fA-F\]\{40\}\$'\)\]/);
+  assert.match(s,/git branch --show-current/);
+  assert.match(s,/git rev-parse HEAD/);
+  assert.match(s,/git status --porcelain/);
+  assert.match(s,/if \(\$LASTEXITCODE -ne 0\) \{ throw "Repository TypeScript typecheck FAILED" \}/);
+  assert.match(s,/run-synthetic-postgres\.mjs --synthetic-only/);
+  assert.doesNotMatch(s,/docker pull|npm run test:postgres/);
+});
