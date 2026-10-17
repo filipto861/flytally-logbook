@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS D3 E1a ID-bound cleanup and injected fake-Docker falsification (DRAFT / NOT RELEASED)
+
+Received owner-forwarded DeepSeek E1 source-only F01–F10 (no Docker/PG executed). Narrow research-only code on branch `fix/gps-r21-p0-d3-e1a-mock-docker` stacked on E1 PR #355: extracted pure container guards + TypeScript declaration, replaced name-based cleanup confirmation with immutable created-ID check, enforced complete unique tmpfs Mounts set and effective HostConfig.Tmpfs options/size, refused malformed inspect, adapted prior source contract tests and authored ten dynamic fake-Docker negative/positive tests. `docker run` remains synthetic-only; preflight is before **runner-issued** psql, not before official Postgres entrypoint startup. Targeted **34 Node cases AUTHORED / NOT RUN** on new SHA; TypeScript, `node --check`, Docker/PG/RLS, full suite, CI/build/browser NOT RUN; no real GPS/production/Neon/DB/migration/merge/deploy. [E1a contract](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1A_FAKE_DOCKER_HARDENING_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS D3 E1 owner-local targeted verification PASS (PR #355 DRAFT; NOT RELEASED)
 
 Owner-provided clean Windows PowerShell run at exact `2e362aeeafe7d816c53c74c61d4c761927d56a22`: `node --check research/gps-r21-p0-d3-synthetic-security/run-synthetic-postgres.mjs` **PASS**, D3 targeted Node **24 tests PASS / 0 FAIL / 0 SKIP**, `npm run typecheck` (`tsc --noEmit`) **PASS** with no diagnostics. Two E1 structural tests exercise source-level pre-SQL inspect ordering and containment of inspect data; not an execution of Docker or actual PostgreSQL RLS. [D3 E1 exact-SHA acceptance record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_E1_CONTAINER_ATTESTATION_2026-10-17.md). No full suite/build/Playwright/CI/DB/Neon/migration/merge/deploy executed. PostgreSQL RLS **NOT RUN / overall D3 security gate OPEN**, real GPS owner data NO-GO. Following documentation-only commits are not re-tested on new HEAD.
