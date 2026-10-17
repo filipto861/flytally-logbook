@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS R2.1c-D2-A exact-SHA owner-local 110/110 characterization PASS (DRAFT / NOT RELEASED)
+
+Owner clean `80581f5bdd1311090e15fe5dce83c16ab37afe87` (HEAD and worktree guards verified): combined 12 targeted GPS/parser files **110/110 Node PASS**, 0 fail/skip/cancelled/todo; `npm run typecheck` / `tsc --noEmit` **PASS**, guarded PowerShell final marker printed. Owner-local, **NOT CI**. All ten D2-A tests completed, including **KNOWN UNSAFE** reproductions: missing CSV altitude and coordinate values become numerical zero, and legitimate altitude zero is excluded from `trackStats` extrema. Passing these tests characterizes **current flawed behavior**, never a safety acceptance. `lib/track-processing.ts`/app/DB unchanged; no new parser source-trust proof, physical contact truth, real data, full suite/build/browser/RLS, migration, merge or deploy. D2-A research inventory **CLOSED**; D2-B evidence DTO and separately approved D2-C production parser corrections remain OPEN. [Evidence & gates](docs/product/GPS_DETECTION_2_0_R2_1C_D2_SOURCE_PROVENANCE_PLAN_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS R2.1c-D2-A source/parser characterization tests authored (DRAFT / NOT VERIFIED)
 
 Research Draft PR #350: new `tests/gps-detection-r21-d2a-parser-characterization.test.ts` with **10 synthetic current-behavior cases**. Evaluates actual unchanged KML/GPX/CSV parser, sort/dedup and split index, ft/feet→m transform, unknown metadata and malformed GPS, plus newly characterized empty CSV coordinate `Number("")→0` and `trackStats` excluding numeric zero altitude. Several assertions explicitly reproduce **KNOWN UNSAFE** behavior; a future PASS is **NOT parser security acceptance**, and a parser fix requires rebaselined negative safety assertions. **NOT RUN** on new executable test HEAD: expected combined 110 (prior 83 GPS + 17 legacy parser + 10 new), typecheck NOT RUN. No `lib/`, UI, app/server, auth, DB/Neon, PG16/18, private track, migrations, merge or deploy changes. [D2 falsification plan and evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2_SOURCE_PROVENANCE_PLAN_2026-10-17.md).
