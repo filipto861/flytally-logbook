@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS I2-B1 (2026-10-17; draft research, NOT RUN):** Added bounded Windows PG16 read-only host inventory CLI (exact binary --version, PG16/PG18 service status, token elevation, safe path observability only), strict no-trust Node interpreter/typed contract and five authored adversarial checks. No actual Windows ACL/process trust or cluster lifecycle, native RLS, real GPS, merge or production integration. [Design/verification boundary](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I2B1_WINDOWS_INVENTORY_2026-10-17.md).
+
+
 **GPS native I2-A offline contract owner-local acceptance (2026-10-17):** exact clean `eb02936be35e8c0590ab4de66cf4b781eeb515e2` targeted I1+I2-A Node 15/15 PASS, module syntax PASS and TypeScript PASS. Bounded offline-only checks; OS truth and SQL/RLS remain unverified. Native I2-B/C unimplemented/unreleased.
 
 
