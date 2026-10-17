@@ -2,6 +2,8 @@
 
 **Audience:** independent reviewer (DeepSeek/Claude). **Mode:** READ-ONLY / adversarial review; **do not implement or alter branches, DB or deployments**.
 **Repo:** `filipto861/flytally-logbook`, current research in Draft PR #349, source snapshot `main@6a67a02475ab09c3271f8646427f7956ed6e590a`.
+
+**Reviewer input completeness REQUIRED:** Please provide the **actual full text/content** of [R1 feasibility](GPS_DETECTION_2_0_R1_FEASIBILITY_BENCHMARK_2026-10-17.md) **and** [R2 proposed architecture](GPS_DETECTION_2_0_R2_PROPOSED_ARCHITECTURE_2026-10-17.md), not just this handoff. Linked GitHub documents can help only when the second AI can actually open them; otherwise paste both complete documents into its context. Review of a handoff alone must explicitly be classified **PARTIAL**, never approved full R1/R2 review. Also supply the [partial-review reconciliation](GPS_DETECTION_2_0_R2_INDEPENDENT_REVIEW_RECONCILIATION_2026-10-17.md) and [R2.1 offline benchmark specification](GPS_DETECTION_2_0_R2_1_OFFLINE_BENCHMARK_CONTRACT_2026-10-17.md) to challenge the refinements.
 **Issue:** #348. **Only existing, legitimately usable GPS/flight data**; user has no external training dataset. No personal routes, account IDs, precise location, source files or production credentials are supplied in this handoff.
 **Requested outcome:** critique the approach independently and suggest measurable alternatives; do not rubber-stamp HMM.
 
@@ -30,7 +32,7 @@ The assistant produced a **provisional** [R2 temporal architecture and falsifica
 
 External authoritative evidence: OGC KML `altitudeMode` defaults to clampToGround and can encode altitude relative to ground or sea level; persisted `KmlPoint` cannot reliably recover those semantics. [OGC 12-007r2](https://docs.ogc.org/is/12-007r2/12-007r2.html). The HMM phase identification paper (~97% FDR median phase accuracy) must **not** be claimed as FlyTally T&G accuracy. [JOAS (2024)](https://journals.open.tudelft.nl/joas/article/view/7269).
 
-**Review is NOT RUN.** No other AI response is claimed. The reviewer should consider whether the proposed `CONTACT_UNRESOLVED` and explicit `UNAVAILABLE` semantics are too conservative or still overstate observations.
+**Independent consultation PARTIAL (17 Oct 2026):** a DeepSeek adversarial response has been received and source-reconciled, but the reviewer explicitly lacked both full R1 and R2 documents and repository access. Complete document review **NOT RUN**. The next reviewer must check the actual R1/R2 documents and challenge the post-review changes instead of assuming the first partial response covered them.
 
 ## Proposed design (challenge it)
 
