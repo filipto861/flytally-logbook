@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS Detection 2.0 R2.1a Batch 6 bounded local acceptance (2026-10-17, RESEARCH ONLY):** owner clean exact `681c62d90d21fdf1efd4aa3ada83383249ea857b` **83/83 targeted Node PASS** (including 14 new T19/A02/A03 source-quality tests), TypeScript PASS, 0 failures/skips. Declared source-unit/mode and accuracy now constrain altitude-reversal and metric vertical-rate edge evidence, with metadata still unverified; no inferred AGL/runway/touchdown. T19/A02/A03 still PARTIAL. Not CI, no production integration, real GPS, P0-D3 RLS, merge/deploy. [Batch 6 verification ledger](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH6_SOURCE_QUALITY_2026-10-17.md).
+
+
 **GPS 2.0 R2.1a Batch 6 — source quality / T19 research prototype (2026-10-17, UNVERIFIED):** New research-only `SourceQualityAssessment` with vertical UNVERIFIED/RELATIVE_CHANGE_ONLY/UNAVAILABLE and declared-but-not-attested H-accuracy/datum. Suppresses incompatible clamped/feet/nonfinite vertical hypotheses AND metric vertical-rate edge checks; malformed known H accuracy causes `PATTERN_ONLY UNAVAILABLE`; runway proximity always unavailable, contact always unresolved. Falsification scorecard rejects forged source claims. 14 offline synthetic cases authored; expected 83 with prior verified 69, **new tests NOT RUN**. No runtime, DB, private tracks, A07/A08, certified count changes or release. [Batch 6 contract](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH6_SOURCE_QUALITY_2026-10-17.md).
 
 
