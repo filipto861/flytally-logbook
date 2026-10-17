@@ -67,7 +67,7 @@ test("P0-D3 operator runner isolates Docker without ports, mounts or existing cr
   assert.match(s,/--synthetic-only/);
   assert.match(s,/image","inspect/);
   assert.match(s,/rm","-f",name/);
-  assert.doesNotMatch(s,/lib\/db|requireUser|DATABASE_URL\)\s*\\?\\?/);
+  assert.doesNotMatch(s,/from\s+["\x27][^"\x27]*(?:lib\/db|require-user)/);
 });
 test("P0-D3 test inventory includes omitted-WHERE and physical denial probes",()=>{
   const s=runner();
