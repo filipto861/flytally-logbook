@@ -42,6 +42,16 @@ The observational token field `elevated` was misleading because `WindowsPrincipa
 
 **Current status:** new test code **AUTHORED, NOT OWNER-RUN** at changed HEAD. Expected **22/22 targeted PASS** if the failure is resolved. Previous code's 21/22 failure must remain in history; TypeScript and PS5 AST successes were independently supported on prior exact SHA only. No positive inventory, trusted ACL/token, RLS, Neon, real GPS, migration or deploy.
 
+## Owner-local corrected post-review acceptance (2026-10-17)
+
+**PASS — LIMITED OFFLINE CONTRACT, CLEAN EXACT SHA `1f77ea6e16973db2888d245ab69a9114433dca61`.** The owner fast-forwarded the correct GitHub topic branch, confirmed exact `git rev-parse HEAD` and empty `git status --porcelain`, then ran three targeted Node files: native I1 **12/12**, I2-A **3/3**, I2-B1 **7/7**, total **22/22 PASS** (0 failed, skipped, cancelled, todo). `npm run typecheck` / `tsc --noEmit` **PASS**. Combined guarded script reached its PASS marker only after Node + TS exit-code guards passed. Prior I2-B1 `node --check` steps PASS on the previous source and the affected launcher/validator `.mjs` files were not edited since; Windows PowerShell 5.1 AST parses of both `.ps1` scripts + intentionally invalid `ParseInput('if (')` negative control PASS on previous exact SHA; no `.ps1` changed after that.
+
+The older `9dfde4b8` **21/22 FAIL** remains a real historical failure, not silently rewritten as a PASS. The corrected test no longer mutates Node child `SystemRoot` or `PATH`; the genuine cause of exit code 134 for the failed child was **not conclusively isolated**. This test correction resolved the observed failure on the clean owner machine.
+
+**Classification:** I2-B1 fail-closed offline guard and targeted test patch **CLOSED**. **NOT** an approval or evidence of positive Windows inventory, safe executable/script-path identity, trusted ACL, process token/owner, actual SQL/RLS, real tenant access or release. Positive I2-B1 launcher **continues to return code 1 unconditionally**. Actual PostgreSQL 16/18 services untouched. Current subsequent documentation-only HEAD is not itself a newly executed test SHA.
+
+**NEXT:** stop repeated offline preflight iterations for I2-B1. Independent actual-source review required before any future positive host probe; I2-B2 native adapter and I2-C PostgreSQL SQL still OPEN with separate owner consent. Focus separate GPS R2.1a synthetic detector/observational experiment only within existing approved research constraints; no unverified release or real data.
+
 ## Required verification for this patch
 
 1. Owner exact clean source SHA (to be printed after final docs and executable change), `node --check` on touched `.mjs`, combined targeted Node I1/I2-A/I2-B1 expected **22** cases, `npm run typecheck`. No skipped cases or hidden failures.
