@@ -35,6 +35,17 @@ Batch 2 adds `nearInvalidBoundary`: flag candidates when their **support edge li
 - Synthetic fixture positive controls are not independent physical touchdown truth and do not establish event precision/recall. The benchmark is a falsification/regression suite.
 - The full contractual T01–T20/A01–A15 suite is **not yet complete**. T20 HMM is future N/A; do not count unexecuted cases as passes.
 
+## Owner-local Batch 2 verification closeout (tested exact HEAD `862c620a`)
+
+The product owner ran the committed research branch at **`862c620a3b0e3bd6e23753aa1688ac7a9c078268`**, checking expected HEAD and clean worktree after a fast-forward-only pull. Full PowerShell output was supplied.
+
+- Targeted suite `tests/gps-detection-r21.test.ts`, `tests/gps-detection-r21-batch2.test.ts`, `tests/gps-detection-r21-shadow.test.ts`, `tests/gps-detection-r21-boundary.test.ts` and `tests/v351-gps-tg-reliability.test.ts`: **41/41 PASS**, 0 failed, 0 skipped, 0 cancelled, 0 todo.
+- `npm run typecheck` (`tsc --noEmit`): **PASS** with PowerShell `$LASTEXITCODE` guard.
+- Evidence is **owner-local**, not CI. Full suite / build / production browser / PostgreSQL / model training and event truth scoring: **NOT RUN**.
+- This closes **Batch 2 local test gates**, not R2.1a as a whole. The remaining T/A fixture scope and misleading “model superiority” evidence risks are still open.
+
+The original gate table below is preserved as a **pre-test historical snapshot**; the closeout above supersedes the `NOT RUN` assertions **only for the exact previously tested SHA**. Subsequent commits require fresh tests.
+
 ## 3. Verification register
 
 | Gate | Result |
