@@ -17,7 +17,7 @@ export type QualityEdge={from:number;to:number;status:"VALID"|"UNAVAILABLE";reas
 export type SignalIsland={start:number;end:number};
 export type EventType="T_G_PATTERN_CANDIDATE"|"STOP_GO_PATTERN_CANDIDATE";
 export type PatternCandidate={type:EventType;index:number;support:{start:number;end:number};time:string|null;gapAdjacent:boolean;physicalContactStatus:"UNRESOLVED";evidence:"ALTITUDE_REVERSAL"|"SPEED_DIP"};
-export type AdvisoryPatternCount={kind:"PATTERN_ONLY";status:"AVAILABLE";value:number};
+export type AdvisoryPatternCount={kind:"PATTERN_ONLY";status:"AVAILABLE";scope:"OBSERVED_VALID_ISLANDS_ONLY";value:number}|{kind:"PATTERN_ONLY";status:"UNAVAILABLE";reason:"INSUFFICIENT_OBSERVATIONS"|"NO_VALID_SPAN"};
 export type ResearchAnalysis={edges:QualityEdge[];islands:SignalIsland[];candidates:PatternCandidate[];patternCount:AdvisoryPatternCount};
 
 // Experimental, predeclared falsification parameters; these are NOT aircraft limitations.
@@ -112,5 +112,6 @@ export function analyzeResearchTrack(points:readonly SourceObservation[],_metada
   // Deliberately treat source order as ground truth for acquisition order, not event truth.
   const samples=[...points];const edges=samples.slice(1).map((p,i)=>edge(samples[i],p,i));
   const islands=signalIslands(samples,edges);const candidates=islands.flatMap(island=>[...altitudeCandidates(samples,edges,island),...speedDipCandidates(samples,edges,island)]).sort((a,b)=>a.index-b.index);
-  return{edges,islands,candidates,patternCount:{kind:"PATTERN_ONLY",status:"AVAILABLE",value:candidates.length}};
+  const patternCount:AdvisoryPatternCount=samples.length<2?{kind:"PATTERN_ONLY",status:"UNAVAILABLE",reason:"INSUFFICIENT_OBSERVATIONS"}:islands.length===0?{kind:"PATTERN_ONLY",status:"UNAVAILABLE",reason:"NO_VALID_SPAN"}:{kind:"PATTERN_ONLY",status:"AVAILABLE",scope:"OBSERVED_VALID_ISLANDS_ONLY",value:candidates.length};
+  return{edges,islands,candidates,patternCount};
 }
