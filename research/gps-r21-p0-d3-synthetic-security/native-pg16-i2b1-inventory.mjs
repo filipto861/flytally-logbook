@@ -15,7 +15,7 @@ export function validateReadOnlyWindowsInventory(value){
      value.platform!=="win32"||value.readOnly!==true||
      value.runtimeAuthorization!==false||value.permitsClusterMutation!==false)return false;
   const token=value.effectiveToken;
-  if(!token||typeof token!=="object"||typeof token.elevated!=="boolean"||
+  if(!token||typeof token!=="object"||typeof token.adminRoleObserved!=="boolean"||
      token.source!=="WindowsPrincipal.IsInRole"||token.identityAttested!==false)return false;
   if(!value.binVersions||!validatePg16Versions(value.binVersions)||
      Object.keys(value.binVersions).length!==fileNames.length)return false;
@@ -45,8 +45,8 @@ export function evaluateReadOnlyInventory(value,environment={}){
     return {accepted:false,reason:"ambient-overrides",permitsRuntime:false};
   if(!validateReadOnlyWindowsInventory(value))
     return {accepted:false,reason:"invalid-observation",permitsRuntime:false};
-  if(value.effectiveToken.elevated)
-    return {accepted:false,reason:"elevated-process",permitsRuntime:false};
+  if(value.effectiveToken.adminRoleObserved)
+    return {accepted:false,reason:"admin-role-observed",permitsRuntime:false};
   if(Object.values(value.pathObservations).some(p=>p.exists&&p.reparsePoint))
     return {accepted:false,reason:"reparse-path",permitsRuntime:false};
   return {accepted:true,reason:"read-only-inventory-only",permitsRuntime:false};
