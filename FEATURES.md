@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS I2-B1 post-review fail-closed patch (2026-10-17; NEW CODE NOT TESTED):** Positive Node host-inventory launch hard-disabled (including `--read-only-inventory`), separate PS5 parse-only self-falsifying syntax gate, advisory admin role semantics clarified (`adminRoleObserved`; not token attestation), two authored new Node security cases (expect 22 combined). All Windows ACL/process trust, PG startup, PostgreSQL RLS, real GPS integration OPEN. [Reviewer reconciliation](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+
 **GPS I2-B1 targeted owner-local 20/20 PASS (2026-10-17, research only):** exact clean `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8` passed two I2-B1 JS syntax checks, I1+I2-A+I2-B1 tests 20/20 and TypeScript. No positive PowerShell inventory/OS ACL attestation/PG16 RLS; untrusted `SystemRoot` launcher resolution identified as open security review item; no runtime permission. [Independent review packet](docs/product/GPS_DETECTION_2_0_I2B1_INDEPENDENT_REVIEW_HANDOFF_2026-10-17.md).
 
 
