@@ -16,10 +16,15 @@ test("E1.5 runtime migrator ignores registry versions newer than its advertised 
   assert.match(db,/pendingMigrationVersions\(rows\.map\(row=>Number\(row\.version\)\)\)/);
 });
 
-test("E1.5 PR automation cannot run feature-branch Vercel runtime and CI databases are isolated",()=>{
+test("E1.5 manual-only Vercel deployment is disabled for main and feature branches; CI databases are isolated",()=>{
   const vercel=JSON.parse(read("vercel.json")) as {git?:{deploymentEnabled?:Record<string,boolean>}};
-  assert.equal(vercel.git?.deploymentEnabled?.["*"],false);
-  assert.equal(vercel.git?.deploymentEnabled?.main,true);
+  const deploymentEnabled=vercel.git?.deploymentEnabled;
+  // Keep both explicit main and wildcard disabled. A future exception
+  // would break the owner-approved merge-without-deploy governance.
+  assert.equal(deploymentEnabled?.["*"],false);
+  assert.equal(deploymentEnabled?.main,false);
+  assert.ok(deploymentEnabled&&Object.values(deploymentEnabled).every(value=>value===false),
+    "Git-triggered deployments must stay disabled for every configured branch");
 
   const verify=read(".github/workflows/verify-web.yml");
   const browser=read(".github/workflows/browser-smoke.yml");

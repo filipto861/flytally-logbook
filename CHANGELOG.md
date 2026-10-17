@@ -33,6 +33,14 @@ Owner-local Node 24 on `79b9a66a` reported 13/13 targeted tests PASS, typecheck 
 Implemented in `feat/airport-elevation-phase1`: CSV `elevation_ft` surfaced through catalogue as nullable `elevationFt`; pure strict parse/validate/format helpers preserve unknown vs 0/negative; database read plus optional custom-airport save/edit/clear; row-level editing limited to authenticated owner and reference exclusions; legacy form omission preserves existing elevation; user-visible status and `ft MSL` on both airport tables. Added focused parser/source contract tests, browser fixture schema updates, documentation and optional additive SQL precondition. **Production schema remains unverified**; Logbook Shadow nullable double-precision column verified READ ONLY. **Tests/typecheck/build/PG/browser NOT RUN; no migration executed, no merge, no deployment.** No modifications to flight records or GPS classification. [PR #346](https://github.com/filipto861/flytally-logbook/pull/346); [contract](docs/product/AIRPORT_ELEVATION_PHASE1_2026-10-16.md).
 
 
+## 2026-10-16 — PR #347 manual-deploy test contract correction (DRAFT, NOT RELEASED)
+
+Owner-local initial PR head `f69333a9`: iteration 142/142 source and TypeScript PASS; canonical risk release **FAIL** (`npm test` 1622/1623, exit 1). Sole failing E1.5 source contract expected old automatic Vercel `main:true`, conflicting with approved `main:false`. Updated the original test to enforce manual-only Git deployment for `main`, wildcard, and every configured exception; existing CI database isolation checks retained. This is a test-contract repair, not a downgrade of verification; corrected candidate **NOT TESTED**. No merges, production DB writes or deploys.
+
+
+## 2026-10-16 — Explicit manual-only production deployment control (DRAFT, NOT RELEASED)
+
+Prepared dedicated `chore/disable-main-auto-deploy` branch to change only `vercel.json` `git.deploymentEnabled.main` from `true` to `false`, keeping wildcard `"*": false`. Vercel project-scope Deployment Policy API returned 404, and **no project setting was changed**. Documentation in DEVELOPMENT, ROADMAP and FEATURES records the safe sequence: local verification → config squash merge → verify Vercel did not launch a production deployment → update/reverify PR #346 against latest `main` → independent feature squash merge → **no production deploy until separate owner authorization**. This is an undeployed configuration change; NO SQL writes, branch merge or production action performed yet.
 
 ## 2026-10-16 — PR #341 public production smoke verified (Vercel READY)
 
