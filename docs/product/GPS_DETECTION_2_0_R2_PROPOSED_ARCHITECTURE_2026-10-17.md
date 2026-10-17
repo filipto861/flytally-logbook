@@ -51,26 +51,33 @@ EdgeQuality
 
 PhaseSegment
   - phaseCandidate: POSSIBLE_SURFACE | ACCELERATION | AIRBORNE | DESCENT |
-                    APPROACH | CLIMB | UNCERTAIN
+                    APPROACH | CLIMB | GAP_UNKNOWN | UNCERTAIN
+  - GAP_UNKNOWN is explicit, not decoded as a physically observed ground/air phase
+  - no transition/contact event may be placed within a missing-data interval
   - intervalUtc: [start,end] | UNAVAILABLE
   - supporting observations and contradictory observations
   - model identity/version, applied quality masks, source provenance
   - phase != runway contact
 
 ContactHypothesis
-  - CONTACT_CANDIDATE | NO_CONTACT_EVIDENCE | CONTACT_UNRESOLVED
+  - CONTACT_UNRESOLVED (always the physical-contact status from bare GPS)
+  - T_G_PATTERN_CANDIDATE | LOW_APPROACH_PATTERN_CANDIDATE etc. are separate
+    advisory *motion-pattern hypotheses*; not positive contact assertions
   - supporting runway-context optional and explicitly source-backed
-  - NEVER CONTACT_CONFIRMED from track alone
-  - no negative assertion if coverage gaps can conceal contact
+  - CONTACT_CONFIRMED only in separate pilot/independent evidence, NEVER from track alone
+  - absence of observed contact is not a NO_CONTACT label, even with full coverage
 
 EventSuggestion
-  - TAKEOFF_CANDIDATE | FINAL_LANDING_CANDIDATE | T_G_CANDIDATE |
-    STOP_GO_CANDIDATE | GO_AROUND_CANDIDATE | LOW_APPROACH_CANDIDATE |
-    UNKNOWN_EVENT
+  - TAKEOFF_CANDIDATE | FINAL_LANDING_CANDIDATE | T_G_PATTERN_CANDIDATE |
+    STOP_GO_PATTERN_CANDIDATE | GO_AROUND_PATTERN_CANDIDATE |
+    LOW_APPROACH_PATTERN_CANDIDATE | UNKNOWN_EVENT
+  - pattern candidates MAY be displayed for pilot review; NEVER asserted wheel contact
   - window: [lowerTime,upperTime] | UNAVAILABLE; not invented point timestamp
   - reason codes and evidence spans; explicit conflicting hypotheses
   - confidenceCategory: HEURISTIC | UNCALIBRATED | CALIBRATED (only with evidence)
   - reviewStatus: UNREVIEWED | PILOT_ACCEPTED | PILOT_REJECTED
+  - content fingerprint (private) + source/algorithm version and evidence lineage
+  - invalidate on track content, timing, airport reference, algorithm, or review-context edits
   - review must never silently rewrite past certified/canonical flight facts
 
 AdvisoryCount
@@ -91,7 +98,7 @@ The enum names and thresholds are **design candidates, not frozen persisted/API 
 
 **Stage 2B — changepoints / robust temporal signal segments.** Compare robust changepoint or segmented regression proposals for altitude slope/groundspeed trend; explicit missingness and outlier masks; still no contact certainty.
 
-**Stage 2C — HMM/HSMM as comparator.** Only if a defensible set of phase semantics and time-sampled feature emissions can be established. Track irregular `Δt` explicitly or work in validated temporal bins with unknown gaps; never trivially interpolate past gaps. Phase decoding can hypothesize landing/approach; no touch contact label without independent truth. HSMM duration handling is research, not guaranteed superiority.
+**Stage 2C — HMM/HSMM as comparator.** Only if a defensible set of phase semantics and time-sampled feature emissions can be established. Model **GAP_UNKNOWN** explicitly; evaluate contiguous valid-signal islands independently or mark missing-data emissions with no reconstructed event/time inside a gap. Track irregular `Δt` explicitly or use validated temporal bins whose empty spans remain unknown, never interpolated as observations. No posterior over a gap may be presented as a verified phase transition or physical contact. HMM/HSMM phases can hypothesize approach/climb, not touch contact; duration modeling is research, not guaranteed superiority.
 
 **Stage 3 — candidate adjudication.** Combine multiple hypotheses and contradictory evidence, suppress impossible sequences, provide `CONTACT_UNRESOLVED` rather than a false strong assertion. Run in read-only shadow mode comparing to legacy on synthetic/approved fixtures. Never change canonical flight data or `civil-twilight` evidence as a side-effect.
 
@@ -130,7 +137,7 @@ Separate (a) phase and quality-diagnostic performance, (b) weak flight-level cou
 ## 7. R2 milestones, decisions and explicit No-Go
 
 1. **R2-DESIGN (this doc):** audited differences + proposed contract/algorithms/falsification; docs-only. Verification: source analysis, no test execution. **Status: DRAFT / IN REVIEW**.
-2. **R2-REVIEW:** independent DeepSeek/Claude read-only critique using anonymized packet; record disagreements and reconcile against actual repo. **Status: NOT RUN**.
+2. **R2-REVIEW:** user-supplied independent DeepSeek critique received and source hazards reconciled in [R2 review reconciliation](GPS_DETECTION_2_0_R2_INDEPENDENT_REVIEW_RECONCILIATION_2026-10-17.md). **Status: PARTIAL** because DeepSeek explicitly did not receive the actual R1/R2 files and had no repo access; full independent document review remains **NOT RUN**.
 3. **R2-EXPERIMENT approval:** owner explicitly chooses a minimal offline pure TypeScript harness on synthetic/known anonymized fixtures, without DB, no UI and no persisted changes; predeclare scoring, freeze datasets, run old baseline vs candidate. **Status: NOT APPROVED**.
 4. **R2-MEASURE:** baseline and experiments must show evidence, missingness behavior, known misses and regressions; ineligible metrics marked N/A. **Status: NOT RUN**.
 5. **R3 integration design** only after demonstrated improvement and proof/no-go assessment. No cross-repo edits, no production changes in R2.
