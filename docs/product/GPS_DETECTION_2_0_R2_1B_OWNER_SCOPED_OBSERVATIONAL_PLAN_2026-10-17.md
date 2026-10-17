@@ -22,6 +22,18 @@ R2.1a has established an isolated research baseline, a failure/abstention scorec
 
 **R2.1b cannot start on raw user data until this authorization and read-only execution boundary are verified.** If access cannot be proven, remain on the current isolated synthetic/checked-in fixture research track.
 
+## R2.1b-P0 source-path reconnaissance — read-only GitHub audit complete (2026-10-17)
+
+Verified against unchanged `main@6a67a024`:
+
+- `app/(protected)/flights/actions.ts` uses `requireUser()` for authenticated flight/import operations, and its flight track inserts include `user_id`. That supports a feasible tenant-scoped design, **but does not confer permission to export or train**.
+- `lib/data/tracks.ts::getFlightTracks(userId,flightId)` has an owner predicate `t.user_id=${userId}` and joins flights under matching user IDs. **It returns map-oriented data via `decodePoints(...,2500)`**, which may thin raw samples and maps nullable altitude through `Number(null) -> 0`; it must **not** be reused as a full-fidelity scientific input.
+- `lib/data/flight-track-review.ts::getFlightTrackReview(userId,flightId)` reads `coordinates_json` with the same owner predicate and `LIMIT 1` for the first track only; `rawPoints()` preserves nullable altitude more accurately than the map decoder. The function produces an existing **legacy re-inference**, not independent contact labels. **This first-track-only API cannot establish exhaustive per-flight multisource coverage**.
+- `lib/track-processing.ts` currently has `KmlPoint` with position, nullable altitude and time only; format/source labels and `TrackQuality` do not establish original KML altitudeMode, GNSS vertical datum or per-fix accuracy.
+- `lib/db.ts` is `server-only` and obtains a production Neon SQL client from `DATABASE_URL`; a new **unapproved** public route or export action must not be added solely for research.
+
+**P0 finding:** the existing app proves **owner-scoped access patterns exist**, but does **not** expose a verified, full-resolution, research-authorized in-boundary aggregation endpoint. The map DTO and first-track review helper are **not suitable shortcuts**. A new minimal authorized read-only processing path would require a separately reviewed security contract and owner signoff **before** any private track data retrieval. **No owner identity guessed, no raw GPS selected, no database query executed in this P0 source audit.**
+
 ## 3. Source and comparison contract
 
 Data input per authorized track:
