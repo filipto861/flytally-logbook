@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — R2.1b isolated code gates PASS after TS7006 correction (DRAFT / NOT RELEASED)
+
+Owner supplied single guarded PowerShell execution at exact clean `8b410f32d207adab54d3b84b340275153d4b1731`: target R2.1a/R2.1b/legacy tests **63/63 PASS**, no failed/skipped, `npm run typecheck` / `tsc --noEmit` **PASS**. Earlier `54146357` TS7006 typecheck FAIL preserved in historical record; narrow callback-typing correction is now verified. Updated [R2.1b observational plan](docs/product/GPS_DETECTION_2_0_R2_1B_OWNER_SCOPED_OBSERVATIONAL_PLAN_2026-10-17.md) and [independent security review reconciliation](docs/product/GPS_DETECTION_2_0_R2_1B_INDEPENDENT_SECURITY_REVIEW_RECONCILIATION_2026-10-17.md). This is local test evidence, **not CI or whole-app build**. No real flight points accessed or exported, no strict-read-only owner identity access path approved, no cross-user model training, no app/runtime/DB/schema modifications, no merge or production deployment.
+
+
 ## 2026-10-17 — GPS R2.1b 63 targeted PASS but TypeScript FAIL; minimal fix and security review (UNMERGED / NOT RELEASED)
 
 From user-provided exact clean SHA `54146357b7792623c8f58ec43a068d49e5bf5e34`: R2.1b/R2.1a/v351 targeted tests **63/63 PASS**, 0 fail/skip, but `npm run typecheck` **FAIL**, exactly two `TS7006` implicit-any callback parameters at `research/gps-detection-r21/observational-aggregate.ts:77`. A subsequent PowerShell PASS string does **not** change the failed typecheck result. Made the minimal explicit `p: KmlPoint, ordinal: number` correction (not yet test/typecheck verified on new SHA). Received full supplied DeepSeek **document-only** security review, reconciled [R2.1b security verdict](docs/product/GPS_DETECTION_2_0_R2_1B_INDEPENDENT_SECURITY_REVIEW_RECONCILIATION_2026-10-17.md): offline preauthorized in-memory aggregate CONDITIONAL; owner-only production raw reads NO-GO pending verifiable SELECT-only identity/privileges and explicit permission; production endpoint, private-data export, cross-owner ML training NO-GO. Updated prior plan/handoff. No real tracks read, production code, DB schema/write, migration, CI/build, merge or deploy.
