@@ -14,6 +14,8 @@ $r21_guard$;
 CREATE SCHEMA r21_lab;
 CREATE ROLE r21_subject_alpha NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE r21_subject_beta NOLOGIN NOINHERIT NOBYPASSRLS;
+-- Gamma deliberately has SELECT privileges without an applicable RLS policy.
+CREATE ROLE r21_subject_gamma NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE r21_unrelated NOLOGIN NOINHERIT NOBYPASSRLS;
 REVOKE TEMPORARY ON DATABASE r21_synthetic_lab FROM PUBLIC;
 CREATE TABLE r21_lab.flights (
@@ -37,9 +39,11 @@ CREATE FUNCTION r21_lab.admin_count() RETURNS integer
   LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,r21_lab
   AS $$ SELECT count(*)::integer FROM r21_lab.tracks $$;
 REVOKE ALL ON FUNCTION r21_lab.admin_count() FROM PUBLIC;
+-- A superuser-owned SECURITY DEFINER would bypass RLS if granted EXECUTE.
+-- This fixture is intentionally kept revoked as an adversarial negative object.
 REVOKE ALL ON SCHEMA r21_lab FROM PUBLIC;
-GRANT USAGE ON SCHEMA r21_lab TO r21_subject_alpha,r21_subject_beta;
-GRANT SELECT ON r21_lab.flights,r21_lab.tracks TO r21_subject_alpha,r21_subject_beta;
+GRANT USAGE ON SCHEMA r21_lab TO r21_subject_alpha,r21_subject_beta,r21_subject_gamma;
+GRANT SELECT ON r21_lab.flights,r21_lab.tracks TO r21_subject_alpha,r21_subject_beta,r21_subject_gamma;
 INSERT INTO r21_lab.flights VALUES
   (101,'r21_subject_alpha'),(102,'r21_subject_alpha'),(201,'r21_subject_beta');
 INSERT INTO r21_lab.tracks VALUES
