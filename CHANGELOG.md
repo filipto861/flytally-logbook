@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS I2-B1 clean owner-local 22/22 retest PASS (DRAFT / NOT RELEASED)
+
+Owner executed clean exact `1f77ea6e16973db2888d245ab69a9114433dca61` on `docs/gps-r21-p0-d3-native-pg16-readiness`, matched HEAD, empty porcelain; I1 12 + I2-A 3 + I2-B1 7 targeted **22/22 Node PASS**, 0 failure/skip/cancelled/todo; `npm run typecheck` (`tsc --noEmit`) **PASS**. Two prior JS syntax checks, and Windows PS5.1 AST parsing of both unchanged scripts with an intentionally malformed syntax negative control were PASS on previous code; no rerun of PS parser on this SHA. Historic `9dfde4b8` 21/22 failure retained. Only test fixture was changed between these executable commits; positive inventory launcher remains unconditionally disabled. **Not run:** actual positive Windows probe, ACL/token/executable attestation, `initdb`, `pg_ctl`, `psql`, SQL/RLS, full Node/build/browser/CI, Neon/real GPS, DB migration, merge or deploy. [Evidence](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS I2-B1 Windows 21/22 Node failure and bounded test-only correction (NOT VERIFIED)
 
 Owner clean `9dfde4b8441ce51be785484dca9a8ed05f0ef76e`: 2 Node `--check` PASS, **21/22 targeted Node PASS, 1 FAIL** (I2-B1 positive-mode-refusal subprocess exit **134**, expected **1**); TypeScript PASS and real Windows PowerShell 5.1 AST parse of both scripts + invalid-syntax negative control PASS. Green final message was unconditional despite Node failure. Exact failed environment variant unknown. Updated only `tests/gps-r21-p0-d3-native-pg16-i2b1-inventory.test.ts`: no more overwriting child `SystemRoot`/`PATH`, assert no launcher process-env/spawn access, retain child refusal and leak checks with non-OS-critical probes. **Corrected 22-case suite and TypeScript NOT RUN**. Positive inventory still unconditionally disabled. No DB/runtime, actual RLS, Neon/real GPS, migrations, merge/deploy. [Evidence ledger](docs/product/GPS_DETECTION_2_0_I2B1_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md).
