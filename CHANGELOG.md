@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS native I2-A exact-SHA owner-local verification (RESEARCH / NOT RELEASED)
+
+Owner ran clean branch at `eb02936be35e8c0590ab4de66cf4b781eeb515e2`, I2 module `node --check` PASS, targeted I1+I2-A Node 15/15 PASS (0 failure/skip), and `npm run typecheck` PASS. This closes bounded offline I2-A tests only; no independently measured Windows token/ACL/process facts and no native PG startup/SQL/RLS. Existing PG16 and PG18 services untouched; no merge/deploy/migration. Later documentation commits not covered by this exact-SHA test.
+
+
 
 ## 2026-10-17 — GPS native PG16 I2-A offline evidence boundary (DRAFT / NOT TESTED)
 
