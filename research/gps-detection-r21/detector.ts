@@ -22,8 +22,17 @@ export type PatternCandidate={type:EventType;index:number;support:{start:number;
 /** Legacy field name: true for ANY nearby invalid edge, not only a temporal GAP. */
 gapAdjacent:boolean;invalidBoundaryEvidence:InvalidBoundaryEvidence[];
 physicalContactStatus:"UNRESOLVED";evidence:"ALTITUDE_REVERSAL"|"SPEED_DIP"};
-export type AdvisoryPatternCount={kind:"PATTERN_ONLY";status:"AVAILABLE";scope:"OBSERVED_VALID_ISLANDS_ONLY";value:number}|{kind:"PATTERN_ONLY";status:"UNAVAILABLE";reason:"INSUFFICIENT_OBSERVATIONS"|"NO_VALID_SPAN"};
-export type ResearchAnalysis={edges:QualityEdge[];islands:SignalIsland[];candidates:PatternCandidate[];patternCount:AdvisoryPatternCount};
+export type AdvisoryPatternCount={kind:"PATTERN_ONLY";status:"AVAILABLE";scope:"OBSERVED_VALID_ISLANDS_ONLY";value:number}|{kind:"PATTERN_ONLY";status:"UNAVAILABLE";reason:"INSUFFICIENT_OBSERVATIONS"|"NO_VALID_SPAN"|"INVALID_SOURCE_METADATA"};
+export type VerticalEvidenceReason=
+  "SOURCE_METADATA_UNKNOWN"|"ALTITUDE_UNIT_UNKNOWN"|"ALTITUDE_MODE_UNKNOWN"|
+  "FEET_NOT_CONVERTED"|"CLAMPED_ALTITUDE"|"UNSUPPORTED_ALTITUDE_MODE"|
+  "MALFORMED_VERTICAL_ACCURACY"|"DECLARED_METRIC_RELATIVE_CHANGE_ONLY";
+export type SourceQualityAssessment={
+  vertical:{status:"UNVERIFIED"|"RELATIVE_CHANGE_ONLY"|"UNAVAILABLE";reason:VerticalEvidenceReason;datum:"UNKNOWN"|"DECLARED_NOT_VERIFIED"};
+  horizontalAccuracy:{status:"UNKNOWN"|"DECLARED_NOT_VERIFIED"|"INVALID";declaredMeters:number|null};
+  runwayProximity:"UNAVAILABLE";
+};
+export type ResearchAnalysis={edges:QualityEdge[];islands:SignalIsland[];candidates:PatternCandidate[];patternCount:AdvisoryPatternCount;sourceQuality:SourceQualityAssessment};
 
 // Experimental, predeclared falsification parameters; these are NOT aircraft limitations.
 export const R21_PARAMETERS=Object.freeze({gapSeconds:60,maxSpeedKmh:900,maxVerticalRateMps:25,altitudeReversalM:30,altitudeWindowSeconds:90,altitudeMinSpeedKmh:28,altitudeMaxSpeedKmh:145,mergeSeconds:40,lowSpeedKmh:20,fastSpeedKmh:45,speedWindowSeconds:60,minLowDurationSeconds:5});
@@ -138,11 +147,50 @@ function speedDipCandidates(points:SourceObservation[],edges:QualityEdge[],islan
   }
   return results;
 }
+/** Metadata is caller-declared, not independently verified sensor provenance.
+ * Never infer AGL/runway/physical contact. Do not silently convert feet to m. */
+export function assessSourceQuality(metadata?:SourceMetadata):SourceQualityAssessment{
+  const datum=metadata?.verticalDatum?.status==="KNOWN"?"DECLARED_NOT_VERIFIED" as const:"UNKNOWN" as const;
+  const h=metadata?.horizontalAccuracyM;
+  const hKnown=h?.status==="KNOWN";
+  const hValid=hKnown&&typeof h.value==="number"&&Number.isFinite(h.value)&&h.value>=0;
+  const horizontalAccuracy:SourceQualityAssessment["horizontalAccuracy"]=!hKnown?
+    {status:"UNKNOWN",declaredMeters:null}:hValid?
+    {status:"DECLARED_NOT_VERIFIED",declaredMeters:h.value}:{status:"INVALID",declaredMeters:null};
+  const make=(status:SourceQualityAssessment["vertical"]["status"],reason:VerticalEvidenceReason):SourceQualityAssessment=>({
+    vertical:{status,reason,datum},horizontalAccuracy,runwayProximity:"UNAVAILABLE"
+  });
+  const mode=metadata?.altitudeMode;
+  const unit=metadata?.altitudeUnit;
+  const v=metadata?.verticalAccuracyM;
+  if(mode?.status==="KNOWN"&&mode.value==="clampToGround")return make("UNAVAILABLE","CLAMPED_ALTITUDE");
+  if(mode?.status==="KNOWN"&&mode.value!=="absolute"&&mode.value!=="relativeToGround")
+    return make("UNAVAILABLE","UNSUPPORTED_ALTITUDE_MODE");
+  if(unit?.status==="KNOWN"&&unit.value==="ft")return make("UNAVAILABLE","FEET_NOT_CONVERTED");
+  if(unit?.status==="KNOWN"&&unit.value!=="m")return make("UNAVAILABLE","ALTITUDE_UNIT_UNKNOWN");
+  if(v?.status==="KNOWN"&&(!Number.isFinite(v.value)||typeof v.value!=="number"||v.value<0))
+    return make("UNAVAILABLE","MALFORMED_VERTICAL_ACCURACY");
+  if(!metadata)return make("UNVERIFIED","SOURCE_METADATA_UNKNOWN");
+  if(unit?.status!=="KNOWN")return make("UNVERIFIED","ALTITUDE_UNIT_UNKNOWN");
+  if(mode?.status!=="KNOWN")return make("UNVERIFIED","ALTITUDE_MODE_UNKNOWN");
+  return make("RELATIVE_CHANGE_ONLY","DECLARED_METRIC_RELATIVE_CHANGE_ONLY");
+}
 /** Never sorts/deduplicates source points. Candidate support is wholly in one valid island. */
-export function analyzeResearchTrack(points:readonly SourceObservation[],_metadata?:SourceMetadata):ResearchAnalysis{
-  // Deliberately treat source order as ground truth for acquisition order, not event truth.
-  const samples=[...points];const edges=samples.slice(1).map((p,i)=>edge(samples[i],p,i));
-  const islands=signalIslands(samples,edges);const candidates=islands.flatMap(island=>[...altitudeCandidates(samples,edges,island),...speedDipCandidates(samples,edges,island)]).sort((a,b)=>a.index-b.index);
-  const patternCount:AdvisoryPatternCount=samples.length<2?{kind:"PATTERN_ONLY",status:"UNAVAILABLE",reason:"INSUFFICIENT_OBSERVATIONS"}:islands.length===0?{kind:"PATTERN_ONLY",status:"UNAVAILABLE",reason:"NO_VALID_SPAN"}:{kind:"PATTERN_ONLY",status:"AVAILABLE",scope:"OBSERVED_VALID_ISLANDS_ONLY",value:candidates.length};
-  return{edges,islands,candidates,patternCount};
+export function analyzeResearchTrack(points:readonly SourceObservation[],metadata?:SourceMetadata):ResearchAnalysis{
+  // Source order is the persisted/acquired order, not a claim of event truth.
+  const sourceQuality=assessSourceQuality(metadata);
+  const samples=[...points],edges=samples.slice(1).map((p,i)=>edge(samples[i],p,i));
+  const islands=signalIslands(samples,edges);
+  // Invalid declared horizontal accuracy cannot be silently treated as UNKNOWN.
+  const invalidHorizontal=sourceQuality.horizontalAccuracy.status==="INVALID";
+  const candidates=invalidHorizontal?[]:islands.flatMap(island=>[
+    ...(sourceQuality.vertical.status==="UNAVAILABLE"?[]:altitudeCandidates(samples,edges,island)),
+    ...speedDipCandidates(samples,edges,island)
+  ]).sort((a,b)=>a.index-b.index);
+  const patternCount:AdvisoryPatternCount=invalidHorizontal?
+    {kind:"PATTERN_ONLY",status:"UNAVAILABLE",reason:"INVALID_SOURCE_METADATA"}:
+    samples.length<2?{kind:"PATTERN_ONLY",status:"UNAVAILABLE",reason:"INSUFFICIENT_OBSERVATIONS"}:
+    islands.length===0?{kind:"PATTERN_ONLY",status:"UNAVAILABLE",reason:"NO_VALID_SPAN"}:
+    {kind:"PATTERN_ONLY",status:"AVAILABLE",scope:"OBSERVED_VALID_ISLANDS_ONLY",value:candidates.length};
+  return{edges,islands,candidates,patternCount,sourceQuality};
 }
