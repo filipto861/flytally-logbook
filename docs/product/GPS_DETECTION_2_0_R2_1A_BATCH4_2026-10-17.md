@@ -41,6 +41,18 @@ The known historical `+11` rolling T&G shape is reconstructed from the already c
 
 No new thresholds and no changes to prerecorded pattern-positive / pattern-negative fixture expectations. The experimental model selection remains **NOT FROZEN**.
 
+## Owner-local Batch 4 closeout — exact tested SHA `325fc921` (2026-10-17)
+
+The product owner executed the exact target commit **`325fc9216b027e7910b549dfcd72aa43ba4df231`** in a clean Windows checkout after fast-forward pull and confirmed the expected SHA. Full terminal transcript was supplied and reviewed.
+
+- `npm run test:target` against Batch 1, Batch 2, scorecard, Batch 4, shadow, import-boundary and original v351 tests: **55/55 PASS**, **0 fail, 0 skipped, 0 cancelled, 0 todo**.
+- `npm run typecheck` (`tsc --noEmit`): **PASS**, `$LASTEXITCODE` guards passed.
+- The T10 substantive strict test **PASS**: legacy misses synthetic historical +11 pattern; research returns at least one **unconfirmed T&G motion-pattern candidate**. This is **not independent wheel-contact truth**.
+- The T14 count separation and complete-recording-but-unverified-contact tests **PASS**. No inference of whole-flight physical landings is authorized.
+- Evidence is **owner-local, not CI**; full Node suite, build, Playwright, PostgreSQL mutation tests and any real-flight event accuracy work were **NOT RUN**. No merge/deploy approval.
+
+**Chronology:** The earlier `NOT RUN` verification table below describes the pre-execution design snapshot and is superseded for **exactly `325fc921`** by this closeout. Any subsequent documentation commits are not new test-executed SHAs. Batch 4 targeted acceptance gates are CLOSED; R2.1a as a whole remains an offline research experiment with incomplete 35-case scenario coverage and no independent ground-truth holdout.
+
 ## 3. Evidence status and next verification
 
 **Previously owner-local verified** on exact clean SHA `9c0f423f1f924b40ded62f198226b338db91aa48`: **48/48 targeted Node tests PASS, 0 failed/skipped**, `npm run typecheck` PASS. Source/existing tests were rechecked through GitHub; this is **owner-local, not CI**.
