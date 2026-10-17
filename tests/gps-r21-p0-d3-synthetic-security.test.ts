@@ -49,6 +49,7 @@ test("S18 malformed, unlisted or fractional synthetic track id fails closed",()=
 const dir=join(process.cwd(),"research","gps-r21-p0-d3-synthetic-security");
 const schema=()=>readFileSync(join(dir,"schema.sql"),"utf8");
 const runner=()=>readFileSync(join(dir,"run-synthetic-postgres.mjs"),"utf8");
+const guards=()=>readFileSync(join(dir,"container-guards.mjs"),"utf8");
 test("P0-D3 fixture is synthetic, force-enables RLS on both owner relations",()=>{
   const s=schema();
   assert.match(s,/CREATE ROLE r21_subject_alpha NOLOGIN NOINHERIT NOBYPASSRLS/);
@@ -66,7 +67,7 @@ test("P0-D3 operator runner isolates Docker without ports, mounts or existing cr
   assert.match(s,/DATABASE_URL/);
   assert.match(s,/--synthetic-only/);
   assert.match(s,/image","inspect/);
-  assert.match(s,/rm","-f",name/);
+  assert.match(s,/cleanupSyntheticContainer\(docker,\{id:createdId,name\}\)/);
   assert.doesNotMatch(s,/from\s+["\x27][^"\x27]*(?:lib\/db|require-user)/);
 });
 test("P0-D3 test inventory includes omitted-WHERE and physical denial probes",()=>{
@@ -158,13 +159,13 @@ test("P0-D3 reviewer F05 image is pinned to a local immutable ID and never impli
   assert.ok(!s.includes('"POSTGRES_DB=r21_synthetic_lab",IMAGE]'));
 });
 
-test("P0-D3 reviewer F06 cleanup cannot falsely PASS if absence is unverified",()=>{
-  const s=runner();
-  assert.ok(s.includes('const removed=docker(["rm","-f",name])'));
-  assert.ok(s.includes('const remaining=docker(["ps","-aq","--filter"'));
-  assert.ok(s.includes('if(!remaining.ok||remaining.output!=="")'));
-  assert.ok(s.includes("container absence not verified"));
-  assert.ok(s.includes("container already absent; absence verified"));
+test("P0-D3 reviewer F06 cleanup uses created immutable ID and refuses unverified absence",()=>{
+  const s=runner(),g=guards();
+  assert.ok(s.includes("cleanupSyntheticContainer(docker,{id:createdId,name})"));
+  assert.ok(g.includes('const removed=docker(["rm","-f",hasId?id:name])'));
+  assert.ok(g.includes('const listing=docker(["ps","-aq","--no-trunc","--filter","id="+id])'));
+  assert.ok(g.includes('verified:listing.ok&&listing.output===""'));
+  assert.ok(s.includes("container ID absence not verified"));
 });
 
 test("P0-D3 reviewer F04 policy distinguishes authorized SELECT from RLS row filtering",()=>{
@@ -211,30 +212,29 @@ test("P0-D3 reviewer F12 refuses PGOPTIONS before executing any Docker binary",(
 });
 
 
-test("P0-D3 E1 effective container configuration is checked before any SQL",()=>{
-  const s=runner();
-  const inspected=s.indexOf('const inspected=docker(["container","inspect","--format","{{json .}}",name]);');
+test("P0-D3 E1 effective container configuration is checked before runner-issued SQL",()=>{
+  const s=runner(),g=guards();
+  const inspected=s.indexOf("inspectSyntheticContainer(docker,{id:createdId,name,imageId:image.output})");
   const ready=s.indexOf("let ready=false;");
   const fixture=s.indexOf('readFileSync(join(ROOT,"schema.sql"),"utf8")');
-  assert.ok(inspected>=0&&ready>inspected&&fixture>ready,"inspect must precede readiness probe and fixture");
+  assert.ok(inspected>=0&&ready>inspected&&fixture>ready,"effective inspect must precede readiness and fixture");
   for(const field of [
-    "cfg?.Id===start.output","cfg?.Name","cfg?.Image===image.output",
-    "cfg?.State?.Running===true","synthetic-rls-research",
-    'host?.NetworkMode==="none"','host?.PublishAllPorts===false',
-    "host?.Privileged===false","host?.Binds==null",
-    "host?.PortBindings","host?.Tmpfs",
-    "m?.Type","m.Destination","mountsVerified"
-  ])assert.ok(s.includes(field),field);
-  assert.ok(s.includes('fail("Disposable Docker isolation configuration not verified; no SQL executed.")'));
+    "cfg.Id===id","cfg.Name","cfg.Image===imageId",
+    "cfg.State?.Running===true","synthetic-rls-research",
+    'host.NetworkMode==="none"','host.PublishAllPorts===false',
+    "host.Privileged===false","host.Binds==null",
+    "host.PortBindings","host.Tmpfs","exactMounts(cfg.Mounts)"
+  ])assert.ok(g.includes(field),field);
+  assert.ok(s.includes('fail("Disposable Docker isolation configuration not verified; no runner SQL executed.")'));
 });
 
-test("P0-D3 E1 pre-SQL inspection must neither print Docker config nor skip cleanup",()=>{
-  const s=runner();
-  assert.ok(s.includes("try{cfg=JSON.parse(inspected.output);}catch{cfg=null;}"));
-  assert.ok(s.includes("if(!inspected.ok||!isolationVerified)"));
-  assert.ok(s.indexOf("const inspected=docker(")>s.indexOf("try{\n  // --pull=never"));
-  assert.ok(s.includes('const removed=docker(["rm","-f",name]);'));
-  assert.ok(s.includes('if(!remaining.ok||remaining.output!=="")'));
+test("P0-D3 E1 inspect parser is guarded, with no config leak or cleanup bypass",()=>{
+  const s=runner(),g=guards();
+  assert.ok(g.includes("try{cfg=JSON.parse(response.output);}catch{return false;}"));
+  assert.ok(g.includes("return validateSyntheticContainer(cfg,{id,name,imageId})"));
+  assert.ok(s.indexOf("inspectSyntheticContainer(docker")>s.indexOf("try{\n  // --pull=never"));
+  assert.ok(s.includes("cleanupSyntheticContainer(docker,{id:createdId,name})"));
+  assert.ok(s.includes("if(!cleanup.verified)"));
   assert.ok(!s.includes("console.log(inspected.output)"));
   assert.ok(!s.includes("process.stdout.write(inspected.output)"));
 });
