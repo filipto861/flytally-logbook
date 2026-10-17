@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS I2-B1 targeted owner-local 20/20 PASS (2026-10-17, research only):** exact clean `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8` passed two I2-B1 JS syntax checks, I1+I2-A+I2-B1 tests 20/20 and TypeScript. No positive PowerShell inventory/OS ACL attestation/PG16 RLS; untrusted `SystemRoot` launcher resolution identified as open security review item; no runtime permission. [Independent review packet](docs/product/GPS_DETECTION_2_0_I2B1_INDEPENDENT_REVIEW_HANDOFF_2026-10-17.md).
+
+
 **GPS I2-B1 (2026-10-17; draft research, NOT RUN):** Added bounded Windows PG16 read-only host inventory CLI (exact binary --version, PG16/PG18 service status, token elevation, safe path observability only), strict no-trust Node interpreter/typed contract and five authored adversarial checks. No actual Windows ACL/process trust or cluster lifecycle, native RLS, real GPS, merge or production integration. [Design/verification boundary](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I2B1_WINDOWS_INVENTORY_2026-10-17.md).
 
 
