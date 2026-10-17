@@ -65,9 +65,15 @@ export function createFalsificationScorecard(fixtures:readonly FalsificationCase
         errors.push("INCONSISTENT_INVALID_BOUNDARY_FLAG");
       if((candidate.gapAdjacent||candidate.invalidBoundaryEvidence.length>0)&&candidate.time!==null)
         errors.push("PRECISE_TIME_NEAR_INVALID_BOUNDARY");
+      const supportIsland=analysis.islands.find(island=>
+        candidate.support.start>=island.start&&candidate.support.end<=island.end);
       for(const observation of candidate.invalidBoundaryEvidence){
         const original=analysis.edges.find(e=>e.from===observation.edge.from&&e.to===observation.edge.to);
-        if(!original||original.status!=="UNAVAILABLE"||original.reason!==observation.reason)
+        const sideMatches=!!supportIsland&&(
+          (observation.side==="BEFORE_ISLAND"&&observation.edge.to===supportIsland.start)||
+          (observation.side==="AFTER_ISLAND"&&observation.edge.from===supportIsland.end)
+        );
+        if(!original||original.status!=="UNAVAILABLE"||original.reason!==observation.reason||!sideMatches)
           errors.push("UNSUPPORTED_INVALID_BOUNDARY_PROVENANCE");
       }
     }
