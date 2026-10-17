@@ -24,6 +24,14 @@
 4. New AI accuracy claims require independent event-level labels; certification and autopopulated counts do not create such labels. No blanket 97% claim from external HMM literature.
 5. Scope only `flytally-logbook`, not Training.
 
+## New proposed R2 design requiring adversarial review (2026-10-17)
+
+The assistant produced a **provisional** [R2 temporal architecture and falsification matrix](GPS_DETECTION_2_0_R2_PROPOSED_ARCHITECTURE_2026-10-17.md). Review that document alongside R1 and **try to disprove it**. In particular inspect actual source details: `seconds()` coerces nonpositive dt to zero, `speeds()` can treat that as zero velocity; `normalize()` reorders timestamps; `trackStats()` excludes valid 0-m altitude; `lib/data/tracks.ts::decodePoints` may coerce nullable map altitude to zero. These are separate scope/risk observations, **not authorization to refactor legacy**.
+
+External authoritative evidence: OGC KML `altitudeMode` defaults to clampToGround and can encode altitude relative to ground or sea level; persisted `KmlPoint` cannot reliably recover those semantics. [OGC 12-007r2](https://docs.ogc.org/is/12-007r2/12-007r2.html). The HMM phase identification paper (~97% FDR median phase accuracy) must **not** be claimed as FlyTally T&G accuracy. [JOAS (2024)](https://journals.open.tudelft.nl/joas/article/view/7269).
+
+**Review is NOT RUN.** No other AI response is claimed. The reviewer should consider whether the proposed `CONTACT_UNRESOLVED` and explicit `UNAVAILABLE` semantics are too conservative or still overstate observations.
+
 ## Proposed design (challenge it)
 
 A. Pure time-based + quality-aware deterministic baseline with physically plausible *advisory* phases, robust velocity/elevation continuity and structured abstention, offline against real-derived regression fixtures.
