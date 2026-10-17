@@ -121,9 +121,10 @@ try{
   deny("S07 SET ROLE beta denied","SET ROLE r21_subject_beta;");
   deny("S07 GRANT role beta denied","GRANT r21_subject_beta TO r21_subject_alpha;");
   deny("S07 ALTER ROLE beta BYPASSRLS denied","ALTER ROLE r21_subject_beta BYPASSRLS;");
-  deny("S07 unrelated role denied","SELECT count(*) FROM r21_lab.tracks;",OTHER);
-  deny("S07 participant relation denied","SELECT count(*) FROM r21_lab.participants;");
-  deny("S19 SECURITY DEFINER call denied","SELECT r21_lab.admin_count();");
+  // Privilege-only denials below do NOT establish RLS policy row filtering.
+  deny("S07 privilege-only unrelated role denied","SELECT count(*) FROM r21_lab.tracks;",OTHER);
+  deny("S07 privilege-only participant relation denied","SELECT count(*) FROM r21_lab.participants;");
+  deny("S19 privilege-only SECURITY DEFINER call denied","SELECT r21_lab.admin_count();");
   deny("S14 row_security off cannot bypass policy","SET row_security=off; SELECT count(*) FROM r21_lab.tracks;");
   const copy=sql("COPY (SELECT id FROM r21_lab.tracks ORDER BY id) TO STDOUT;",ALPHA);
   record("S06 COPY may emit authorized IDs only",copy.ok&&copy.output==="1001\n1002");
