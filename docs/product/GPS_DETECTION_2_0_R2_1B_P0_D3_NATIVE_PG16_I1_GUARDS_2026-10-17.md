@@ -1,7 +1,21 @@
 # GPS R2.1b P0-D3 — Native Windows PostgreSQL 16 I1 offline guard implementation
 
 **Date:** 2026-10-17. **Scope:** synthetic-only research, same Draft PR #359 stacked on #357, no new PR.
-**Status:** guard source / offline-only preflight CLI / 12 Node cases AUTHORED; **owner-local Node and TypeScript NOT RUN**; no PostgreSQL server or RLS SQL executed.
+**Status:** **I1 OWNER-LOCAL NODE 12/12 PASS + TWO NODE SYNTAX PASS + TYPESCRIPT PASS** on exact clean `2c4219e3e3bbeb26852b05d9f394a66cf3954d04`; new native cluster/SQL/RLS **NOT RUN / OPEN**.
+
+## Owner-local I1 acceptance — 2026-10-17
+
+**Verified clean exact source SHA:** `2c4219e3e3bbeb26852b05d9f394a66cf3954d04`. Owner's Windows PowerShell `git fetch origin`, `git switch docs/gps-r21-p0-d3-native-pg16-readiness`, `git pull --ff-only` returned up to date. `git status --short` empty; `git rev-parse HEAD` full SHA matched.
+
+- `node --check research/gps-r21-p0-d3-synthetic-security/native-pg16-guards.mjs`: **PASS** (explicit exit guard did not throw).
+- `node --check research/gps-r21-p0-d3-synthetic-security/run-native-pg16-preflight.mjs`: **PASS**.
+- `npm run test:target -- tests/gps-r21-p0-d3-native-pg16-guards.test.ts`: **12/12 PASS, 0 failures, 0 cancelled, 0 skipped**, with actual subprocess CLI early-refusal cases.
+- `npm run typecheck` / `tsc --noEmit`: **PASS**, no diagnostics, explicit exit guard did not throw.
+- Docker, actual PG16 `initdb/pg_ctl/psql`, OS ACL adapter, server identity validation against a running server, SQL/RLS, CI/full test suite/build/browser/migrations/merge/deploy: **NOT RUN**.
+
+**Bounded milestone I1: CLOSED, on tested source SHA only.** Subsequent documentation and implementation commits are **not** retested automatically. This validation confirms pure predicates and refusal behavior; it **does not establish true Windows token/ACL trust or PostgreSQL RLS policy behavior**.
+
+**Next I2:** in the same Draft PR #359, implement the owner-controlled native Windows OS adapter and one disposable PG16 runner, first with offline adversarial tests. Do not launch it without separate explicit owner approval; existing PG16/18 Windows services must remain untouched.
 
 ## Reason and contract
 
