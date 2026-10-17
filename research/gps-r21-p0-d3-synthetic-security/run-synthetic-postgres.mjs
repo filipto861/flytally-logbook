@@ -10,6 +10,7 @@ import {readFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {randomUUID} from "node:crypto";
+import {validContainerId,inspectSyntheticContainer,cleanupSyntheticContainer} from "./container-guards.mjs";
 const ROOT=dirname(fileURLToPath(import.meta.url));
 const IMAGE="postgres:16-alpine",ALPHA="r21_subject_alpha",BETA="r21_subject_beta",GAMMA="r21_subject_gamma",OTHER="r21_unrelated";
 const fail=(message)=>{throw new Error(message)};
@@ -44,6 +45,7 @@ if(!image.ok||!/^sha256:[a-f0-9]{64}$/.test(image.output))
   fail("Docker image postgres:16-alpine not locally resolved to an immutable ID; no DB touched.");
 if(!docker(["info","--format","{{.ServerVersion}}"]).ok)fail("Docker daemon unavailable.");
 const name="flytally-r21-synthetic-"+randomUUID().slice(0,12);
+let createdId=null;
 let pass=0,failed=0;
 const record=(name,ok,detail="")=>{
   if(ok)pass++;else failed++;
@@ -71,41 +73,13 @@ try{
     "--tmpfs","/var/run/postgresql:rw,nosuid,size=16m",
     "--tmpfs","/tmp:rw,nosuid,size=16m",
     "-e","POSTGRES_PASSWORD=SYNTHETIC_NOT_A_SECRET","-e","POSTGRES_DB=r21_synthetic_lab",image.output]);
+  // Docker may start its synthetic PostgreSQL entrypoint BEFORE this check;
+  // this verifies configuration before any RUNNER-ISSUED psql/schema operation.
+  if(validContainerId(start.output))createdId=start.output;
   if(!start.ok)fail("Could not start isolated synthetic DB: "+start.error.slice(0,200));
-  if(!/^[a-f0-9]{64}$/.test(start.output))
-    fail("Disposable container ID was not verified; no SQL executed.");
-  // Verify the EFFECTIVE Docker configuration, not merely authored run flags.
-  // A mismatch aborts before even SELECT 1 or schema.sql. The inspect payload
-  // (including environment) is never printed or retained.
-  const inspected=docker(["container","inspect","--format","{{json .}}",name]);
-  let cfg=null;
-  if(inspected.ok){
-    try{cfg=JSON.parse(inspected.output);}catch{cfg=null;}
-  }
-  const tmpfsPaths=["/var/lib/postgresql/data","/var/run/postgresql","/tmp"];
-  const host=cfg?.HostConfig;
-  // Docker inspect can represent --tmpfs paths as a map or mount records.
-  // Accept only the three expected disposable paths and no host/volume mounts.
-  const observedMounts=cfg?.Mounts;
-  const mountsVerified=Array.isArray(observedMounts)
-    ? observedMounts.length===tmpfsPaths.length&&
-      observedMounts.every(m=>m?.Type==="tmpfs"&&tmpfsPaths.includes(m.Destination))
-    : observedMounts!==null&&typeof observedMounts==="object"&&
-      Object.keys(observedMounts).length===tmpfsPaths.length&&
-      tmpfsPaths.every(path=>Object.hasOwn(observedMounts,path));
-  const isolationVerified=
-    cfg?.Id===start.output&&cfg?.Name==="/"+name&&cfg?.Image===image.output&&
-    cfg?.State?.Running===true&&
-    cfg?.Config?.Labels?.["flytally.purpose"]==="synthetic-rls-research"&&
-    host?.NetworkMode==="none"&&host?.PublishAllPorts===false&&
-    host?.Privileged===false&&
-    (host?.Binds==null||(Array.isArray(host.Binds)&&host.Binds.length===0))&&
-    (host?.PortBindings==null||Object.keys(host.PortBindings).length===0)&&
-    host?.Tmpfs!=null&&Object.keys(host.Tmpfs).length===tmpfsPaths.length&&
-    tmpfsPaths.every(path=>Object.hasOwn(host.Tmpfs,path))&&
-    mountsVerified;
-  if(!inspected.ok||!isolationVerified)
-    fail("Disposable Docker isolation configuration not verified; no SQL executed.");
+  if(!createdId)fail("Disposable container ID was not verified; no SQL executed.");
+  if(!inspectSyntheticContainer(docker,{id:createdId,name,imageId:image.output}))
+    fail("Disposable Docker isolation configuration not verified; no runner SQL executed.");
   let ready=false;
   for(let i=0;i<25;i++){
     if(docker(["exec",name,"psql","-X","-qAt","-v","ON_ERROR_STOP=1","-U","postgres","-d","r21_synthetic_lab","-c","SELECT 1"]).ok){ready=true;break;}
@@ -147,9 +121,10 @@ try{
   deny("S07 SET ROLE beta denied","SET ROLE r21_subject_beta;");
   deny("S07 GRANT role beta denied","GRANT r21_subject_beta TO r21_subject_alpha;");
   deny("S07 ALTER ROLE beta BYPASSRLS denied","ALTER ROLE r21_subject_beta BYPASSRLS;");
-  deny("S07 unrelated role denied","SELECT count(*) FROM r21_lab.tracks;",OTHER);
-  deny("S07 participant relation denied","SELECT count(*) FROM r21_lab.participants;");
-  deny("S19 SECURITY DEFINER call denied","SELECT r21_lab.admin_count();");
+  // Privilege-only denials below do NOT establish RLS policy row filtering.
+  deny("S07 privilege-only unrelated role denied","SELECT count(*) FROM r21_lab.tracks;",OTHER);
+  deny("S07 privilege-only participant relation denied","SELECT count(*) FROM r21_lab.participants;");
+  deny("S19 privilege-only SECURITY DEFINER call denied","SELECT r21_lab.admin_count();");
   deny("S14 row_security off cannot bypass policy","SET row_security=off; SELECT count(*) FROM r21_lab.tracks;");
   const copy=sql("COPY (SELECT id FROM r21_lab.tracks ORDER BY id) TO STDOUT;",ALPHA);
   record("S06 COPY may emit authorized IDs only",copy.ok&&copy.output==="1001\n1002");
@@ -158,17 +133,15 @@ try{
   if(failed)fail(String(failed)+" of "+String(failed+pass)+" synthetic DB assertions FAILED.");
   process.stdout.write("SYNTHETIC DB ROLE CHECKS PASS: "+String(pass)+" assertions; NOT full S01–S23 or real Neon proof.\n");
 }finally{
-  // --rm can auto-delete an exited container. rm may then return nonzero.
-  // Never turn a daemon error into a false PASS: require a successful independent
-  // absence check whether removal succeeded or not.
-  const removed=docker(["rm","-f",name]);
-  const remaining=docker(["ps","-aq","--filter","name=^/"+name+"$"]);
-  if(!remaining.ok||remaining.output!==""){
-    process.stderr.write("FAIL: disposable synthetic container absence not verified; inspect Docker before retry.\n");
+  // --rm may already remove an exited container. Check the EXACT created ID,
+  // not a name filter that could miss an orphan or match a reused name.
+  const cleanup=cleanupSyntheticContainer(docker,{id:createdId,name});
+  if(!cleanup.verified){
+    process.stderr.write("FAIL: disposable synthetic container ID absence not verified; inspect Docker before retry.\n");
     process.exitCode=1;
-  }else if(removed.ok){
-    process.stdout.write("Disposable synthetic PostgreSQL container removed and absence verified.\n");
+  }else if(cleanup.removed){
+    process.stdout.write("Disposable synthetic PostgreSQL container removed and ID absence verified.\n");
   }else{
-    process.stdout.write("Disposable synthetic PostgreSQL container already absent; absence verified.\n");
+    process.stdout.write("Disposable synthetic PostgreSQL container already absent; ID absence verified.\n");
   }
 }
