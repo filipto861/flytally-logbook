@@ -84,3 +84,11 @@ The previous **OPEN T10/T14** findings remain accurate **as of the tested Batch 
 - **NO production deployment/merge** or model precision claims from this audit. Passing 48 tests and a clean TypeScript check are valid exact-SHA regression evidence, not a proof of full 35-case contract or external reliability.
 
 **Source/evidence status:** source/test/contract review = **COMPLETED**; owner-local 48/48 and typecheck on `9c0f423f` = **PASS**; new code benchmark, real-event accuracy and production smoke = **NOT RUN / N/A**.
+
+## Batch 5 status amendment — A13 reason-coded boundary evidence (2026-10-17; NOT YET EXECUTED)
+
+The T/A matrix above preserves its historically verified state. Subsequently Batch 4 T10/T14 landed with owner-local 55/55 targeted PASS on exact `325fc921`; Batch R2.1b in-memory observational research landed with owner-local **63/63 targeted PASS + TypeScript PASS** at clean exact `8b410f32d207adab54d3b84b340275153d4b1731`. None of these old tests establishes physical gear contact, independent holdout, source-native altitude datum or real data-access security.
+
+Batch 5 [source and 6-test contract](GPS_DETECTION_2_0_R2_1A_BATCH5_BOUNDARY_PROVENANCE_2026-10-17.md) is now authored on this research branch, **not yet run**. It directly targets previously **PARTIAL A13/T13** (distinct invalid-edge reason/side/index, candidate time suppression, island confinement, negative evidence forgery) and the documented concern that `gapAdjacent` could be misread as an actual time gap. Continue to mark full A13/T13 as **PARTIAL, pending exact-SHA test evidence**, and do not imply source acquisition provenance or independent event accuracy from this improvement.
+
+**Remaining material gaps unchanged:** A07/A08 go-around/low-approach classification (separate approval), A02/A03 source metadata applicability, A15 resampling stability, T19 contradictory/quantized altitude, full-source provenance and real-event holdout. **Actual PG16 RLS / real owner GPS still NO-GO.** No unapproved production code/UI, DB, merges or deployment.
