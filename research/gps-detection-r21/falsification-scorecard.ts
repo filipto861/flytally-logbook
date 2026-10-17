@@ -55,7 +55,12 @@ export function createFalsificationScorecard(fixtures:readonly FalsificationCase
     else if(reference.kind==="EXPECTED_NO_PATTERN"){negativeTotal++;if(!unexpected)negativeClear++;}
     else unknownTotal++;
     if(analysis.patternCount.status==="UNAVAILABLE"){abstentions++;if(reference.kind==="EXPECTED_PATTERN")positiveAbstentions++;}
+    if(!analysis.sourceQuality)errors.push("MISSING_SOURCE_QUALITY_ASSESSMENT");
+    if(analysis.sourceQuality?.horizontalAccuracy.status==="INVALID"&&candidates.length>0)
+      errors.push("CANDIDATES_WITH_INVALID_HORIZONTAL_METADATA");
     for(const candidate of candidates){
+      if(analysis.sourceQuality?.vertical.status==="UNAVAILABLE"&&candidate.type==="T_G_PATTERN_CANDIDATE")
+        errors.push("VERTICAL_CANDIDATE_WITH_UNAVAILABLE_SOURCE");
       if(candidate.physicalContactStatus!=="UNRESOLVED")errors.push("BARE_TRACK_CONTACT_ASSERTION");
       if(candidate.support.start>candidate.index||candidate.index>candidate.support.end||candidate.support.start>candidate.support.end)
         errors.push("INVALID_SUPPORT_INTERVAL");
