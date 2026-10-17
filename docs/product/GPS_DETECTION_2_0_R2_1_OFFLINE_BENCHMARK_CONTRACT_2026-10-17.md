@@ -1,44 +1,45 @@
-# GPS Detection 2.0 — R2.1 offline benchmark contract (implementation proposal only)
+# GPS Detection 2.0 — R2.1a offline falsification/regression contract (implementation proposal only)
 
-**Status:** DESIGN / OWNER APPROVAL REQUIRED; **NO IMPLEMENTATION / NO TEST RUN**.  
+**Status:** R2.1a CONTRACT REVISION / OWNER APPROVAL REQUIRED; **NO IMPLEMENTATION / NO TEST RUN**. The filename retains the earlier *benchmark* term for link/history stability; this document is **NOT an empirical benchmark**, nor evidence of accuracy or superiority.  
 **Date:** 2026-10-17  
 **Scope:** `flytally-logbook` only, [Issue #348](https://github.com/filipto861/flytally-logbook/issues/348), [Draft PR #349](https://github.com/filipto861/flytally-logbook/pull/349).  
-**Input:** [R1 data/label feasibility](GPS_DETECTION_2_0_R1_FEASIBILITY_BENCHMARK_2026-10-17.md), [R2 architecture](GPS_DETECTION_2_0_R2_PROPOSED_ARCHITECTURE_2026-10-17.md) and [partial DeepSeek review reconciliation](GPS_DETECTION_2_0_R2_INDEPENDENT_REVIEW_RECONCILIATION_2026-10-17.md).
+**Input:** [R1 data/label feasibility](GPS_DETECTION_2_0_R1_FEASIBILITY_BENCHMARK_2026-10-17.md), [R2 architecture](GPS_DETECTION_2_0_R2_PROPOSED_ARCHITECTURE_2026-10-17.md), [source-backed first review reconciliation](GPS_DETECTION_2_0_R2_INDEPENDENT_REVIEW_RECONCILIATION_2026-10-17.md) and [second, full-document DeepSeek review reconciliation](GPS_DETECTION_2_0_R2_1_SECOND_REVIEW_RECONCILIATION_2026-10-17.md).
 
 ## 1. Narrow objective
 
-In an **offline, pure TypeScript, fixture-only** harness, compare current legacy T&G advice against an experimental **quality-masked, time-windowed phase/pattern baseline**, without external training data, model training, production DB access, UI, airport lookup, feature-flag rollout, logbook save or any mutation to finalized/certified records. Pure benchmark code must not be wired into `components/kml-import-form.tsx`, `lib/civil-twilight.ts`, `lib/data/flight-track-review.ts`, any live route, API, server action or persistence.
+In an **offline, pure TypeScript, fixture-only falsification harness**, compare current legacy T&G advisory behavior with a quality-masked, time-windowed phase/pattern candidate. It is **not** a representative measurement of event precision/recall or model superiority because the synthetic and checked-in regression scenarios are not an untouched independent holdout. No external training data, model training, production DB access, UI, airport lookup, feature-flag rollout, logbook save or any mutation to finalized/certified records. Research code must never be imported by `components/kml-import-form.tsx`, `lib/civil-twilight.ts`, `lib/data/flight-track-review.ts`, routes, APIs, server actions, persistence or other production modules.
 
 **Primary question:** Can a quality-aware advisory detector preserve useful T&G *pattern* candidates on existing evidence while reducing explicitly known legacy false-positive failure modes and returning real uncertainty on insufficient evidence?
 
-**NOT asked or measured now:** Are wheel contacts correctly classified with a validated probability? The available fixtures do not support that claim.
+**NOT asked or measured now:** Are wheel contacts correctly classified with validated probability, precision, recall or superiority against real flights? The fixtures do not support those claims. Passing tests means **regression/falsification only**, not validation. A candidate must meet **both** safety gates and an explicit *utility* gate: a universal all-`UNAVAILABLE` predictor FAILS usefulness, even if it asserts no false contact.
 
 ## 2. Proposed minimum implementation shape (not authorized yet)
 
 ```text
-lib/gps-detection-research/
-  observation-types.ts       // strictly sourced lat/lon/alt/time and source order
-  quality.ts                 // quality/islands, invalid dt, gaps, uncertainty
-  temporal-features.ts       // safe speed/vertical trend on valid edges
-  candidate-detector.ts      // time-aware advisory phase / T&G pattern windows
-  benchmark.ts               // pure output comparison; no DB/client imports
+research/gps-detection-r21/
+  observation-types.ts       // source order, raw time, alt/datum/mode, missingness
+  quality.ts                 // separate valid islands; invalid dt/gap/uncertainty
+  temporal-features.ts       // safe within-island speed/vertical trend
+  candidate-detector.ts      // advisory patterns; NO physical contact assertions
+  legacy-shadow-adapter.ts   // production-equivalent legacy path on same fixture
+  falsification.ts           // fixture output comparison and evidence scorecard
 tests/gps-detection-r21-*.test.ts
-docs/product/GPS_DETECTION_2_0_R2_1_BENCHMARK_EVIDENCE.md // measured only when run
+docs/product/GPS_DETECTION_2_0_R2_1_FALSIFICATION_EVIDENCE.md // only if executed
 ```
 
-Names are provisional. Reuse the existing test runner and shared math where safety can be established, **not** legacy `seconds()`, `speeds()`, `normalize()`, `trackStats()` or map `decodePoints()` for new quality inference. No new production dependencies required; no HMM/HSMM or ML libraries in this first implementation.
+Names are provisional. Keep research under a top-level `research/` directory, **never** `lib/` or a normal app import tree. The eventual experiment PR must enforce a CI/source-contract rule that *no production imports* of `research/` exist (including barrel/re-export or dynamic imports); no runtime/DB code may depend on it. Research computations must not reuse unsafe legacy `seconds()`, `speeds()`, `normalize()`, `trackStats()` or map `decodePoints()`. The **legacy comparator alone** may call the exact unchanged production parse/normalize/detect path, and must record its preprocessing provenance. Reuse test infrastructure and vetted shared math where appropriate; no new dependencies, HMM/HSMM or ML in R2.1a.
 
 ### Input and output contract
 
-- `SourceObservation`: source position and ordinal order, raw timestamp, parsed explicit UTC/offset or unavailable, alt `number | null` and vertical datum `KNOWN | UNKNOWN`; only track metadata permitted in synthetic fixtures.
-- `QualityInterval`: `VALID` or `UNAVAILABLE(reason)` with temporal/spatial span; zero/negative/missing dt never produces a valid 0 km/h measurement. Preserve source-order anomaly and normalization decisions as reason codes, do not silently reorder to remove evidence of bad data.
+- `SourceObservation`: source lat/lon and ordinal order, raw timestamp, explicit UTC/offset or `UNAVAILABLE`; timestamp precision `KNOWN(value) | UNKNOWN`; altitude `number | null`, altitude unit `KNOWN(value) | UNKNOWN`, altitude mode `KNOWN(absolute | relativeToGround | clampToGround | other) | UNKNOWN`, vertical datum `KNOWN(value) | UNKNOWN`; horizontal and vertical accuracy `KNOWN(value + units) | UNKNOWN`; source format, producer/generator and sensor origin each `KNOWN(value) | UNKNOWN`. Preserve uncertainty and raw-order provenance, never silently fill metadata based on file extension, known airport, default sensor or historical KML assumptions. These are **source facts**, not claims that historical records contain them.
+- `QualityInterval`: `VALID` or `UNAVAILABLE(reason)` with temporal/spatial support; zero/negative/missing dt never produces valid 0 km/h. Preserve raw order and normalization decisions. Partition each track into **contiguous supported signal islands**. A gap is an explicit `GAP_UNKNOWN` boundary: no candidate's evidence/support window may span it. Any gap-adjacent candidate must have `GAP_ADJACENT`, contact unresolved and event timestamp `UNAVAILABLE` when exact timing would rely on the gap.
 - `PhaseCandidate`: `POSSIBLE_GROUND`, `POSSIBLE_AIRBORNE`, `APPROACH`, `CLIMB`, `DESCENT`, `GAP_UNKNOWN`, `UNCERTAIN`. Never equate POSSIBLE_GROUND with wheels on runway.
-- `EventHypothesis`: `T_G_PATTERN_CANDIDATE`, `LOW_APPROACH_PATTERN_CANDIDATE`, `GO_AROUND_PATTERN_CANDIDATE`, etc.; temporal support interval; reasons/contradictions; **physicalContactStatus always `UNRESOLVED` from track-only input**. No `CONTACT_CONFIRMED` prediction and no `NO_CONTACT` negative assertion from missing data.
-- `AdvisoryCount`: `AVAILABLE(n)` when a declared set of flight-boundary observations supports a count of *candidate patterns*, otherwise `UNAVAILABLE(reason)`. It must be labeled as advisory, never a flight-certified/recency count. No minimum-one assumption.
+- `EventHypothesis`: `T_G_PATTERN_CANDIDATE`, `LOW_APPROACH_PATTERN_CANDIDATE`, `GO_AROUND_PATTERN_CANDIDATE`, etc.; **support interval confined to one valid island** (never spanning a gap), supporting/contradictory reason codes and optional gap-adjacent status. **physicalContactStatus always `UNRESOLVED` from track-only input**. No computed `CONTACT_CONFIRMED` or `NO_CONTACT` negative label, including for unlabeled/insufficient data.
+- `AdvisoryPatternCount`: separate type/name/namespace from legacy `landingCount` and canonical movements. `AVAILABLE(n)` only for evidence-supported candidate patterns and known scope/coverage, otherwise `UNAVAILABLE(reason)`. No minimum-one assumption. Never assignment-compatible with certified movements, regulatory/recency or `civil-twilight` counters; do not provide a conversion adapter in R2.1a.
 - `SourceProvenance`: hash/fingerprint of private input context, algorithm version, source time basis, datum status, reference/effectivity when used; evidence invalidates on changing track/time/airport/algorithm/review context. Never expose stable identity hashes for private flights in public fixtures.
 - `PilotEventEvidence` (external and separate): independent accepted/rejected contact evidence, not predicted by this harness. Can be represented as synthetic-only truth in tests but never generated by inference.
 
-**Explicit compatibility requirement:** legacy helpers untouched and still called wherever production currently calls them; no new suggestion flows to `civil-twilight`, regulatory currency, or certification.
+**Explicit compatibility requirement:** legacy helpers untouched, live production paths unchanged. The shadow adapter runs the **exact existing production-equivalent parser, normalize, detector and count path** on the **same synthetic/checked-in fixture input** as the research pipeline, with both source-order and transformed-point summaries recorded. Report (1) end-to-end comparison and (2) preprocessing differences as a **confound**. Do **not** attribute a difference to a superior event algorithm unless preprocessing effects can be separated. No suggestion flows to `civil-twilight`, regulatory currency, certification or production imports.
 
 ## 3. Predeclared synthetic/adverse fixtures and expected assertions
 
@@ -52,11 +53,11 @@ Names are provisional. Reuse the existing test runner and shared math where safe
 | T06 | Altitude level shift during climb | No T&G assertion; mark discontinuity and contradicting evidence |
 | T07 | Sawtooth during initial climb | No falsely confident descent-to-ground plus climb contact event |
 | T08 | Legacy duplicate/stale-fix speed false T&G | No fake stop/contact; quality reason documented |
-| T09 | Full positive five-pattern circuit from existing anonymized v351 fixture | Show supported T&G **pattern** hypotheses OR `CONTACT_UNRESOLVED` with counted abstention; zero confirmed contacts |
+| T09 | Positive five-pattern circuit from checked-in v351 fixture (**legacy regression positive, not independently labeled contact truth**) | **Utility fixture:** at least one supported `T_G_PATTERN_CANDIDATE` in a valid signal island; record candidate-count denominator, coverage and any missed patterns. All-unknown = utility FAIL. Zero contact confirmations |
 | T10 | Known missed short rolling T&G (`+11` shape) | Candidate or explicit **MISS/UNRESOLVED**; never relabel legacy failure as a negative |
-| T11 | Flat-altitude stop-and-go | Pattern candidate may be emitted on horizontal evidence; datum uncertainty persists |
+| T11 | Flat-altitude stop-and-go (**legacy regression pattern positive, not independently labeled physical contact**) | **Utility fixture:** at least one supported stop/go pattern candidate where valid horizontal evidence exists; a detector returning only `UNAVAILABLE` fails usefulness. Contact remains unresolved |
 | T12 | KML altitude mode/datum unknown at high-terrain airport | No computed AGL/touchdown from airport reference; explicit datum unknown |
-| T13 | 60- and 120-second gap straddling descent/climb | `GAP_UNKNOWN`; no event or precise time inside gap |
+| T13 | 60- and 120-second gap straddling descent/climb | Explicit `GAP_UNKNOWN`; **no candidate support spanning either gap**, contiguous-island computation; gap-adjacent pattern marked `GAP_ADJACENT` and no precise event time |
 | T14 | Cropped beginning/end; track ends in climb | No automatic final landing or `1` default; count `UNAVAILABLE` |
 | T15 | Taxi-only, no airborne proof | No new takeoff/landing contact evidence from single speed outlier |
 | T16 | Identical sampled GPS, independent truth A = T&G and B = low pass | **Same algorithm output** `CONTACT_UNRESOLVED` for both, with separately stored truth |
@@ -73,12 +74,12 @@ For each fixture, record:
 - Legacy detected candidate count, new pattern candidate count, quality rejection count and `CONTACT_UNRESOLVED` count.
 - Source support and known fixture-grounded expected behavior; `UNKNOWN` is never silently scored as true negative.
 - False positive **pattern hypotheses** on known negative fixtures, known-positive pattern detected/missed, abstentions, event-window support and false timestamp claims.
-- No (0/0) denominators disguised as 100% accuracy, no uncalibrated probabilities, no cross-validation on generated pseudo-labels.
+- No (0/0) denominators disguised as 100% accuracy, no uncalibrated probabilities, no cross-validation on generated pseudo-labels. **Report pattern-candidate coverage (eligible positive fixtures, eligible supported events), abstentions, false pattern candidates and exclusions with separate denominators.**
 - Existing flight-level count agreement only later, when counts have defensible review provenance and permission; even then it is a weak proxy, never event precision.
 
-**Hard functional safety gates:** any bare-track `CONTACT_CONFIRMED`, any speed=0 produced only by invalid dt, any contact/time inserted inside a missing interval, or any mutation of legacy runtime/DB/flight records is **FAIL**. True 0 altitude must survive; null must remain missing. For positives, abstention is allowed only when explicitly scored and recorded; do not allow an all-unknown detector to be marketed as superior.
+**Hard functional safety gates:** any computed bare-track `CONTACT_CONFIRMED` or `NO_CONTACT` label; speed=0 derived solely from invalid dt; event support crossing a gap; precise event time invented from a gap; missing-vs-zero confusion; invalid AGL from unavailable source datum/mode/unit/accuracy; cross-layer research import; or legacy runtime/DB/flight mutation is **FAIL**. True altitude 0 survives; null remains missing. **Independent hard utility floor:** T09 and T11 must each emit at least one supported pattern candidate on their declared valid synthetic evidence, with zero confirmed contacts; universal `UNAVAILABLE` **FAIL**, not a safety PASS promoted as usefulness. T10 stays a known-miss diagnostic, never relabeled negative.
 
-**Soft evaluation:** compare candidate usefulness, test-source stratification and unknown/false-pattern trade-offs. With only synthetic cases, conclusions must be labeled **synthetic regression evidence**, not validated precision, recall or production superiority. Threshold selection cannot use the same fixtures as independent holdout; require an untouched separate set before any model promotion claim.
+**Evaluation boundary:** T01–T20 and A01–A15 are **predeclared falsification/regression cases**, not an independent holdout; prohibit parameter/threshold optimization against these pass/fail fixtures and do not call their scores validation accuracy. Pre-register any candidate thresholds and reasons **before the first run**. If threshold iteration is needed, use a distinct explicitly identified development set; the fixed falsification matrix remains a red-line regression suite, **never** retrofitted into a purported holdout. No genuine untouched independent labeled holdout exists today, so conclusions remain **synthetic regression evidence**, not validated precision/recall, calibrated probabilities or production superiority.
 
 ## 5. Build, verification and scope boundary if owner authorizes implementation
 
@@ -92,8 +93,8 @@ For each fixture, record:
 ## 6. Current gate
 
 - Data-only R1 feasibility complete for structural/timing properties, not event-contact labels.
-- Partial DeepSeek handoff review reconciled against repo; *full* independent R1/R2 review **PENDING**.
+- Full R1/R2/R2.1 document-only DeepSeek review **RECEIVED**, conditional with the nine contract blockers enumerated in the [second-review reconciliation](GPS_DETECTION_2_0_R2_1_SECOND_REVIEW_RECONCILIATION_2026-10-17.md); reviewer ran **NO source/tests/SQL**, so source verification is ours and empirical evaluation remains NOT RUN.
 - R2.1 code/testing permission **NOT YET REQUESTED/GRANTED**.
 - Production model benchmark, Node tests, build, browser, Postgres integration **NOT RUN** for this research work.
-- **Next product decision:** approve or revise this exact isolated, synthetic-only R2.1 experimental scope after complete independent review, **not** a product release.
+- **Next product decision:** review this revised R2.1a **offline falsification/regression** scope and explicitly approve/revise *research-only* code in a separate branch. Conditional DeepSeek review is not owner approval and does not authorize production, model training or algorithm rollout.
 
