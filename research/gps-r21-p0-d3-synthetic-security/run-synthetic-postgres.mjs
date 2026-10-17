@@ -38,7 +38,7 @@ const start=docker(["run","-d","--rm","--network","none","--name",name,
   "--tmpfs","/var/lib/postgresql/data:rw,nosuid,noexec,size=256m",
   "--tmpfs","/var/run/postgresql:rw,nosuid,size=16m",
   "--tmpfs","/tmp:rw,nosuid,size=16m",
-  "-e","POSTGRES_PASSWORD=SYNTHETIC_NOT_A_SECRET",IMAGE]);
+  "-e","POSTGRES_PASSWORD=SYNTHETIC_NOT_A_SECRET","-e","POSTGRES_DB=r21_synthetic_lab",IMAGE]);
 if(!start.ok)fail("Could not start isolated synthetic DB: "+start.error.slice(0,200));
 let pass=0,failed=0;
 const record=(name,ok,detail="")=>{
@@ -48,7 +48,7 @@ const record=(name,ok,detail="")=>{
 function sql(command,role=null){
   const prefix=role?"SET SESSION AUTHORIZATION "+role+";\n":"";
   return docker(["exec","-i",name,"psql","-X","-qAt","-v","ON_ERROR_STOP=1",
-    "-v","VERBOSITY=sqlstate","-U","postgres","-d","postgres"],prefix+command+"\n");
+    "-v","VERBOSITY=sqlstate","-U","postgres","-d","r21_synthetic_lab"],prefix+command+"\n");
 }
 const value=(label,statement,expected,role=ALPHA)=>{
   const r=sql(statement,role);
@@ -62,13 +62,13 @@ const deny=(label,statement,role=ALPHA)=>{
 try{
   let ready=false;
   for(let i=0;i<25;i++){
-    if(docker(["exec",name,"pg_isready","-U","postgres","-d","postgres"]).ok){ready=true;break;}
+    if(docker(["exec",name,"pg_isready","-U","postgres","-d","r21_synthetic_lab"]).ok){ready=true;break;}
     await new Promise(resolve=>setTimeout(resolve,400));
   }
   if(!ready)fail("Disposable Postgres not ready.");
-  const created=sql(readFileSync(join(ROOT,"schema.sql"),"utf8"));
+  const created=sql("SET r21.synthetic_only = 'NO_NETWORK_TEST_CONTAINER';\n"+readFileSync(join(ROOT,"schema.sql"),"utf8"));
   if(!created.ok)fail("Synthetic SQL schema failed: "+created.error.slice(0,330));
-  if(sql("SELECT current_database();").output!=="postgres")fail("Unexpected database target.");
+  if(sql("SELECT current_database();").output!=="r21_synthetic_lab")fail("Unexpected database target.");
   process.stdout.write("SYNTHETIC ONLY: local isolated PostgreSQL, no production credentials, no ports.\n");
   value("S05 alpha unfiltered SELECT remains scoped","SELECT count(*) FROM r21_lab.tracks;",2);
   value("S05 beta unfiltered SELECT remains scoped","SELECT count(*) FROM r21_lab.tracks;",1,BETA);
