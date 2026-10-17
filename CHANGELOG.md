@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 partial external review reconciled and R2.1 offline falsification specified (DRAFT / NOT RELEASED)
+
+Received a DeepSeek architectural critique, but the reviewer expressly lacked the actual R1/R2 documents and repo access. Reconciled confirmed source hazards against `main@6a67a024` in [R2 review reconciliation](docs/product/GPS_DETECTION_2_0_R2_INDEPENDENT_REVIEW_RECONCILIATION_2026-10-17.md) without mislabeling the partial critique as full review. Hardened R2 to require `GAP_UNKNOWN`, prohibit contact confirmations and negative labels from absence of evidence, permit clearly marked T&G *pattern* candidates, and segregate pilot-accepted events. Wrote [R2.1 synthetic/offline benchmark plan](docs/product/GPS_DETECTION_2_0_R2_1_OFFLINE_BENCHMARK_CONTRACT_2026-10-17.md) with 20 adversarial scenarios and explicit pass/fail and no-cross-user-data boundaries. Updated review packet to require actual R1/R2 content. **No application code/model, GPS algorithm, database/schema, live tests, merge or deployment changed/performed; full independent review and R2.1 implementation NOT RUN.**
+
 ## 2026-10-17 — GPS Detection 2.0 R2 temporal architecture candidate (RESEARCH ONLY; NOT RELEASED)
 
 Added [R2 fail-closed architecture and falsification plan](docs/product/GPS_DETECTION_2_0_R2_PROPOSED_ARCHITECTURE_2026-10-17.md) after inspecting exact legacy GPS time, speed, altitude, quality and review consumers. Documented zero-vs-null, invalid Δt and ordering hazards, KML altitude-mode provenance, empirical labels gap, proposed hypothesis/event DTO and synthetic metamorphic tests. Expanded [independent review packet](docs/product/GPS_DETECTION_2_0_INDEPENDENT_ARCH_REVIEW_2026-10-17.md) to challenge these conclusions and HMM domain transfer. **Second AI review and benchmark/model tests NOT RUN**; no runtime code, database, external track exports, merge or deployment.
