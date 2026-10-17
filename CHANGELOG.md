@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS native I2-B1 exact-SHA owner-local offline verification PASS (NOT RELEASED)
+
+Owner verified clean executable SHA `ae1eb81c35ea27b56798e30b37ce4cacc2ef46a8`. Both I2-B1 Node syntax checks PASS, combined native I1/I2-A/I2-B1 targeted **20/20 PASS** (0 failures/skips/cancelled/todo), `tsc --noEmit` PASS. **Not executed:** PowerShell 5.1 parse/positive host inventory, real token/ACL proof, initdb/pg_ctl/psql/SQL/RLS, full test/build/browser/CI, auth/Neon/real GPS, merge or deploy. Post-test source review flagged inherited `SystemRoot` as insufficiently verified executable root for a positive CLI invocation. Independent review/correction required before probing; no actual SQL/RLS release permission. Source and commit pins: [I2-B1 handoff](docs/product/GPS_DETECTION_2_0_I2B1_INDEPENDENT_REVIEW_HANDOFF_2026-10-17.md).
+
+
 ## 2026-10-17 — GPS I2-B1 native Windows read-only inventory (DRAFT / NOT TESTED)
 
 New ASCII PowerShell 5.1 inventory (PG16.15 five binaries --version only, effective elevated admin check, existing PG16/PG18 service status, path existence/reparse/ACL readability), strict Node output validation, CLI and typed contract. Five new targeted offline negative tests authored; target now 20 including I1 12 and I2-A 3. **Node/TypeScript/PS5 actual execution NOT RUN** on this source. No file/db/server mutation, no approved native PG runtime, no SQL/RLS; no auth/Neon/real GPS access, no merge/deploy. I2-A 15/15 applies only to clean prior executable SHA. [I2-B1 record](docs/product/GPS_DETECTION_2_0_R2_1B_P0_D3_NATIVE_PG16_I2B1_WINDOWS_INVENTORY_2026-10-17.md).
