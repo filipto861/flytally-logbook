@@ -42,7 +42,11 @@ function csvCells(line:string,delimiter:string){const out:string[]=[],push=()=>{
 function normalizeHeader(value:string){return value.toLowerCase().replace(/[^a-z0-9]/g,"")}
 function combineCsvTimestamp(dateValue:string|undefined,timeValue:string|undefined){const date=(dateValue||"").trim(),time=(timeValue||"").trim();if(!time)return date||null;if(/^\d{4}-\d{2}-\d{2}(?:[T ]|$)/.test(time))return time.replace(" ","T");if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&/^\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/.test(time))return`${date}T${time}`;return time}
 function parseCsv(source:string){
-  const lines=source.replace(/^\uFEFF/,"").split(/\r?\n/).filter(line=>line.trim());if(lines.length<2)return[];
+  const lines=source.replace(/^\uFEFF/,"").split(/\r?\n/);
+  // A final CSV newline is not a data row; an internal blank row is missing
+  // source evidence and must not be silently discarded from a flight track.
+  while(lines.length&&!lines[lines.length-1].trim())lines.pop();
+  if(lines.length<2||!lines[0].trim()||lines.slice(1).some(line=>!line.trim()))return[];
   const delimiter=[",",";","\t"].map(value=>({value,count:delimiterCount(lines[0],value)})).sort((a,b)=>b.count-a.count)[0]?.value||",";
   const headers=csvCells(lines[0],delimiter).map(normalizeHeader),at=(names:string[])=>headers.findIndex(header=>names.includes(header));
   const latIndex=at(["lat","latitude","latitudedeg","latitudedegrees"]),lonIndex=at(["lon","lng","long","longitude","longitudedeg","longitudedegrees"]),altIndex=at(["alt","altitude","elevation","ele","altm","altitudem","altitudemeters","altitudeft","altitudefeet","elevationft","elevationfeet","gpsaltitude"]),timeIndex=at(["time","timestamp","datetime","utc","utctime","dateandtime","gpstime"]),dateIndex=at(["date","utcdate","flightdate"]);
