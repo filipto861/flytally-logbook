@@ -2,7 +2,34 @@
 
 **Date:** 2026-10-17
 **Repository/branch:** `filipto861/flytally-logbook` / `fix/gps-r21-p0-d3-e1a-mock-docker`, stacked synthetic Draft PR #357, not `main`.
-**Status:** REVIEW RECONCILED / PATCH AUTHORED / **NEW OWNER-LOCAL TESTS NOT RUN**. Actual Docker/PG16 SQL/RLS **NOT RUN / D3 SECURITY OPEN**; real GPS/Neon NO-GO.
+**Status:** **E1b BOUNDED OWNER-LOCAL OFFLINE GATE PASS: 35/35 NODE + 2 SYNTAX + TYPESCRIPT ON EXACT CLEAN SHA**. Actual Docker/PG16 SQL/RLS **NOT RUN / D3 SECURITY OPEN**; real GPS/Neon NO-GO.
+
+## Owner-local E1b acceptance — exact clean SHA (2026-10-17)
+
+**LIMITED OFFLINE GATE: PASS at `e14bc91314e2439859f3ea381d93abb7c43a25cd`.** This is **NOT** PostgreSQL RLS security acceptance.
+
+Product owner supplied full Windows PowerShell execution transcript from `C:\Users\filip\Documents\GitHub\Logbook`. `git fetch origin`, `git switch fix/gps-r21-p0-d3-e1a-mock-docker`, `git pull --ff-only` fast-forwarded cleanly to `e14bc91314e2439859f3ea381d93abb7c43a25cd`; `git status --short` was empty and `git rev-parse HEAD` matched exactly. The operator executed only:
+
+```powershell
+& .\research\gps-r21-p0-d3-synthetic-security\run-local-gates-e1a.ps1 -ExpectedSha "e14bc91314e2439859f3ea381d93abb7c43a25cd"
+```
+
+| Gate | Observed result | Evidence class |
+| --- | --- | --- |
+| Expected branch, SHA and clean worktree | Gate printed `E1a synthetic-only offline gate, clean SHA e14bc91314e2439859f3ea381d93abb7c43a25cd` | **PASS, owner-local** |
+| Two `node --check` commands (guard and runner) | Script continued without exception; each command is guarded by `$LASTEXITCODE` | **PASS, owner-local (through wrapper)** |
+| D3 + E1a fake-Docker targeted Node tests | `tests 35; pass 35; fail 0; cancelled 0; skipped 0; todo 0` | **35/35 PASS, owner-local** |
+| `npm run typecheck` | `tsc --noEmit`, no diagnostics; wrapper printed success | **PASS, owner-local** |
+| Cleanup/inspect on actual Docker daemon and PG16 SQL/roles/RLS | Wrapper explicitly printed `NOT RUN - Docker, PostgreSQL SQL, role/RLS or any external database` | **NOT RUN / D3 GATE OPEN** |
+| Full Node suite, production build, browser/Playwright, CI, production/Neon DB, migrations, deploy | Not invoked | **NOT RUN** |
+
+PowerShell also printed `PASS - E1a local syntax, targeted Node and TypeScript (not CI)` and `OVERALL P0-D3 SECURITY GATE OPEN - real PostgreSQL RLS not executed`. The 35 tests include source/mocked authorization and fake-Docker guard logic, **not** actual Docker runtime, PostgreSQL RLS enforcement or real authenticated user access.
+
+**Conclusion:** E1b bounded no-Docker owner-local acceptance **CLOSED** on the exact pinned code revision. The two DeepSeek pre-runtime items (standalone gated test and privilege-only labeling) are implemented and locally tested. The independent source-only DeepSeek **CONDITIONAL GO** applies to **preparing** a future disposable synthetic PostgreSQL experiment, not permission for it to run, install Docker, touch Neon or use real GPS. Keep stacked PR #357 **Draft/unmerged**. Any following documentation-only HEAD is not a separately tested SHA; compare changed files before inheriting source evidence.
+
+### Next distinct decision
+
+Conduct a read-only inventory of the operator's available optional local Docker environment (if the owner chooses) or native Postgres alternative; identify exact isolation preconditions. Do not make Docker mandatory or launch `run-synthetic-postgres.mjs --synthetic-only` without a **separate, explicit operator decision**. P0-D3 actual PostgreSQL RLS stays **NOT RUN / OPEN** and all real GPS/Neon/login/driver/consent/security gates remain **NO-GO**.
 
 ## Independent review decision
 
