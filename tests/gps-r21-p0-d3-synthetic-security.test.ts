@@ -74,7 +74,7 @@ test("P0-D3 test inventory includes omitted-WHERE and physical denial probes",()
   const s=runner();
   for(const item of ["S05 alpha unfiltered SELECT","S06 INSERT denied","S06 UPDATE denied",
     "S06 DELETE denied","S06 TRUNCATE denied","S07 SET ROLE beta denied",
-    "S19 SECURITY DEFINER call denied","S22 shared-flight participant",
+    "S19 privilege-only SECURITY DEFINER call denied","S22 shared-flight participant",
     "S14 row_security off cannot bypass policy"]){
     assert.ok(s.includes(item),item);
   }
