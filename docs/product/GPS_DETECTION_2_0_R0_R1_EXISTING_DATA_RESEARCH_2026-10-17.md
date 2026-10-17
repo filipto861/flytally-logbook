@@ -63,11 +63,11 @@ A read-only, privacy-minimizing assessment of the existing production track stor
 
 Time interval analysis found both duplicate/nonpositive deltas and heterogeneous cadence; index-based `±10 points` evidence neighborhoods cannot represent a uniform elapsed-time span. Database JSON shape/field completeness alone does not verify GNSS accuracy/datum or runway contact. Calibration of confidence and event-level precision/recall remain **NOT RUN / UNAVAILABLE** without independent labels.
 
-Independent read-only adversarial review handoff: [GPS Detection 2.0 architecture challenge](GPS_DETECTION_2_0_INDEPENDENT_ARCH_REVIEW_2026-10-17.md). **Second AI review NOT RUN**. No production code or saved-flight mutations.
+Independent read-only adversarial review handoff: [GPS Detection 2.0 architecture challenge](GPS_DETECTION_2_0_INDEPENDENT_ARCH_REVIEW_2026-10-17.md). DeepSeek response received, **PARTIAL ONLY** because the reviewer did not receive the complete R1/R2 documents or access the repo; source hazard claims were separately verified and decisions recorded in [R2 reconciliation](GPS_DETECTION_2_0_R2_INDEPENDENT_REVIEW_RECONCILIATION_2026-10-17.md). A complete R1/R2 independent review is **NOT RUN**. The [R2.1 offline-only benchmark contract](GPS_DETECTION_2_0_R2_1_OFFLINE_BENCHMARK_CONTRACT_2026-10-17.md) is **PROPOSED / UNIMPLEMENTED**. No production code or saved-flight mutations.
 
 ## Deliverables, acceptance and status
 
 - R0 output: verified source and consumer inventory, event taxonomy, ambiguity contract and risks. **PARTIAL: preliminary source inventory done; full contract pending.**
 - R1 output: private read-only aggregate timestamp/altitude/cadence assessment and reproducible benchmark/label-risk contract. **DESIGN CHECKPOINT COMPLETE: structural and timing audit performed; supervised label gate NO-GO; independent annotation validation and actual model benchmark NOT RUN.**
-- Model comparison, empirical accuracy, calibrated thresholds, independent second-AI review, rollout proposal, tests, build, browser, PostgreSQL mutation tests, PR merge, deploy: **NOT RUN / NOT APPROVED**.
+- Model comparison, empirical accuracy, calibrated thresholds, **complete** independent second-AI review, rollout implementation, tests, build, browser, PostgreSQL mutation tests, PR merge, deploy: **NOT RUN / NOT APPROVED**. The partial external critique has been reconciled but does not substitute for full document review.
 - This document is a scoped research draft; it **does not** assert completed model research, successful training or accuracy gains.
