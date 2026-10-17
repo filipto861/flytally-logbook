@@ -62,7 +62,7 @@ test("I2-B1: strictly no filesystem or server mutations in PowerShell probe sour
   const path=join(process.cwd(),"research","gps-r21-p0-d3-synthetic-security",
     "read-native-pg16-i2b1-inventory.ps1");
   const src=readFileSync(path,"utf8");
-  assert.ok([...src].every(c=>c.codePointAt(0)!>0&&c.codePointAt(0)!<128));
+  assert.ok([...src].every(c=>(c.codePointAt(0)??999)<128));
   assert.match(src,/InventoryOnly/);
   assert.match(src,/Get-Acl/);
   assert.match(src,/Get-Service/);
