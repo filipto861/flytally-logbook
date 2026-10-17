@@ -57,7 +57,9 @@
     "D3b-1 browser: deleting one GPS track preserves the other, then Trash atomically archives expenses and retained GPS",
     "D3b-1 browser: pending collaboration refuses ordinary Trash with no archive or evidence deletion",
     "Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",
-    "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency"
+    "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
+    "Airport elevation add edit and clear preserves nullable persisted MSL values",
+    "Airport elevation server action refuses a cross-user forged edit"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs",

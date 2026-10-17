@@ -1,11 +1,13 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { serializeOptionalBilling } from "@/lib/billing";
 import { supportedIsoCurrency } from "@/lib/iso4217-currency-registry";
 import { initialRateDateError,validIsoDate } from "@/lib/rate-history";
 import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catalog";
+import { validateManualAirportElevationFt } from "@/lib/airport-elevation";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { parseAircraftDefaultEngineType,parseAircraftDefaultOperationType,validateAircraftProfile } from "@/lib/aircraft-profile-validation";
@@ -58,7 +60,38 @@ export async function deleteAircraftWithResult(form:FormData):Promise<AircraftDe
 }
 export async function saveRate(form:FormData){const {userId}=await requireUser();const reg=s(form,"registration").toUpperCase(),valid=s(form,"valid_from"),currency=supportedIsoCurrency(s(form,"currency")),raw=s(form,"price_per_hour"),decimal=hourlyDecimal(raw,true),dryRaw=s(form,"dry_price_per_hour"),dryDecimal=dryRaw?hourlyDecimal(dryRaw,false):null;if(!reg||!validIsoDate(valid)||!currency||!decimal||(dryRaw&&!dryDecimal))return;const price=Number(decimal),dryPrice=dryDecimal===null?null:Number(dryDecimal);await sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source,currency_code,currency_minor_units,price_per_hour_decimal,dry_price_per_hour_decimal) VALUES(${userId},${reg},${s(form,"aircraft_type")},${valid},${price},${dryPrice},${s(form,"source")||"Aircraft rate change"},${currency.code},${currency.minorUnits},${decimal},${dryDecimal}) ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET aircraft_type=EXCLUDED.aircraft_type,price_per_hour=EXCLUDED.price_per_hour,dry_price_per_hour=EXCLUDED.dry_price_per_hour,source=EXCLUDED.source,currency_code=EXCLUDED.currency_code,currency_minor_units=EXCLUDED.currency_minor_units,price_per_hour_decimal=EXCLUDED.price_per_hour_decimal,dry_price_per_hour_decimal=EXCLUDED.dry_price_per_hour_decimal`;refreshPricing();}
 export async function deleteRate(form:FormData){const {userId}=await requireUser();await sql`DELETE FROM rates WHERE id=${n(form,"id")} AND user_id=${userId}`;refreshPricing();}
-export async function saveAirport(form:FormData){const {userId}=await requireUser();const ident=canonicalAirportIdent(s(form,"ident"));if(!ident)return;await sql`INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,active,closed,source,updated_at) VALUES(${userId},${ident},${s(form,"name")},${s(form,"municipality")},${s(form,"iso_country").toUpperCase()},${n(form,"latitude_deg")},${n(form,"longitude_deg")},1,0,'Manual',NOW()) ON CONFLICT(user_id,ident) DO UPDATE SET name=EXCLUDED.name,municipality=EXCLUDED.municipality,iso_country=EXCLUDED.iso_country,latitude_deg=EXCLUDED.latitude_deg,longitude_deg=EXCLUDED.longitude_deg,active=1,updated_at=NOW()`;revalidatePath("/database");}
+function finishAirportSave(status:string):never{
+  revalidatePath("/database");
+  redirect(`/database?view=airports&airportStatus=${status}`);
+}
+
+export async function saveAirport(form:FormData){
+  const {userId}=await requireUser();
+  const ident=canonicalAirportIdent(s(form,"ident"));
+  if(!ident)return finishAirportSave("invalid-code");
+  const elevationSpecified=form.has("elevation_ft");
+  const elevation=validateManualAirportElevationFt(s(form,"elevation_ft"));
+  if(elevationSpecified&&elevation.error)return finishAirportSave("invalid-elevation");
+  await sql`INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,elevation_ft,active,closed,source,updated_at)
+    VALUES(${userId},${ident},${s(form,"name")},${s(form,"municipality")},${s(form,"iso_country").toUpperCase()},${n(form,"latitude_deg")},${n(form,"longitude_deg")},${elevation.value},1,0,'Manual',NOW())
+    ON CONFLICT(user_id,ident) DO UPDATE SET name=EXCLUDED.name,municipality=EXCLUDED.municipality,iso_country=EXCLUDED.iso_country,latitude_deg=EXCLUDED.latitude_deg,longitude_deg=EXCLUDED.longitude_deg,elevation_ft=CASE WHEN ${elevationSpecified} THEN EXCLUDED.elevation_ft ELSE airports.elevation_ft END,active=1,updated_at=NOW()`;
+  return finishAirportSave("saved");
+}
+
+/** Update only the elevation: editing an existing airport must not clear its other fields. */
+export async function saveAirportElevation(form:FormData){
+  const {userId}=await requireUser();
+  const id=n(form,"id");
+  if(!Number.isSafeInteger(id)||!id||id<=0)return finishAirportSave("not-found");
+  if(!form.has("elevation_ft"))return finishAirportSave("invalid-elevation");
+  const elevation=validateManualAirportElevationFt(s(form,"elevation_ft"));
+  if(elevation.error)return finishAirportSave("invalid-elevation");
+  const updated=await sql`UPDATE airports SET elevation_ft=${elevation.value},updated_at=NOW()
+    WHERE id=${id} AND user_id=${userId} AND LOWER(COALESCE(source,'')) NOT LIKE 'ourairports%'
+    RETURNING id`;
+  if(!updated.length)return finishAirportSave("not-found");
+  return finishAirportSave("saved");
+}
 export async function toggleAirport(form:FormData){const {userId}=await requireUser();await sql`UPDATE airports SET active=CASE WHEN active=1 THEN 0 ELSE 1 END,updated_at=NOW() WHERE id=${n(form,"id")} AND user_id=${userId}`;revalidatePath("/database");}
 
 export async function canonicalizeFlightAirportCodes(form:FormData){

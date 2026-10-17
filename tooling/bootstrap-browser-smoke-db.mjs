@@ -90,12 +90,17 @@ CREATE TABLE airports(
   id BIGSERIAL PRIMARY KEY,
   ident TEXT NOT NULL,
   name TEXT NOT NULL DEFAULT '',
+  municipality TEXT NOT NULL DEFAULT '',
+  iso_country TEXT NOT NULL DEFAULT '',
   latitude_deg DOUBLE PRECISION,
   longitude_deg DOUBLE PRECISION,
+  elevation_ft DOUBLE PRECISION,
   user_id BIGINT NOT NULL DEFAULT 0,
   source TEXT NOT NULL DEFAULT '',
   active INTEGER NOT NULL DEFAULT 1,
-  closed INTEGER NOT NULL DEFAULT 0
+  closed INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT airports_user_ident_unique UNIQUE(user_id,ident)
 );
 CREATE INDEX airports_ident_idx ON airports(ident);
 
@@ -409,6 +414,16 @@ CREATE TABLE aircraft(
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id,registration)
 );
+CREATE TABLE aircraft_photos(
+  aircraft_id BIGINT PRIMARY KEY REFERENCES aircraft(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  image_base64 TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(mime_type IN ('image/jpeg','image/webp','image/png')),
+  CHECK(length(image_base64)<=1200000)
+);
+CREATE INDEX idx_aircraft_photos_user ON aircraft_photos(user_id,aircraft_id);
 
 CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $flytally$
   DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
@@ -451,8 +466,12 @@ CREATE TABLE rates(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   registration TEXT NOT NULL,
+  aircraft_type TEXT NOT NULL DEFAULT '',
   valid_from TEXT,
-  price_per_hour NUMERIC NOT NULL DEFAULT 0
+  price_per_hour NUMERIC NOT NULL DEFAULT 0,
+  dry_price_per_hour NUMERIC,
+  source TEXT NOT NULL DEFAULT '',
+  UNIQUE(user_id,registration,valid_from)
 );
 -- Historic legacy points are still queried by ordinary Trash/track deletion;
 -- portable backup v13 merely omits their export, not the database table.
@@ -725,7 +744,7 @@ INSERT INTO users(id,email,display_name,role,active,email_verified_at)
 VALUES
   (9001,'browser-auth@example.test','Browser Smoke Pilot','user',1,NOW()),
   (9002,'browser-friend@example.test','Browser Friend','user',1,NOW());
-INSERT INTO user_credentials(user_id,password_hash) VALUES(9001,${quote(passwordHash)});
+INSERT INTO user_credentials(user_id,password_hash) VALUES(9001,${quote(passwordHash)}),(9002,${quote(passwordHash)});
 INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json)
 VALUES
   (9001,'Europe/Prague','CZK','LKLT','PIC','{}'::jsonb),

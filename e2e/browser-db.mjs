@@ -91,10 +91,12 @@ export function resetIntelligentReviewFormScopeFixture(){
       name TEXT NOT NULL DEFAULT '',
       latitude_deg DOUBLE PRECISION,
       longitude_deg DOUBLE PRECISION,
+      elevation_ft DOUBLE PRECISION,
       active INTEGER NOT NULL DEFAULT 1,
       closed INTEGER NOT NULL DEFAULT 0,
       source TEXT NOT NULL DEFAULT ''
     );
+    ALTER TABLE airports ADD COLUMN IF NOT EXISTS elevation_ft DOUBLE PRECISION;
     DELETE FROM flights WHERE user_id=9001 AND id IN (9911,9912,9913);
     DELETE FROM aircraft WHERE user_id=9001 AND registration='OK-HST1';
     INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)

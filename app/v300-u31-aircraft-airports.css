@@ -16,10 +16,16 @@
 
 .u31-airport-panel{display:grid;gap:16px;margin:0}
 .u31-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
-.u31-airport-editor{display:grid;grid-template-columns:1.1fr 2fr 1.5fr .8fr 1fr 1fr auto;gap:9px;align-items:end;padding:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel2)}
+.u31-airport-editor{display:grid;grid-template-columns:1.05fr 1.6fr 1.3fr .75fr .85fr .85fr .95fr auto;gap:9px;align-items:end;padding:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel2)}
 .u31-airport-editor label{min-width:0;gap:5px;font-size:.7rem}
 .u31-airport-editor input{width:100%;min-width:0;padding:10px}
 .u31-airport-editor .primary-button{min-height:42px;white-space:nowrap}
+.u31-airport-elevation-details{margin-top:4px;min-width:145px}
+.u31-airport-elevation-details summary{cursor:pointer;font-size:.76rem;text-decoration:underline;text-underline-offset:2px}
+.u31-airport-elevation-form{display:grid;gap:7px;margin-top:9px;max-width:210px}
+.u31-airport-elevation-form label{display:grid;gap:4px;min-width:0;font-size:.76rem}
+.u31-airport-elevation-form input{width:100%;min-width:0}
+.u31-airport-elevation-form button{justify-self:start}
 .u31-airport-search{margin:0}
 .u31-advanced-health{margin:0}
 .u31-advanced-health>summary,.airport-code-migration>summary{cursor:pointer;list-style:none}
