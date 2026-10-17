@@ -38,6 +38,7 @@ test("R2.1a scorecard reports separate pattern-positive, negative, unknown and a
   assert.deepEqual(result.knownPatternNegatives,{total:1,withoutCandidate:1,withUnexpectedCandidate:0});
   assert.deepEqual(result.unlabeled,{total:1,notScoredAsNegative:1});
   assert.equal(result.abstentions.amongKnownPositives,0);
+  assert.equal(result.abstentions.total,1,"known ground-only negative with valid data is not an abstention; empty unlabeled input is");
   assert.equal(result.hardUtility.pass,true);
   assert.equal(result.safety.pass,true);
   assert.equal(result.findings.find(f=>f.fixtureId==="T10")?.unexpectedPatternOnKnownNegative,null);
@@ -100,4 +101,12 @@ test("R2.1a scorecard cannot compute real-event precision or claim an untouched 
   assert.equal(card.independentHoldout,false);
   assert.ok(!("eventPrecision" in card));
   assert.ok(!("landingAccuracy" in card));
+});
+
+test("R2.1a hard utility pins the fixture class; changing T09 expected type does not create PASS",()=>{
+  const xs=suite();
+  xs[0]={...xs[0],reference:{kind:"EXPECTED_PATTERN",eventType:"STOP_GO_PATTERN_CANDIDATE"}};
+  const result=createFalsificationScorecard(xs);
+  assert.equal(result.hardUtility.pass,false);
+  assert.ok(result.hardUtility.missingOrUncovered.includes("T09"));
 });
