@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS Detection 2.0 R2.1a Batch 3 scorecard (DRAFT / NOT RELEASED)
+
+Owner-local Batch 2 on exact clean `862c620a`: **41/41 targeted PASS** and `npm run typecheck` PASS; evidence recorded in PR #350 and Batch 2 document. Added offline-only [Batch 3 scorecard](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH3_2026-10-17.md) and seven isolated tests to separate synthetic pattern positives/negatives, unscored observations, unavailable evidence and no-pattern results, pin T09/T11 expected candidate types and flag bogus source-contact/time/support assertions. **Batch 3 targeted tests/typecheck NOT RUN**, full app build/CI/DB/Playwright NOT RUN for this experiment. No production code, flight records, GPS parser, schema, user-data export, model training, merge or deploy changed.
+
+
 ## 2026-10-17 — GPS Detection 2.0 R2.1a Batch 1 locally verified; Batch 2 synthetic falsification extension (DRAFT, NOT RELEASED)
 
 Owner executed exact-clean-head local tests on `eb5cde7c`: **30/30 PASS** (research, shadow, import boundary and existing v351 regressions), repository TypeScript PASS, exit guards respected; not CI. Next isolated Batch 2 research-only change makes hypotheses near invalid signal-island edges time-uncertain (no precise timestamp), adds 11 synthetic A/T checks covering source metadata, 60s gap and gap adjacency, invalid fix/time, resampling, cropped track and two positive-utility controls; records [Batch 2 evidence/limitations](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH2_2026-10-17.md). **New Batch 2 targeted tests, full suite and typecheck on latest SHA NOT RUN.** No change to existing GPS runtime, logbook flight facts, DB/schema, aircraft Training, model training or production deploy.
