@@ -193,3 +193,23 @@ test("A03: scorecard refuses tampered source quality and ghost candidate",()=>{
 });
 
 function candidatesFixture(){return cases();}
+
+test("T19: explicit feet and clamp must not feed metre-based vertical-rate edge discontinuity",()=>{
+  const xs=circuit().map((p,i)=>({...p,alt:i%2===0?0:9000}));
+  const metres=metadata();metres.altitudeMode={status:"KNOWN",value:"absolute"};
+  metres.altitudeUnit={status:"KNOWN",value:"m"};
+  const reference=analyzeResearchTrack(xs,metres);
+  assert.ok(reference.edges.some(e=>e.reason==="ALTITUDE_DISCONTINUITY"),"metric baseline exercises the guard");
+  const feet=metadata();feet.altitudeMode={status:"KNOWN",value:"absolute"};
+  feet.altitudeUnit={status:"KNOWN",value:"ft"};
+  const clamped=metadata();clamped.altitudeMode={status:"KNOWN",value:"clampToGround"};
+  clamped.altitudeUnit={status:"KNOWN",value:"m"};
+  for(const md of [feet,clamped]){
+    const report=analyzeResearchTrack(xs,md);
+    assert.ok(report.edges.every(e=>e.status==="VALID"),"horizontal quality remains independent of incompatible altitude source");
+    assert.ok(report.edges.every(e=>e.verticalRateMps===null));
+    assert.ok(report.edges.some(e=>e.speedKmh!==null),"horizontal speed is preserved");
+    assert.equal(report.candidates.filter(e=>e.type==="T_G_PATTERN_CANDIDATE").length,0);
+    assert.equal(report.sourceQuality.vertical.status,"UNAVAILABLE");
+  }
+});
