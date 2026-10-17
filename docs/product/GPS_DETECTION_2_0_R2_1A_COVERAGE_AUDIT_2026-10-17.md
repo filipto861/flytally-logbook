@@ -59,6 +59,14 @@
 | A14 | COVERED | T09/T11 pattern class pinned; all-abstain utility FAIL even if contact safety PASS |
 | A15 | PARTIAL | Same synthetic trajectory with resampling produces no physical contact claim; detailed overlap/coverage/stability reporting absent |
 
+## Batch 4 resolution to this earlier audit — code committed, NOT YET TESTED (2026-10-17)
+
+The user delegated the T10/T14 decision. Under the fail-closed project contract, `AdvisoryPatternCount` remains **strictly observed-island motion-pattern count**, which may be `AVAILABLE(0)` for a cropped track. It is **not** a whole-flight count. `WholeFlightLandingCountFromGps` is a separately tagged, **always `UNAVAILABLE`** GPS-only assessment: incomplete track, unknown coverage, or independently verified complete coverage without observed gear contact. No numerical `value` is exposed for this latter assessment, and no bridge to persisted certified counts exists.
+
+The previous **OPEN T10/T14** findings remain accurate **as of the tested Batch 3 SHA**, but a new untested [Batch 4 implementation and test package](GPS_DETECTION_2_0_R2_1A_BATCH4_2026-10-17.md) addresses them explicitly: the T10 test now requires legacy `0` T&G and at least one new unresolved T&G *pattern* candidate on the same historically documented synthetic +11 shape. It must not be confused with independent touchdown verification. The T14 tests assert separate pattern vs whole-flight count contracts with incomplete, unknown and independently verified full track coverage.
+
+**Verification:** the previously executed Batch 3 owner-local 48/48 PASS and typecheck PASS remains valid for its exact SHA only. **New Batch 4 added tests, comparison totals and typecheck NOT RUN** at this documentation update. Update coverage status only after execution evidence; no code is production-integrated.
+
 ## High-risk gaps prioritized for subsequent decisions
 
 1. **Correct label and assertion for T10.** Existing v351 fixture retains a *known missed* genuine T&G in legacy. Current new T10 test can pass even if the new detector emits zero T&G candidates. This cannot support a statement that R2.1a recovered the known miss.
