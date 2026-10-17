@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-17 — GPS R2.1a Batch 4 owner-local PASS; R2.1b observational research plan (DOCS ONLY / NOT RELEASED)
+
+Owner provided clean exact-SHA `325fc9216b027e7910b549dfcd72aa43ba4df231` Windows PowerShell: **55/55 targeted PASS**, no fail/skip, `npm run typecheck` PASS (**local**, not CI). Recorded full evidence in PR #350 and added Batch 4 verification closeout. Formalized next [R2.1b owner-scoped read-only observational protocol](docs/product/GPS_DETECTION_2_0_R2_1B_OWNER_SCOPED_OBSERVATIONAL_PLAN_2026-10-17.md) and source access audit: current `getFlightTracks` map DTO can downsample and coerce missing altitude to 0; `getFlightTrackReview` reads only first raw track, so neither is an authorized full-data offline benchmark input as-is. Protocol requires validated tenant access, minimal in-boundary processing and aggregate-only outputs; **no real tracks accessed/queried/exported, no training or benchmark performed**. Existing detector and certified flights remain unchanged; no DB/schema changes, merge or deploy. Future full source/test/CI gates remain outstanding.
+
+
+
 ## 2026-10-17 — GPS Detection R2.1a Batch 4 count integrity and historical T10 comparator (DRAFT / NOT RELEASED)
 
 User delegated T10/T14 product decision. Added isolated, pure TypeScript `research/gps-detection-r21/flight-count-contract.ts` (distinguishes observed quality-island pattern count from **unavailable GPS-only physical whole-flight landing count**) and `research/gps-detection-r21/legacy-pattern-comparison.ts` (bounded fixture-only comparison with legacy, an explicit T10 known-miss category, no independent physical-contact accuracy claims, and preprocessing-confound disclosure). Added **7 synthetic Batch 4 tests** in `tests/gps-detection-r21-batch4.test.ts` and [scope/evidence documentation](docs/product/GPS_DETECTION_2_0_R2_1A_BATCH4_2026-10-17.md); reconciled prior [coverage audit](docs/product/GPS_DETECTION_2_0_R2_1A_COVERAGE_AUDIT_2026-10-17.md). Previously owner-local tested Batch 3 exact SHA `9c0f423f` **48/48 targeted PASS + typecheck PASS**; **new Batch 4 tests/typecheck NOT RUN**. No production GPS logic, flights, DB/schema, Training repo, model training, merge or deploy changed.
