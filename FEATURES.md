@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS D2-C canonical import integrity correction (2026-10-17, PROPOSED/NOT IMPLEMENTED):** scope-only plan for safe CSV missing latitude/longitude/altitude and true numeric zero statistics; explicit server/client parity, existing import review and legacy T&G behavior preserved. Separate owner approval and independent source review required before parser code. [Consumer map and acceptance](docs/product/GPS_DETECTION_2_0_R2_1C_D2C_PARSER_FIX_SCOPE_2026-10-17.md).
+
+
 **GPS 2.0 D2-B2 narrow CSV lineage offline research verified (2026-10-17, NOT RELEASED):** clean exact `25d0efdb9b46cf096b01f7191ed645d7a09d620b`, **130/130 targeted Node PASS + TypeScript PASS** (10 new D2-B2 cases), owner-local not CI. Strict CSV subset preserves sourceLine→normalizedIndex and header-declared ft conversion and missing/zero distinctions; does not prove sensor units/accuracy or pilot-contact; all pilot-facing outputs UNAVAILABLE. Three production legacy parser issues remain open. [Evidence](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_CSV_LINEAGE_2026-10-17.md).
 
 
