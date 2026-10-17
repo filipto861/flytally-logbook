@@ -66,3 +66,12 @@ D2-A reuses the actual existing `parseTrackFile`, `inspectTrackFile`, `splitPoin
 **D2-A CLOSEOUT:** bounded synthetic parser characterization **CLOSED** on exact tested SHA. **D2-B NEXT:** define a strict research-only source/provenance contract separating parser observation, normalization/transforms and independently supported sensor/units/mode/accuracy. A caller-provided `validated:true` cannot approve V2 vertical display. **D2-C OPEN / SEPARATE APPROVAL REQUIRED:** minimal canonical parser corrections for missing vs zero and raw-source lineage; first inventory affected consumers and get an independent code-level review. Do not overwrite or reinterpret persisted records without original source evidence.
 
 **Still NOT RUN / NO-GO:** full Node suite/build/browser, production parser fix, independent physical touchdown, real GPS/Neon/PG16 RLS/consent and no-write, migrations, merge/deploy. Approved D1–D5 product direction stays frozen; no authority to use private GPS.
+
+
+## D2-B1 research untrusted-inspection model — 2026-10-17 (NEW TESTS NOT RUN)
+
+**Code authored:** `research/gps-detection-r21/source-provenance.ts` and `tests/gps-detection-r21-d2b-provenance.test.ts` (10 synthetic cases). [Exact source design and falsification contract](GPS_DETECTION_2_0_R2_1C_D2B_UNTRUSTED_PROVENANCE_CONTRACT_2026-10-17.md). Source parser `lib/track-processing.ts` remains unchanged. The last clean **owner-tested** source stays `80581f5b` (110/110 Node PASS + TS PASS, characterization NOT parser-safety acceptance). **D2-B1 new Node/TS NOT RUN**, expected next targeted total **120**.
+
+**Safety semantics:** caller-provided normalized `TrackInspection` can expose counts only as `DIAGNOSTIC_ONLY`; invalid inspection fails closed `UNAVAILABLE`. All possible pilot-facing vertical/horizontal/time/sample identity use remains `UNAVAILABLE` and physical contact `UNRESOLVED`, regardless of forged `validated:true`, favorable parser quality or source label. No approval path exists in D2-B1. A trusted source-byte lineage and transform mapper is separate **D2-B2**, NOT IMPLEMENTED. D2-C legacy parser fixes still require separate product scope/independent review.
+
+**NEXT:** owner clean exact HEAD tests (previous 110 + 10 new), strict TypeScript and source/no-production-import check; reconcile failures before claiming bounded D2-B1 acceptance. No private GPS/DB, P0-D3 native RLS, real-data analytics, canonical flight writes, migration, merge or deploy.
