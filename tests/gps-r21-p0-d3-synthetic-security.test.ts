@@ -223,7 +223,7 @@ test("P0-D3 E1 effective container configuration is checked before any SQL",()=>
     'host?.NetworkMode==="none"','host?.PublishAllPorts===false',
     "host?.Privileged===false","host?.Binds==null",
     "host?.PortBindings","host?.Tmpfs",
-    "m.Type","m.Destination"
+    "m?.Type","m.Destination","mountsVerified"
   ])assert.ok(s.includes(field),field);
   assert.ok(s.includes('fail("Disposable Docker isolation configuration not verified; no SQL executed.")'));
 });
