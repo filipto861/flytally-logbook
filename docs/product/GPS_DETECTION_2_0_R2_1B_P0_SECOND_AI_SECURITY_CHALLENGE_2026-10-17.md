@@ -1,7 +1,7 @@
 # DeepSeek / Claude independent challenge — R2.1b-P0 strict read-only design
 
 **Date:** 2026-10-17  
-**Reviewer role:** independent adversarial **READ-ONLY** security/architecture reviewer. **Consultation on THIS revised design NOT RUN.**  
+**Reviewer role:** independent adversarial **READ-ONLY** security/architecture reviewer. **Second review RECEIVED / PARTIAL**: DeepSeek saw this P0 design and the owner-scoped plan, but did **not** receive the earlier R2.1b security reconciliation; no repo/code/SQL/test access. Its review is reconciled in [second-review reconciliation](GPS_DETECTION_2_0_R2_1B_P0_SECOND_REVIEW_RECONCILIATION_2026-10-17.md). Source checks were independently performed by ChatGPT, not by DeepSeek. A full-document follow-up remains optional/pending.  
 **Repos:** `filipto861/flytally-logbook` only, canonical `main@6a67a02475ab09c3271f8646427f7956ed6e590a`, isolated Draft PR #350. `flytally-training` must remain untouched.
 
 ## Required reading — full documents, not just this handoff
@@ -20,6 +20,12 @@ If you cannot open the documents, request their *entire content* and clearly mar
 - Existing `requireUser/getSession` may run migrations and update session heartbeat; normal HTTP session access therefore does not guarantee zero application writes.
 - Existing map DTO downsamples and `Number(null)` may become 0; first-track review sees one track only. Both are unsuitable full-fidelity scientific sources.
 - Owner/scoped authorization is not established merely by access to database administrator credentials.
+
+## Follow-up packet gap after second review
+
+The second review supplied by owner is **PARTIAL because file #2 (earlier reconciliation) was missing**. Before treating further review as full, provide the complete [earlier R2.1b security reconciliation](GPS_DETECTION_2_0_R2_1B_INDEPENDENT_SECURITY_REVIEW_RECONCILIATION_2026-10-17.md), the updated [strict read-only design](GPS_DETECTION_2_0_R2_1B_P0_STRICT_READ_ONLY_DESIGN_2026-10-17.md), and the new [second review reconciliation](GPS_DETECTION_2_0_R2_1B_P0_SECOND_REVIEW_RECONCILIATION_2026-10-17.md). Never claim the reviewer inspected code without an explicit confirmation.
+
+The present accepted decision is **NO-GO for production Option A and live tracks**, conditional synthetic-only P0-D3 design after owner approval, S01–S23 proof pending. A critique cannot grant data access.
 
 ## Mandatory adversarial questions
 
