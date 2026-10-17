@@ -1,11 +1,25 @@
 # FlyTally GPS Detection 2.0 — R2.1c Pilot Review architecture draft
 
 **Date:** 2026-10-17
-**Status:** **DESIGN / READ-ONLY ANALYSIS ONLY — NO PRODUCT APPROVAL, NO CODE IMPLEMENTATION, NO DEPLOY**
+**Status:** **D1–D5 PRODUCT DIRECTION APPROVED; DESIGN / PRODUCTION IMPLEMENTATION NOT APPROVED; NO DEPLOY**
 **Post-review status:** **FIX DESIGN FIRST** (DeepSeek independent PARTIAL/handoff-only, then GitHub source reconciliation by ChatGPT); **live Pilot Review BLOCKED**. This document was the initial proposal; the [source-verified reconciliation and provenance/display contract](GPS_DETECTION_2_0_R2_1C_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-17.md) supersede any implication that the initial DTO can be implemented or displayed based only on `SourceMetadata.status="KNOWN"`.
 
 **Repo:** filipto861/flytally-logbook only. Research Draft PR #350, branch `test/gps-detection-r21-falsification`. Canonical main source inspected at `main@6a67a02475ab09c3271f8646427f7956ed6e590a`.
 **Baseline:** research executable source clean `681c62d90d21fdf1efd4aa3ada83383249ea857b`: owner-local GPS/legacy targeted **83/83 PASS** and TypeScript PASS; subsequent docs-only HEAD `3294760eef337985b96e79c29d856a95fa1380de`. This is synthetic regression evidence, not wheel-contact truth.
+
+## Product owner approval — 2026-10-17 (FROZEN D1–D5 direction)
+
+The product owner explicitly approved the recommended R2.1c Pilot Review direction. This supersedes the earlier `PENDING` product-choice wording in this document, but **does not waive** the DeepSeek/source-provenance/security implementation gates.
+
+- **D1 APPROVED:** add the pilot-facing V2 advisory **only inside the existing GPS import's `Review GPS track` flow**. No second standalone workflow or new flight-authority API.
+- **D2 APPROVED:** optional **ephemeral, advisory-only notes**, with `Leave unresolved` as default; a viewed note is not confirmed gear contact, legal flight evidence or certification. Avoid ambiguous `Reviewed`/green success authority labels.
+- **D3 APPROVED:** **hide pilot-facing altitude/vertical-rate candidates** unless independently supported source units/mode and parser-transformation provenance have been validated by a defined evidence boundary. A caller-supplied `Known` or `validated:true` cannot unlock display. Unknown ≠ zero or MSL/AGL. Horizontal stop-go hypotheses, if ever displayed, require separate verified horizontal/time applicability and remain advisory only.
+- **D4 APPROVED:** no persistence of notes in the first phase, no new DB migration, no cross-upload retention claim. Changing file/split/metadata/algorithm invalidates notes.
+- **D5 APPROVED / DEFERRED:** **no separate post-flight review** of saved tracks until P0-D3 independent owner/consent/strict no-write/RLS gates and source-fidelity evidence exist. No A07/A08 go-around/low-approach labels before a separate source-backed product decision.
+
+Other frozen constraints: **no automatic prefilling, modifying or certifying landing/day/night/starts counts**, default-OFF feature flag must retain existing legacy import behavior, V2 hypotheses must never enter `gpsFlightCandidate` or `importKmlFlight` as contact evidence, `physicalContactStatus=UNRESOLVED`, GPS-only whole-flight landing count `UNAVAILABLE`. Product direction approval is **NOT an instruction or approval to use private owner GPS, change production UX, run DB/RLS, merge or deploy**.
+
+**Approved next limited milestone:** R2.1c-D2 synthetic/parser-source provenance falsification and strict fail-closed evidence design, **research-only**. D3 DTO after D2 evidence, with its own review/test gate.
 
 ## 1. Existing product reality — do not build a duplicate workflow
 
@@ -112,4 +126,4 @@ Owner is final product decision maker. These are proposals, **not frozen impleme
 - **Renderer:** missing altitude and invalid Δt currently have zero fallbacks in the legacy player. Source code confirms the fallback, not actual runtime visual impact; a future display-only patch must be verified separately and must not change legacy count semantics.
 - **Sequencing:** design reconciliation (now) → standalone parser/provenance red-line tests and trusted capability contract (not yet run) → pure offline DTO test adapter → only with owner-frozen decisions and complete P0-D3 security source authority consider an actual flagged integration. No production/DB actions or release approvals in this milestone.
 
-**Owner choices D1–D5 in §5 remain PENDING**. The proposed feature flag, memory-only notes and inline UX are recommendations, not authorization.
+**Owner choices D1–D5 in §5 are now APPROVED as product direction** (see approval block above); source-provenance, strict data authorization, acceptance and deployment gates remain OPEN.
