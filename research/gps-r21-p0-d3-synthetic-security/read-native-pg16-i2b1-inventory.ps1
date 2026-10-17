@@ -26,9 +26,7 @@ try {
             throw 'ambient database override'
         }
     }
-    $principal = New-Object Security.Principal.WindowsPrincipal(
-        [Security.Principal.WindowsIdentity]::GetCurrent()
-    )
+    $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
     $elevated = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     $profile = [Environment]::GetFolderPath('UserProfile')
     $appdata = Join-Path $profile 'AppData'
