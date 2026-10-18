@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { AircraftOption } from "@/lib/data/aircraft";
 import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,FlightActionState } from "@/app/(protected)/flights/actions";
 import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
-import { inspectGpsV2HorizontalCsv } from "@/lib/gps-v2-advisory";
+import { inspectGpsV2HorizontalTrack } from "@/lib/gps-v2-advisory";
 import type { ImportReviewEvent } from "@/components/gps-import-review-player";
 import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
@@ -149,7 +149,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
   const visualTrack=useMemo(()=>analysis?mapTrack(analysis.points,-1,registration,undefined,1800):null,[analysis,registration]);
   const visualEvents=useMemo(()=>analysis?importReviewEvents(analysis,cuts):[],[analysis,cuts]);
-  const v2Advisory=useMemo(()=>GPS_V2_ADVISORY_ENABLED&&analysis?inspectGpsV2HorizontalCsv({sourceText:analysis.sourceText,fileName:analysis.name,canonicalPoints:analysis.points,splitCuts:cuts}):null,[analysis,cuts]);
+  const v2Advisory=useMemo(()=>GPS_V2_ADVISORY_ENABLED&&analysis?inspectGpsV2HorizontalTrack({sourceText:analysis.sourceText,fileName:analysis.name,canonicalPoints:analysis.points,splitCuts:cuts}):null,[analysis,cuts]);
 
   const resetParts=(next:number[],source=analysis)=>{
     if(!source)return;
