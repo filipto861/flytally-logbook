@@ -43,7 +43,7 @@ test("D4-SOURCE-01 two blocks 4.9-second apart remain a hard evidence boundary",
   const r=accepted(source);
   assert.equal(r.blockCount,2);
   assert.deepEqual(r.blockedEdges,[2]);
-  assert.deepEqual(r.continuousIslands,[{first:0,last:2},{first:3,last:5}]);
+  assert.deepEqual(r.unblockedSourceRuns,[{first:0,last:2},{first:3,last:5}]);
   assert.deepEqual(r.blockedEdgeReasons[0].reasons,["SOURCE_BLOCK_BOUNDARY"]);
 });
 test("D4-SOURCE-02 35/94 second telemetry-like outages are not silently bridged",()=>{
@@ -51,7 +51,7 @@ test("D4-SOURCE-02 35/94 second telemetry-like outages are not silently bridged"
     [pt(0),pt(5)],[pt(40),pt(45)],[pt(139),pt(144)],
   ]));
   assert.deepEqual(r.blockedEdges,[1,3]);
-  assert.equal(r.continuousIslands.length,3);
+  assert.equal(r.unblockedSourceRuns.length,3);
   assert.equal(r.actualLandings,"UNAVAILABLE");
 });
 test("D4-SOURCE-03 empty middle gx block fails closed instead of inventing motion",()=>{
