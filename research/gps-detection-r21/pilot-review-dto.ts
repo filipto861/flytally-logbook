@@ -75,7 +75,7 @@ const PILOT:D3PilotUnavailable=Object.freeze({
   fullFlightLandingCount:"UNAVAILABLE",
   canAffectCanonicalFlight:false,
 });
-const NOTE_POLICY=D3OfflineReviewDto["notePolicy"]=Object.freeze({
+const NOTE_POLICY:D3OfflineReviewDto["notePolicy"]=Object.freeze({
   initial:"LEAVE_UNRESOLVED",persistence:"NONE",canAddNotes:false,
 });
 const isRecord=(value:unknown):value is Record<string,unknown>=>
