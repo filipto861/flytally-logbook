@@ -107,3 +107,19 @@ Do NOT paste raw KML, private registrations or complete routes into GitHub issue
 - No production parser, detector, UI, feature flag, database, flight data, migration, merge or deploy has changed.
 
 **Next step:** run the existing owner-local six-file D4.1 lineage summary CLI shown in this document. Expected raw/normalized counts by sample are 951→948, 590→587, 897→893, 77→74, 596→593, 1037→1034; block counts 2/2/3/2/2/2. Do not invent expected conflict or boundary-edge counts — inspect actual output. Any `UNAVAILABLE` or mismatch should fail the corpus acceptance gate and be investigated without altering production behavior.
+
+
+## Read-only independent six-KML duplicate audit — preliminary, not Node sidecar acceptance
+
+In an assistant-local independent parser inspection of the six owner-uploaded KML files, indexed by private anonymous sample IDs:
+
+| Sample | Blocks | Paired raw fixes | Legacy-shaped dedup fixes | Adjacent collapsed duplicates | Conflicting duplicate altitudes | Cross-block collapsed duplicates | Timestamp order inversions |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sample03 | 2 | 951 | 948 | 3 | 0 | 0 | 0 |
+| sample04 | 2 | 590 | 587 | 3 | 0 | 0 | 0 |
+| sample05 | 3 | 897 | 893 | 4 | 0 | 0 | 0 |
+| sample06 | 2 | 77 | 74 | 3 | 0 | 0 | 0 |
+| sample07 | 2 | 596 | 593 | 3 | 0 | 0 | 0 |
+| sample08 | 2 | 1037 | 1034 | 3 | 0 | 0 | 0 |
+
+**Method limitation:** This is a separate local Python inspection of source block/time/coord pairs using the documented legacy near-duplicate rule, not a native execution of `tooling/gps-v2-d4-lineage.mjs` and not proof of exact JS canonical parity. It cannot replace the next owner-local Node24 six-file acceptance run. No raw routes, source names, coordinates or source timestamps have been committed. Expected blocked edge and `sourceRuns` values are not asserted until native evaluation; source runs are not independently validated time/speed continuity.
