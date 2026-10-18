@@ -11,7 +11,7 @@
  */
 import type {KmlPoint} from "./track-processing.ts";
 import {haversineKm} from "./track-processing.ts";
-import {examineStrictCsvSourceLineage,CSV_LINEAGE_PARSER_REVISION} from "../research/gps-detection-r21/csv-lineage.ts";
+import {examineStrictCsvSourceLineage,CSV_LINEAGE_PARSER_REVISION} from "./gps-v2-source-lineage.ts";
 
 export const GPS_V2_ALGORITHM_REVISION="GPS_V2_HORIZONTAL_V1" as const;
 export type GpsV2Reason=
