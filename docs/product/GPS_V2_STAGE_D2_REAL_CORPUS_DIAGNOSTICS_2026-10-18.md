@@ -68,3 +68,26 @@ Run on owner-local Node24 checkout, using the exact raw KML previously tested:
 Send only redacted JSON reports (not raw files/paths) for analysis. The program does not attach pilot labels or alter results. **Latest new D2 code/tests NOT RUN**; prior 39/39 PASS and TypeScript PASS belong to the earlier comparator SHA, not this D2 code HEAD.
 
 After report inspection, differentiate observed anomalies from causality: a >25 m/s step in the surrounding window is not necessarily within the actual left-minimum-right qualifying evidence span. If source altitude is unverified, record source-derived altitude shape only, not confirmed AGL/contact.
+
+## D2 event quality probe — FIRST OWNER-LOCAL RESULTS (2026-10-18)
+
+**Evidence scope:** Owner local PowerShell: Node v24.19.0, git rev-parse HEAD = 69e7e220; targeted 44/44 PASS; npm run typecheck PASS. Both original KML files were read locally by the research-only D2 CLI. Reports are redacted aggregate/relative-offset data; prior pilot labels remain separate. Current repository HEAD after this documentation change will differ from tested source SHA.
+
+| Sample/event (elapsed) | Pilot status | Legacy smoothed horizontal km/h | Source altitude height above event: max before / after (m) | Nearest +30m evidence span (s) | Within-span edges below 0.1s | Edges >15s | Alt-rate >25m/s | Max observed valid alt-rate m/s |
+| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| sample01 +1824.9 | Confirmed false legacy T&G | 126.9 | 54.2 / 41.9 | 52.8 | 1 | 1 | 0 | 12.6 |
+| sample01 +3694.9 | Pilot-time-corresponding T&G | 104.1 | 103.9 / 195.5 | 61.0 | 0 | 3 | 0 | UNAVAILABLE (no valid-rate intervals <=15s in span) |
+| sample02 +3110.7 | Pilot-time-corresponding T&G | 95.6 | 120.7 / 134.6 | 71.0 | 0 | 0 | 0 | 4.8 |
+| sample02 +3409.7 | Pilot-time-corresponding T&G | 96.8 | 124.0 / 138.8 | 75.0 | 0 | 1 | 0 | 3.6 |
+
+The BEFORE/AFTER figures above are **source-height deviations from each event candidate** within ten surrounding fixes, not AGL, actual climb/descent, runway elevation or contact evidence. The relative times are derived by JavaScript millisecond parsing, not verified timing precision of the receiver.
+
+**Measured limitations and falsification:**
+- The one confirmed false legacy candidate has a source-derived V-shaped altitude pattern and passes current legacy altitude jump-rate guard; no >25 m/s edge inside its qualifying evidence span. A guard on this rate **alone** cannot reject it.
+- It includes one sub-0.1-second timed edge and one >15-second interval within the qualification span; neither proves those samples caused the false proposal.
+- A known true pilot-matched T&G on sample01 has *three* >15-second intervals within its own qualification span. A blanket rule treating any >15-second interval as evidence of a false T&G would risk suppressing this true event. It is especially important that its valid altitude-rate maximum is **UNAVAILABLE**, not zero.
+- The other two pilot-matched events have more consistent sampling; one still has a >15-second span gap.
+- Sample02's confirmed low pass is pilot-labeled but NOT separately analyzed by this new probe: the CLI only emits quality for legacy T&G proposals, not arbitrary ground-truth negatives.
+- Event-level reasons for the V2 STOP_GO misses are still not individually established; the horizontal-only algorithm structurally lacks rolling-T&G altitude recognition. Do not modify production thresholds from these four proposals.
+
+**Next D2 action:** acquire additional owner-provided KML/GPX/CSV tracks (public ADS-B is acceptable for robustness/disagreement research, with source/licence/provenance recorded). Keep real T&G/full-stop/low-pass counts as UNKNOWN unless pilot/independent evidence supports them. Prefer both confirmed positives and confirmed negatives, including suspected go-arounds and low passes. Inspect quality windows then prepare independent reviewer questions; no tuning/count update, no source upload to GitHub.
