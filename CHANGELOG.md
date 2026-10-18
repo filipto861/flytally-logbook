@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-18 — GPS V2 D4.1 exact-HEAD targeted tests and TypeScript PASS (LOCAL RESEARCH)
+
+- Owner fetched checked-out research HEAD `3fc3cd11` and completed 63/63 targeted Node tests (0 fail) and `npm run typecheck` (`tsc --noEmit`) PASS. This confirms the previously failing TS2367/TS2339 test-helper fix; results are OWNER-LOCAL, not CI. No production runtime or GPS detector changes.
+- Reconciled D4.1 implementation ledger. Remaining acceptance: native read-only D4.1 sidecar CLI over six private KML files with source blocks, raw/canonical count parity and blocked-edge summaries. Prior D4.0 native comparator success does not substitute. D4.1 not yet done; full suite/build/Playwright/browser/deploy NOT RUN; DB/migration N/A; flag OFF, PR #366 Draft, no merge.
+
 ## 2026-10-18 — GPS D4.1 first owner-local targeted tests and TypeScript repair (STAGED)
 
 - Owner submitted Windows PowerShell output from exact research HEAD `059b98a9`: 63/63 target Node tests **PASS** (local, not CI); `npm run typecheck` **FAIL** with TS2367/TS2339 in the new D4.1 test helper at line 30. Root cause is TypeScript discriminant narrowing after a prior `assert.equal()` assertion.
