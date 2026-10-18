@@ -178,3 +178,130 @@ test("V2-F14 untrusted source reader never grants landing authority from valid a
   assert.equal(result.wholeFlightLandings,"UNAVAILABLE");
   assert.equal(result.physicalContact,"UNRESOLVED");
 });
+
+/** Synthetic UTC/duplicate shape inferred from a privacy-safe real KML probe.
+ * No real coordinates, location, flight time or original source file committed.
+ */
+function highPrecision(points=fixes){
+  return points.map(p=>({...p,time:p.time.replace("Z",".123456789Z")}));
+}
+
+test("V2-F15 9-digit SkyDemon KML UTC is preserved verbatim and matches canonical",()=>{
+  const source=kml(highPrecision());
+  const parsed=inspectGpsV2SourceLineage(source,"sky-track.kml");
+  assert.equal(parsed.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY");
+  if(parsed.status!=="SOURCE_PARSED_DIAGNOSTIC_ONLY")return;
+  const canonical=parseTrackFile(source,"sky-track.kml");
+  assert.equal(parsed.samples.length,canonical.length);
+  assert.equal(parsed.samples[0].utc,highPrecision()[0].time);
+  assert.ok(parsed.samples.every((p,i)=>p.utc===canonical[i].time));
+  const v2=inspect(source,"sky-track.kml");
+  assert.equal(v2.status,"ADVISORY_ONLY");
+  assert.equal(v2.canAffectCanonicalFlight,false);
+});
+
+test("V2-F16 adjacent exact duplicate KML fix is removed only with canonical parity",()=>{
+  const points=highPrecision();
+  const withRepeat=[...points.slice(0,5),{...points[4]},...points.slice(5)];
+  const source=kml(withRepeat);
+  const canonical=parseTrackFile(source,"sky-track.kml");
+  assert.equal(canonical.length,points.length);
+  const parsed=inspectGpsV2SourceLineage(source,"sky-track.kml");
+  assert.equal(parsed.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY");
+  if(parsed.status!=="SOURCE_PARSED_DIAGNOSTIC_ONLY")return;
+  assert.equal(parsed.samples.length,canonical.length);
+  assert.equal(inspect(source,"sky-track.kml").status,"ADVISORY_ONLY");
+});
+
+test("V2-F17 identical KML time at distinct positions remains a zero-dt discontinuity",()=>{
+  const points=highPrecision();
+  const repeated={...points[6],lon:points[6].lon+0.004};
+  const source=kml([...points.slice(0,7),repeated,...points.slice(7)]);
+  const canonical=parseTrackFile(source,"sky-track.kml");
+  assert.equal(canonical.length,points.length+1);
+  const parsed=inspectGpsV2SourceLineage(source,"sky-track.kml");
+  assert.equal(parsed.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY");
+  if(parsed.status!=="SOURCE_PARSED_DIAGNOSTIC_ONLY")return;
+  assert.equal(parsed.samples.length,canonical.length);
+  const result=inspect(source,"sky-track.kml");
+  assert.equal(result.status,"ADVISORY_ONLY");
+  assert.equal(result.wholeFlightLandings,"UNAVAILABLE");
+  assert.equal(result.physicalContact,"UNRESOLVED");
+  assert.equal(result.canAffectCanonicalFlight,false);
+  // Do not misrepresent the same-timestamp pair as an observed flight contact.
+  assert.ok(result.events.every(e=>e.physicalContact==="UNRESOLVED"));
+});
+
+test("V2-F18 canonical altitude-discard conflicts at an adjacent duplicate fail closed",()=>{
+  const points=highPrecision();
+  const conflicting={...points[4],alt:points[4].alt+30};
+  const source=kml([...points.slice(0,5),conflicting,...points.slice(5)]);
+  assert.equal(parseTrackFile(source,"sky-track.kml").length,points.length);
+  const parsed=inspectGpsV2SourceLineage(source,"sky-track.kml");
+  assert.equal(parsed.status,"UNAVAILABLE");
+  const result=inspect(source,"sky-track.kml");
+  assert.equal(result.status,"UNAVAILABLE");
+  assert.deepEqual(result.events,[]);
+});
+
+test("V2-F19 missing zone, non-UTC offset and excessive UTC fraction remain unavailable",()=>{
+  const source=kml(highPrecision());
+  for(const revised of [
+    source.replace(".123456789Z",".123456789"),
+    source.replace(".123456789Z",".123456789+01:00"),
+    source.replace(".123456789Z","."+("1".repeat(33))+"Z")
+  ]){
+    const result=inspect(revised,"sky-track.kml");
+    assert.equal(result.status,"UNAVAILABLE");
+    assert.deepEqual(result.events,[]);
+  }
+});
+
+test("V2-F20 distinct submillisecond timestamps mapping to same JS ms are isolated",()=>{
+  const points=highPrecision();
+  const near={...points[6],lon:points[6].lon+0.004,time:points[6].time.replace("123456789","123456790")};
+  const source=kml([...points.slice(0,7),near,...points.slice(7)]);
+  const canonical=parseTrackFile(source,"sky-track.kml");
+  assert.equal(canonical.length,points.length+1);
+  assert.equal(Date.parse(near.time),Date.parse(points[6].time));
+  const result=inspect(source,"sky-track.kml");
+  assert.equal(result.status,"ADVISORY_ONLY");
+  assert.equal(result.wholeFlightLandings,"UNAVAILABLE");
+});
+
+test("V2-F21 privacy-derived 1094/1088 KML duplicate-shape matches exact source index",()=>{
+  const base=Array.from({length:1078},(_,i)=>({
+    lat:50,
+    lon:14+i*0.00001,
+    alt:100,
+    time:new Date(Date.UTC(2026,0,1,10,0,0)+i*5000)
+      .toISOString().replace(".000Z",".123456789Z")
+  }));
+  const expanded=[...base];
+  // Six adjacent same-time/same-position repeats are removed by canonical KML.
+  for(let j=5;j>=0;j--){
+    const index=40+j*140;
+    expanded.splice(index+1,0,{...base[index]});
+  }
+  // Ten same-time DISTINCT-position fixes cannot be discarded or assigned
+  // observed motion speed; the V2 engine cuts the dt=0 edge.
+  for(let j=9;j>=0;j--){
+    const index=100+j*90;
+    const target=base[index];
+    const at=expanded.findIndex(p=>p===target);
+    expanded.splice(at+1,0,{...target,lon:target.lon+0.0005});
+  }
+  assert.equal(expanded.length,1094);
+  const source=kml(expanded);
+  const canonical=parseTrackFile(source,"redacted-shape.kml");
+  assert.equal(canonical.length,1088);
+  const parsed=inspectGpsV2SourceLineage(source,"redacted-shape.kml");
+  assert.equal(parsed.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY");
+  if(parsed.status!=="SOURCE_PARSED_DIAGNOSTIC_ONLY")return;
+  assert.equal(parsed.samples.length,canonical.length);
+  assert.ok(parsed.samples.every((p,i)=>p.lat===canonical[i].lat&&p.lon===canonical[i].lon&&p.altM===canonical[i].alt&&p.utc===canonical[i].time));
+  const result=inspect(source,"redacted-shape.kml");
+  assert.equal(result.status,"ADVISORY_ONLY");
+  assert.equal(result.wholeFlightLandings,"UNAVAILABLE");
+  assert.equal(result.canAffectCanonicalFlight,false);
+});
