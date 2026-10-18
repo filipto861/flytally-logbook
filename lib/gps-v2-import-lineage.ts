@@ -12,7 +12,7 @@ import {
   examineStrictCsvSourceLineage,
 } from "./gps-v2-source-lineage.ts";
 
-export const GPS_V2_IMPORT_LINEAGE_REVISION="GPS_V2_IMPORT_LINEAGE_V1" as const;
+export const GPS_V2_IMPORT_LINEAGE_REVISION="GPS_V2_IMPORT_LINEAGE_V2" as const;
 export type GpsV2LineageKind="STRICT_CSV"|"SKYDEMON_CSV"|"GPX_TRACK"|"KML_GX_TRACK";
 export type GpsV2LineagePoint={lat:number;lon:number;altM:number|null;utc:string};
 export type GpsV2ImportLineage=
