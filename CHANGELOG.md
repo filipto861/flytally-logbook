@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — Stage D4 multi-gx:Track source-lineage design proposed (DOCS ONLY)
+
+- Independently audited owner-submitted six KMLs for source-block counts and post-normalization block boundaries. Relative intervals 20.11, 70.66, 24.01/77.16, 92.46, 4.90 and 26.39 seconds; none provide independent continuity proof. No raw GPS route/coordinates/dates committed.
+- Added D4 design-only proposed source-lineage sidecar interface and no-bridge/split/dedup/parity acceptance cases, with PowerShell commands for owner-local native D1 comparator on the same six KMLs. Reviewed DeepSeek recommendations against existing legacy canonical sort/dedup; keep canonical model unchanged. 
+- **No runtime source or tests modified**; native six-file comparator and new exact-HEAD tests NOT RUN, D4.1 implementation NOT STARTED pending owner approval. PR #366 Draft, parent #364 Draft, no DB/migration/merge/deploy or feature enablement.
+
 ## 2026-10-18 — Stage D3 independent DeepSeek review reconciliation (DOCS ONLY)
 
 - Received DeepSeek read-only critique of the redacted six-track corpus; independently compared its source-lineage, duplicate-fix, ambiguity and ground-truth assertions against actual `lib/track-processing.ts`, `lib/gps-v2-import-lineage.ts`, `lib/gps-v2-advisory.ts`, and the frozen D3 offline DTO contract.
