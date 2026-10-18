@@ -1,5 +1,7 @@
 # GPS V2 — Stage D4 multi-gx:Track source-lineage proposal
 
+**Superseding decision (2026-10-18):** The owner has now explicitly **approved only D4.1 research-sidecar implementation**, which is staged in PR #366, without production lib/parser, detector, flight data or UI changes. Source-run wording is strictly provenance-only, not evidence of time/speed continuity. The original design/approval-pending text below is retained for historical context. **D4.1 Node24/typecheck/six-file acceptance still NOT RUN; D4.2 detector integration and production visibility are NOT approved.** See `docs/product/GPS_V2_STAGE_D4_1_RESEARCH_SIDECAR_IMPLEMENTATION_2026-10-18.md` for current milestone state.
+
 **Date:** 2026-10-18. **Current status:** D4.0 OWNER-LOCAL NATIVE CORPUS CLASSIFICATION COMPLETE; D4.1 research sidecar DESIGN PROPOSAL / OWNER APPROVAL REQUIRED before implementation.
 **Repo:** flytally-logbook. Research PR #366 (draft); parent PR #364 (draft). No flytally-training changes.
 **Purpose:** make source applicability to multiple KML gx:Track blocks researchable without inventing movement, modifying canonical flights or enabling experimental production Pilot Review.
