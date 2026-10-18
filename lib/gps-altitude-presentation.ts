@@ -21,7 +21,8 @@ export function interpolatedGpsAltitude(
 export function gpsAltitudeProfileGeometry(
   values:readonly (number|null|undefined)[],
   width:number,
-  height:number
+  height:number,
+  breakBefore:readonly boolean[]=[]
 ):{segments:string[];isolated:Array<{cx:number;cy:number}>}{
   const result:{segments:string[];isolated:Array<{cx:number;cy:number}>}={segments:[],isolated:[]};
   if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)return result;
@@ -36,6 +37,7 @@ export function gpsAltitudeProfileGeometry(
     positions.length=0;
   };
   for(let index=0;index<alts.length;index++){
+    if(breakBefore[index])flush();
     const altitude=alts[index];
     if(altitude===null){flush();continue}
     positions.push({
