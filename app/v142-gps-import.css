@@ -26,3 +26,13 @@
   .profile-event-marker>span{font-size:.5rem;padding:3px 4px}
   .import-event-strip button{min-width:76px}
 }
+
+
+/* GPS V2 pilot-review experiment: opt-in only, no legacy marker or form overrides. */
+.gps-v2-preview{display:grid;gap:10px;margin:12px 0 8px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.gps-v2-preview>.section-heading{margin-bottom:0}
+.gps-v2-event-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;list-style:none;padding:0;margin:0}
+.gps-v2-event-list li{display:grid;gap:3px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.gps-v2-event-list li strong{font-size:.85rem;line-height:1.35}
+.gps-v2-event-list li span{font-size:.74rem;color:var(--muted);line-height:1.45}
+@media(max-width:600px){.gps-v2-preview{padding:11px}.gps-v2-event-list{grid-template-columns:1fr}}
