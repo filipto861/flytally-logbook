@@ -42,7 +42,9 @@ export type D42Result=
     reason:null|"UNOBSERVED_CONTINUITY";
   })[];
   hypotheticalBase:readonly SafeCandidate[];
-  suppressedByBoundary:readonly SafeCandidate[];
+  suppressedByBoundary:readonly (SafeCandidate & {
+    disposition:"INCONCLUSIVE";reason:"SOURCE_DISCONTINUITY";
+  })[];
   cadence:Readonly<{
     positiveIntervals:number;medianSeconds:number|null;maxSeconds:number|null;
     intervalsAtOrAboveExisting60sLimit:number;
@@ -217,7 +219,7 @@ export function inspectD42Shadow(input:unknown):D42Result{
  const found=new Set(detected.map(key));
  const intervals:number[]=[];let invalid60=0;
  for(let i=0;i<points.length-1;i++){
-  if(blocked.has(i))continue;
+  if(blocked.has(i)||cuts.includes(i))continue;
   const a=ms(points[i].time),b=ms(points[i+1].time);
   if(a===null||b===null||b<=a)continue;
   const elapsed=(b-a)/1000;
@@ -231,7 +233,10 @@ export function inspectD42Shadow(input:unknown):D42Result{
   canAffectCanonicalFlight:false,sourceBlocks:proof.blockCount,
   canonicalFixes:points.length,blockedEdges:proof.blockedEdges.length,
   hypotheticalBase:base.map(c=>safe(c,origin)),
-  suppressedByBoundary:base.filter(c=>!found.has(key(c))).map(c=>safe(c,origin)),
+  suppressedByBoundary:base.filter(c=>!found.has(key(c))).map(c=>({
+   ...safe(c,origin),disposition:"INCONCLUSIVE" as const,
+   reason:"SOURCE_DISCONTINUITY" as const,
+  })),
   candidates:detected.map(c=>{
    const inconclusive=c.kind==="STOP_GO_REVIEW_POINT"&&c.slowEdges===1;
    // One averaged slow edge, even 35s long, is not repeated low-speed evidence.
