@@ -1,5 +1,7 @@
 # GPS V2 — D4.2A independent review reconciliation and proposed implementation contract
 
+**Implementation update (2026-10-18):** The product owner explicitly approved Option A research-only D4.2A implementation after this read-only review. The shadow code, synthetic tests and local-only CLI are now STAGED on PR #366, **not tested or completed**. No production lib/ or Pilot Review changes. See `docs/product/GPS_V2_STAGE_D4_2A_SHADOW_IMPLEMENTATION_2026-10-18.md` for actual files, evidence ledger and next exact-HEAD verification gate. The original pre-approval proposal and options below remain historical context.
+
 **Date:** 2026-10-18. **Status:** REVIEW RECEIVED AND RECONCILED; IMPLEMENTATION NOT APPROVED / NOT STARTED.
 **Scope:** `flytally-logbook` PR #366 Draft, research-only. Parent PR #364 Draft; main/production not modified.
 **Independent reviewer:** DeepSeek. Reviewer had no repository, private KML, production runtime or independent touchdown evidence. Recommendations were independently checked against current repo code by ChatGPT.
