@@ -30,6 +30,41 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   await expect(gpsForm).toContainText("0 GPS points");
   await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toHaveCount(0);
 
+  // Build-time V2 ON acceptance, deliberately inside this authoritative
+  // selected GPS-save browser scenario (desktop + mobile). OFF remains a
+  // zero-change legacy control; no new database/fixture workflow.
+  if(process.env.NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY==="1"){
+    const speeds=[5,5,60,60,60,5,5,5,60,60,60,5,5];
+    let lon=14;
+    const date="2026-10-05";
+    const rows=[`50,${lon.toFixed(9)},0,${date},14:00:00Z,"start, apron"`];
+    for(let index=0;index<speeds.length;index++){
+      lon+=speeds[index]*5/3600/(111.1950802*Math.cos(50*Math.PI/180));
+      rows.push(`50,${lon.toFixed(9)},0,${date},14:00:${String((index+1)*5).padStart(2,"0")}Z,flight`);
+    }
+    const skydemon=[
+      "Latitude,Longitude,Altitude ft,UTC Date,UTC Time,Note",...rows
+    ].join("\n");
+    await gpsForm.locator('input[name="kml"]').setInputFiles({
+      name:"SkyDemon_v2_checked.csv",mimeType:"text/csv",buffer:Buffer.from(skydemon)
+    });
+    await expect(gpsForm).toContainText("14 GPS points");
+    const review=gpsForm.locator("details.gps-track-review");
+    if(!(await review.evaluate(node=>node.open)))await review.locator("summary").click();
+    const preview=gpsForm.locator("[data-gps-v2-preview]");
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText("Movement patterns for pilot review");
+    await expect(preview).toContainText("Possible stop-and-go movement");
+    await expect(preview).toContainText("Unresolved");
+    await expect(preview).toContainText("cannot change logbook counts");
+    const startsBefore=await gpsForm.locator('input[name="part_0_starts"]').inputValue();
+    await expect(gpsForm.locator('input[name="part_0_starts"]')).toHaveValue(startsBefore);
+    // Re-uploading unsupported wider CSV must invalidate V2 source claims.
+    // The regular manually reviewed form and legacy saving continue below.
+  }else{
+    await expect(gpsForm.locator("[data-gps-v2-preview]")).toHaveCount(0);
+  }
+
   // Unlike the KML-only baseline, the selected registered GPS save test now
   // exercises real CSV data with missing altitude AND a measured zero.
   const validCsv=[
