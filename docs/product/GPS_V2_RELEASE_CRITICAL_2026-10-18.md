@@ -1,5 +1,10 @@
 # FlyTally Logbook — GPS Detection 2.0 expedited release track
 
+## Status addendum — 2026-10-18 (supersedes original unrun staging snapshot below)
+
+- Previous exact PR #364 HEAD `ad28752c288c38398eb64a511a9a6f3f342b8227`: owner-local targeted Node 85/85 PASS; `verify:iterate` 257/257 source, 54/54 GPS domain, TypeScript PASS. Risk release aggregate **1689/1690**, `release_status=FAIL` due to `tests/v340-flight-entry-phase1.test.ts:104` expecting frozen `open={gpsReviewNeedsAttention}`. Build and authenticated browser NOT RUN (release stopped on aggregate failure). Disposable PG16 cluster verified local only and stopped successfully.
+- **Minimal correction now staged**: restore frozen clean-track disclosure open expression in `components/kml-import-form.tsx`, align the *new* `tests/gps-v2-ui-contract.test.ts`, do not modify historical v3.4.0 test. Original implementation and initial test run are history, not a current SHA PASS. Updated branch HEAD and risk candidate must be recomputed; targeted/full/release/browser **NOT RUN** after correction. Flag defaults OFF, no merge/deploy, real GPS source coverage and actual false positive/negative validation still pending.
+
 **Date:** 2026-10-18
 **Owner request:** expedite release of the actual improved GPS detection. User-facing behavior over further isolated research.
 **Repo:** `filipto861/flytally-logbook`
