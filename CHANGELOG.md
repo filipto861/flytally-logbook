@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS D2-C.1 merged to main (not deployed)
+
+- Merged PR [#360](https://github.com/filipto861/flytally-logbook/pull/360) at `beef98053e141f99fd7844fb7c02702b43107fda` from tested head `742aeadad4ac3432c78f62bbc37884f1500b05c8`. Changes: fail-file on absent/malformed CSV coordinates; missing altitude stays `null` (true numeric zero survives); finite decimal GPS values; optional altitude retained in persisted-track read; chart/playback gaps in import and saved/public views; async stale-file guard; owner-scoped browser negative/positive regression. No database migration, flight certification change, detector rewrite or automatic count mutation.
+- **Verified OWNER-LOCAL exact-head release evidence:** `release_status=PASS` candidate `ee585f0d97c23f9b355aae3c362685b60ed8c0c2e5fc92d12963213f971fa31f`; full Node **1650/1650**, direct domain **73/73**, application source **257/257**, isolated native PG16 **163/163**, disposable desktop/mobile Playwright **24/24**, TypeScript and candidate production build **PASS**, no blocked evidence. Tests run on PR head; this docs-only closeout creates a different documentary head (not claimed tested). CI NOT RUN. Source read-only first-party review reported no confirmed new merge blocker; external review explicitly not completed/waived for this bounded correction.
+- **Deployment:** NOT RUN; Git auto-deploy was disabled for `main` before merge. GPS Detection 2.0 Pilot Review and any real GPS owner/RLS security gating remain **NOT IMPLEMENTED/NOT AUTHORIZED**. Original source constraints and historical pre-merge results follow below.
+
 ## 2026-10-18 — GPS D2-C.1 runtime inventory correction (DRAFT / NOT RELEASED)
 
 - Updated `tooling/development-modules.json` audited runtime count from 398 to **400** after two new, already GPS-owned `lib/gps-*.ts` files. No test policy relaxation, source business-rule change, DB schema change or deploy.

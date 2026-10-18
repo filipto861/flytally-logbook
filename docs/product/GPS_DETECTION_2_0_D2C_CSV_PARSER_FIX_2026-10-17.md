@@ -1,5 +1,7 @@
 # GPS Detection 2.0 — D2-C narrowly scoped canonical CSV missing-data fix
 
+> **CURRENT CLOSING STATUS — 2026-10-18 (supersedes older Draft/NOT RUN snapshots below):** PR [#360](https://github.com/filipto861/flytally-logbook/pull/360) merged into `main` at `beef98053e141f99fd7844fb7c02702b43107fda`. Exact owner-tested head `742aeadad4ac3432c78f62bbc37884f1500b05c8`, candidate `ee585f0d97c23f9b355aae3c362685b60ed8c0c2e5fc92d12963213f971fa31f`: canonical `verify:release:risk` `release_status=PASS`, source 257/257, domain 73/73, full Node 1650/1650, PG16 163/163 (six isolated local clusters), browser-risk 24/24 (desktop/mobile against separate disposable local PG16), typecheck and production build PASS. Owner-local only, no CI and no production DB/Neon writes. Vercel Git deployment for `main` verified disabled; no deploy or production smoke. Independent external source reviewer was not engaged for this narrow fix; first-party source check found no confirmed blocker. **D2-C.1 coding/release-gate/merge complete; GPS Detection 2.0 and Pilot Review are NOT implemented or deployed.** Old milestones, constraints, and failures below remain historic.
+
 **Date:** 2026-10-17
 **Repository:** `filipto861/flytally-logbook`
 **Branch:** `fix/gps-import-csv-missing-values` based on canonical `main@6a67a02475ab09c3271f8646427f7956ed6e590a`
