@@ -130,7 +130,9 @@ test("V2-F9 malformed SkyDemon coordinate is not dropped into a plausible route"
 
 test("V2-F10 duplicate UTC in any supported source format fails closed",()=>{
   for(const c of cases){
-    const bad=c.source.replace("2026-10-18T10:00:05Z","2026-10-18T10:00:00Z");
+    const bad=c.kind==="SKYDEMON_CSV"?
+      c.source.replace("2026-10-18,10:00:05Z","2026-10-18,10:00:00Z"):
+      c.source.replace("2026-10-18T10:00:05Z","2026-10-18T10:00:00Z");
     const result=inspect(bad,c.file);
     assert.equal(result.status,"UNAVAILABLE",c.name);
     assert.deepEqual(result.events,[],c.name);
