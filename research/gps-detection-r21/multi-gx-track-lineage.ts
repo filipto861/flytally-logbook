@@ -173,7 +173,9 @@ export function inspectD4MultiGxLineage(
   }
   // Stable chronological ordering should be a no-op after the source-order
   // requirement; still compare against the ACTUAL canonical importer.
-  const actual=parseKml(sourceText);
+  let actual:KmlPoint[];
+  try { actual=parseKml(sourceText); }
+  catch { return unavailable("CANONICAL_SOURCE_MISMATCH"); }
   if(actual.length!==normalized.length ||
     actual.some((point,i)=>!equals(point,normalized[i].point)))
     return unavailable("CANONICAL_SOURCE_MISMATCH");
