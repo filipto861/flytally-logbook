@@ -200,6 +200,14 @@ export function inspectD42Shadow(input:unknown):D42Result{
  const bounds=[0,...cuts.map(c=>c+1),points.length];
  if(bounds.some((n,i)=>i>0&&n-bounds[i-1]<2))return unavailable("INVALID_SPLIT");
  const blocked=new Set(proof.blockedEdges);
+ // Existing V2 quarantines the two preceding and two following velocity
+ // contexts around an altitude-conflicting, canonical-retained duplicate.
+ // Preserve that stronger research-only exclusion, without changing lib/.
+ for(const fix of proof.canonical){
+  if(!fix.altitudeConflict)continue;
+  for(let j=Math.max(0,fix.canonicalIndex-2);
+   j<=Math.min(points.length-2,fix.canonicalIndex+1);j++)blocked.add(j);
+ }
  const base:Candidate[]=[],detected:Candidate[]=[];
  for(let part=0;part<bounds.length-1;part++){
   const from=bounds[part],end=bounds[part+1],slice=points.slice(from,end);
