@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-18 — GPS D4.1 first owner-local targeted tests and TypeScript repair (STAGED)
+
+- Owner submitted Windows PowerShell output from exact research HEAD `059b98a9`: 63/63 target Node tests **PASS** (local, not CI); `npm run typecheck` **FAIL** with TS2367/TS2339 in the new D4.1 test helper at line 30. Root cause is TypeScript discriminant narrowing after a prior `assert.equal()` assertion.
+- Applied minimal test-only guard reordering (`if status UNAVAILABLE then throw` before successful-status assertion) in commit `ae7b3574`; production GPS parser, V2 detector, app, DB and feature flag unaffected. **Patched HEAD targeted tests/typecheck NOT RUN.** Six-file D4.1 lineage CLI acceptance NOT RUN, no merge/deploy. Milestone remains open until rerun evidence.
+
 ## 2026-10-18 — D4.1 source-run semantic hardening (RESEARCH / NOT VERIFIED)
 
 - Renamed research sidecar `continuousIslands` to `unblockedSourceRuns` and CLI `motionIslands` to `sourceRuns` to avoid misrepresenting source block adjacency as confirmed sampling/motion continuity. Documentation makes explicit that gaps inside one source block are not validated by D4.1; source timing and velocity quality belong to the future D4.2 detector-consumption contract.
