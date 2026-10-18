@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS V2 M0 event-label and persisted-track research (DOCS ONLY)
+
+- After owner confirmed 3 actual T&G across two original flight recordings, one actual low pass, two full stops and one additional false legacy T&G suggestion, began a separate documentation-only ground-truth study; no new detector result claimed.
+- Read-only repo inventory: saved `flight_tracks.coordinates_json` holds canonical points but not guaranteed source KML; existing authenticated read-only replay computes legacy advisory and the map player can decimate/select a longest segment. Consequently original-file V2 strict lineage must not be fabricated from saved points, and visual replay must not become complete track evidence.
+- Added research protocol covering pilot-supplied UTC precision, owner scope, read-only native RLS prerequisite for any future DB scan, quality/source classes, strict FP/FN scoring only on labeled intervals, frozen D3 visibility rules and DeepSeek read-only review. No production code, schema, migrations, DB queries, flight counts, auth, or certification touched. All execution/testing/build/browser/deploy **NOT RUN / N/A to doc-only scope**. PR #364 still a separate unmerged Draft with fresh ON/OFF release gates outstanding.
+
 ## 2026-10-18 — GPS Detection 2.0 D3 Batch 1 offline DTO (draft, tests not yet run)
 
 - Added offline-only `research/gps-detection-r21/pilot-review-dto.ts`: exact in-memory CSV source text, local SHA-256 equality-bound upload/split context, strict revision/schema and previous-session validation. No caller-forged trusted source, available pilot candidate, review note, physical-contact inference or flight-count write can result. Source parse diagnostics never include raw coordinates/timestamps in DTO. Genuine sensor quality/datum/altitude mode remains unavailable.
