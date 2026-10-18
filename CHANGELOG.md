@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — Stage D2 owner-local quality probe verified on two real KMLs (NO DETECTOR CHANGE)
+
+- Owner-local exact working HEAD `69e7e220` Node 24.19.0 targeted tests **44/44 PASS**, TypeScript **PASS**. Both prior private files analyzed by the new D2 quality CLI; no absolute timestamps or coordinates included in submitted reports.
+- Confirmed false legacy proposal (`sample01` +1824.9s): horizontal speed 126.9 km/h, surrounding source height differences +54.2/+41.9m, 52.8s +30m evidence span, 1 sub-0.1s edge, 1 >15s edge, no measured >25m/s altitude-rate edge. Pilot-matched event in the same source (`+3694.9s`) has 3 >15s edges and maximum valid rate UNAVAILABLE; this does not support indiscriminate sample-gap rejection. Pilot-matched sample02 events have 71s/75s altitude qualification spans. Cause of the false proposal is not yet proven; V2 horizontal rolling-T&G miss not independently localized by these diagnostics.
+- Docs-only evidence reconciliation. No new test run on resulting documentation-only SHA. Additional KML ground truth, full suite/build/Playwright/planner NOT RUN. No DB/migration/main/merge/deployment/feature-flag/production detector changes.
+
 ## 2026-10-18 — Stage D2 real-KML benchmark and quality probe (RESEARCH / NEW HEAD NOT VERIFIED)
 
 - User's local branch was explicitly verified as `114a8204` and ran the D1 comparator on two existing owner-labeled private KML files. `sample01`: 913 timed canonical points, 4092.5 s; legacy altitude hypotheses at +1824.9 s (pilot-confirmed false) and +3694.9 s (pilot-time-corresponding T&G); V2 ADVISORY_ONLY, no review points, one quarantined height conflict. `sample02`: 1088 timed canonical points, 3960.3 s; two pilot-time-corresponding legacy altitude hypotheses at +3110.7/+3409.7 s; V2 ADVISORY_ONLY with two unresolved ARRIVAL hints (+1356.7/+1462.5 s), no STOP_GO, one quarantined conflict. Pilot also confirmed a low pass in sample02. `groundTruthComparison=NOT_EVALUATED` remains intentional in CLI because labels come from a separate pilot-report source.
