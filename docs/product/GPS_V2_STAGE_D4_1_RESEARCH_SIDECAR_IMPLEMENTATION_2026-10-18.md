@@ -8,7 +8,7 @@
 
 1. research/gps-detection-r21/multi-gx-track-lineage.ts — pure bounded gx:Track source-to-canonical evidence sidecar. Reads only caller-provided source text, imports existing canonical parseKml (read-only), does NOT modify legacy parser or canonical flight model.
 2. tests/gps-v2-d4-multi-gx-lineage.test.ts — 19 synthetic source/provenance/fail-closed test cases. Test count is authored, not yet a passing result.
-3. tooling/gps-v2-d4-lineage.mjs — owner-local, read-only single-file CLI for a compact non-geographic summary. Outputs only anonymous sample ID, source block count, raw/normalized fix totals, collapsed/conflict fix counts, blocked-edge/collision-edge counts and motion island count. No source path, original filename, GPS coordinates, time, altitude or registration in stdout.
+3. tooling/gps-v2-d4-lineage.mjs — owner-local, read-only single-file CLI for a compact non-geographic summary. Outputs only anonymous sample ID, source block count, raw/normalized fix totals, collapsed/conflict fix counts, blocked-edge/collision-edge counts and unblocked source-run count. No source path, original filename, GPS coordinates, time, altitude or registration in stdout.
 4. No changes to lib/, app/, components/, pages, DB, migrations, persistence, flight calculations, landingCount, production V2 parser/detector or experimental feature flags.
 
 ## Frozen semantics and proof obligations
@@ -17,7 +17,7 @@
 - Canonical parity is evaluated by executing actual parseKml on the same raw string and requiring every normalized lat/lon/alt/time value and count to match exactly. Supplied canonical cannot forge trust.
 - Existing legacy dedup is mirrored: adjacent same-UTC/near-position fixes preserve first reading. All collapsed raw source fix references are retained in the sidecar. Conflicting source heights are quarantined, never made authoritative.
 - Source block identity remains sidecar metadata, not a flight split. Edges crossing source blocks are blocked, even at 4.9 seconds. When a cross-block duplicate collapses away, both neighboring canonical edges are blocked to avoid hidden bridging.
-- Same-millisecond timestamp collisions also quarantine neighboring edges. No speed or altitude calculations are performed by D4.1, and no recognizer consumes its edges yet.
+- Same-millisecond timestamp collisions also quarantine neighboring edges. These source runs are NOT proof of temporal/sensor continuity; 35-second gaps inside a source block are not independently ruled out here. The production V2 edge-level time-gap gate is a separate D4.2 requirement. No speed or altitude calculations are performed by D4.1, and no recognizer consumes its edges yet.
 - Data gaps cannot prove touchdown. This tool is about provenance and continuity only. It always returns canAffectCanonicalFlight=false, physicalContact=UNRESOLVED, actualLandings=UNAVAILABLE.
 - Additional forbidden inputs: GPS fixes outside recognized gx:Track, unsupported Track dialects, oversized string (>2,000,000 characters), more than 25,000 fixes. Source modes/altitude datum/device accuracy remain unknown, even when parser equality succeeds.
 
@@ -64,7 +64,7 @@ Only if they both pass, run the local CLI on the six raw KMLs (ensure the filena
         Sample=$r.sample; Status=$r.status; Blocks=$r.sourceBlocks
         Raw=$r.rawFixes; Canonical=$r.canonicalFixes
         Duplicates=$r.collapsedFixes; Conflicts=$r.conflictFixes
-        BlockedEdges=$r.blockedEvidenceEdges; Islands=$r.motionIslands
+        BlockedEdges=$r.blockedEvidenceEdges; SourceRuns=$r.sourceRuns
       }
     }
     $results | Format-Table -AutoSize
