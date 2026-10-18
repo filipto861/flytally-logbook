@@ -44,3 +44,27 @@ Read-only comparator results on the exact reported owner-local HEAD:
 - This documentation commit occurs **after** that comparison; no new-HEAD test/release PASS implied.
 - No analyzer output on further event features yet. Additional GPS corpus, `verify:plan`, full suite, build and browser **NOT RUN**.
 - No DB access/migrations, merge, deployment or enablement. Production D3 HIDDEN-vs-experimental-Pilot-Review conflict remains unresolved.
+
+## D2 local diagnostic probe (STAGED, NOT VERIFIED)
+
+Research-only files now staged in PR #366:
+- research/gps-detection-r21/stage-d-event-quality.ts
+- tooling/gps-v2-stage-d-quality.mjs
+- tests/gps-v2-stage-d-event-quality.test.ts
+
+For every legacy hypothesis, the quality probe outputs relative time, the *legacy-derived* five-point smoothed horizontal speed, the elapsed time covered by +/-10 canonical fixes, counts of missing/zero/near-zero (>0 and <0.1 s)/over-15 s time intervals, source altitude-rate anomalies >25 m/s, max source-derived rates, and the nearest +/-30 m altitude rise evidence boundaries with aggregate span quality. These values are **for diagnosis**, not new thresholds or physical-contact proof. The <=0.1 s diagnostic flag does not silently admit samples, change the legacy detector, or make sensor evidence valid. Original absolute altitude, route and UTC remain unreported.
+
+Run on owner-local Node24 checkout, using the exact raw KML previously tested:
+
+    git fetch origin
+    git pull --ff-only
+    git rev-parse --short HEAD
+    npm run test:target -- tests/gps-v2-stage-d-event-quality.test.ts tests/gps-v2-stage-d-comparator.test.ts tests/gps-v2-advisory.test.ts tests/gps-v2-import-lineage.test.ts
+    npm run typecheck
+
+    node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types tooling/gps-v2-stage-d-quality.mjs --file "$env:USERPROFILE\Downloads\121001.kml" --id sample01
+    node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types tooling/gps-v2-stage-d-quality.mjs --file "$env:USERPROFILE\Downloads\121002.kml" --id sample02
+
+Send only redacted JSON reports (not raw files/paths) for analysis. The program does not attach pilot labels or alter results. **Latest new D2 code/tests NOT RUN**; prior 39/39 PASS and TypeScript PASS belong to the earlier comparator SHA, not this D2 code HEAD.
+
+After report inspection, differentiate observed anomalies from causality: a >25 m/s step in the surrounding window is not necessarily within the actual left-minimum-right qualifying evidence span. If source altitude is unverified, record source-derived altitude shape only, not confirmed AGL/contact.
