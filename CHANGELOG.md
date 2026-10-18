@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS V2 format-specific duplicate UTC regression expectation corrected (unverified new SHA)
+
+- Owner-local on `7f06ff4c`: targeted Node 62/63, failing V2-F10 legacy uniform duplicate UTC `UNAVAILABLE` assertion on KML; TypeScript PASS; `verify:iterate=PASS` (source 257/257, GPS domain 54/54, typecheck). Full release/production build/Playwright NOT RUN. Real private KML comparator still pins old 39278ce4 and refused to evaluate this head; no real result yet.
+- Updated only V2-F10 synthetic test to require CSV/GPX reject duplicates but KML retain same-time distinct-position fixes and never grant contact/count/write authority; existing V2-F17/F20 directly check zero-duration motion quarantine. No production behavior change from this correction. New HEAD verification NOT RUN; no merge/deploy.
+
 ## 2026-10-18 — GPS V2 real KML source compatibility fix staged; NO NEW RELEASE PASS
 
 - Owner-local read-only diagnostic found one complete SkyDemon-like `gx:Track`, 1,094 paired high-precision UTC-Z times and coordinates, 16 exact timestamp repetitions (6 adjacent equivalent positions removed by canonical normalization; 10 same-time distinct-position cases), **1,088** normalized canonical fixes. Old V2 rejected as `SOURCE_UNAVAILABLE`; legacy's two T&G candidates and landing suggestion 3 remain **unverified**.
