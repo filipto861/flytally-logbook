@@ -5,7 +5,7 @@
 **Branch:** `fix/gps-import-csv-missing-values` based on canonical `main@6a67a02475ab09c3271f8646427f7956ed6e590a`
 **PR:** [#360](https://github.com/filipto861/flytally-logbook/pull/360) — **Draft, DO NOT MERGE/DEPLOY**
 **Approval:** product owner expressly approved D2-C minimal CSV integrity correction on separate branch with no merge/deploy.
-**Status:** code + 7 new regression cases AUTHORED. Node, TypeScript, full suite/build and browser **NOT RUN** on new branch; no CI evidence.
+**Status:** D2-C.1 additional source and UI corrections staged on Draft PR #360, **NOT YET TESTED** on updated executable HEAD; previously owner-tested D2-C baseline (41/41 targeted, 1637/1637 full Node, typecheck, build; domain 43/43) is evidence for earlier source only, not the new batch. Browser/CI/merge/deploy NOT RUN.
 
 ## Precisely implemented
 
@@ -64,3 +64,33 @@ Review questions: (1) Is empty-vs-real-zero fully preserved including whitespace
 **Review disposition: HOLD / REVIEW AND BROWSER EVIDENCE NEEDED.** No independent actual-source reviewer verdict or authenticated CSV runtime evidence yet. The exact code SHA has only the owner-local tests/build above. Browser/PG16/merge/deploy remain unproven or unauthorised. D2-C does not confer GPS sensor/AGL/contact accuracy, real owner GPS access, native RLS approval or Pilot Review availability.
 
 **Next bounded handoff for DeepSeek (READ ONLY):** review PR #360 exact executable source `8fb1daa9cfd0b9005055e9d09592d27ac8b8333a` vs `main@6a67a02475ab09c3271f8646427f7956ed6e590a`, read `lib/track-processing.ts`, `tests/track-processing.test.ts`, `components/kml-import-form.tsx`, `app/(protected)/flights/actions.ts`, `components/gps-import-review-player.tsx`, and the three E2E specs above. Challenge: null-vs-zero integrity, CSV malformed coordinates and unsupported multiline handling, decimal-token lexical policy, rapid-upload race, absence of CSV actual-client/server negative E2E, correct release blockers. Identify exact lines, severity, confirmed vs inferred, and recommend FIX FIRST or GO TO BOUNDED BROWSER GATE; do **not** merge, deploy, query production, change DB or reclassify research as contact-truth.
+
+## 2026-10-18 D2-C.1 — reviewer-informed corrective implementation (DRAFT / NOT TESTED)
+
+**Independent reviewer qualification:** DeepSeek sent `FIX FIRST` but explicitly acknowledged **no actual repository or PR access**. Therefore its risk classifications are advisory hypotheses, not independent code-confirmed findings. ChatGPT independently read current repo, PR diff and consumers to reconcile each issue.
+
+**Confirmed actual-source findings and correction:**
+
+1. `parseCsv` already prechecked whitespace/missing; DeepSeek's generic `Number("")` critical warning was **not an active D2-C parser bug**. Semicolon fields with decimal comma also already worked. However `Number("0x10")` / binary / octal strings could still become plausible lat/lon; now uses shared `lib/gps-track-number.ts::optionalGpsNumber` (strict finite signed decimal, decimal comma, scientific notation). Coordinates malformed -> entire CSV unavailable; malformed altitude -> missing/null, in line with existing D2-C policy. Added numeric and source-regression cases.
+2. `components/gps-import-review-player.tsx` truly fabricated 0 ft in replay interpolation, max/profile and current sample labels; now uses tested pure `lib/gps-altitude-presentation.ts`, no alt interpolation across missing data, chart gaps and isolated measured points, explicit 'Altitude unavailable' when missing. Real zero remains numeric zero.
+3. **Additional confirmed read-path defect missed by source-inaccessible reviewer:** `lib/data/tracks.ts::decodePoints` originally ran `Number(item?.alt)`, turning correctly persisted JSON null into 0 in owner/public map and saved flight player. The shared optional decoder now preserves omission of unknown altitude while keeping measured 0; missing lat/lon likewise no longer produce false numerical zero. `components/flight-track-player.tsx` now uses the same no-invented-altitude profile/interpolation/tooltip semantics, including split track-boundary gaps. No persisted row rewrite or migration.
+4. `KmlImportForm` did not guard asynchronous `file.text()`: a stale previous file could overwrite a newer preview. Selection epoch plus immediate clearing of old analyzed/review-ready state now make stale results discardable; file read failures leave no ready-to-save preview. UI feedback for file-read failures remains a possible follow-up, but never treats previous preview as current evidence.
+5. Existing `e2e/gps-rolecrew.spec.mjs` **registered GPS save/certification target** (same frozen test title) now includes malformed CSV client refusal, CSV positive preview, adversarial file swap without React change event to prove **server-side** whole-file refusal and zero persisted rows, restored valid CSV import+certification and JSON null-vs-zero persisted source check. Existing suite baseline test-title ownership retained. This is AUTHORING ONLY, **browser runtime NOT RUN**.
+
+**Source-contract and evidence scope:** `tests/track-processing.test.ts` augmented with decimal grammar, hex/binary/octal rejection, semicolon decimal comma, and *explicit expected fail-closed* unsupported quoted multiline. New `tests/gps-track-number.test.ts` and `tests/gps-altitude-presentation.test.ts` verify direct behavior; added to canonical `gps-tracks` domain-unit evidence registry in `tooling/development-modules.json`. `tests/v142-gps-import.test.ts` pins import/read/replay source contracts (not a substitute for browser). Old owner's 43/43 domain and 1637/1637 full tests were on **previous code**; do NOT carry PASS across modified code/registry. New actual test counts and candidate IDs must be obtained from fresh owner-local execution.
+
+**Explicitly not solved or in scope:**
+- This is still a **line-based CSV importer**. Legitimate quoted **multiline** fields are unsupported and must refuse rather than silently partially ingest. Supporting RFC 4180 would change the source contract and needs separate source-compatibility research. Semicolon and ordinary same-line quoted fields are supported.
+- `components/track-profile.tsx` remains a dormant legacy presentation (no active import found by default-branch code search); do not conflate with current saved/preview players. Re-audit if activated.
+- Current `decodePoints` retains a historical near-(0,0) rejection even for a genuine zero coordinate, as an anti-spurious-route heuristic. D2-C parsing does accept literal measured (0,0), but owner/public map may be unavailable for such tracks. No implicit relaxation of the historical fallback without a separate provenance analysis.
+- Existing direct `e2e/gps-rolecrew` browser path has not been executed against a disposable PostgreSQL fixture. Risk plan may include currency v21 tests and **resets DB schema**. Never point at real/local valuable database or production. A verified disposable isolated PostgreSQL fixture and relevant explicit purpose flags are prerequisites; no guessed command/DB URL.
+- New code changes to owner/public replay add runtime surfaces; planned browser selection must be rerun on current HEAD. Confirm no certification/stored flight/regulatory behavior change.
+- Real GPS access, Pilot Review default-OFF DTO, native RLS and consent, and P0-D3 remain blocked. No auto-write, sensor accuracy elevation or contact inference.
+
+**Required closeout sequence:**
+(1) Verify GitHub diff against current exact HEAD, docs roadmap, feature list and changelog;
+(2) owner clean current SHA, `npm run verify:plan -- --base origin/main`, targeted Node test files, `npm run typecheck`; any failure = stop;
+(3) owner candidate-bound `npm run verify:domain -- --base origin/main`, full Node and build after static green;
+(4) peer reviewer with **actual source access** or explicitly disclose unverified status; check code/behavior and E2E semantics;
+(5) prepare verified disposable localhost database with reset protection, then execute canonical `browser-risk` selection and CSV E2E; inspect 0 failed/skipped and exact candidate;
+(6) update evidence/docs and request explicit merge/deploy authorization. No production action here.
