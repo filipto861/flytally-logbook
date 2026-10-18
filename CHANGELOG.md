@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — Stage D3 independent DeepSeek review reconciliation (DOCS ONLY)
+
+- Received DeepSeek read-only critique of the redacted six-track corpus; independently compared its source-lineage, duplicate-fix, ambiguity and ground-truth assertions against actual `lib/track-processing.ts`, `lib/gps-v2-import-lineage.ts`, `lib/gps-v2-advisory.ts`, and the frozen D3 offline DTO contract.
+- Added Stage D3 reviewer reconciliation and acceptance matrix. Guidance accepts segment-first nonbridging GPS motion analysis and recommends a separate source→canonical audit sidecar; **does not** approve changing legacy normalization, the existing >25m/s in-span guard, canonical movement records or flight splits. Owner-reported event evidence is kept separate from independently corroborated wheel contact, and research-only suppressed hypotheses remain non-counted and HIDDEN in production.
+- Next prerequisite remains exact-HEAD owner-local native comparator over the six new KMLs, plus design acceptance. **No source/runtime/tests/schema changes this commit; Node tests/typecheck/full/build/browser NOT RUN on new documentation HEAD; no migration/merge/deploy or feature enablement.**
+
 ## 2026-10-18 — Stage D3 six-KML source corpus audit (DOCS ONLY / NO DETECTOR CHANGE)
 
 - Independently parsed six owner-provided KMLs read-only in a local sandbox, reproduced 948/587/893/74/593/1034 canonical normalized points and 1/1/10/0/6/3 legacy candidate counts (21 total) against current algorithm and screenshots. Five tracks have two gx:Track elements and one has three; strict V2 source lineage requires exactly one and thus these six are out of scope, pending native exact-HEAD comparator confirmation.
