@@ -1,6 +1,6 @@
 # GPS V2 — Stage D4.1 source lineage sidecar implementation evidence
 
-**Status:** IMPLEMENTATION STAGED / EXACT-HEAD TESTS AND NATIVE 6-KML ACCEPTANCE NOT RUN.
+**Status:** IMPLEMENTATION STAGED / TARGETED OWNER-LOCAL 63/63 PASS ON `059b98a9` / TYPECHECK REPAIR STAGED AND NOT YET VERIFIED / NATIVE 6-KML SIDECAR ACCEPTANCE NOT RUN.
 **Approved scope:** Owner explicitly approved D4.1 research-only implementation on 2026-10-18.
 **Repo:** flytally-logbook. Branch: research/gps-v2-stage-d-comparator-20261018. Research PR #366 Draft, nested under parent experimental PR #364 Draft.
 
@@ -81,3 +81,15 @@ Do NOT paste raw KML, private registrations or complete routes into GitHub issue
 - D4.1 acceptance: **PENDING** exact-HEAD targeted PASS, TypeScript PASS and real corpus parity. D4.2 NOT STARTED.
 - DB/migrations: N/A. Build/Playwright/production smoke: NOT RUN; production application unchanged in this batch.
 - Merge/deploy/flag: NOT RUN/OFF. Experimental PR #364 policy conflict (pilot Review HIDDEN) remains unresolved. No certification or regulatory recency status granted.
+
+
+## 2026-10-18 D4.1 first owner-local test acceptance attempt and minimal repair
+
+- Owner's Windows local branch was `059b98a9` according to `git rev-parse --short HEAD`.
+- `npm run test:target -- tests/gps-v2-d4-multi-gx-lineage.test.ts tests/gps-v2-stage-d-comparator.test.ts tests/gps-v2-stage-d-event-quality.test.ts tests/gps-v2-advisory.test.ts tests/gps-v2-import-lineage.test.ts`: **63/63 PASS, fail 0**, including all 19 new D4.1 cases. This is valid owner-local Node test evidence **only for that tested head**, not CI and not a production release check.
+- `npm run typecheck`: **FAIL** with TS2367 + TS2339 at `tests/gps-v2-d4-multi-gx-lineage.test.ts:30`. Cause: the helper called `assert.equal(r.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY",...)` before testing `if(r.status==="UNAVAILABLE")`, so assert's type narrowing rendered the second branch unreachable.
+- Minimal research **test helper only** correction: test status `UNAVAILABLE` and throw before asserting `SOURCE_PARSED_DIAGNOSTIC_ONLY`. No runtime production or research parser implementation changed.
+- New repair commit `ae7b3574`: **NOT RUN** tests/typecheck on that patched exact head. The newer documentation commits also do not inherit test evidence.
+- The six-file `tooling/gps-v2-d4-lineage.mjs` sidecar acceptance remains **NOT RUN**. Earlier D4.0 native comparator on the same six KMLs is distinct and cannot substitute for D4.1.
+
+**Next gate:** exact current branch HEAD, repeat the same 63 targeted tests plus `npm run typecheck`. If successful, run the read-only six-KML D4.1 lineage CLI from this document and compare block/raw/canonical counts. Never weaken source parity merely to make a sample pass.
