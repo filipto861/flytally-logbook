@@ -70,3 +70,18 @@ test("v1.42.1 keeps only the authoritative import player map",()=>{
   assert.match(form,/touch-review/);
   assert.match(form,/review-grid/);
 });
+
+
+test("D2-C.1 GPS import review does not fabricate altitude or leave stale file previews ready",()=>{
+  const form=read("components/kml-import-form.tsx"),player=read("components/gps-import-review-player.tsx");
+  assert.match(form,/fileEpoch=useRef\(0\)/);
+  assert.match(form,/const epoch=\+\+fileEpoch\.current/);
+  assert.match(form,/setAnalysis\(null\);setReviews\(\[\]\)/);
+  assert.match(form,/if\(epoch!==fileEpoch\.current\)return/);
+  assert.match(player,/interpolatedGpsAltitude\(a\.alt,b\.alt,fraction\)/);
+  assert.match(player,/gpsAltitudeProfileGeometry\(alts,width,height\)/);
+  assert.match(player,/Altitude unavailable/);
+  assert.doesNotMatch(player,/alt:Number\(a\.alt\?\?0\)/);
+  assert.doesNotMatch(player,/samples\.map\(point=>Number\(point\.alt\?\?0\)\)/);
+  assert.doesNotMatch(player,/metersToFeet\(current\?\.alt\|\|0\)/);
+});
