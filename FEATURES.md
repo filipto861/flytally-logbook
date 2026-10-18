@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS 2.0 D2-C staged implementation — 2026-10-18 audit, NOT RELEASED.** owner-local clean exact executable `8fb1daa9` targeted Node 41/41, TypeScript PASS, full Node 1637/1637, Next build PASS (not CI). First-party source review confirms shared CSV client/server parser and identifies unresolved CSV-specific browser end-to-end coverage, pre-existing player null-altitude-to-zero display, limited line-based CSV grammar, non-decimal numeric token semantics and rapid-file-selection race. Independent DeepSeek/Claude source review and authenticated CSV runtime tests NOT RUN; no merge/deploy. See `docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md`.
+
 **GPS 2.0 D2-C canonical CSV import safety fix (2026-10-17, DRAFT/NOT RELEASED):** Owner-approved small branch adds explicit missing-vs-zero altitude, fail-file on missing/invalid coordinates or internal blank row, zero-alt min/max, 7 synthetic regression tests, preserves existing KML/GPX and landing heuristics. New targeted 41 Node + TypeScript **NOT RUN**, independent source review + broader runtime verification pending. No current Pilot Review/real GPS unlock. [D2-C scope](docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md).
 
 
