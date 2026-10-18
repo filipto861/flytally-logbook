@@ -228,7 +228,8 @@ test("V2-F17 identical KML time at distinct positions remains a zero-dt disconti
   assert.equal(result.wholeFlightLandings,"UNAVAILABLE");
   assert.equal(result.physicalContact,"UNRESOLVED");
   assert.equal(result.canAffectCanonicalFlight,false);
-  // Do not misrepresent the same-timestamp pair as an observed flight contact.
+  // The zero-dt collision and its neighboring edges cannot supply a fake T&G.
+  assert.equal(result.events.some(e=>e.kind==="STOP_GO_REVIEW_POINT"),false);
   assert.ok(result.events.every(e=>e.physicalContact==="UNRESOLVED"));
 });
 
@@ -266,6 +267,7 @@ test("V2-F20 distinct submillisecond timestamps mapping to same JS ms are isolat
   assert.equal(Date.parse(near.time),Date.parse(points[6].time));
   const result=inspect(source,"sky-track.kml");
   assert.equal(result.status,"ADVISORY_ONLY");
+  assert.equal(result.events.some(e=>e.kind==="STOP_GO_REVIEW_POINT"),false);
   assert.equal(result.wholeFlightLandings,"UNAVAILABLE");
 });
 
