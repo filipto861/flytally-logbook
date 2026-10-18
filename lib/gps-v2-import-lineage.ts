@@ -30,18 +30,73 @@ const numberToken=(text:string):number|null=>{
   const value=Number(text);
   return Number.isFinite(value)?value:null;
 };
-const utcMillis=(text:string):number|null=>{
-  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(text))return null;
+const utcMillis=(text:string,extendedPrecision=false):number|null=>{
+  // SkyDemon gx:Track UTC can preserve sub-millisecond precision. Keep the
+  // ORIGINAL UTC string verbatim; Date.parse is only a coarse ordering clock.
+  // Never infer timezone or round coordinates/timestamps into distinct fixes.
+  const fraction=extendedPrecision?"{1,32}":"{1,3}";
+  if(!new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d${fraction})?Z/**
+ * Bounded GPS V2 ORIGINAL FILE -> canonical import index comparison inputs.
+ * This independently validates a deliberately small, explicit subset of
+ * existing GPS import formats. It does NOT authenticate instruments, source
+ * device, accuracy, altitude mode/datum or runway contact.
+ *
+ * Unsupported/ambiguous XML or CSV must leave V2 unavailable while the legacy
+ * import continues to work. Never silently discard malformed source fixes.
+ */
+import {
+  CSV_LINEAGE_PARSER_REVISION,
+  examineStrictCsvSourceLineage,
+} from "./gps-v2-source-lineage.ts";
+
+export const GPS_V2_IMPORT_LINEAGE_REVISION="GPS_V2_IMPORT_LINEAGE_V1" as const;
+export type GpsV2LineageKind="STRICT_CSV"|"SKYDEMON_CSV"|"GPX_TRACK"|"KML_GX_TRACK";
+export type GpsV2LineagePoint={lat:number;lon:number;altM:number|null;utc:string};
+export type GpsV2ImportLineage=
+  | {status:"UNAVAILABLE";reason:"UNSUPPORTED_SOURCE"|"SOURCE_UNAVAILABLE"}
+  | {
+    status:"SOURCE_PARSED_DIAGNOSTIC_ONLY";
+    kind:GpsV2LineageKind;
+    parserRevision:typeof CSV_LINEAGE_PARSER_REVISION|typeof GPS_V2_IMPORT_LINEAGE_REVISION;
+    samples:readonly GpsV2LineagePoint[];
+  };
+const MAX_TEXT_LENGTH=2_000_000,MAX_POINTS=25_000;
+const unavailable=(reason:"UNSUPPORTED_SOURCE"|"SOURCE_UNAVAILABLE"):GpsV2ImportLineage=>({status:"UNAVAILABLE",reason});
+const numberToken=(text:string):number|null=>{
+  if(!/^-?\d+(?:\.\d+)?$/.test(text))return null;
+  const value=Number(text);
+  return Number.isFinite(value)?value:null;
+};
+).test(text))return null;
   const n=Date.parse(text);
   if(!Number.isFinite(n)||new Date(n).toISOString().slice(0,19)!==text.slice(0,19))return null;
   return n;
 };
 type Observed={point:GpsV2LineagePoint;ms:number};
 /** Strong source-order requirement. Sorting preserves only known one-to-one fixes. */
-function finalized(kind:GpsV2LineageKind,rows:Observed[]):GpsV2ImportLineage{
+function finalized(kind:GpsV2LineageKind,rows:Observed[],gxTrack=false):GpsV2ImportLineage{
   if(rows.length<2||rows.length>MAX_POINTS)return unavailable("SOURCE_UNAVAILABLE");
-  const sorted=[...rows].sort((a,b)=>a.ms-b.ms);
-  for(let i=1;i<sorted.length;i++)if(sorted[i].ms===sorted[i-1].ms)
+  // Canonical KML normalization discards only *adjacent* same-time near-identical
+  // fixes BEFORE stable timestamp ordering. Do not silently discard distinct
+  // positions sharing a timestamp; they are retained as a discontinuity.
+  const normalized:Observed[]=[];
+  for(const row of rows){
+    const prev=normalized.at(-1);
+    if(gxTrack&&prev&&prev.point.utc===row.point.utc&&
+      Math.abs(prev.point.lat-row.point.lat)<1e-7&&
+      Math.abs(prev.point.lon-row.point.lon)<1e-7){
+      // The legacy parser ignores height when deduplicating. If it differed,
+      // refusing the entire V2 source is safer than hiding conflicting data.
+      if(prev.point.altM!==row.point.altM)return unavailable("SOURCE_UNAVAILABLE");
+      continue;
+    }
+    normalized.push(row);
+  }
+  if(normalized.length<2)return unavailable("SOURCE_UNAVAILABLE");
+  const sorted=[...normalized].sort((a,b)=>a.ms-b.ms);
+  // Retain identical times at differing positions ONLY in KML: V2 edge()
+  // refuses dt<=0 and islands() cuts the motion evidence at that boundary.
+  for(let i=1;i<sorted.length;i++)if(!gxTrack&&sorted[i].ms===sorted[i-1].ms)
     return unavailable("SOURCE_UNAVAILABLE");
   return {
     status:"SOURCE_PARSED_DIAGNOSTIC_ONLY",kind,
@@ -139,7 +194,7 @@ function kmlGxTrack(source:string):GpsV2ImportLineage{
     return unavailable("SOURCE_UNAVAILABLE");
   const rows:Observed[]=[];
   for(let i=0;i<times.length;i++){
-    const utc=times[i][1].trim(),ms=utcMillis(utc);
+    const utc=times[i][1].trim(),ms=utcMillis(utc,true);
     const tokens=coords[i][1].trim().split(/\s+/);
     if(ms===null||tokens.length<2||tokens.length>3)return unavailable("SOURCE_UNAVAILABLE");
     const lon=numberToken(tokens[0]),lat=numberToken(tokens[1]);
@@ -148,7 +203,7 @@ function kmlGxTrack(source:string):GpsV2ImportLineage{
       (tokens.length===3&&altM===null))return unavailable("SOURCE_UNAVAILABLE");
     rows.push({point:{lat,lon,altM,utc},ms});
   }
-  return finalized("KML_GX_TRACK",rows);
+  return finalized("KML_GX_TRACK",rows,true);
 }
 /** Entire source shape checked before comparison with the canonical importer. */
 export function inspectGpsV2SourceLineage(source:unknown,fileName:unknown):GpsV2ImportLineage{
