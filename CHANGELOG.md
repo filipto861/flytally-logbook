@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS D2-C exact source acceptance, first-party audit (DRAFT / NO RELEASE)
+
+owner-local clean exact executable `8fb1daa9` targeted Node 41/41, TypeScript PASS, full Node 1637/1637, Next build PASS (not CI). First-party source review confirms shared CSV client/server parser and identifies unresolved CSV-specific browser end-to-end coverage, pre-existing player null-altitude-to-zero display, limited line-based CSV grammar, non-decimal numeric token semantics and rapid-file-selection race. Independent DeepSeek/Claude source review and authenticated CSV runtime tests NOT RUN; no merge/deploy. See `docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md`.
+
 ## 2026-10-17 — GPS D2-C minimal canonical CSV null/zero integrity fix (DRAFT PR #360 / NOT RELEASED)
 
 After explicit owner approval, created `fix/gps-import-csv-missing-values` from canonical main, changed only `lib/track-processing.ts` parsing/statistics and `tests/track-processing.test.ts` (7 new desired-behavior cases), plus governance docs. Empty or malformed altitude now null, true numeric zero preserved; missing/invalid/out-of-range CSV lat/lon and internal blank data rows reject whole file, conventional trailing newline allowed; finite numeric zero participates in altitude extrema. No KML/GPX/motion heuristic/T&G/auth/server action/UI/DB/schema changes. Current source Node/TS, full suite/build/browser, independent review **NOT RUN**. Research PR #350 previously verified 130/130 targeted is a different source and still contains historic unsafe-characterization assertions that must be corrected on rebase. No merge/deploy. [Scope and independent review criteria](docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md).
