@@ -87,7 +87,9 @@ test("D42-02 4.9s cross-block fast-slow-fast cannot bridge; one-block is control
   q[i].time=new Date(Date.parse(q[i].time)-100).toISOString();
  const mixed=accepted(kml([q.slice(0,6),q.slice(6)]));
  assert.ok(mixed.hypotheticalBase.some(e=>e.kind==="STOP_GO_REVIEW_POINT"));
- assert.ok(mixed.suppressedByBoundary.some(e=>e.kind==="STOP_GO_REVIEW_POINT"));
+ assert.ok(mixed.suppressedByBoundary.some(e=>
+  e.kind==="STOP_GO_REVIEW_POINT"&&e.disposition==="INCONCLUSIVE"&&
+  e.reason==="SOURCE_DISCONTINUITY"));
  assert.equal(mixed.candidates.some(e=>e.kind==="STOP_GO_REVIEW_POINT"),false);
  assert.equal(mixed.blockedEdges,1);
 });
@@ -167,6 +169,8 @@ test("D42-11 user flight split and source block are independent; changed raw sou
  const r=inspectD42Shadow({sourceText:source,splitCuts:cuts,
   uploadRevision,splitRevision,expectedBinding});
  assert.equal(r.status,"RESEARCH_DIAGNOSTIC_ONLY");
+ if(r.status==="RESEARCH_DIAGNOSTIC_ONLY")
+  assert.equal(r.cadence.positiveIntervals,p.length-1-2); // block and manual cuts
  const stale=inspectD42Shadow({sourceText:source+" ",splitCuts:cuts,
   uploadRevision,splitRevision,expectedBinding});
  assert.equal(stale.status,"UNAVAILABLE");
