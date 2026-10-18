@@ -238,7 +238,7 @@ export function inspectD42Shadow(input:unknown):D42Result{
    // No new gap-size threshold; this is a research-only disposition.
    return {...safe(c,origin),
     disposition:inconclusive?"INCONCLUSIVE":"RESEARCH_HYPOTHESIS",
-    reason:inconclusive?"UNOBSERVED_CONTINUITY":null};
+    reason:inconclusive?"UNOBSERVED_CONTINUITY":null} as const;
   }),
   cadence:{positiveIntervals:intervals.length,medianSeconds:median(intervals),
    maxSeconds:intervals.length?Math.max(...intervals):null,
