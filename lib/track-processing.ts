@@ -56,7 +56,11 @@ function parseCsv(source:string){
   const number=(value:string|undefined):number|null=>{
     const token=value?.trim();
     if(!token)return null;
-    const parsed=Number(token.replace(",","."));
+    // Only decimal measurements are valid CSV evidence; Number() also accepts
+    // 0x/0b/0o, which must not become plausible geographic coordinates.
+    const decimal=token.replace(",",".");
+    if(!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(decimal))return null;
+    const parsed=Number(decimal);
     return Number.isFinite(parsed)?parsed:null;
   };
   const points:KmlPoint[]=[];
