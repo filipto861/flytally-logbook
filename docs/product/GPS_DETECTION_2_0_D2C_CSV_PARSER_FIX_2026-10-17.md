@@ -94,3 +94,12 @@ Review questions: (1) Is empty-vs-real-zero fully preserved including whitespace
 (4) peer reviewer with **actual source access** or explicitly disclose unverified status; check code/behavior and E2E semantics;
 (5) prepare verified disposable localhost database with reset protection, then execute canonical `browser-risk` selection and CSV E2E; inspect 0 failed/skipped and exact candidate;
 (6) update evidence/docs and request explicit merge/deploy authorization. No production action here.
+
+## 2026-10-18 — first D2-C.1 owner-local gate result and inventory correction
+
+Owner clean `9f818dc0ef7cdf8f88481c0ef88b1543a1a3d910`:
+- `verify:plan` passed, candidate `6797acae14d8d6ca1b790ef69cbc7dba5e9e570c15d170e045739386206ef8f8`; browser 24 targets, PostgreSQL required, evidence blockers none.
+- Targeted GPS Node **54/54 PASS**, strict E2E syntax `node --check` PASS, `npm run typecheck` PASS, canonical domain **73/73 PASS**; production `npm run build` PASS including 41/41 generated pages.
+- `verify:iterate` **FAIL**: application source **256/257**, lone failure `tests/development-scope.test.ts:228`, `400 !== 398`. Full Node `npm test` also FAIL on **that same single source-contract expectation**, not GPS runtime assertions. User separately invoked next commands after PowerShell throws; the final manually printed label `D2-C.1 STATIC RELEASE GATES PASS` **must not be treated as true aggregate verification PASS**.
+- Review of current canonical `tooling/development-modules.json`: two new `lib/gps-altitude-presentation.ts`, `lib/gps-track-number.ts` match existing `gps-tracks` prefix `lib/gps-`; only obsolete count `ownership.auditedTotal=398` required change. Updated to **400** in standalone scoped commit `a128cbf249ba6153ee4e55c170b73adfd6299cad`, leaving minimum stable coverage 90%, baseline stable-owned 121 and uncovered-zero assertion unmodified. There is **no runtime code change** in that commit.
+- **Corrected exact HEAD has NOT been tested**; rerun source contract, full Node and candidate plan/verification after final docs-only commits; old candidate ID must not be reused as corrected candidate. Authenticated browser/isolated PG16 acceptance, source-access second review and merge/deploy remain NOT RUN/HOLD. No production data touched.
