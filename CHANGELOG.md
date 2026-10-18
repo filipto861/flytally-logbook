@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS V2 Stage D read-only research contract recorded
+
+- Added `docs/product/GPS_V2_STAGE_D_PILOT_LABELED_RESEARCH_2026-10-18.md` defining pilot-labeled event truth, privacy, local-export vs saved-owner-UI review boundaries, and gated independent design review. No detector/source/parser/UI/server/DB changes in this batch.
+- User local V3 verification on exact `f1511767`: 66/66 targeted, source 257/257, GPS domain 54/54, TypeScript and iteration PASS; original 121002 KML now ADVISORY_ONLY. Six-KML local coverage: five accepted, one unsupported. Three pilot-confirmed T&G across two labeled flights; one pilot-confirmed low pass; legacy three matched T&G proposals and one known false T&G proposal; V2 zero stop-go proposals. Full ON/OFF risk release build/browser still NOT RUN on this newer documentation HEAD.
+- Recorded repository frozen D3 production horizontal candidate HIDDEN policy as a blocker against broad V2 flag ON; owner secure RLS consent gate required before new bulk saved-track access. No merge/deploy.
+
 ## 2026-10-18 — Stage C real KML altitude-discrepancy handling staged (unverified)
 
 - Owner-local prior HEAD `74230824`: targeted 63/63 PASS; TypeScript, source 257/257, GPS domain 54/54, iteration PASS, but original private 121002.kml still V2 `SOURCE_UNAVAILABLE`; full build/browser NOT RUN.
