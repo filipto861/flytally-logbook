@@ -1,5 +1,7 @@
 # GPS V2 — Stage D4 multi-gx:Track source-lineage proposal
 
+**Latest reconciliation (2026-10-18):** D4.1 was subsequently IMPLEMENTED and COMPLETED **only** as research source-lineage sidecar, verified by owner-local 63/63 targeted Node tests, TypeScript PASS and 6/6 native six-KML source/normalization parity. Original proposals and pending statuses below remain as historical decision records. D4.2 boundary-aware consumer remains **DESIGN ONLY**, requiring independent reviewer feedback and explicit owner implementation decision; live V2 multi-gx:Track still `UNAVAILABLE/UNSUPPORTED_SOURCE`, feature OFF/HIDDEN. See D4.1 acceptance ledger and `docs/product/GPS_V2_STAGE_D4_2_BOUNDARY_AWARE_V2_DESIGN_2026-10-18.md`.
+
 **Superseding decision (2026-10-18):** The owner has now explicitly **approved only D4.1 research-sidecar implementation**, which is staged in PR #366, without production lib/parser, detector, flight data or UI changes. Source-run wording is strictly provenance-only, not evidence of time/speed continuity. The original design/approval-pending text below is retained for historical context. **D4.1 Node24/typecheck/six-file acceptance still NOT RUN; D4.2 detector integration and production visibility are NOT approved.** See `docs/product/GPS_V2_STAGE_D4_1_RESEARCH_SIDECAR_IMPLEMENTATION_2026-10-18.md` for current milestone state.
 
 **Date:** 2026-10-18. **Current status:** D4.0 OWNER-LOCAL NATIVE CORPUS CLASSIFICATION COMPLETE; D4.1 research sidecar DESIGN PROPOSAL / OWNER APPROVAL REQUIRED before implementation.
