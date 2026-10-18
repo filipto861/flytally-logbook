@@ -50,6 +50,7 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
       name:"SkyDemon_v2_checked.csv",mimeType:"text/csv",buffer:Buffer.from(skydemon)
     });
     await expect(gpsForm).toContainText("14 GPS points");
+    const startsBefore=await gpsForm.locator('input[name="part_0_starts"]').inputValue();
     const review=gpsForm.locator("details.gps-track-review");
     if(!(await review.evaluate(node=>node.open)))await review.locator("summary").click();
     const preview=gpsForm.locator("[data-gps-v2-preview]");
@@ -58,7 +59,6 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
     await expect(preview).toContainText("Possible stop-and-go movement");
     await expect(preview).toContainText("Unresolved");
     await expect(preview).toContainText("cannot change logbook counts");
-    const startsBefore=await gpsForm.locator('input[name="part_0_starts"]').inputValue();
     await expect(gpsForm.locator('input[name="part_0_starts"]')).toHaveValue(startsBefore);
     // Re-uploading unsupported wider CSV must invalidate V2 source claims.
     // The regular manually reviewed form and legacy saving continue below.
@@ -79,6 +79,11 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   ].join("\n");
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"d2c-positive.csv",mimeType:"text/csv",buffer:Buffer.from(validCsv)});
   await expect(gpsForm).toContainText("6 GPS points");
+  if(process.env.NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY==="1"){
+    const preview=gpsForm.locator("[data-gps-v2-preview]");
+    await expect(preview).toContainText("V2 movement review unavailable for this source");
+    await expect(preview).not.toContainText("Possible stop-and-go movement");
+  }
   const trackDetails=gpsForm.locator("details.gps-track-review");
   if(!(await trackDetails.evaluate(node=>node.open)))await trackDetails.locator("summary").click();
   const replay=gpsForm.locator(".import-review-player");
