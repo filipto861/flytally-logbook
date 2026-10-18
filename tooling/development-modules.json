@@ -672,6 +672,8 @@
       },
       "evidenceTests": {
         "domain-unit": [
+          "tests/gps-altitude-presentation.test.ts",
+          "tests/gps-track-number.test.ts",
           "tests/track-processing.test.ts",
           "tests/track-time.test.ts",
           "tests/v370-openaip-airspace-contract.test.ts",
