@@ -2,6 +2,7 @@ import "server-only";
 import { sql } from "@/lib/db";
 import { getCatalogAirport } from "@/lib/airport-catalog";
 import { routePairKey } from "@/lib/route-filter";
+import {optionalGpsNumber} from "@/lib/gps-track-number";
 
 export type TrackPoint = { lat: number; lon: number; alt?: number; time?: string };
 export type MapTrack = {
@@ -18,10 +19,10 @@ function decodePoints(payload: unknown, maxPoints: number): TrackPoint[] {
     if (!Array.isArray(parsed)) return [];
     const valid: TrackPoint[] = [];
     for (const item of parsed) {
-      const lat = Number(item?.lat); const lon = Number(item?.lon);
-      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 || (Math.abs(lat)<.001&&Math.abs(lon)<.001)) continue;
+      const lat=optionalGpsNumber(item?.lat),lon=optionalGpsNumber(item?.lon);
+      if (lat===null || lon===null || lat < -90 || lat > 90 || lon < -180 || lon > 180 || (Math.abs(lat)<.001&&Math.abs(lon)<.001)) continue;
       const point: TrackPoint = { lat, lon };
-      const alt = Number(item?.alt); if (Number.isFinite(alt)) point.alt = alt;
+      const alt=optionalGpsNumber(item?.alt); if(alt!==null)point.alt=alt;
       if (item?.time) point.time = String(item.time);
       valid.push(point);
     }
