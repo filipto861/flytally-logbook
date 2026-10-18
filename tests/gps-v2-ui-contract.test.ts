@@ -23,7 +23,7 @@ test("V2-12 experimental pilot panel is exactly build-flagged OFF by default",()
 });
 test("V2-13 production preview reads exact in-memory upload and current split and no form authority",()=>{
   const ui=read("../components/kml-import-form.tsx");
-  assert.match(ui,/inspectGpsV2HorizontalCsv\(\{sourceText:analysis\.sourceText,fileName:analysis\.name,canonicalPoints:analysis\.points,splitCuts:cuts\}\)/);
+  assert.match(ui,/inspectGpsV2HorizontalTrack\(\{sourceText:analysis\.sourceText,fileName:analysis\.name,canonicalPoints:analysis\.points,splitCuts:cuts\}\)/);
   assert.match(ui,/setAnalysis\(null\)/);
   assert.match(ui,/epoch!==fileEpoch\.current/);
   assert.doesNotMatch(ui,/<input[^>]*name="[^"]*gpsV2[^"]*"/i);
