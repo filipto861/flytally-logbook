@@ -31,3 +31,17 @@ test("D2-C.1 altitude profile preserves gaps and isolated valid samples",()=>{
   assert.deepEqual(gpsAltitudeProfileGeometry([null,undefined,NaN],1000,150),{segments:[],isolated:[]});
   assert.deepEqual(gpsAltitudeProfileGeometry([0,0],1000,150).isolated,[]);
 });
+
+
+test("D2-C.1 saved replay does not connect disjoint track sections through an altitude profile",()=>{
+  const profile=gpsAltitudeProfileGeometry([100,150,200,300],1000,150,[false,false,true,false]);
+  assert.equal(profile.segments.length,2);
+  assert.deepEqual(profile.isolated,[]);
+});
+
+test("D2-C.1 altitude geometry preserves actual negative and zero samples",()=>{
+  const profile=gpsAltitudeProfileGeometry([-10,0,10],1000,150);
+  assert.equal(profile.segments.length,1);
+  assert.equal(profile.isolated.length,0);
+  assert.equal(profile.segments[0].split(" ").length,3);
+});
