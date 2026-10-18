@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS R2.1c D2-B2 clean-main research bridge (DRAFT / NOT MERGED)
+
+- Staged pure offline `research/gps-detection-r21/csv-lineage.ts` with its original ten-case test suite from formerly owner-tested source SHA `25d0efdb...`, plus 3 new cross-check cases against the merged D2-C.1 production CSV parser. No changes to production runtime, GPS detector, persistence, schema, privacy, or certifier. The research output cannot authorize pilot motion candidates or landing counts.
+- **New branch test status NOT RUN**: previously tested research code is byte-identical but this merged-main context and three new assertions need exact-head targeted Node/typecheck/plan. No production UI, review, DB, merge or deployment. [Scope and handoff](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_MAIN_REBASELINE_2026-10-18.md).
+
 ## 2026-10-18 — GPS D2-C.1 merged to main (not deployed)
 
 - Merged PR [#360](https://github.com/filipto861/flytally-logbook/pull/360) at `beef98053e141f99fd7844fb7c02702b43107fda` from tested head `742aeadad4ac3432c78f62bbc37884f1500b05c8`. Changes: fail-file on absent/malformed CSV coordinates; missing altitude stays `null` (true numeric zero survives); finite decimal GPS values; optional altitude retained in persisted-track read; chart/playback gaps in import and saved/public views; async stale-file guard; owner-scoped browser negative/positive regression. No database migration, flight certification change, detector rewrite or automatic count mutation.
