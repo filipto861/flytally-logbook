@@ -1,5 +1,27 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS D2-C.1 runtime inventory correction (DRAFT / NOT RELEASED)
+
+- Updated `tooling/development-modules.json` audited runtime count from 398 to **400** after two new, already GPS-owned `lib/gps-*.ts` files. No test policy relaxation, source business-rule change, DB schema change or deploy.
+- Owner-local prior HEAD `9f818dc0`: 54/54 targeted PASS, 73/73 domain PASS, TypeScript PASS, Next build PASS; application source 256/257 FAIL and aggregate Node FAIL on one identical stale inventory expectation. New HEAD **NOT RUN**, browser and isolated PostgreSQL release gates NOT RUN. Full GPS 2.0 remains future work.
+
+## 2026-10-18 — GPS D2-C.1 reviewer-informed guardrails (DRAFT, NOT RELEASED)
+
+- Shared strict decimal-only finite optional GPS number decoder used for CSV parsing and loaded persisted tracks; missing/null remains unavailable, zero remains real zero. Previously accepted hex/binary/octal strings no longer create apparent coordinates.
+- Import and saved/private/public GPS players now show missing altitude as unavailable, with altitude profile gaps, isolated points and no interpolation across unknown values or track boundaries.
+- Import file chooser invalidates stale preview immediately and ignores late reads from prior file selections.
+- Added direct numeric/altitude tests, source-contract checks and enhanced registered GPS browser acceptance assertions for client refusal, forged-input server rejection and persisted null vs zero; documented unsupported multiline CSV grammar and existing near-(0,0) map filtering.
+- Source-inaccessible DeepSeek review treated as risk hypotheses, independently reconciled against actual repository. **Current code NOT RUN**: new targeted/full Node, TypeScript, build or Playwright. Earlier PASS results belong only to pre-D2-C.1 executable SHA. No DB migration, merge or deploy. [Audit and gates](docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md).
+
+## 2026-10-18 — GPS D2-C exact source acceptance, first-party audit (DRAFT / NO RELEASE)
+
+owner-local clean exact executable `8fb1daa9` targeted Node 41/41, TypeScript PASS, full Node 1637/1637, Next build PASS (not CI). First-party source review confirms shared CSV client/server parser and identifies unresolved CSV-specific browser end-to-end coverage, pre-existing player null-altitude-to-zero display, limited line-based CSV grammar, non-decimal numeric token semantics and rapid-file-selection race. Independent DeepSeek/Claude source review and authenticated CSV runtime tests NOT RUN; no merge/deploy. See `docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md`.
+
+## 2026-10-17 — GPS D2-C minimal canonical CSV null/zero integrity fix (DRAFT PR #360 / NOT RELEASED)
+
+After explicit owner approval, created `fix/gps-import-csv-missing-values` from canonical main, changed only `lib/track-processing.ts` parsing/statistics and `tests/track-processing.test.ts` (7 new desired-behavior cases), plus governance docs. Empty or malformed altitude now null, true numeric zero preserved; missing/invalid/out-of-range CSV lat/lon and internal blank data rows reject whole file, conventional trailing newline allowed; finite numeric zero participates in altitude extrema. No KML/GPX/motion heuristic/T&G/auth/server action/UI/DB/schema changes. Current source Node/TS, full suite/build/browser, independent review **NOT RUN**. Research PR #350 previously verified 130/130 targeted is a different source and still contains historic unsafe-characterization assertions that must be corrected on rebase. No merge/deploy. [Scope and independent review criteria](docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md).
+
+
 ## 2026-10-16 — Airport Elevation Phase 1 local acceptance and production schema confirmed (PR #346 DRAFT, NOT RELEASED)
 
 Exact clean source SHA `c37ae3ba9f2d69d8972ca23d61291a1f9d62266f` verified **owner-locally**: source 257/257, direct domain 20/20, typecheck PASS, full Node **1,630/1,630 PASS** (0 skipped), six owned disposable PG16 groups **163/163 PASS**, Next production build PASS and Playwright browser-risk **27/27 desktop + 26/26 mobile PASS**, all exit 0. Browser and PG16 fixtures were isolated and cleaned up; no production SQL writes. Vercel `logbook` production `DATABASE_URL` endpoint maps to Neon project `muddy-dust-14049657`, **production** branch `br-raspy-fog-b1btvu5t`; read-only schema check confirms nullable double-precision `public.airports.elevation_ft` and unique owner/ident constraint, **migration N/A**. Legacy production `updated_at` remains text (test fixture timestamp); no modification/backfill. This final documentation amendment creates a new HEAD whose formal canonical release result is **NOT RUN** and must not inherit the earlier SHA PASS automatically. No merge, deployment, or GPS Detection logic change.

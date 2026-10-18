@@ -9,7 +9,7 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   // A cold local server action may outlive the global 5s assertion timeout.
   // Budget the authenticated GPS import transaction without relaxing the
   // subsequent UI certification, immutable-hash or track persistence assertions.
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS completion coverage requires the isolated browser database.");
   runBrowserFlightFixtureCleanup(`
     DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00');
@@ -19,8 +19,36 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   await page.getByRole("button",{name:"Import GPS track"}).click();
 
   const gpsForm=page.locator("form.kml-wizard");
-  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-10-05T14:00:00Z</when><when>2026-10-05T14:01:00Z</when><when>2026-10-05T14:02:00Z</when><when>2026-10-05T14:03:00Z</when><when>2026-10-05T14:04:00Z</when><when>2026-10-05T14:05:00Z</when><gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord></gx:Track></kml>';
-  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"v340-direct-certify.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  // D2-C: The client must not create a false (0,0) route from a damaged CSV.
+  const damagedCsv=[
+    "Latitude,Longitude,Altitude Meters,UTC Time",
+    "50.10,14.10,100,2026-10-05T14:00:00Z",
+    ",14.12,120,2026-10-05T14:01:00Z",
+    "50.26,14.31,300,2026-10-05T14:05:00Z"
+  ].join("\n");
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"d2c-invalid.csv",mimeType:"text/csv",buffer:Buffer.from(damagedCsv)});
+  await expect(gpsForm).toContainText("0 GPS points");
+  await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toHaveCount(0);
+
+  // Unlike the KML-only baseline, the selected registered GPS save test now
+  // exercises real CSV data with missing altitude AND a measured zero.
+  const validCsv=[
+    "Latitude,Longitude,Altitude Meters,UTC Time",
+    "50.10,14.10,,2026-10-05T14:00:00Z",
+    "50.12,14.13,0,2026-10-05T14:01:00Z",
+    "50.16,14.18,800,2026-10-05T14:02:00Z",
+    "50.20,14.24,850,2026-10-05T14:03:00Z",
+    "50.24,14.29,500,2026-10-05T14:04:00Z",
+    "50.26,14.31,300,2026-10-05T14:05:00Z"
+  ].join("\n");
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"d2c-positive.csv",mimeType:"text/csv",buffer:Buffer.from(validCsv)});
+  await expect(gpsForm).toContainText("6 GPS points");
+  const trackDetails=gpsForm.locator("details.gps-track-review");
+  if(!(await trackDetails.evaluate(node=>node.open)))await trackDetails.locator("summary").click();
+  const replay=gpsForm.locator(".import-review-player");
+  await expect(replay).toBeVisible();
+  await expect(replay).toContainText("Altitude unavailable");
+  await expect(replay).toContainText("Altitude gaps indicate unavailable source measurements.");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
@@ -39,6 +67,32 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
   await expect(gpsForm.locator(".gps-certification-summary")).toContainText("EASA");
   await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  // Force a malformed upload into the DOM WITHOUT firing change, preserving
+  // intentionally stale client review. The server must independently reparse
+  // the actual multipart file, reject it, and persist zero rows.
+  await gpsForm.locator('input[name="kml"]').evaluate(input=>{
+    const original=input.files?.[0];
+    if(!original)throw new Error("Missing original browser CSV fixture");
+    window.__d2cHeldSource=original;
+    const dt=new DataTransfer();
+    dt.items.add(new File([
+      "lat,lon,altitude,time\n50.10,14.10,100,2026-10-05T14:00:00Z\n0x10,14.12,200,2026-10-05T14:01:00Z\n50.26,14.31,300,2026-10-05T14:05:00Z"
+    ],"d2c-forged.csv",{type:"text/csv"}));
+    input.files=dt.files;
+  });
+  await gpsForm.getByRole("button",{name:"Save & certify flight"}).click();
+  await expect(gpsForm.getByRole("alert")).toContainText("No usable GPS track was found.",{timeout:20_000});
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00'")).toBe("0");
+
+  // Restore the original reviewed CSV without changing React review fields.
+  await gpsForm.locator('input[name="kml"]').evaluate(input=>{
+    const original=window.__d2cHeldSource;
+    if(!original)throw new Error("Lost positive CSV fixture");
+    const dt=new DataTransfer();
+    dt.items.add(original);
+    input.files=dt.files;
+    delete window.__d2cHeldSource;
+  });
   await gpsForm.getByRole("button",{name:"Save & certify flight"}).click();
 
   // Wait for the actual server-action redirect instead of assuming completion
@@ -48,6 +102,7 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
   expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");
   expect(browserSqlScalar("SELECT COUNT(*) FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00')")).toBe("1");
+  expect(browserSqlScalar("SELECT COALESCE(t.coordinates_json::jsonb->0->>'alt','NULL')||'|'||COALESCE(t.coordinates_json::jsonb->1->>'alt','NULL') FROM flight_tracks t JOIN flights f ON f.id=t.flight_id WHERE f.user_id=9001 AND f.registration='OK-E2E' AND f.date='2026-10-05' AND f.off_block='14:00' ORDER BY t.id DESC LIMIT 1")).toBe("NULL|0");
   await expectNoHorizontalOverflow(page);
 });
 
