@@ -1,6 +1,6 @@
 # GPS Detection 2.0 — Stage D1 offline benchmark runbook
 
-**Status: experimental research; Node24/typecheck/exact-HEAD execution NOT RUN.**
+**Status: experimental research; owner-local targeted 39/39 and TypeScript PASS; real KML/ADS-B corpus NOT RUN.**
 **Branch:** research/gps-v2-stage-d-comparator-20261018 (based on the Stage D PR #364 head).
 **Scope:** FlyTally Logbook only. The Training repository is excluded.
 
@@ -85,8 +85,8 @@ the two initial handpicked flights.
 
 ## Current verification ledger
 
-- Research branch and new source/tests: STAGED; exact HEAD should be recorded after all edits.
-- Node 24 targeted, TypeScript, full suite, build, Playwright: **NOT RUN**.
+- Owner-local Windows PowerShell (Node 24.19.0): targeted comparator/advisory/import-lineage tests **39/39 PASS**; `npm run typecheck` **PASS**. The shared terminal log does not include `git rev-parse HEAD`; report is grounded to an up-to-date checkout of the research branch before this documentation update, not a claimed later exact commit SHA.
+- New documentation commits follow this result. Full suite, build, Playwright, verification planner: **NOT RUN**.
 - Local KML, ADS-B corpus, pilot-label scoring: **NOT RUN** on this new branch.
 - DB access/migration: N/A; no DB change.
 - Production flag: OFF by default in PR #364, unchanged.
