@@ -1,6 +1,6 @@
 # FlyTally GPS V2 — Stage D4.2A research shadow implementation
 
-**Date:** 2026-10-18. **Current status: OWNER-LOCAL NODE24 TARGETED TESTS 83/83 PASS + TYPECHECK PASS ON `83635bc4`; SIX-KML D4.2A SHADOW CORPUS NOT RUN; MILESTONE NOT DONE / NOT SHIPPED.**
+**Date:** 2026-10-18. **Current status: D4.2A OWNER-LOCAL 83/83 TESTS + TYPECHECK PASS; 6/6 REAL-SOURCE SHADOW CLI EXECUTED (0 BASE/SHADOW STOP_GO ALL SIX). POST-CORPUS INDEPENDENT REVIEW PENDING / RECOGNITION FITNESS NOT DEMONSTRATED / NOT SHIPPED.**
 **Approval:** Product owner explicitly approved D4.2A Option A as an isolated research-only shadow consumer after the independent DeepSeek review.
 **Repo:** flytally-logbook, branch research/gps-v2-stage-d-comparator-20261018, PR #366 Draft (parent PR #364 Draft). No flytally-training changes.
 
@@ -122,3 +122,9 @@ The product owner supplied the Windows PowerShell output from the checked-out re
 **Remaining gate for D4.2A:** run the documented privacy-bounded `tooling/gps-v2-d42-shadow.mjs` on all six original local KMLs; inspect anonymized counts of hypothetical baseline and source-aware horizontal review points, boundary suppression and inconclusive coverage dispositions. No STOP_GO number is assumed and no legacy 21 proposal count is treated as true touchdown count.
 
 **Status:** D4.2A is **SYNTHETICALLY VERIFIED / CORPUS ACCEPTANCE PENDING**; not complete, not merged/deployed. `lib/`, legacy movement/landing counts, DB/schema, feature OFF and Pilot Review HIDDEN remain unaffected. Full tests/build/Playwright/CI and production smoke NOT RUN; DB/migration N/A.
+
+## 2026-10-18 — Latest native six-file D4.2A result (supersedes historical PENDING text)
+
+Owner ran the privacy-safe research CLI after `git pull --ff-only` fast-forward to docs-only HEAD `c5cd44b2` (source/test code previously tested at `83635bc4`). All six private KML samples returned `RESEARCH_DIAGNOSTIC_ONLY`. The printed STOP_GO counts are **zero hypothetical baseline, zero source-aware shadow, zero suppressed** in each of six, and `Inconclusive=0`. These are zero *emitted horizontal hypotheses*, **not** confirmed zero touch-and-go or proof that gaps lack maneuvers. Max observed intervals range from 20.17s to 491.57s. No source-boundary positive counterexample appeared in the real corpus, so usefulness of the shadow's STOP_GO recognition **remains unvalidated** against rolling T&G. Six original legacy altitude candidate counts 1/1/10/0/6/3 (21 provisional hypotheses) cannot be scored as independent ground truth. A separate Python inspection found very few valid <=20km/h source edges (0/3/11/4/1/0), supporting horizontal stop/go-vs-rolling domain mismatch without justifying altered thresholds. No exact full route/UTC or private registration committed.
+
+**Accepted engineering gates:** Node v24.19.0, targeted tests 83/83 PASS, TypeScript PASS at `83635bc4`; real source CLI 6/6 executed at docs-only `c5cd44b2`. **Open review gate:** independent evidence/domain-fit assessment of 0 STOP_GO outcomes before any new algorithm or production suggestion. The latest dedicated review document is `docs/product/GPS_V2_STAGE_D42_SIX_KML_RESULTS_AND_REVIEW_2026-10-18.md`. This appendix supersedes older instructions below that say the six-file CLI was NOT RUN; those remain as historical verification entries. D4.2A remains research-only / not shipped / not approved as a rolling-T&G detector. Full suite/build/Playwright/CI/DB migration/merge/deploy NOT RUN/N/A, production flags OFF and Pilot Review HIDDEN.
