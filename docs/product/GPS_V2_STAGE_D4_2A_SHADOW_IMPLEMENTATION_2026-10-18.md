@@ -1,6 +1,6 @@
 # FlyTally GPS V2 — Stage D4.2A research shadow implementation
 
-**Date:** 2026-10-18. **Status: IMPLEMENTED ON DRAFT RESEARCH PR / NODE24 TESTS AND SIX-KML SHADOW CORPUS NOT RUN.**
+**Date:** 2026-10-18. **Current status: OWNER-LOCAL NODE24 TARGETED TESTS 83/83 PASS + TYPECHECK PASS ON `83635bc4`; SIX-KML D4.2A SHADOW CORPUS NOT RUN; MILESTONE NOT DONE / NOT SHIPPED.**
 **Approval:** Product owner explicitly approved D4.2A Option A as an isolated research-only shadow consumer after the independent DeepSeek review.
 **Repo:** flytally-logbook, branch research/gps-v2-stage-d-comparator-20261018, PR #366 Draft (parent PR #364 Draft). No flytally-training changes.
 
@@ -105,3 +105,20 @@ Expected SOURCE shapes ONLY: six research diagnostic outputs with blocks 2/2/3/2
 - D4.2A: code/test/CLI staged on current research branch. **Native tests, typecheck and private corpus NOT RUN** at current new code HEAD.
 - Full suite/build/Playwright/CI/production smoke NOT RUN; database/migrations N/A, merge/deploy NOT RUN, feature OFF.
 - D4.2A NOT DONE until exact-head test/typecheck, owner-local six source evidence, independent interpretation and governance reconciliation; D4.2B/production integration NOT authorized.
+
+
+## 2026-10-18 — First native D4.2A verification (OWNER-LOCAL EVIDENCE)
+
+The product owner supplied the Windows PowerShell output from the checked-out research branch. `git fetch origin`, `git pull --ff-only` and `git rev-parse --short HEAD` verified **`83635bc4`**. `node -v` reported **v24.19.0**.
+
+**Exact command:** `npm run test:target -- tests/gps-v2-d42-shadow.test.ts tests/gps-v2-d4-multi-gx-lineage.test.ts tests/gps-v2-stage-d-comparator.test.ts tests/gps-v2-stage-d-event-quality.test.ts tests/gps-v2-advisory.test.ts tests/gps-v2-import-lineage.test.ts`.
+
+**Observed result:** **83 tests / 83 PASS / 0 FAIL / 0 skipped**, including all 20 D42 tests. In particular D42-14's 36 deterministic seeded one-block differential cases passed against the existing `GPS_V2_HORIZONTAL_V3` function, and D42-02, -04, -05, -06, -07, -08, -11, -13 covered synthetic source-boundary, duplicate, conflict, UTC-collision, 35s and 94s cases, split independence and native multi-block unsupported behavior.
+
+`npm run typecheck` (`tsc --noEmit`) finished without diagnostic output: **PASS**.
+
+**Evidence scope:** these are owner-local targeted checks on exact source/test SHA `83635bc4`, **not CI**, full suite, browser, production runtime or actual-contact validation. No 6-file **D4.2A** shadow-CLI run was in this supplied transcript. Earlier 6/6 D4.1 source-lineage results DO NOT qualify as D4.2A recognition evidence. The new documentation-only commits after `83635bc4` are not separately tested, but code remains unchanged as proved by GitHub diff.
+
+**Remaining gate for D4.2A:** run the documented privacy-bounded `tooling/gps-v2-d42-shadow.mjs` on all six original local KMLs; inspect anonymized counts of hypothetical baseline and source-aware horizontal review points, boundary suppression and inconclusive coverage dispositions. No STOP_GO number is assumed and no legacy 21 proposal count is treated as true touchdown count.
+
+**Status:** D4.2A is **SYNTHETICALLY VERIFIED / CORPUS ACCEPTANCE PENDING**; not complete, not merged/deployed. `lib/`, legacy movement/landing counts, DB/schema, feature OFF and Pilot Review HIDDEN remain unaffected. Full tests/build/Playwright/CI and production smoke NOT RUN; DB/migration N/A.
