@@ -33,7 +33,7 @@ export type D4LineageResult =
       canonical:null;
       blockedEdges:null;
       blockedEdgeReasons:null;
-      continuousIslands:null;
+      unblockedSourceRuns:null;
     }>
   | Readonly<{
       revision:typeof D4_LINEAGE_REVISION;
@@ -51,8 +51,8 @@ export type D4LineageResult =
       blockedEdgeReasons:readonly Readonly<{
         leftCanonicalIndex:number;reasons:readonly D4BlockedReason[];
       }>[];
-      /** Closed fix-index ranges; single-fix ranges have NO velocity evidence. */
-      continuousIslands:readonly Readonly<{first:number;last:number}>[];
+      /** Unblocked-by-provenance fix-index ranges ONLY; not time/velocity continuity proof. Even one range can contain long telemetry gaps. */
+      unblockedSourceRuns:readonly Readonly<{first:number;last:number}>[];
     }>;
 
 type Raw = {
@@ -68,7 +68,7 @@ function unavailable(reason:Extract<D4LineageResult,{status:"UNAVAILABLE"}>["rea
     revision:D4_LINEAGE_REVISION,status:"UNAVAILABLE",reason,
     canAffectCanonicalFlight:false,physicalContact:"UNRESOLVED",
     actualLandings:"UNAVAILABLE",
-    canonical:null,blockedEdges:null,blockedEdgeReasons:null,continuousIslands:null,
+    canonical:null,blockedEdges:null,blockedEdgeReasons:null,unblockedSourceRuns:null,
   };
 }
 function numeric(value:string):number|null {
@@ -211,13 +211,13 @@ export function inspectD4MultiGxLineage(
     }
   }
   const blockedEdges=[...reasons.keys()].sort((a,b)=>a-b);
-  const continuousIslands:{first:number;last:number}[]=[];
+  const unblockedSourceRuns:{first:number;last:number}[]=[];
   let start=0;
   for(const edge of blockedEdges){
-    continuousIslands.push({first:start,last:edge});
+    unblockedSourceRuns.push({first:start,last:edge});
     start=edge+1;
   }
-  continuousIslands.push({first:start,last:normalized.length-1});
+  unblockedSourceRuns.push({first:start,last:normalized.length-1});
   return {
     revision:D4_LINEAGE_REVISION,status:"SOURCE_PARSED_DIAGNOSTIC_ONLY",
     reason:null,canAffectCanonicalFlight:false,physicalContact:"UNRESOLVED",
@@ -231,6 +231,6 @@ export function inspectD4MultiGxLineage(
     blockedEdgeReasons:blockedEdges.map(leftCanonicalIndex=>({
       leftCanonicalIndex,reasons:[...reasons.get(leftCanonicalIndex)!].sort(),
     })),
-    continuousIslands,
+    unblockedSourceRuns,
   };
 }
