@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS D2-C.1 reviewer-informed guardrails (DRAFT, NOT RELEASED)
+
+- Shared strict decimal-only finite optional GPS number decoder used for CSV parsing and loaded persisted tracks; missing/null remains unavailable, zero remains real zero. Previously accepted hex/binary/octal strings no longer create apparent coordinates.
+- Import and saved/private/public GPS players now show missing altitude as unavailable, with altitude profile gaps, isolated points and no interpolation across unknown values or track boundaries.
+- Import file chooser invalidates stale preview immediately and ignores late reads from prior file selections.
+- Added direct numeric/altitude tests, source-contract checks and enhanced registered GPS browser acceptance assertions for client refusal, forged-input server rejection and persisted null vs zero; documented unsupported multiline CSV grammar and existing near-(0,0) map filtering.
+- Source-inaccessible DeepSeek review treated as risk hypotheses, independently reconciled against actual repository. **Current code NOT RUN**: new targeted/full Node, TypeScript, build or Playwright. Earlier PASS results belong only to pre-D2-C.1 executable SHA. No DB migration, merge or deploy. [Audit and gates](docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md).
+
 ## 2026-10-18 — GPS D2-C exact source acceptance, first-party audit (DRAFT / NO RELEASE)
 
 owner-local clean exact executable `8fb1daa9` targeted Node 41/41, TypeScript PASS, full Node 1637/1637, Next build PASS (not CI). First-party source review confirms shared CSV client/server parser and identifies unresolved CSV-specific browser end-to-end coverage, pre-existing player null-altitude-to-zero display, limited line-based CSV grammar, non-decimal numeric token semantics and rapid-file-selection race. Independent DeepSeek/Claude source review and authenticated CSV runtime tests NOT RUN; no merge/deploy. See `docs/product/GPS_DETECTION_2_0_D2C_CSV_PARSER_FIX_2026-10-17.md`.
