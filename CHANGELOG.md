@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-18 — GPS V2 D4.0 six-KML native comparator acceptance (RESEARCH EVIDENCE)
+
+- Owner-local run from exact branch checkout `c2274ca2`: six private KMLs evaluated through `tooling/gps-v2-stage-d-compare.mjs` with anonymized IDs sample03..08. Native legacy counts **1/1/10/0/6/3** (21 hypotheses) and normalized point counts **948/587/893/74/593/1034** match earlier independent reconstruction. Native V2 results **UNAVAILABLE/UNSUPPORTED_SOURCE for all six**; V2 event counts UNAVAILABLE, not zero. No private KML, coordinates or absolute times added to Git.
+- Updated D4 design documentation to record D4.0 COMPLETE and preserve D4.1 owner-approval gate. No detector, parser, UI, runtime, DB, schema or feature flag modification. Prior owner-local targeted 44/44 PASS + TypeScript PASS belongs to earlier `69e7e220`, not a new exact-HEAD test run. Full/build/Playwright/merge/deploy NOT RUN.
+
 ## 2026-10-18 — Stage D4 multi-gx:Track source-lineage design proposed (DOCS ONLY)
 
 - Independently audited owner-submitted six KMLs for source-block counts and post-normalization block boundaries. Relative intervals 20.11, 70.66, 24.01/77.16, 92.46, 4.90 and 26.39 seconds; none provide independent continuity proof. No raw GPS route/coordinates/dates committed.
