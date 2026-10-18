@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — GPS V2 D4.2A six-KML shadow corpus: all source-compatible, no horizontal STOP_GO hypotheses (RESEARCH EVIDENCE)
+
+- Owner-local six-file run from `c5cd44b2` fast-forward (docs-only since code HEAD `83635bc4`) produced 6/6 `RESEARCH_DIAGNOSTIC_ONLY` outcomes. For every sample, horizontal hypothetical/base STOP_GO=0, source-aware shadow STOP_GO=0, source-boundary suppressed STOP_GO=0, emitted inconclusive candidates=0. Longest observed intervals by anonymous sample 20.17/20.84/491.57/50.09/53.06/94.39s. Zero emitted candidate does not imply no missing evidence or no actual landings; other candidate kinds were not included in the posted stop-go summary.
+- Separate offline Python source-speed inspection (not native Node test) found V2-eligible low-speed <=20km/h edge counts 0/3/11/4/1/0 out of 946/585/889/72/591/1031. This supports recognition-domain mismatch with pilot-reported rolling T&G; 21 legacy altitude proposals are not independent contact labels and no detection accuracy is calculated.
+- Owner-local Node v24.19.0 targeted tests 83/83 PASS and typecheck PASS remain exact source HEAD `83635bc4`; actual six-file shadow CLI verified after documentation-only update. Created dedicated six-corpus evidence and read-only DeepSeek post-corpus review handoff; no D4.2A classifier tuning, code changes or production integration. **Recognition fitness review PENDING**, milestone not fully closed. Full suite/build/browser/CI/production smoke NOT RUN, DB/migration N/A, research PR #366 / parent #364 Draft, no merge/deploy, feature OFF/pilot HIDDEN.
+
 ## 2026-10-18 — GPS V2 D4.2A native owner-local targeted verification (83/83 PASS, TypeScript PASS)
 
 - Verified owner terminal log from research checkout **`83635bc4`**, Node.js **v24.19.0**. Six specified D42/D4/D1/D2/V2 targeted Node test files: **83 tests, 83 PASS, 0 FAIL**, including all 20 new D42 tests and 36 generated one-block differential inputs; `npm run typecheck` (`tsc --noEmit`) **PASS**. These are owner-local checks, not GitHub CI or production runtime evidence.
