@@ -1,9 +1,10 @@
 # FlyTally changelog
 
-## 2026-10-18 — Stage D1 GPS comparison harness (RESEARCH STAGED / NOT VERIFIED)
+## 2026-10-18 — Stage D1 GPS comparison harness (RESEARCH; OWNER-LOCAL TARGETED VERIFIED)
 
 - Started isolated Stage D1 branch from PR #364 without changing main, the detector thresholds, flag state or production runtime. Scoped a local KML/GPX/CSV comparator and synthetic privacy/availability tests. Intended output contains only anonymized relative timing, event-type hypotheses, aggregate source diagnostics and explicit uncertainty; does not persist original GPS bytes or feed logbook counts.
-- **Verification on the new branch: NOT RUN.** Private/ADS-B corpus: NOT RUN. No DB, migrations, merge, deployment or flag enablement.
+- Owner's Windows PowerShell evidence: Node v24.19.0, `npm run test:target -- tests/gps-v2-stage-d-comparator.test.ts tests/gps-v2-advisory.test.ts tests/gps-v2-import-lineage.test.ts` = **39/39 PASS**, and `npm run typecheck` completed without errors (**PASS**). Checkout tracked the research remote and `git pull --ff-only` reported up to date; `git rev-parse HEAD` was not included in the submitted terminal log, so exact local commit identity is not independently logged.
+- New documentation commits follow the user's test run; do not reuse that report as a fresh exact-HEAD release run. Private/ADS-B corpus: NOT RUN. Full suite/build/Playwright/planner: NOT RUN. No DB, migrations, merge, deployment or flag enablement.
 
 ## 2026-10-18 — GPS V2 Stage D read-only research contract recorded
 
