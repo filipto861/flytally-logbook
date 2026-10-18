@@ -18,7 +18,7 @@ test("V2-12 experimental pilot panel is exactly build-flagged OFF by default",()
   const ui=read("../components/kml-import-form.tsx");
   assert.match(ui,/const GPS_V2_ADVISORY_ENABLED=process\.env\.NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY==="1"/);
   assert.match(ui,/GPS_V2_ADVISORY_ENABLED&&v2Advisory\?/);
-  assert.match(ui,/open=\{gpsReviewNeedsAttention\|\|GPS_V2_ADVISORY_ENABLED\}/);
+  assert.match(ui,/className="entry-section gps-track-review" open=\{gpsReviewNeedsAttention\}/);
   assert.match(ui,/aria-label="GPS Detection 2\.0 experimental review"/);
 });
 test("V2-13 production preview reads exact in-memory upload and current split and no form authority",()=>{
