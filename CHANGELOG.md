@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-18 — D4.1 source-run semantic hardening (RESEARCH / NOT VERIFIED)
+
+- Renamed research sidecar `continuousIslands` to `unblockedSourceRuns` and CLI `motionIslands` to `sourceRuns` to avoid misrepresenting source block adjacency as confirmed sampling/motion continuity. Documentation makes explicit that gaps inside one source block are not validated by D4.1; source timing and velocity quality belong to the future D4.2 detector-consumption contract.
+- No production library/importer/landing detector/flag/persistence changes. Exact-new-HEAD targeted tests/typecheck and six-file sidecar owner-local run NOT RUN. No merge/deploy.
+
 ## 2026-10-18 — GPS V2 Stage D4.1 research source-lineage implementation STAGED (TESTS NOT RUN)
 
 - With owner approval added pure research `multi-gx-track-lineage.ts` sidecar for bounded multi-gx:Track KML: strict paired UTC/position samples, exact existing canonical parseKml equality, dedup raw references, altitude conflict and UTC collision quarantine, blocked source boundaries even at short intervals, motion islands without flight auto-splits. Any incomplete/unsafe proof returns explicit UNAVAILABLE rather than inferred continuity.
