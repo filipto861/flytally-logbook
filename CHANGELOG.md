@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — D4.2A independent review reconciliation (DOCUMENTATION ONLY)
+
+- Received independent DeepSeek read-only design critique, then cross-checked recommendations against current production `lib/gps-v2-advisory.ts` and D4.1 source-lineage sidecar. Added separate reviewed D4.2A contract with Option A research-only shadow, pinned production V2 revision and exact one-block differential equivalence; Option B production `lib/` refactor deferred, Option C V2 multi-block unsupported remains effective.
+- Defined hard source-boundary and conflict/collision evidence breaks, independent manual flight splits, input/revision invalidation, candidate vs research disposition separation, synthetic 35s/94s gap controls and source-local cadence sensitivity without fixed new gap thresholds, deterministic one-block fuzz and pilot-evidence strata. 19 D42 tests are proposed, **not authored/executed**. No raw GPS/source UTC/coordinates or full routes committed.
+- Original Stage D4.2 design retained with superseding review link. No code or runtime API changes; D4.1 previous targeted 63/63/typecheck and 6/6 KML refer to prior exact SHAs, NOT tests of this docs-only HEAD. Full suite/build/browser/CI, DB/migration, merge/deploy NOT RUN/N/A; parent #364 and research #366 remain Draft, feature flag OFF, Pilot Review HIDDEN. D4.2A implementation awaits explicit owner authorization.
+
 ## 2026-10-18 — GPS V2 D4.1 research milestone accepted on six private KMLs; D4.2 design only
 
 - Owner-local targeted Node tests **63/63 PASS** and TypeScript **PASS** on exact source/test HEAD `3fc3cd11`; owner then pulled docs-only `815c2693` and ran research sidecar CLI on six KMLs, all **6/6 SOURCE_PARSED_DIAGNOSTIC_ONLY**. Verified sums: 13 gx:Track blocks, 4148 raw paired fixes, 4129 canonical fixes, 19 collapsed duplicates, 0 conflicting duplicate heights, 7 blocked source evidence edges and 13 unblocked *provenance* runs. These runs are not evidence of continuous motion. No original GPS route, registration, absolute timestamps or coords added to repo.
