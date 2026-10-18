@@ -2,7 +2,7 @@
 
 Date: 2026-10-18. Repo: `filipto861/flytally-logbook`.
 Branch: `feat/gps-r21-d3-offline-advisory-dto`, from `main@e6fce0b896dba402a03bc5102d75539d4ca4f1de` (D2-B2 research PR #362 merged).
-**Status: D3 design approved product direction, implementation and exact-HEAD tests NOT YET RUN. Draft PR only, no merge/deploy.**
+**Status: D3 Batch 1 offline DTO and 13 synthetic tests IMPLEMENTED IN TOPIC BRANCH; exact-HEAD tests/typecheck/release NOT YET RUN. Draft PR only, no merge/deploy.**
 
 ## Frozen decisions, technical reality
 
