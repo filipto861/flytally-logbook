@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { AircraftOption } from "@/lib/data/aircraft";
 import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,FlightActionState } from "@/app/(protected)/flights/actions";
 import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
+import { inspectGpsV2HorizontalCsv } from "@/lib/gps-v2-advisory";
 import type { ImportReviewEvent } from "@/components/gps-import-review-player";
 import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
@@ -19,11 +20,12 @@ import { roleCrewSpec } from "@/lib/role-crew";
 import type { ConnectedPicOption } from "@/lib/flight-connected-crew";
 import { gpsLandingDayNightSuggestion,gpsNightMinutesSuggestion,gpsPfMovementDayNightSuggestion,type CivilTwilightNightTimeSuggestion } from "@/lib/civil-twilight";
 
+const GPS_V2_ADVISORY_ENABLED=process.env.NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY==="1";
 const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-player").then(module=>module.GpsImportReviewPlayer),{ssr:false,loading:()=> <div className="track-map-loading">Loading visual GPS review…</div>});
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type AirportAction=(requests:AirportDetectionRequest[])=>Promise<AirportDetectionResult>;
-type Analysis={name:string;points:KmlPoint[];suggested:number[];details:SplitSuggestion[];registration:string;timeBasis:TrackTimeBasis;format:TrackFileFormat;source:TrackSource;quality:TrackQuality};
+type Analysis={name:string;sourceText:string;points:KmlPoint[];suggested:number[];details:SplitSuggestion[];registration:string;timeBasis:TrackTimeBasis;format:TrackFileFormat;source:TrackSource;quality:TrackQuality};
 type LandingSplitSource="UNSET"|"SUGGESTED"|"MANUAL";
 type NightTimeSource="UNSET"|"SUGGESTED"|"MANUAL";
 type Review={date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:string;takeoffs:string;landingsDay:string;landingsNight:string;landingSplitSource:LandingSplitSource;pfMovement:""|"yes";takeoffsDay:string;takeoffsNight:string;approachesDay:string;approachesNight:string;launchMethod:string;launches:string;nightTime:string;nightTimeSource:NightTimeSource;ifrTime:string;note:string};
@@ -58,7 +60,7 @@ function roleCrewSummary(buffer:RoleCrewBuffer,picConnections:ConnectedPicOption
 function inspect(source:string,name:string):Analysis{
   const inspection=inspectTrackFile(source,name),points=inspection.points;
   const registration=name.toUpperCase().replaceAll("_","-").match(/\bOK-?[A-Z]{3}\d{0,2}\b/)?.[0]?.replace(/^OK(?!-)/,"OK-")||"";
-  return{name,points,suggested:suggestedSplits(points),details:suggestedSplitDetails(points),registration,timeBasis:trackTimeBasis(points),format:inspection.format,source:inspection.source,quality:inspection.quality};
+  return{name,sourceText:source,points,suggested:suggestedSplits(points),details:suggestedSplitDetails(points),registration,timeBasis:trackTimeBasis(points),format:inspection.format,source:inspection.source,quality:inspection.quality};
 }
 
 function reviewFor(part:KmlPoint[]):Review{
@@ -147,6 +149,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
   const visualTrack=useMemo(()=>analysis?mapTrack(analysis.points,-1,registration,undefined,1800):null,[analysis,registration]);
   const visualEvents=useMemo(()=>analysis?importReviewEvents(analysis,cuts):[],[analysis,cuts]);
+  const v2Advisory=useMemo(()=>GPS_V2_ADVISORY_ENABLED&&analysis?inspectGpsV2HorizontalCsv({sourceText:analysis.sourceText,fileName:analysis.name,canonicalPoints:analysis.points,splitCuts:cuts}):null,[analysis,cuts]);
 
   const resetParts=(next:number[],source=analysis)=>{
     if(!source)return;
@@ -236,7 +239,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
     {analysis&&gpsQualityNeedsAcknowledgement?<label className="review-confirm gps-warning-confirm"><input name="gpsWarningReviewed" type="checkbox" value="yes" checked={gpsWarningAcknowledged} onChange={event=>setGpsWarningAcknowledged(event.target.checked)}/> I reviewed the GPS quality warning.</label>:null}
 
     {analysis&&analysis.points.length>=2?<>
-      <details className="entry-section gps-track-review" open={gpsReviewNeedsAttention}>
+      <details className="entry-section gps-track-review" open={gpsReviewNeedsAttention||GPS_V2_ADVISORY_ENABLED}>
         <summary><span>Review GPS track</span><small>{gpsReviewNeedsAttention?parts.length>1?`${parts.length} flights detected`:"Needs review":"Optional visual review"}</small></summary>
         <div className="entry-section-body">
           {parts.length===1&&!cuts.length?<div className="field-actions"><button type="button" className="secondary-button" onClick={addCut}>Split into multiple flights</button></div>:<section className="split-editor">
@@ -245,6 +248,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
           </section>}
           {overrideResetNotice?<p className="track-time-warning" role="status">{overrideResetNotice}</p>:null}
           {visualTrack?<section className="import-player-review"><div className="section-heading"><div><p className="eyebrow">GPS REVIEW</p><h2>Detected flight</h2><p className="muted">Takeoff, landing, touch-and-go and split detections are marked on the altitude/speed profile.</p></div></div><GpsImportReviewPlayer track={visualTrack} events={visualEvents}/><p className="import-player-note">Use this view when the automatic interpretation needs checking. Edit the final flight fields below whenever the track evidence is not sufficient.</p></section>:null}
+           {GPS_V2_ADVISORY_ENABLED&&v2Advisory?<section className="gps-v2-preview" aria-label="GPS Detection 2.0 experimental review" data-gps-v2-preview><div className="section-heading"><div><p className="eyebrow">GPS DETECTION 2.0 · EXPERIMENTAL</p><h2>Movement patterns for pilot review</h2><p className="muted">Separate from the existing detected events. Source quality and wheel contact are not verified. These suggestions cannot change logbook counts or certification.</p></div></div>{v2Advisory.status==="UNAVAILABLE"?<p className="track-time-warning">V2 movement review unavailable for this source ({v2Advisory.reason}). Continue with the existing manual GPS review; no event count is inferred.</p>:v2Advisory.events.length?<ul className="gps-v2-event-list">{v2Advisory.events.map(event=><li key={`${event.splitIndex}-${event.normalizedIndex}-${event.kind}`}><strong>{event.kind==="DEPARTURE_REVIEW_POINT"?"Possible departure movement":event.kind==="ARRIVAL_REVIEW_POINT"?"Possible arrival movement":"Possible stop-and-go movement"}</strong><span>Flight {event.splitIndex+1} · {event.utc.slice(11,19)} UTC · Unresolved</span></li>)}</ul>:<p className="muted">No qualifying horizontal movement patterns in the supported GPS source. This does not mean zero landings. Leave unresolved and review manually.</p>}<p className="import-player-note">Altitude mode, sensor accuracy and physical contact are unverified. V2 does not update take-offs, landings, PF movements or any submitted form values.</p></section>:null}
         </div>
       </details>
       <input type="hidden" name="splitIndices" value={cuts.join(",")}/><input type="hidden" name="partCount" value={parts.length}/>
