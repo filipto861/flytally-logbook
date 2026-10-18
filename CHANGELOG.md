@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — GPS V2 D4.2A shadow recognizer staged (RESEARCH-ONLY / TESTS NOT RUN)
+
+- With owner approval after DeepSeek review, added a separate `stage-d42-shadow.ts` V2 horizontal candidate mirror pinned to `GPS_V2_HORIZONTAL_V3` and fed by verified D4.1 source lineage. It applies hard source/dedup/collision/altitude conflict boundaries before computing candidate islands; exposes hypothetical baseline vs boundary-aware candidates, explicitly inconclusive blocked/gap-dependent proposals and descriptive cadence. It cannot prove touchdown, add landing counts, set recency or change saved flights.
+- Added 20 authored test cases incl 36-case deterministic clean one-block differential fuzz, source block and manual split separation, 4.9s joins, 35s/94s gaps, conflicting source altitude, timestamp collisions, local-binding invalidation and privacy. Added bounded anonymous owner-local `tooling/gps-v2-d42-shadow.mjs` CLI. Raw KML/coords/timestamps not added to Git.
+- Documented D4.2A acceptance commands and preserved original review decisions. **New D4.2A tests/typecheck/six private KML shadow CLI NOT RUN.** No edits to production `lib/`, app/components, DB, migration, legacy T&G/feature flags, merge or deploy. PR #366 and parent #364 Draft, Pilot Review HIDDEN, feature OFF. D4.2A implementation STAGED, not DONE.
+
 ## 2026-10-18 — D4.2A independent review reconciliation (DOCUMENTATION ONLY)
 
 - Received independent DeepSeek read-only design critique, then cross-checked recommendations against current production `lib/gps-v2-advisory.ts` and D4.1 source-lineage sidecar. Added separate reviewed D4.2A contract with Option A research-only shadow, pinned production V2 revision and exact one-block differential equivalence; Option B production `lib/` refactor deferred, Option C V2 multi-block unsupported remains effective.
