@@ -152,3 +152,26 @@ test("D4-CONTRACT-04 new sidecar is not used by production and has no IO or netw
   assert.match(s,/parseKml/);
   assert.match(s,/actualLandings:"UNAVAILABLE"/);
 });
+
+test("D4-SOURCE-11 gx fix outside recognized Track blocks is unsupported",()=>{
+  const source=kml([[pt(0),pt(5),pt(10)]]);
+  const tampered=source.replace("</kml>",
+    "<gx:coord>0 0 0</gx:coord></kml>");
+  const result=inspectD4MultiGxLineage(tampered);
+  assert.equal(result.status,"UNAVAILABLE");
+  assert.equal(result.reason,"UNSUPPORTED_SOURCE");
+});
+test("D4-SOURCE-12 unsupported mixed namespaced/unqualified Track does not gain lineage",()=>{
+  const source=kml([[pt(0),pt(5),pt(10)]]);
+  const tampered=source.replace("</kml>", "<Track></Track></kml>");
+  const result=inspectD4MultiGxLineage(tampered);
+  assert.equal(result.status,"UNAVAILABLE");
+  assert.equal(result.reason,"UNSUPPORTED_SOURCE");
+});
+test("D4-SOURCE-13 source input limit is fail-closed and does not echo raw content",()=>{
+  const raw="SECRET"+("x".repeat(2_000_001));
+  const r=inspectD4MultiGxLineage(raw);
+  assert.equal(r.status,"UNAVAILABLE");
+  assert.equal(r.reason,"SOURCE_LIMIT");
+  assert.equal(JSON.stringify(r).includes("SECRET"),false);
+});
