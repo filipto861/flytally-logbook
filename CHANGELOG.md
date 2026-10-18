@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — GPS V2 Stage D4.1 research source-lineage implementation STAGED (TESTS NOT RUN)
+
+- With owner approval added pure research `multi-gx-track-lineage.ts` sidecar for bounded multi-gx:Track KML: strict paired UTC/position samples, exact existing canonical parseKml equality, dedup raw references, altitude conflict and UTC collision quarantine, blocked source boundaries even at short intervals, motion islands without flight auto-splits. Any incomplete/unsafe proof returns explicit UNAVAILABLE rather than inferred continuity.
+- Added 19 synthetic/authority regression cases, including the explicit assertion that this sidecar DOES NOT unlock native V2 on multi-block KML; added owner-local read-only `tooling/gps-v2-d4-lineage.mjs` aggregate report. No private routes committed; no production `lib/`, app/components/UI, DB, saved flight model, landing count, feature flags or thresholds modified.
+- **Verification pending:** new D4.1 Node24 tests/typecheck, six-file native sidecar run, full tests/build/browser NOT RUN. D4.1 not DONE until owner-local exact-SHA evidence; no migrations/merge/deploy. See D4.1 implementation and acceptance runbook.
+
 ## 2026-10-18 — GPS V2 D4.0 six-KML native comparator acceptance (RESEARCH EVIDENCE)
 
 - Owner-local run from exact branch checkout `c2274ca2`: six private KMLs evaluated through `tooling/gps-v2-stage-d-compare.mjs` with anonymized IDs sample03..08. Native legacy counts **1/1/10/0/6/3** (21 hypotheses) and normalized point counts **948/587/893/74/593/1034** match earlier independent reconstruction. Native V2 results **UNAVAILABLE/UNSUPPORTED_SOURCE for all six**; V2 event counts UNAVAILABLE, not zero. No private KML, coordinates or absolute times added to Git.
