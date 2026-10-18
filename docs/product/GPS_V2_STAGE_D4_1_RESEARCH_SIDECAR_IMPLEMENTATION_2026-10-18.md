@@ -7,7 +7,7 @@
 ## Implemented, isolated surface
 
 1. research/gps-detection-r21/multi-gx-track-lineage.ts — pure bounded gx:Track source-to-canonical evidence sidecar. Reads only caller-provided source text, imports existing canonical parseKml (read-only), does NOT modify legacy parser or canonical flight model.
-2. tests/gps-v2-d4-multi-gx-lineage.test.ts — 18 synthetic source/provenance/fail-closed test cases. Test count is authored, not yet a passing result.
+2. tests/gps-v2-d4-multi-gx-lineage.test.ts — 19 synthetic source/provenance/fail-closed test cases. Test count is authored, not yet a passing result.
 3. tooling/gps-v2-d4-lineage.mjs — owner-local, read-only single-file CLI for a compact non-geographic summary. Outputs only anonymous sample ID, source block count, raw/normalized fix totals, collapsed/conflict fix counts, blocked-edge/collision-edge counts and motion island count. No source path, original filename, GPS coordinates, time, altitude or registration in stdout.
 4. No changes to lib/, app/, components/, pages, DB, migrations, persistence, flight calculations, landingCount, production V2 parser/detector or experimental feature flags.
 
@@ -23,7 +23,7 @@
 
 ## Synthetic test inventory — EXPECTED, NOT VERIFIED
 
-D4-SOURCE-01: 4.9s block boundary; D4-SOURCE-02: 35s/94s gaps; D4-SOURCE-03: empty middle block; D4-SOURCE-04: unpaired tags; D4-SOURCE-05: in-block duplicate; D4-SOURCE-05b: boundary collapsed duplicate; D4-SOURCE-06: conflicting heights; D4-SOURCE-07: submillisecond UTC collision; D4-SOURCE-08: source order inversion; D4-SOURCE-09: missing vs measured zero altitude; D4-CONTRACT-01: forged canonical; D4-CONTRACT-02: malformed Track; D4-SOURCE-10: sparse/large/sparse block runs; D4-CONTRACT-03: output redaction; D4-CONTRACT-04: no IO/network from pure sidecar; D4-SOURCE-11: extra fix outside blocks; D4-SOURCE-12: unsupported mixed Track; D4-SOURCE-13: oversized input.
+D4-SOURCE-01: 4.9s block boundary; D4-SOURCE-02: 35s/94s gaps; D4-SOURCE-03: empty middle block; D4-SOURCE-04: unpaired tags; D4-SOURCE-05: in-block duplicate; D4-SOURCE-05b: boundary collapsed duplicate; D4-SOURCE-06: conflicting heights; D4-SOURCE-07: submillisecond UTC collision; D4-SOURCE-08: source order inversion; D4-SOURCE-09: missing vs measured zero altitude; D4-CONTRACT-01: forged canonical; D4-CONTRACT-02: malformed Track; D4-SOURCE-10: sparse/large/sparse block runs; D4-CONTRACT-03: output redaction; D4-CONTRACT-04: no IO/network from pure sidecar; D4-SOURCE-11: extra fix outside blocks; D4-SOURCE-12: unsupported mixed Track; D4-SOURCE-13: oversized input; D4-RELEASE-01: sidecar does not enable native V2 multi-block status or landing authority.
 
 These tests cover **sidecar boundary data**, NOT actual downstream STOP_GO behavior. Full evidence-island propagation to V2 speed smoothing, event windows, altitude shape and manual splits is **D4.2 design**, not implemented in D4.1. Do not misrepresent blockedEdges as a production detector guard yet.
 
