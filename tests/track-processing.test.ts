@@ -281,3 +281,40 @@ test("D2-C internal empty CSV row is not silently skipped; trailing newline rema
   assert.deepEqual(parseTrackFile([header,one,"",two].join("\n"),"synthetic.csv"),[]);
   assert.equal(parseTrackFile([header,one,two,""].join("\n"),"synthetic.csv").length,2);
 });
+
+
+test("D2-C.1 reject non-decimal coordinate spellings rather than accepting plausible fixes",()=>{
+  const head="lat,lon,altitude,time";
+  const start="50,14,100,2026-10-17T08:00:00Z";
+  const end="50.1,14.1,200,2026-10-17T08:02:00Z";
+  for(const bad of ["0x10","0b1010","0o17","1_0"," 0x10 ","Infinity","NaN"]){
+    assert.deepEqual(parseTrackFile([head,start,bad+",14,120,2026-10-17T08:01:00Z",end].join("\n"),"numbers.csv"),[],bad);
+    assert.deepEqual(parseTrackFile([head,start,"50,"+bad+",120,2026-10-17T08:01:00Z",end].join("\n"),"numbers.csv"),[],bad);
+  }
+  assert.deepEqual(parseTrackFile([head,start,"   ,14,120,2026-10-17T08:01:00Z",end].join("\n"),"numbers.csv"),[]);
+});
+
+test("D2-C.1 malformed non-decimal altitude remains null while an explicit zero stays zero",()=>{
+  const file=["lat,lon,altitude,time","50,14,0x10,2026-10-17T08:00:00Z","50.1,14.1,0,2026-10-17T08:01:00Z","50.2,14.2,1e2,2026-10-17T08:02:00Z"].join("\n");
+  const points=parseTrackFile(file,"altitude.csv");
+  assert.equal(points.length,3);
+  assert.deepEqual(points.map(point=>point.alt),[null,0,100]);
+  assert.equal(trackStats(points).minAlt,0);
+});
+
+test("D2-C.1 semicolon CSV supports decimal comma without fabricating missing measurements",()=>{
+  const file=["Latitude;Longitude;Altitude Meters;UTC Time","50,10;14,20;;2026-10-17T08:00:00Z","50,11;14,21;0;2026-10-17T08:01:00Z","50,12;14,22;-1,5;2026-10-17T08:02:00Z"].join("\n");
+  const points=parseTrackFile(file,"semicolon.csv");
+  assert.equal(points.length,3);
+  assert.deepEqual(points.map(point=>point.alt),[null,0,-1.5]);
+  assert.ok(Math.abs(points[0].lat-50.10)<1e-10);
+  assert.ok(Math.abs(points[0].lon-14.20)<1e-10);
+});
+
+test("D2-C.1 unsupported multiline quoted CSV fails closed instead of accepting partial route",()=>{
+  const file=["lat,lon,altitude,time,note",
+    '50,14,100,2026-10-17T08:00:00Z,"quoted',
+    'multiline"',
+    "50.1,14.1,200,2026-10-17T08:01:00Z,end"].join("\n");
+  assert.deepEqual(parseTrackFile(file,"unsupported-multiline.csv"),[]);
+});
