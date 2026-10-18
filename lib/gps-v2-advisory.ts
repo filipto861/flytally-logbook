@@ -14,7 +14,7 @@ import {haversineKm} from "./track-processing.ts";
 import {CSV_LINEAGE_PARSER_REVISION} from "./gps-v2-source-lineage.ts";
 import {GPS_V2_IMPORT_LINEAGE_REVISION,inspectGpsV2SourceLineage} from "./gps-v2-import-lineage.ts";
 
-export const GPS_V2_ALGORITHM_REVISION="GPS_V2_HORIZONTAL_V1" as const;
+export const GPS_V2_ALGORITHM_REVISION="GPS_V2_HORIZONTAL_V2" as const;
 export type GpsV2Reason=
   "UNSUPPORTED_SOURCE"|"SOURCE_UNAVAILABLE"|"CANONICAL_SOURCE_MISMATCH"|
   "INVALID_SPLIT"|"INSUFFICIENT_TIME_POSITION_EVIDENCE";
@@ -76,6 +76,22 @@ function islands(edges:readonly Edge[]):Array<{start:number;end:number}>{
 }
 function candidatesInPart(points:readonly KmlPoint[],splitIndex:number,offset:number):GpsV2Event[]{
   const edges=points.slice(1).map((p,i)=>edge(points[i],p));
+  // A receiver may report distinct locations with exactly the same UTC time
+  // or distinct sub-millisecond stamps that JS timestamps map to the same ms.
+  // Both locations are ambiguous velocity anchors. Invalidate their edge AND
+  // the immediately adjacent edges rather than using an arbitrary position
+  // for a plausible 5-second speed. No motion island can bridge this area.
+  const collisions:number[]=[];
+  for(let i=0;i<edges.length;i++){
+    const left=points[i].time,right=points[i+1].time;
+    if(!left||!right)continue;
+    const a=Date.parse(left),b=Date.parse(right);
+    if(Number.isFinite(a)&&a===b)collisions.push(i);
+  }
+  for(const i of collisions){
+    for(let j=Math.max(0,i-1);j<=Math.min(edges.length-1,i+1);j++)
+      edges[j]={speed:null,seconds:null};
+  }
   const events:GpsV2Event[]=[];
   const add=(kind:GpsV2Event["kind"],at:number)=>{
     const point=points[at];
