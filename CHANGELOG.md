@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-18 — Stage D1 GPS comparison harness (RESEARCH STAGED / NOT VERIFIED)
+
+- Started isolated Stage D1 branch from PR #364 without changing main, the detector thresholds, flag state or production runtime. Scoped a local KML/GPX/CSV comparator and synthetic privacy/availability tests. Intended output contains only anonymized relative timing, event-type hypotheses, aggregate source diagnostics and explicit uncertainty; does not persist original GPS bytes or feed logbook counts.
+- **Verification on the new branch: NOT RUN.** Private/ADS-B corpus: NOT RUN. No DB, migrations, merge, deployment or flag enablement.
+
 ## 2026-10-18 — GPS V2 Stage D read-only research contract recorded
 
 - Added `docs/product/GPS_V2_STAGE_D_PILOT_LABELED_RESEARCH_2026-10-18.md` defining pilot-labeled event truth, privacy, local-export vs saved-owner-UI review boundaries, and gated independent design review. No detector/source/parser/UI/server/DB changes in this batch.
