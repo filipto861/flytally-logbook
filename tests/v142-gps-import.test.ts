@@ -85,3 +85,15 @@ test("D2-C.1 GPS import review does not fabricate altitude or leave stale file p
   assert.doesNotMatch(player,/samples\.map\(point=>Number\(point\.alt\?\?0\)\)/);
   assert.doesNotMatch(player,/metersToFeet\(current\?\.alt\|\|0\)/);
 });
+
+
+test("D2-C.1 saved GPS track read/replay preserves unknown altitude and valid zero",()=>{
+  const decoder=read("lib/data/tracks.ts"),saved=read("components/flight-track-player.tsx");
+  assert.match(decoder,/optionalGpsNumber\(item\?\.lat\),lon=optionalGpsNumber\(item\?\.lon\)/);
+  assert.match(decoder,/const alt=optionalGpsNumber\(item\?\.alt\); if\(alt!==null\)point\.alt=alt;/);
+  assert.doesNotMatch(decoder,/const alt = Number\(item\?\.alt\)/);
+  assert.match(saved,/interpolatedGpsAltitude\(a\.alt,b\.alt,fraction\)/);
+  assert.match(saved,/gpsAltitudeProfileGeometry\(alts,w,h/);
+  assert.match(saved,/Altitude unavailable/);
+  assert.doesNotMatch(saved,/current\?\.alt\|\|0/);
+});
