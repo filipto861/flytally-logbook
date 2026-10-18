@@ -1,5 +1,7 @@
 # GPS V2 — Stage D4.2 boundary-aware research detector consumption
 
+**Review update (2026-10-18):** Independent DeepSeek read-only critique received, compared with actual `lib/gps-v2-advisory.ts` (`GPS_V2_HORIZONTAL_V3`) and existing D4.1 sidecar. **Option A recommended but NOT YET OWNER-APPROVED FOR CODING.** Option B production refactor is prohibited for D4.2A; Option C remains current production `UNAVAILABLE/UNSUPPORTED_SOURCE` for multi-block KML. Shadow candidate equivalence must be exact on one-block clean inputs, with separate research-only dispositions and a source-cadence sensitivity layer, **no universal gap threshold**. Source runs are provenance partitions, not timed motion islands. New D42-14/15 differential/cadence tests and additional controls have been proposed. See `docs/product/GPS_V2_STAGE_D4_2_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-18.md` for current proposed contract. Historical pending-review questions below are preserved as the original decision record.
+
 **Date:** 2026-10-18. **Status: DESIGN ONLY / OWNER APPROVAL AND INDEPENDENT REVIEW REQUIRED BEFORE CODING.**
 Repo: `flytally-logbook`. PR #366 research Draft based on PR #364 Draft. No production V2, legacy, logbook counts, DB, app, UI or feature flag change authorized under this design document.
 
