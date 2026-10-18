@@ -1,3 +1,4 @@
+import {optionalGpsNumber} from "./gps-track-number.ts";
 export type KmlPoint={lat:number;lon:number;alt:number|null;time:string|null};
 export type TrackFileFormat="kml"|"gpx"|"csv";
 export type TrackSource="adsbexchange"|"flightradar24"|"skydemon"|"generic";
@@ -52,17 +53,8 @@ function parseCsv(source:string){
   const latIndex=at(["lat","latitude","latitudedeg","latitudedegrees"]),lonIndex=at(["lon","lng","long","longitude","longitudedeg","longitudedegrees"]),altIndex=at(["alt","altitude","elevation","ele","altm","altitudem","altitudemeters","altitudeft","altitudefeet","elevationft","elevationfeet","gpsaltitude"]),timeIndex=at(["time","timestamp","datetime","utc","utctime","dateandtime","gpstime"]),dateIndex=at(["date","utcdate","flightdate"]);
   if(latIndex<0||lonIndex<0)return[];
   const altitudeFeet=altIndex>=0&&/(ft|feet)$/.test(headers[altIndex]);
-  // Number("") is zero: do not turn absent CSV evidence into a GPS measurement.
-  const number=(value:string|undefined):number|null=>{
-    const token=value?.trim();
-    if(!token)return null;
-    // Only decimal measurements are valid CSV evidence; Number() also accepts
-    // 0x/0b/0o, which must not become plausible geographic coordinates.
-    const decimal=token.replace(",",".");
-    if(!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(decimal))return null;
-    const parsed=Number(decimal);
-    return Number.isFinite(parsed)?parsed:null;
-  };
+  // Shared optional source numeric decoder; missing is not zero.
+  const number=optionalGpsNumber;
   const points:KmlPoint[]=[];
   for(const line of lines.slice(1)){
     const row=csvCells(line,delimiter),lat=number(row[latIndex]),lon=number(row[lonIndex]);
