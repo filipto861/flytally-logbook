@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS Detection 2.0 pilot-facing V2 preview (DRAFT / NOT TESTED / NOT DEPLOYED)
+
+- Began release-critical GPS V2 user slice after owner priority change. Added conservative standalone production strict CSV source-lineage adapter, pure time/position-bounded horizontal departure/arrival/stop-go **review point** detector per manual flight split (no legacy event/count replacement), and default-OFF `NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY` panel in existing `Review GPS track`. No additional save fields/DB/API and no post-flight private GPS analysis.
+- New synthetic falsification and browser-source boundary contracts: 10 pure detector tests plus 4 UI/lineage contract tests **NOT RUN** on this new topic HEAD. No full release/production browser evidence; current build status NOT RUN. D3's earlier 1676/1676 owner-local PASS belongs to prior exact main ancestor only.
+- V2 review is limited to canonical, exact UTC four-column strict CSV subset and source→normalization agreement; KML, GPX, complex SkyDemon CSV, unknown sensor accuracy/altitude mode are not silently interpreted as validated. Never confirms physical touchdown, T&G or whole-flight landing count. Next: broaden actual source format support only with evidence; test desktop+iPad/mobile/night + actual user workflows before flag ON or deploy. [Scope](docs/product/GPS_V2_RELEASE_CRITICAL_2026-10-18.md).
+
 ## 2026-10-18 — GPS Detection 2.0 D3 Batch 1 offline DTO (draft, tests not yet run)
 
 - Added offline-only `research/gps-detection-r21/pilot-review-dto.ts`: exact in-memory CSV source text, local SHA-256 equality-bound upload/split context, strict revision/schema and previous-session validation. No caller-forged trusted source, available pilot candidate, review note, physical-contact inference or flight-count write can result. Source parse diagnostics never include raw coordinates/timestamps in DTO. Genuine sensor quality/datum/altitude mode remains unavailable.
