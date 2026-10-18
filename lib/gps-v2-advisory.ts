@@ -14,7 +14,7 @@ import {haversineKm} from "./track-processing.ts";
 import {CSV_LINEAGE_PARSER_REVISION} from "./gps-v2-source-lineage.ts";
 import {GPS_V2_IMPORT_LINEAGE_REVISION,inspectGpsV2SourceLineage} from "./gps-v2-import-lineage.ts";
 
-export const GPS_V2_ALGORITHM_REVISION="GPS_V2_HORIZONTAL_V2" as const;
+export const GPS_V2_ALGORITHM_REVISION="GPS_V2_HORIZONTAL_V3" as const;
 export type GpsV2Reason=
   "UNSUPPORTED_SOURCE"|"SOURCE_UNAVAILABLE"|"CANONICAL_SOURCE_MISMATCH"|
   "INVALID_SPLIT"|"INSUFFICIENT_TIME_POSITION_EVIDENCE";
@@ -32,6 +32,9 @@ export type GpsV2Advisory={
   reason:GpsV2Reason|null;
   events:readonly GpsV2Event[];
   sourceParserRevision:typeof CSV_LINEAGE_PARSER_REVISION|typeof GPS_V2_IMPORT_LINEAGE_REVISION|null;
+  /** Canonical-deleted fixes with contradictory GPS altitude: excluded from
+   * motion evidence at and around the retained horizontal anchor. */
+  quarantinedSourceFixes:number;
   algorithmRevision:typeof GPS_V2_ALGORITHM_REVISION;
   sourceAccuracy:"UNKNOWN";
   altitudeMode:"UNKNOWN";
@@ -43,7 +46,7 @@ const base={
   algorithmRevision:GPS_V2_ALGORITHM_REVISION,
   sourceAccuracy:"UNKNOWN",altitudeMode:"UNKNOWN",
   physicalContact:"UNRESOLVED",wholeFlightLandings:"UNAVAILABLE",
-  canAffectCanonicalFlight:false
+  canAffectCanonicalFlight:false,quarantinedSourceFixes:0
 } as const;
 function unavailable(reason:GpsV2Reason):GpsV2Advisory{
   return {...base,status:"UNAVAILABLE",reason,events:[],
@@ -74,8 +77,21 @@ function islands(edges:readonly Edge[]):Array<{start:number;end:number}>{
   if(edges.length-start>=2)spans.push({start,end:edges.length});
   return spans;
 }
-function candidatesInPart(points:readonly KmlPoint[],splitIndex:number,offset:number):GpsV2Event[]{
+function candidatesInPart(
+  points:readonly KmlPoint[],splitIndex:number,offset:number,
+  quarantinedIndices:readonly number[]
+):GpsV2Event[]{
   const edges=points.slice(1).map((p,i)=>edge(points[i],p));
+  // Source-to-canonical equality alone is insufficient if canonical KML
+  // collapsed a same-time/same-position fix with conflicting raw altitude.
+  // Retain canonical position/time and explicitly invalidate local velocity
+  // edges so no inferred review event can use that ambiguous sensor area.
+  for(const globalIndex of quarantinedIndices){
+    const at=globalIndex-offset;
+    if(at<0||at>=points.length)continue;
+    for(let j=Math.max(0,at-2);j<=Math.min(edges.length-1,at+1);j++)
+      edges[j]={speed:null,seconds:null};
+  }
   // A receiver may report distinct locations with exactly the same UTC time
   // or distinct sub-millisecond stamps that JS timestamps map to the same ms.
   // Both locations are ambiguous velocity anchors. Invalidate their edge AND
@@ -173,9 +189,10 @@ export function inspectGpsV2HorizontalTrack(input:{
   for(let i=0;i<bounds.length-1;i++){
     const start=bounds[i],end=bounds[i+1];
     if(end-start<2)return unavailable("INVALID_SPLIT");
-    events.push(...candidatesInPart(points.slice(start,end),i,start));
+    events.push(...candidatesInPart(points.slice(start,end),i,start,source.quarantinedSourceIndices));
   }
   return {...base,status:"ADVISORY_ONLY",reason:null,events,
+    quarantinedSourceFixes:source.quarantinedSourceIndices.length,
     sourceParserRevision:source.parserRevision};
 }
 
