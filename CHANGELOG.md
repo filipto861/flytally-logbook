@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — GPS V2 D4.1 research milestone accepted on six private KMLs; D4.2 design only
+
+- Owner-local targeted Node tests **63/63 PASS** and TypeScript **PASS** on exact source/test HEAD `3fc3cd11`; owner then pulled docs-only `815c2693` and ran research sidecar CLI on six KMLs, all **6/6 SOURCE_PARSED_DIAGNOSTIC_ONLY**. Verified sums: 13 gx:Track blocks, 4148 raw paired fixes, 4129 canonical fixes, 19 collapsed duplicates, 0 conflicting duplicate heights, 7 blocked source evidence edges and 13 unblocked *provenance* runs. These runs are not evidence of continuous motion. No original GPS route, registration, absolute timestamps or coords added to repo.
+- Recorded final acceptance and **CLOSED D4.1 in research-only scope**, not production. Separately drafted D4.2 read-only design for boundary-aware *shadow* evaluation; current V2 speed edge may accept a 35s sample gap under its existing <60s rule, so missing coverage must be treated explicitly. No D4.2 code written or approved; independent design review and owner decision required.
+- Production code/app/DB/flight count untouched. Earlier tests are local, not CI. New docs-only HEAD tests/full suite/build/Playwright/production smoke: NOT RUN; DB/migration N/A; PR #366 Draft, parent #364 Draft, no merge/deploy or feature ON.
+
 ## 2026-10-18 — GPS V2 D4.1 exact-HEAD targeted tests and TypeScript PASS (LOCAL RESEARCH)
 
 - Owner fetched checked-out research HEAD `3fc3cd11` and completed 63/63 targeted Node tests (0 fail) and `npm run typecheck` (`tsc --noEmit`) PASS. This confirms the previously failing TS2367/TS2339 test-helper fix; results are OWNER-LOCAL, not CI. No production runtime or GPS detector changes.
