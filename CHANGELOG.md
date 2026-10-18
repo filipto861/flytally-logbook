@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS V2 release gate failed; legacy disclosure fix staged (not released)
+
+- Exact previous candidate `ad28752c` owner-local: source contract **257/257 PASS**, domain **54/54 PASS**, targeted **85/85 PASS**, TypeScript PASS; complete release aggregate **1689/1690** with one failed old 3.4.0 UI contract due to automatic opening of clean `Review GPS track` on V2 enable. Final `release_status=FAIL`; build and browser were **NOT RUN**.
+- Minimal scoped fix restores `open={gpsReviewNeedsAttention}` and updates the new V2 contract to assert the frozen compact GPS UX. Historical 3.4.0 test remains unchanged. **New candidate test/build/browser status NOT RUN** until owner provides exact-HEAD evidence. No PR merge or production deploy.
+
 ## 2026-10-18 — GPS Detection 2.0 pilot-facing V2 preview (DRAFT / NOT TESTED / NOT DEPLOYED)
 
 - Began release-critical GPS V2 user slice after owner priority change. Added conservative standalone production strict CSV source-lineage adapter, pure time/position-bounded horizontal departure/arrival/stop-go **review point** detector per manual flight split (no legacy event/count replacement), and default-OFF `NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY` panel in existing `Review GPS track`. No additional save fields/DB/API and no post-flight private GPS analysis.
