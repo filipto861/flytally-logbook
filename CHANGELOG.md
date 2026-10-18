@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-18 — Stage D2 real-KML benchmark and quality probe (RESEARCH / NEW HEAD NOT VERIFIED)
+
+- User's local branch was explicitly verified as `114a8204` and ran the D1 comparator on two existing owner-labeled private KML files. `sample01`: 913 timed canonical points, 4092.5 s; legacy altitude hypotheses at +1824.9 s (pilot-confirmed false) and +3694.9 s (pilot-time-corresponding T&G); V2 ADVISORY_ONLY, no review points, one quarantined height conflict. `sample02`: 1088 timed canonical points, 3960.3 s; two pilot-time-corresponding legacy altitude hypotheses at +3110.7/+3409.7 s; V2 ADVISORY_ONLY with two unresolved ARRIVAL hints (+1356.7/+1462.5 s), no STOP_GO, one quarantined conflict. Pilot also confirmed a low pass in sample02. `groundTruthComparison=NOT_EVALUATED` remains intentional in CLI because labels come from a separate pilot-report source.
+- Added Stage D2 evidence/diagnostic contract and staged a pure event-local quality inspector + local CLI + five synthetic tests. No legacy/V2 detector/runtime/UX/DB schema changes. **New quality probe/test SHA not executed yet**. Earlier owner's 39/39 and TypeScript PASS refer to the unchanged Stage D1 implementation, not new code. Full/planner/build/Playwright NOT RUN, no merge/deploy/flag enablement.
+
 
 ## 2026-10-18 — Stage D1 GPS comparison harness (RESEARCH; OWNER-LOCAL TARGETED VERIFIED)
 
