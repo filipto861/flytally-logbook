@@ -239,7 +239,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
     {analysis&&gpsQualityNeedsAcknowledgement?<label className="review-confirm gps-warning-confirm"><input name="gpsWarningReviewed" type="checkbox" value="yes" checked={gpsWarningAcknowledged} onChange={event=>setGpsWarningAcknowledged(event.target.checked)}/> I reviewed the GPS quality warning.</label>:null}
 
     {analysis&&analysis.points.length>=2?<>
-      <details className="entry-section gps-track-review" open={gpsReviewNeedsAttention||GPS_V2_ADVISORY_ENABLED}>
+      <details className="entry-section gps-track-review" open={gpsReviewNeedsAttention}>
         <summary><span>Review GPS track</span><small>{gpsReviewNeedsAttention?parts.length>1?`${parts.length} flights detected`:"Needs review":"Optional visual review"}</small></summary>
         <div className="entry-section-body">
           {parts.length===1&&!cuts.length?<div className="field-actions"><button type="button" className="secondary-button" onClick={addCut}>Split into multiple flights</button></div>:<section className="split-editor">
