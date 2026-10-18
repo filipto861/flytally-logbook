@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — Stage D3 six-KML source corpus audit (DOCS ONLY / NO DETECTOR CHANGE)
+
+- Independently parsed six owner-provided KMLs read-only in a local sandbox, reproduced 948/587/893/74/593/1034 canonical normalized points and 1/1/10/0/6/3 legacy candidate counts (21 total) against current algorithm and screenshots. Five tracks have two gx:Track elements and one has three; strict V2 source lineage requires exactly one and thus these six are out of scope, pending native exact-HEAD comparator confirmation.
+- Owner confirmed 0–3 suggestions correct, identified missed real rolling T&G in #4; #5 tentative due possible event during roughly 35.35s and 94.39s missing intervals. #4 minimum at relative +1780.93s satisfies shape/speed but +15m/0.52s=28.85m/s in-scope sensor-height discontinuity violates frozen 25m/s limit. Do not automatically accept or tune it away. Private GPS and absolute UTC withheld from GitHub.
+- Added D3 corpus and DeepSeek independent review handoff. File-backed independent Python reproduction is NOT native Node D1/D2 execution of these six KMLs. Docs-only HEAD untested; no detector/parser/UI/DB/migration/flag/merge/deploy change.
+
 ## 2026-10-18 — Stage D2 owner-local quality probe verified on two real KMLs (NO DETECTOR CHANGE)
 
 - Owner-local exact working HEAD `69e7e220` Node 24.19.0 targeted tests **44/44 PASS**, TypeScript **PASS**. Both prior private files analyzed by the new D2 quality CLI; no absolute timestamps or coordinates included in submitted reports.
