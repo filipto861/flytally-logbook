@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-18 — Stage C real KML altitude-discrepancy handling staged (unverified)
+
+- Owner-local prior HEAD `74230824`: targeted 63/63 PASS; TypeScript, source 257/257, GPS domain 54/54, iteration PASS, but original private 121002.kml still V2 `SOURCE_UNAVAILABLE`; full build/browser NOT RUN.
+- New shape-only diagnostic: 1094 raw KML points and 1088 canonical; 6 dropped adjacent fixes, 5 altitudes matching and 1 altitude conflicting; coordinates/time withheld.
+- KML-only source adapter V3 now records the conflicting removed fix as a quarantined retained anchor; V3 motion engine invalidates local velocity edges; optional V2 review panel warns. Canonical retained height/time/position parity still exact; contact/count authority remains unavailable. CSV/GPX unchanged.
+- Revised test V2-F18, added synthetic V2-F22 to F24. Current code HEAD targeted/typecheck/real-KML/full-release NOT RUN. No DB/migrations/merge/deploy; feature OFF by default.
+
 ## 2026-10-18 — GPS V2 format-specific duplicate UTC regression expectation corrected (unverified new SHA)
 
 - Owner-local on `7f06ff4c`: targeted Node 62/63, failing V2-F10 legacy uniform duplicate UTC `UNAVAILABLE` assertion on KML; TypeScript PASS; `verify:iterate=PASS` (source 257/257, GPS domain 54/54, typecheck). Full release/production build/Playwright NOT RUN. Real private KML comparator still pins old 39278ce4 and refused to evaluate this head; no real result yet.
