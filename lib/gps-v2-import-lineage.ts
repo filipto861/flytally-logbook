@@ -35,39 +35,7 @@ const utcMillis=(text:string,extendedPrecision=false):number|null=>{
   // ORIGINAL UTC string verbatim; Date.parse is only a coarse ordering clock.
   // Never infer timezone or round coordinates/timestamps into distinct fixes.
   const fraction=extendedPrecision?"{1,32}":"{1,3}";
-  if(!new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d${fraction})?Z/**
- * Bounded GPS V2 ORIGINAL FILE -> canonical import index comparison inputs.
- * This independently validates a deliberately small, explicit subset of
- * existing GPS import formats. It does NOT authenticate instruments, source
- * device, accuracy, altitude mode/datum or runway contact.
- *
- * Unsupported/ambiguous XML or CSV must leave V2 unavailable while the legacy
- * import continues to work. Never silently discard malformed source fixes.
- */
-import {
-  CSV_LINEAGE_PARSER_REVISION,
-  examineStrictCsvSourceLineage,
-} from "./gps-v2-source-lineage.ts";
-
-export const GPS_V2_IMPORT_LINEAGE_REVISION="GPS_V2_IMPORT_LINEAGE_V1" as const;
-export type GpsV2LineageKind="STRICT_CSV"|"SKYDEMON_CSV"|"GPX_TRACK"|"KML_GX_TRACK";
-export type GpsV2LineagePoint={lat:number;lon:number;altM:number|null;utc:string};
-export type GpsV2ImportLineage=
-  | {status:"UNAVAILABLE";reason:"UNSUPPORTED_SOURCE"|"SOURCE_UNAVAILABLE"}
-  | {
-    status:"SOURCE_PARSED_DIAGNOSTIC_ONLY";
-    kind:GpsV2LineageKind;
-    parserRevision:typeof CSV_LINEAGE_PARSER_REVISION|typeof GPS_V2_IMPORT_LINEAGE_REVISION;
-    samples:readonly GpsV2LineagePoint[];
-  };
-const MAX_TEXT_LENGTH=2_000_000,MAX_POINTS=25_000;
-const unavailable=(reason:"UNSUPPORTED_SOURCE"|"SOURCE_UNAVAILABLE"):GpsV2ImportLineage=>({status:"UNAVAILABLE",reason});
-const numberToken=(text:string):number|null=>{
-  if(!/^-?\d+(?:\.\d+)?$/.test(text))return null;
-  const value=Number(text);
-  return Number.isFinite(value)?value:null;
-};
-).test(text))return null;
+  if(!new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d${fraction})?Z$`).test(text))return null;
   const n=Date.parse(text);
   if(!Number.isFinite(n)||new Date(n).toISOString().slice(0,19)!==text.slice(0,19))return null;
   return n;
