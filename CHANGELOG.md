@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS V2 real KML source compatibility fix staged; NO NEW RELEASE PASS
+
+- Owner-local read-only diagnostic found one complete SkyDemon-like `gx:Track`, 1,094 paired high-precision UTC-Z times and coordinates, 16 exact timestamp repetitions (6 adjacent equivalent positions removed by canonical normalization; 10 same-time distinct-position cases), **1,088** normalized canonical fixes. Old V2 rejected as `SOURCE_UNAVAILABLE`; legacy's two T&G candidates and landing suggestion 3 remain **unverified**.
+- Scope-limited KML lineage parser correction accepts extended UTC fractional precision, duplicates only canonical adjacent equivalent fixes where altitude also agrees, retains same-time different-position fixes; existing V2 edge guard prevents dividing horizontal distance by zero dt. Whole-flight count `UNAVAILABLE`, physical contact `UNRESOLVED`, no form/DB/API changes, no private route checked in.
+- Added seven synthetic tests for fractional precision, exact canonical duplicates, different-position collisions, rejected altitude conflicts, invalid UTC, submillisecond same-ms pairs, and anonymized 1,094/1,088 shape parity. **Tests/typecheck/release/browser NOT RUN on updated HEAD.** Previous exact-SHA ON/OFF canonical release PASS is historical; PR #364 still Draft, feature default OFF, no merge/deploy. [Acceptance](docs/product/GPS_V2_RELEASE_CRITICAL_2026-10-18.md).
+
 ## 2026-10-18 — GPS V2 format coverage / opt-in browser QA staged (not tested or released)
 
 - PR #364 earlier exact head `a1fe81af223cf408ff48cfe803250bda83d43444`: **owner-local canonical risk release PASS** (1690/1690 full Node, Next build/TypeScript, reuse of 257/257 source and 54/54 GPS domain, authenticated desktop 6/6, mobile 6/6; owned PG16 fixture shutdown; V2 build OFF). This is verified historical acceptance, **not** acceptance of new commits.
