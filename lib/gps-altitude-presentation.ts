@@ -33,7 +33,7 @@ export function gpsAltitudeProfileGeometry(
   const positions:Array<{cx:number;cy:number}>=[];
   const flush=()=>{
     if(positions.length>=2)result.segments.push(positions.map(({cx,cy})=>cx+","+cy).join(" "));
-    else if(positions.length===1)result.isolated.push(positions[0]);
+    else if(positions.length===1){const first=positions[0];if(first)result.isolated.push(first);}
     positions.length=0;
   };
   for(let index=0;index<alts.length;index++){
