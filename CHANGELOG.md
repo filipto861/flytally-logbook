@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS D2-C.1 runtime inventory correction (DRAFT / NOT RELEASED)
+
+- Updated `tooling/development-modules.json` audited runtime count from 398 to **400** after two new, already GPS-owned `lib/gps-*.ts` files. No test policy relaxation, source business-rule change, DB schema change or deploy.
+- Owner-local prior HEAD `9f818dc0`: 54/54 targeted PASS, 73/73 domain PASS, TypeScript PASS, Next build PASS; application source 256/257 FAIL and aggregate Node FAIL on one identical stale inventory expectation. New HEAD **NOT RUN**, browser and isolated PostgreSQL release gates NOT RUN. Full GPS 2.0 remains future work.
+
 ## 2026-10-18 — GPS D2-C.1 reviewer-informed guardrails (DRAFT, NOT RELEASED)
 
 - Shared strict decimal-only finite optional GPS number decoder used for CSV parsing and loaded persisted tracks; missing/null remains unavailable, zero remains real zero. Previously accepted hex/binary/octal strings no longer create apparent coordinates.
