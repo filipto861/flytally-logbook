@@ -114,6 +114,13 @@ export function inspectD4MultiGxLineage(
   const allOpens=[...sourceText.matchAll(/<(?:\w+:)?Track\b/gi)].length;
   if(!opens||opens!==closes||opens!==bodies.length||allOpens!==opens)
     return unavailable("UNSUPPORTED_SOURCE");
+  // Refuse extra gx:coord observations outside the recognized blocks.
+  // The legacy importer could ignore them, but a provenance reader must not
+  // silently claim it audited all source fixes.
+  const allSourceCoords=[...sourceText.matchAll(/<gx:coord\b/gi)].length;
+  const inBlockCoords=bodies.reduce((n,b)=>
+    n+[...b[1].matchAll(/<gx:coord\b/gi)].length,0);
+  if(allSourceCoords!==inBlockCoords)return unavailable("UNSUPPORTED_SOURCE");
   const blocks:RawBlock[]=bodies.map((b,ordinal)=>({content:b[1],ordinal}));
   const all:Raw[]=[];
   let count=0;
