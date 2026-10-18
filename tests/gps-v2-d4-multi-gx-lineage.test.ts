@@ -26,8 +26,8 @@ function kml(blocks:readonly (readonly P[])[]):string {
 }
 function accepted(source:string){
   const r=inspectD4MultiGxLineage(source);
-  assert.equal(r.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY",r.status==="UNAVAILABLE"?r.reason:"");
   if(r.status==="UNAVAILABLE")throw Error(r.reason);
+  assert.equal(r.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY");
   assert.equal(r.revision,D4_LINEAGE_REVISION);
   assert.equal(r.canAffectCanonicalFlight,false);
   assert.equal(r.physicalContact,"UNRESOLVED");
