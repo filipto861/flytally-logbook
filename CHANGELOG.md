@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-18 — GPS V2 D4.2A native owner-local targeted verification (83/83 PASS, TypeScript PASS)
+
+- Verified owner terminal log from research checkout **`83635bc4`**, Node.js **v24.19.0**. Six specified D42/D4/D1/D2/V2 targeted Node test files: **83 tests, 83 PASS, 0 FAIL**, including all 20 new D42 tests and 36 generated one-block differential inputs; `npm run typecheck` (`tsc --noEmit`) **PASS**. These are owner-local checks, not GitHub CI or production runtime evidence.
+- Updated D4.2A runbook to separate synthetic acceptance from next 6-file native shadow CLI. Existing D4.1 six-file source-lineage PASS cannot be claimed as D4.2A detection corpus PASS. Shadow STOP_GO proposals, suppressed boundaries and inconclusive counts remain unknown until new run; never infer physical touchdown, negative events, or legacy counts.
+- Documentation-only changes after tested code SHA. No edits to production `lib/`, app, flight records, DB, limits or feature flags. Parent PR #364 and research PR #366 remain Draft, no merge/deploy; full suite/build/browser/CI/prod smoke NOT RUN; DB/migration N/A. D4.2A is NOT DONE until real corpus and review.
+
 ## 2026-10-18 — GPS V2 D4.2A shadow recognizer staged (RESEARCH-ONLY / TESTS NOT RUN)
 
 - With owner approval after DeepSeek review, added a separate `stage-d42-shadow.ts` V2 horizontal candidate mirror pinned to `GPS_V2_HORIZONTAL_V3` and fed by verified D4.1 source lineage. It applies hard source/dedup/collision/altitude conflict boundaries before computing candidate islands; exposes hypothetical baseline vs boundary-aware candidates, explicitly inconclusive blocked/gap-dependent proposals and descriptive cadence. It cannot prove touchdown, add landing counts, set recency or change saved flights.
