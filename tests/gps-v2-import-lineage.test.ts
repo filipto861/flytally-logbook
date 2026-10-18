@@ -288,7 +288,7 @@ test("V2-F21 privacy-derived 1094/1088 KML duplicate-shape matches exact source 
   // Ten same-time DISTINCT-position fixes cannot be discarded or assigned
   // observed motion speed; the V2 engine cuts the dt=0 edge.
   for(let j=9;j>=0;j--){
-    const index=100+j*90;
+    const index=108+j*87;
     const target=base[index];
     const at=expanded.findIndex(p=>p===target);
     expanded.splice(at+1,0,{...target,lon:target.lon+0.0005});
