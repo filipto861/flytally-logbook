@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {parseKml, type KmlPoint} from "../lib/track-processing.ts";
+import {inspectGpsV2HorizontalTrack} from "../lib/gps-v2-advisory.ts";
 import {
   inspectD4MultiGxLineage,D4_LINEAGE_REVISION,
 } from "../research/gps-detection-r21/multi-gx-track-lineage.ts";
@@ -174,4 +175,21 @@ test("D4-SOURCE-13 source input limit is fail-closed and does not echo raw conte
   assert.equal(r.status,"UNAVAILABLE");
   assert.equal(r.reason,"SOURCE_LIMIT");
   assert.equal(JSON.stringify(r).includes("SECRET"),false);
+});
+
+test("D4-RELEASE-01 research sidecar cannot unlock current native V2 multi-block authority",()=>{
+  const source=kml([[pt(0),pt(5),pt(10)],[pt(15),pt(20),pt(25)]]);
+  const sidecar=inspectD4MultiGxLineage(source);
+  assert.equal(sidecar.status,"SOURCE_PARSED_DIAGNOSTIC_ONLY");
+  const native=inspectGpsV2HorizontalTrack({
+    sourceText:source,
+    fileName:"anonymous.kml",
+    canonicalPoints:parseKml(source),
+    splitCuts:[],
+  });
+  assert.equal(native.status,"UNAVAILABLE");
+  assert.equal(native.reason,"UNSUPPORTED_SOURCE");
+  assert.equal(native.canAffectCanonicalFlight,false);
+  assert.equal(native.wholeFlightLandings,"UNAVAILABLE");
+  assert.deepEqual(native.events,[]);
 });
