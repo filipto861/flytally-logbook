@@ -128,14 +128,26 @@ test("V2-F9 malformed SkyDemon coordinate is not dropped into a plausible route"
   assert.deepEqual(result.events,[]);
 });
 
-test("V2-F10 duplicate UTC in any supported source format fails closed",()=>{
+test("V2-F10 strict CSV/GPX duplicate UTC fails closed; KML retains ambiguous source without landing authority",()=>{
   for(const c of cases){
     const bad=c.kind==="SKYDEMON_CSV"?
       c.source.replace("2026-10-18,10:00:05Z","2026-10-18,10:00:00Z"):
       c.source.replace("2026-10-18T10:00:05Z","2026-10-18T10:00:00Z");
     const result=inspect(bad,c.file);
-    assert.equal(result.status,"UNAVAILABLE",c.name);
-    assert.deepEqual(result.events,[],c.name);
+    if(c.kind==="KML_GX_TRACK"){
+      // Two different positions share the same UTC instant. KML source fixes
+      // are retained; horizontal edges around the collision are quarantined.
+      // This is NOT independent evidence of a touchdown or a landing count.
+      const canonical=parseTrackFile(bad,c.file);
+      assert.equal(canonical.length,fixes.length,c.name);
+      assert.equal(result.status,"ADVISORY_ONLY",c.name);
+      assert.equal(result.physicalContact,"UNRESOLVED");
+      assert.equal(result.wholeFlightLandings,"UNAVAILABLE");
+      assert.equal(result.canAffectCanonicalFlight,false);
+    }else{
+      assert.equal(result.status,"UNAVAILABLE",c.name);
+      assert.deepEqual(result.events,[],c.name);
+    }
   }
 });
 
