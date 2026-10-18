@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS V2 format coverage / opt-in browser QA staged (not tested or released)
+
+- PR #364 earlier exact head `a1fe81af223cf408ff48cfe803250bda83d43444`: **owner-local canonical risk release PASS** (1690/1690 full Node, Next build/TypeScript, reuse of 257/257 source and 54/54 GPS domain, authenticated desktop 6/6, mobile 6/6; owned PG16 fixture shutdown; V2 build OFF). This is verified historical acceptance, **not** acceptance of new commits.
+- Added fail-closed strict independent lineage adapter for SkyDemon six-column quoted-Note CSV, single-segment GPX trkpt and single KML gx:Track. Integrated exact normalized source-to-canonical equality into existing horizontal-only opt-in V2 advisory, preserving all older strict CSV tests/API and zero movement/count authority. Unsupported formats remain legacy-only.
+- Added 14 synthetic format/error/split/duplicate and unchanged-count tests and V2-ON expectations to the existing registered authenticated GPS-save Playwright test (positive SkyDemon movement, no form mutation, source-change invalidation). Updated module count to 403 and direct UI contract. **New HEAD targeted/full/typecheck/browser/build NOT RUN**. No DB/schema/Training/deploy/main changes. [Scope](docs/product/GPS_V2_RELEASE_CRITICAL_2026-10-18.md).
+
 ## 2026-10-18 — GPS V2 release gate failed; legacy disclosure fix staged (not released)
 
 - Exact previous candidate `ad28752c` owner-local: source contract **257/257 PASS**, domain **54/54 PASS**, targeted **85/85 PASS**, TypeScript PASS; complete release aggregate **1689/1690** with one failed old 3.4.0 UI contract due to automatic opening of clean `Review GPS track` on V2 enable. Final `release_status=FAIL`; build and browser were **NOT RUN**.
