@@ -154,7 +154,7 @@ function candidatesInPart(
   !stops.some(s=>Math.abs(s.at-e.at)<5)).sort((a,b)=>a.at-b.at);
 }
 const key=(c:Candidate):string=>c.kind+":"+c.at+":"+c.part;
-const ms=(time:string|null):number|null=>{
+const ms=(time:string|null|undefined):number|null=>{
  const parsed=time?Date.parse(time):NaN;
  return Number.isFinite(parsed)?parsed:null;
 };
