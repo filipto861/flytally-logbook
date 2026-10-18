@@ -1,6 +1,6 @@
 # GPS V2 — Stage D4 multi-gx:Track source-lineage proposal
 
-**Date:** 2026-10-18. **Status:** DESIGN PROPOSAL / OWNER APPROVAL REQUIRED before implementation.
+**Date:** 2026-10-18. **Current status:** D4.0 OWNER-LOCAL NATIVE CORPUS CLASSIFICATION COMPLETE; D4.1 research sidecar DESIGN PROPOSAL / OWNER APPROVAL REQUIRED before implementation.
 **Repo:** flytally-logbook. Research PR #366 (draft); parent PR #364 (draft). No flytally-training changes.
 **Purpose:** make source applicability to multiple KML gx:Track blocks researchable without inventing movement, modifying canonical flights or enabling experimental production Pilot Review.
 
@@ -128,13 +128,34 @@ for ($i = 0; $i -lt $names.Count; $i++) {
 }
 ```
 
-If the local filenames differ, change only the local `$names` values. The D1 comparator outputs relative offset aggregates; source names/paths should not be copied into Github or other public locations. **No native test run has yet been reported for the six new KMLs.**
+If the local filenames differ, change only the local `$names` values. The D1 comparator outputs relative offset aggregates; source names/paths should not be copied into Github or other public locations. **Historical note:** This command was subsequently run on the owner-local checkout; see D4.0 results and evidence ledger below.
 
 ## D4 evidence ledger
 
 - Current six-KML block-run/boundary audit: **local read-only independent XML/source reconstruction**, not native Node24 FlyTally.
-- Prior owner-local code tests on `69e7e220`: targeted 44/44 and TypeScript PASS; does not cover the latest docs-only HEAD.
-- Native D1 comparator for six KML: NOT RUN.
+- Prior owner-local code tests on `69e7e220`: targeted 44/44 and TypeScript PASS. The newer six-file command ran on exact `c2274ca2` (docs-only changes since earlier code), but no fresh targeted tests/typecheck were included in this latest terminal log; no exact-HEAD test claim.
+- Native D1 comparator for all six new KML: **PASS — owner-local six-file execution, exact HEAD `c2274ca2`, all rows completed**, output table captured below. This verifies legacy hypothesis counts and strict V2 applicability outcomes, NOT landing truth.
 - D4.1 source-lineage sidecar implementation: NOT STARTED / awaits owner approval.
 - Full suite/build/Playwright/DB/production smoke: NOT RUN / N/A as appropriate.
 - No runtime/legacy/import/persistence, feature-flag or production changes, no merge/deploy.
+
+
+## D4.0 verified milestone — native six-KML comparator
+
+**Evidence:** Owner's Windows PowerShell transcript on 2026-10-18. Working repo branch `research/gps-v2-stage-d-comparator-20261018`, `git pull --ff-only` fast-forward and `git rev-parse --short HEAD` = **`c2274ca2`**. The CLI `tooling/gps-v2-stage-d-compare.mjs` was executed for each of the six private KML files using anonymized local sample IDs. All six rows were produced without missing/error messages. Runtime version was not reprinted in this D4.0 transcript; an earlier owner terminal verified Node v24.19.0.
+
+| Anonymous sample | Canonical points | Native legacy T&G hypotheses | Native V2 status | Native V2 reason | V2 event count |
+| --- | ---: | ---: | --- | --- | --- |
+| sample03 | 948 | 1 | UNAVAILABLE | UNSUPPORTED_SOURCE | UNAVAILABLE |
+| sample04 | 587 | 1 | UNAVAILABLE | UNSUPPORTED_SOURCE | UNAVAILABLE |
+| sample05 | 893 | 10 | UNAVAILABLE | UNSUPPORTED_SOURCE | UNAVAILABLE |
+| sample06 | 74 | 0 | UNAVAILABLE | UNSUPPORTED_SOURCE | UNAVAILABLE |
+| sample07 | 593 | 6 | UNAVAILABLE | UNSUPPORTED_SOURCE | UNAVAILABLE |
+| sample08 | 1034 | 3 | UNAVAILABLE | UNSUPPORTED_SOURCE | UNAVAILABLE |
+
+**Conclusion:** Native parser execution exactly matches the previously independent reconstructed legacy counts: total **21 legacy proposals**. The strict V2 source gate returns `UNSUPPORTED_SOURCE` for **6/6** sources with multiple `gx:Track` blocks. The text `V2Events = UNAVAILABLE` must never be replaced with `0`. This proves current source incompatibility, NOT that V2 failed to detect 21 true landings. `sample06` zero is only zero *legacy proposals*, not a ground-truth no-T&G determination. `sample07` owner-reported missed rolling T&G and `sample08` potential event during missing telemetry remain separately labeled/uncertain.
+
+**D4.0 acceptance:** COMPLETE for anonymous native source compatibility classification and reproduction of legacy proposal counts. It does NOT establish raw source sensor trust, physical contact, per-event correctness, production readiness or a test pass on this later documentation SHA. No private KML source or full route copied into Git.
+
+**D4.1 decision remains OPEN:** implement pure research-only source-lineage sidecar under `research/gps-detection-r21/`, preserving canonical code/data, parser behavior, V2 unsupported status, experimental flag OFF and HIDDEN pilot hints. No direct production multi-block support until a separately reviewed, boundary-aware detector contract exists. Prove synthetic invariant cases SOURCE-1..10, CONTRACT-1..2 and existing targeted tests before further scope.
+
