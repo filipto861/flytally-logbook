@@ -5,13 +5,14 @@
  * CSV*, not independent receiver quality, physical runway contact, pilot role
  * or complete coverage. This module NEVER changes logbook movements.
  *
- * Release v1 deliberately declines unproven KML/GPX/complex CSV lineage.
+ * V2 accepts constrained source-equal CSV, SkyDemon CSV, GPX and gx:Track KML.
  * A parsed horizontal stop-go pattern can be a taxi, low pass, or traffic
  * artefact; it MUST NOT be represented as a confirmed touch-and-go.
  */
 import type {KmlPoint} from "./track-processing.ts";
 import {haversineKm} from "./track-processing.ts";
-import {examineStrictCsvSourceLineage,CSV_LINEAGE_PARSER_REVISION} from "./gps-v2-source-lineage.ts";
+import {CSV_LINEAGE_PARSER_REVISION} from "./gps-v2-source-lineage.ts";
+import {GPS_V2_IMPORT_LINEAGE_REVISION,inspectGpsV2SourceLineage} from "./gps-v2-import-lineage.ts";
 
 export const GPS_V2_ALGORITHM_REVISION="GPS_V2_HORIZONTAL_V1" as const;
 export type GpsV2Reason=
@@ -30,7 +31,7 @@ export type GpsV2Advisory={
   status:"ADVISORY_ONLY"|"UNAVAILABLE";
   reason:GpsV2Reason|null;
   events:readonly GpsV2Event[];
-  sourceParserRevision:typeof CSV_LINEAGE_PARSER_REVISION|null;
+  sourceParserRevision:typeof CSV_LINEAGE_PARSER_REVISION|typeof GPS_V2_IMPORT_LINEAGE_REVISION|null;
   algorithmRevision:typeof GPS_V2_ALGORITHM_REVISION;
   sourceAccuracy:"UNKNOWN";
   altitudeMode:"UNKNOWN";
@@ -131,20 +132,17 @@ function candidatesInPart(points:readonly KmlPoint[],splitIndex:number,offset:nu
   )).sort((a,b)=>a.normalizedIndex-b.normalizedIndex);
 }
 
-/** The supplied current canonical points MUST match the strict original
- * CSV parser's normalized order, units, coordinates and timestamps exactly.
- * This is parser-chain verification, not independent sensor attestation.
+/** Only one-to-one source→canonical normalized equality permits horizontal
+ * observation; neither matching syntax nor units validate physical contact.
  */
-export function inspectGpsV2HorizontalCsv(input:{
+export function inspectGpsV2HorizontalTrack(input:{
   sourceText:string;
   fileName:string;
   canonicalPoints:readonly KmlPoint[];
   splitCuts:readonly number[];
 }):GpsV2Advisory{
-  if(!input.fileName.toLowerCase().endsWith(".csv"))
-    return unavailable("UNSUPPORTED_SOURCE");
-  const source=examineStrictCsvSourceLineage(input.sourceText);
-  if(source.status==="UNAVAILABLE")return unavailable("SOURCE_UNAVAILABLE");
+  const source=inspectGpsV2SourceLineage(input.sourceText,input.fileName);
+  if(source.status==="UNAVAILABLE")return unavailable(source.reason);
   const points=input.canonicalPoints;
   if(points.length!==source.samples.length||points.some((p,i)=>{
     const s=source.samples[i];
@@ -162,5 +160,8 @@ export function inspectGpsV2HorizontalCsv(input:{
     events.push(...candidatesInPart(points.slice(start,end),i,start));
   }
   return {...base,status:"ADVISORY_ONLY",reason:null,events,
-    sourceParserRevision:CSV_LINEAGE_PARSER_REVISION};
+    sourceParserRevision:source.parserRevision};
 }
+
+/** Historical CSV API retained for prior source/tests compatibility. */
+export const inspectGpsV2HorizontalCsv=inspectGpsV2HorizontalTrack;
