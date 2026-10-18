@@ -46,7 +46,7 @@ if(argv.length!==4||argv[0]!=="--file"||argv[2]!=="--id"||
           collapsedFixes,conflictFixes,
           blockedEvidenceEdges:r.blockedEdges.length,
           blockedTimestampEdges:collisions,
-          motionIslands:r.continuousIslands.length,
+          sourceRuns:r.unblockedSourceRuns.length,
           actualLandings:"UNAVAILABLE",physicalContact:"UNRESOLVED",
           canAffectCanonicalFlight:false,
         },null,2)+"\n");
