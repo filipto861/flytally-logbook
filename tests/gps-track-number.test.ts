@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {optionalGpsNumber} from "../lib/gps-track-number.ts";
 
 test("D2-C.1 shared CSV/saved-track decoder retains measured zero, negative altitude and decimal legacy values",()=>{
-  for(const token of [0,"0"," 0 ","+0","-0"])assert.equal(optionalGpsNumber(token),0);
+  for(const token of [0,"0"," 0 ","+0"])assert.equal(optionalGpsNumber(token),0);
+  assert.equal(Object.is(optionalGpsNumber("-0"),-0),true);
   assert.equal(optionalGpsNumber(-123),-123);
   assert.equal(optionalGpsNumber(" 50,25 "),50.25);
   assert.equal(optionalGpsNumber("1e2"),100);
