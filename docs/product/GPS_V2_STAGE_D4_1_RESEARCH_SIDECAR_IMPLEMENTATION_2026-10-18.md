@@ -1,6 +1,6 @@
 # GPS V2 — Stage D4.1 source lineage sidecar implementation evidence
 
-**Status:** IMPLEMENTATION STAGED / TARGETED OWNER-LOCAL 63/63 PASS ON `059b98a9` / TYPECHECK REPAIR STAGED AND NOT YET VERIFIED / NATIVE 6-KML SIDECAR ACCEPTANCE NOT RUN.
+**Status:** RESEARCH D4.1 SYNTHETIC ACCEPTANCE VERIFIED OWNER-LOCAL at `3fc3cd11`: 63/63 targeted PASS and TypeScript PASS. NATIVE SIX-KML SIDECAR CORPUS ACCEPTANCE PENDING. NOT SHIPPED.
 **Approved scope:** Owner explicitly approved D4.1 research-only implementation on 2026-10-18.
 **Repo:** flytally-logbook. Branch: research/gps-v2-stage-d-comparator-20261018. Research PR #366 Draft, nested under parent experimental PR #364 Draft.
 
@@ -93,3 +93,17 @@ Do NOT paste raw KML, private registrations or complete routes into GitHub issue
 - The six-file `tooling/gps-v2-d4-lineage.mjs` sidecar acceptance remains **NOT RUN**. Earlier D4.0 native comparator on the same six KMLs is distinct and cannot substitute for D4.1.
 
 **Next gate:** exact current branch HEAD, repeat the same 63 targeted tests plus `npm run typecheck`. If successful, run the read-only six-KML D4.1 lineage CLI from this document and compare block/raw/canonical counts. Never weaken source parity merely to make a sample pass.
+
+
+## D4.1 second owner-local verification — typecheck correction confirmed (2026-10-18)
+
+**Runtime evidence:** Owner performed `git fetch`, `git switch`, `git pull --ff-only` and `git rev-parse --short HEAD` reporting **`3fc3cd11`**. Exact research branch source for D4.1 code/test had no changes compared with the previous owner-local test, except the two-line test helper reordering committed to this head.
+
+- Owner-local `npm run test:target -- tests/gps-v2-d4-multi-gx-lineage.test.ts tests/gps-v2-stage-d-comparator.test.ts tests/gps-v2-stage-d-event-quality.test.ts tests/gps-v2-advisory.test.ts tests/gps-v2-import-lineage.test.ts` **63 tests / 63 PASS / 0 FAIL**, including D4.1 source & release guards.
+- Owner-local `npm run typecheck` (`tsc --noEmit`) completed without errors: **PASS**.
+- The earlier TS2367/TS2339 diagnostic has been fixed by placing the `UNAVAILABLE` discriminant guard **before** the success assertion; verified locally on the exact checkout. This is local evidence, **not CI**.
+- The six-file native **D4.1 source-lineage CLI** on owner-private corpus is **NOT RUN** yet. D4.0 comparator native results cannot be substituted. D4.1 remains **PARTIALLY VERIFIED / NOT DONE** until sidecar corpus parity and all six source-block/provenance reports are inspected.
+- New commits that modify **only these governance documents** follow the source verification. The source/test code was verified on `3fc3cd11`, but a later new-HEAD release suite, full tests/build/Playwright and actual sidecar corpus evidence have **NOT RUN**.
+- No production parser, detector, UI, feature flag, database, flight data, migration, merge or deploy has changed.
+
+**Next step:** run the existing owner-local six-file D4.1 lineage summary CLI shown in this document. Expected raw/normalized counts by sample are 951→948, 590→587, 897→893, 77→74, 596→593, 1037→1034; block counts 2/2/3/2/2/2. Do not invent expected conflict or boundary-edge counts — inspect actual output. Any `UNAVAILABLE` or mismatch should fail the corpus acceptance gate and be investigated without altering production behavior.
