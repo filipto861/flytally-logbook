@@ -12,7 +12,7 @@ import {
   examineStrictCsvSourceLineage,
 } from "./gps-v2-source-lineage.ts";
 
-export const GPS_V2_IMPORT_LINEAGE_REVISION="GPS_V2_IMPORT_LINEAGE_V2" as const;
+export const GPS_V2_IMPORT_LINEAGE_REVISION="GPS_V2_IMPORT_LINEAGE_V3" as const;
 export type GpsV2LineageKind="STRICT_CSV"|"SKYDEMON_CSV"|"GPX_TRACK"|"KML_GX_TRACK";
 export type GpsV2LineagePoint={lat:number;lon:number;altM:number|null;utc:string};
 export type GpsV2ImportLineage=
@@ -22,6 +22,10 @@ export type GpsV2ImportLineage=
     kind:GpsV2LineageKind;
     parserRevision:typeof CSV_LINEAGE_PARSER_REVISION|typeof GPS_V2_IMPORT_LINEAGE_REVISION;
     samples:readonly GpsV2LineagePoint[];
+    /** Original-source altitude contradiction at a canonical-deleted KML fix.
+     * Its retained horizontal anchor and nearby velocity edges are quarantined.
+     * This does not authenticate GPS height or confirm runway contact. */
+    quarantinedSourceIndices:readonly number[];
   };
 const MAX_TEXT_LENGTH=2_000_000,MAX_POINTS=25_000;
 const unavailable=(reason:"UNSUPPORTED_SOURCE"|"SOURCE_UNAVAILABLE"):GpsV2ImportLineage=>({status:"UNAVAILABLE",reason});
@@ -48,14 +52,17 @@ function finalized(kind:GpsV2LineageKind,rows:Observed[],gxTrack=false):GpsV2Imp
   // fixes BEFORE stable timestamp ordering. Do not silently discard distinct
   // positions sharing a timestamp; they are retained as a discontinuity.
   const normalized:Observed[]=[];
+  const conflictAnchors=new Set<Observed>();
   for(const row of rows){
     const prev=normalized.at(-1);
     if(gxTrack&&prev&&prev.point.utc===row.point.utc&&
       Math.abs(prev.point.lat-row.point.lat)<1e-7&&
       Math.abs(prev.point.lon-row.point.lon)<1e-7){
-      // The legacy parser ignores height when deduplicating. If it differed,
-      // refusing the entire V2 source is safer than hiding conflicting data.
-      if(prev.point.altM!==row.point.altM)return unavailable("SOURCE_UNAVAILABLE");
+      // Legacy canonical normalization keeps the FIRST fix even if altitude
+      // disagrees. Preserve that exact chosen measurement for parity, but
+      // explicitly quarantine the retained horizontal anchor before analysis.
+      // Do not silently use the discarded altitude for any inference.
+      if(prev.point.altM!==row.point.altM)conflictAnchors.add(prev);
       continue;
     }
     normalized.push(row);
@@ -69,7 +76,9 @@ function finalized(kind:GpsV2LineageKind,rows:Observed[],gxTrack=false):GpsV2Imp
   return {
     status:"SOURCE_PARSED_DIAGNOSTIC_ONLY",kind,
     parserRevision:GPS_V2_IMPORT_LINEAGE_REVISION,
-    samples:sorted.map(item=>item.point)
+    samples:sorted.map(item=>item.point),
+    quarantinedSourceIndices:sorted.flatMap((item,index)=>
+      conflictAnchors.has(item)?[index]:[])
   };
 }
 
@@ -184,7 +193,8 @@ export function inspectGpsV2SourceLineage(source:unknown,fileName:unknown):GpsV2
       return {
         status:"SOURCE_PARSED_DIAGNOSTIC_ONLY",kind:"STRICT_CSV",
         parserRevision:CSV_LINEAGE_PARSER_REVISION,
-        samples:strict.samples.map(p=>({lat:p.lat,lon:p.lon,altM:p.altM,utc:p.utc}))
+        samples:strict.samples.map(p=>({lat:p.lat,lon:p.lon,altM:p.altM,utc:p.utc})),
+        quarantinedSourceIndices:[]
       };
     return source.replace(/^\uFEFF/,"").startsWith(SKYDEMON_HEADER+"\n")||
       source.replace(/^\uFEFF/,"").startsWith(SKYDEMON_HEADER+"\r\n")
