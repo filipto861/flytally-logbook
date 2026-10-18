@@ -40,7 +40,8 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
     const rows=[`50,${lon.toFixed(9)},0,${date},14:00:00Z,"start, apron"`];
     for(let index=0;index<speeds.length;index++){
       lon+=speeds[index]*5/3600/(111.1950802*Math.cos(50*Math.PI/180));
-      rows.push(`50,${lon.toFixed(9)},0,${date},14:00:${String((index+1)*5).padStart(2,"0")}Z,flight`);
+      const iso=new Date(Date.parse(`${date}T14:00:00Z`)+(index+1)*5000).toISOString();
+      rows.push(`50,${lon.toFixed(9)},0,${date},${iso.slice(11,19)}Z,flight`);
     }
     const skydemon=[
       "Latitude,Longitude,Altitude ft,UTC Date,UTC Time,Note",...rows
