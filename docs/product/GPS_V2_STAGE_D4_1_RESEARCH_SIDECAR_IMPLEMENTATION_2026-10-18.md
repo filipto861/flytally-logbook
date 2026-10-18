@@ -1,5 +1,31 @@
 # GPS V2 — Stage D4.1 source lineage sidecar implementation evidence
 
+**Current status (supersedes historical pending entries below): D4.1 RESEARCH-ONLY MILESTONE COMPLETE / OWNER-LOCAL VERIFIED.** Owner-local 63/63 targeted Node tests + TypeScript PASS on `3fc3cd11`; six private KMLs passed native D4.1 lineage CLI on `815c2693` (documentation-only commits since tested code). No production authority, integration, merge or deploy.
+
+
+## D4.1 final acceptance — 6/6 native KML sidecar PASS (2026-10-18)
+
+**Provenance:** Owner's local Windows PowerShell terminal log. Branch `research/gps-v2-stage-d-comparator-20261018`, `git pull --ff-only`, exact local `git rev-parse --short HEAD` **`815c2693`**. Six owner-selected original KML files run through `tooling/gps-v2-d4-lineage.mjs`. Every CLI call completed without nonzero exit or MISSING. This new HEAD differs from previously tested `3fc3cd11` only by documentation, as verified in the PR file comparison.
+
+| Sample | Status | Blocks | Raw | Canonical | Collapsed | Conflicts | Blocked edges | Unblocked source runs |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sample03 | SOURCE_PARSED_DIAGNOSTIC_ONLY | 2 | 951 | 948 | 3 | 0 | 1 | 2 |
+| sample04 | SOURCE_PARSED_DIAGNOSTIC_ONLY | 2 | 590 | 587 | 3 | 0 | 1 | 2 |
+| sample05 | SOURCE_PARSED_DIAGNOSTIC_ONLY | 3 | 897 | 893 | 4 | 0 | 2 | 3 |
+| sample06 | SOURCE_PARSED_DIAGNOSTIC_ONLY | 2 | 77 | 74 | 3 | 0 | 1 | 2 |
+| sample07 | SOURCE_PARSED_DIAGNOSTIC_ONLY | 2 | 596 | 593 | 3 | 0 | 1 | 2 |
+| sample08 | SOURCE_PARSED_DIAGNOSTIC_ONLY | 2 | 1037 | 1034 | 3 | 0 | 1 | 2 |
+| **Total** | **6/6 source diagnostic only** | **13** | **4148** | **4129** | **19** | **0** | **7** | **13** |
+
+Acceptance conclusion:
+- D4.1 **research-only** source parser output is compatible with the existing canonical normalized-fix counts for all six actual owner-KMLs. All samples have the expected source block count and dedup totals; sidecar reports one blocked edge per inter-block boundary in this corpus, and no duplicate-height conflicts. This is corpus evidence for **these six sources only**, not a general formal proof of all KMLs or sensor truth.
+- Tests: exact code HEAD `3fc3cd11` **63/63 targeted PASS, TypeScript PASS**, owner-local not CI. The `815c2693` later documentation HEAD tested the same implementation through six-file CLI, not an all-suite re-run. This final acceptance documentation commit follows both.
+- A source run is **not** a verified timed/speed-continuous movement island. Even an uninterrupted source block may have absent telemetry. Sample08's possible unobserved maneuver in the known gaps is still `UNKNOWN/UNOBSERVABLE`, not an additional touchdown.
+- The runtime `lib/gps-v2-import-lineage.ts` remains unchanged: six multi-block files still produce `UNAVAILABLE/UNSUPPORTED_SOURCE` in current production-facing V2; D4.1 sidecar does not make them V2-evaluable. Legacy T&G counts are not physical-contact truth.
+- **D4.1 DONE** as narrowly approved pure research sidecar + synthetic tests + owner-local corpus validation. **D4.2 NOT IMPLEMENTED/NOT APPROVED** for detector integration; any next phase needs distinct owner decision and independent design review. Parent D3 pilot visibility HIDDEN/experimental flag OFF decisions unchanged.
+- Full test suite, build, Playwright, production smoke: **NOT RUN**; DB/migration: N/A; merge/deploy: NOT RUN. No raw route, absolute UTC, coordinates, registration, or full GPS source committed.
+
+
 **Status:** RESEARCH D4.1 SYNTHETIC ACCEPTANCE VERIFIED OWNER-LOCAL at `3fc3cd11`: 63/63 targeted PASS and TypeScript PASS. NATIVE SIX-KML SIDECAR CORPUS ACCEPTANCE PENDING. NOT SHIPPED.
 **Approved scope:** Owner explicitly approved D4.1 research-only implementation on 2026-10-18.
 **Repo:** flytally-logbook. Branch: research/gps-v2-stage-d-comparator-20261018. Research PR #366 Draft, nested under parent experimental PR #364 Draft.
