@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-18 — GPS Detection 2.0 D3 Batch 1 offline DTO (draft, tests not yet run)
+
+- Added offline-only `research/gps-detection-r21/pilot-review-dto.ts`: exact in-memory CSV source text, local SHA-256 equality-bound upload/split context, strict revision/schema and previous-session validation. No caller-forged trusted source, available pilot candidate, review note, physical-contact inference or flight-count write can result. Source parse diagnostics never include raw coordinates/timestamps in DTO. Genuine sensor quality/datum/altitude mode remains unavailable.
+- Added 13 synthetic tests for malformed/forged source context, missing-vs-zero, invalid source, wrong split/file/algorithm, stale review/session/notes, raw data exclusion and zero movement authority. **TESTS/TYPECHECK/BUILD/RELEASE NOT RUN** for this new exact executable HEAD; evidence awaits owner.
+- No production `app/`, `lib/`, `components/`, DB, migration, private GPS, main merge, certification or deploy. [Contract and acceptance](docs/product/GPS_DETECTION_2_0_R21_D3_OFFLINE_DTO_2026-10-18.md).
+
 ## 2026-10-18 — GPS R2.1c D2-B2 clean-main research bridge (DRAFT / NOT MERGED)
 
 - Staged pure offline `research/gps-detection-r21/csv-lineage.ts` with its original ten-case test suite from formerly owner-tested source SHA `25d0efdb...`, plus 3 new cross-check cases against the merged D2-C.1 production CSV parser. No changes to production runtime, GPS detector, persistence, schema, privacy, or certifier. The research output cannot authorize pilot motion candidates or landing counts.
