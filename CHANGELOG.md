@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 D4.3-R2-1 source altitude quality research staged (NO RELEASE)
+
+- Created child research branch research/gps-v2-d43-r2-quality-20261019 from PR #366 research head 3ea5f9bc after owner chose to skip optional external review and proceed with R2-1. Added candidate-independent source altitude-quality module under research/gps-detection-r21, privacy-bounded owner-local CLI under tooling and 21 authored tests under tests. Strict existing source lineage and coverage rules remain intact; no legacy T&G candidate generator or operational contact conclusions.
+- Counts finite/null/zero altitudes separately; respects D4.1 hard source edges, R1 overlapping issue reasons, manual cuts, timestamp/height conflicts, exact source revision binding and unknown altitude accuracy/datum. Distinguishes 0<dt<=15s global source derivative reference counts from the ORIGINAL legacy in-window rejection; >15s pairs are unassessed even when independently V2-invalid >=60s.
+- Added docs/product/GPS_V2_D43_R2_1_ALTITUDE_QUALITY_IMPLEMENTATION_2026-10-19.md with test and owner-private six-KML CLI runbook. R2-1 NEW tests/typecheck/private six KML **NOT RUN**; prior R1 107/107 and six R1 KML are distinct historical evidence only. Full Node/build/Playwright/CI/deploy NOT RUN; DB/migration N/A. Main, production lib/UI/DB, source acceptance, flight counts/recency and feature flags unchanged; PR parent remains Draft and R2-2 NOT APPROVED.
+
 ## 2026-10-19 — GPS V2 D4.3-R2 altitude shape and source quality draft design (DOCUMENTATION ONLY)
 
 - Reconstructed current GPS source and completed research R1: audited frozen `lib/track-processing.ts` legacy rolling altitude evidence (28–145 km/h, +30m descent/climb, in-window >25m/s rejection when `0<dt<=15s`), independent takeoff guard, `stage-d-event-quality.ts`, D4.1 canonical KML block lineage, D4.3-R1 source coverage and historical `GPS_TOUCH_AND_GO_RELIABILITY.md` regressions.
