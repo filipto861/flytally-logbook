@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — P1B first owner-local verification and ESM source import fix (UNVERIFIED)
+
+- Owner-local P1B branch HEAD 349c6324: targeted **146/147 PASS, 1 FAIL** at P1B test module resolution (`ERR_MODULE_NOT_FOUND` for extensionless P1A research source inspector), while TypeScript `tsc --noEmit` PASS and Next.js `npm run build` PASS on that original HEAD. NOT CI, NOT a complete green P1B run.
+- Minimal corrective edit: `lib/gps-r3-quality-review.ts` import now explicitly ends in `.ts` for Node 24 ESM strip-types; P1B-15 static+runtime import regression authored (15 new P1B tests total). Node tests/typecheck/build after this fix **NOT RUN**. No UI, source quality algorithm, native V2 eligibility, form state, flight count, recency, DB, merge or production deploy changes.
+
 ## 2026-10-19 — GPS V2 R3-P1B review-only quality warning staged (NOT VERIFIED / DEFAULT OFF)
 
 - Following owner-verified P1A (142/142 Node PASS, TypeScript PASS, 6/6 original KML shadow parity), added a **separate, default-OFF opt-in** P1B UI in existing GPS import `Review GPS track`: pure typed `lib/gps-r3-quality-review.ts` adapter, render-only `components/gps-altitude-quality-review.tsx`, minimal exact-source/split `useMemo` and section auto-open only for positive source quality warnings in `components/kml-import-form.tsx`, and dark/light/responsive token styling in `app/v142-gps-import.css`. User-facing notice covers recorded height step and unknown motion during >15s source intervals without suggesting a landing/contact event. No point seek or raw source metadata displayed.
