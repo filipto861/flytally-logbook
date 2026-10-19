@@ -133,3 +133,15 @@ Tests for any future R3-1 validator: no-contact absence fails closed, uncorrobor
 ## 10. Status and closing evidence
 
 R3-0 documents authored on a child research branch; no executable code, tests, DB, UI, feature flag, legacy or production files changed. Node/TypeScript/build/browser/CI and six-private-KML R3 execution NOT RUN / N/A, since no R3 implementation. No branch merge, deployment or production release. ROADMAP, FEATURES, CHANGELOG must record R3-0 DESIGN only; next task is owner review of evidence-source and privacy decisions.
+
+## 2026-10-19 — New owner pilot attestation (qualitative, NOT independent corroboration)
+
+During follow-up to the sample07 research question, the pilot expressly affirmed that **one manoeuvre in this recording was a rolling touch-and-go with runway wheel contact followed by departure**, rather than a low pass. The pilot supplied an approximate private local and UTC minute, which is deliberately **NOT copied into this GitHub document, PR, diagnostic output, template or repository**. Exact event time and identifying original data remain owner-private.
+
+**Evidence category:** PILOT_ATTESTATION (first-party, direct retrospective testimony). **Provisional contact category if owner creates a private case:** REPORTED_CONTACT_UNCORROBORATED. This is new human evidence about an asserted manoeuvre, not independent verification of actual wheel contact. The R3 source-case worksheet remains BLANK, no private event case ID, timestamps or raw data have been committed, and no independent video/sensor/witness material has been supplied here.
+
+**Association status:** NOT_ATTEMPTED / UNVERIFIED. The existing R2-2 aggregate of **two overlapping derivative-rejected source geometry windows** in sample07 cannot be identified as two touchdowns, cannot yet be proven to correspond to this one pilot-asserted event and does not establish the actual time of contact. Historical 6 emitted legacy altitude proposals remain provisional. Do not label a GPS-recognizer false negative in a verified confusion matrix from pilot testimony alone.
+
+**Next private evidence gate:** ask whether there is an original independent continuous video or directly observing witness or an applicable integrity-backed contact-specific sensor source. If none, preserve this first-party report as research diagnostic context and do not upgrade to CORROBORATED_CONTACT. Confirmation of the reported minute by owner does not resolve source accuracy, source coverage, time pairing or wheel-contact corroboration.
+
+**Scope and privacy:** Documentation-only claim-class update. No public event label, metric, algorithm threshold change, native V2 source acceptance, flight landing count, recency, UI, DB, feature flag, merge or deploy. Tests/typecheck/browser/build/CI N/A/NOT RUN for this docs-only update. The unchanged R3-0 protocol remains in owner review.
