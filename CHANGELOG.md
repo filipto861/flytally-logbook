@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 R2-1 post-fix local verification PASS (corpus pending)
+
+- Owner verified clean tracked R2-1 research branch and fast-forward `4cbe7365..129fa308`, then **79/79 targeted Node tests PASS (0 fail/skipped)** across R2-1/R1/legacy/parser, duration 879.9284 ms, and `npm run typecheck` PASS (no diagnostics) after null-narrowing fix. This supersedes the immediately prior TypeScript failure. **LOCAL, NOT CI.**
+- Native R2 altitude-quality CLI six-private-KML source reports NOT RUN; R2-1 remains OPEN. No test of actual contact or new detector. Full suite/build/CI/browser/production smoke NOT RUN; DB/migration N/A; no merge/deploy, UI, flags, flight/recency changes.
+
 ## 2026-10-19 — GPS V2 R2-1 first local test pass, TypeScript failure fixed in research (RERUN PENDING)
 
 - Owner PowerShell log: 79/79 targeted regression tests PASS, 0 failures, across R2-1/R1/legacy/parser. Exact local SHA not printed. `npm run typecheck` FAIL with 2 TS2345 errors in newly authored research module when parsing nullable GPS timestamps.
