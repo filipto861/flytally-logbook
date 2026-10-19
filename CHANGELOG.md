@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 R3-P1A isolated quality-context source inspector staged (NOT YET VERIFIED)
+
+- New feat/gps-v2-r3-p1a-quality-contexts-20261019 from R3-P1 design. Added research-only pure/browser-compatible R3-P1A source-quality context module with strict D4 canonical and gx:Track provenance validation, explicit source-block/flight-cut isolation, frozen 3.5.1 altitude-window/25m/s guard diagnostic replay, shared-bad-edge grouping, missing >15s interval flag and fail-closed unknown results. No TOUCHDOWN/T&G event emitted or counted.
+- Added 18 authored tests; owner-local R3-P1A CLI with cross-check of frozen R2-2 rejected-window count, and six-KML PowerShell one-dialog runner with anonymous-only outputs. Offline private source inspection only suggests sample04 and sample07 context(s); THIS IS NOT NATIVE P1A TEST PASS. Updated implementation doc and roadmap. No production lib/components/actions/DB/UI/flags/landingCount/recency changes, merge or deploy. All new Node tests, typecheck, full suite, build, Playwright, CI and P1A owner-local six-KML runs NOT RUN; DB/migration N/A.
+
 ## 2026-10-19 — GPS V2 R3-P1 inconclusive-altitude pilot-review design staged (DOCS ONLY)
 
 - Read current components/kml-import-form.tsx, components/gps-import-review-player.tsx, lib/gps-v2-advisory.ts, lib/gps-v2-import-lineage.ts, flight import action, GPS styles and existing V2 contracts on stacked research branch. Confirmed legacy landingCount auto-suggests reviewed starts; existing manual edits remain explicit; V2 horizontal-only panel OFF by default; native multi-gx V2 is UNSUPPORTED_SOURCE; R2-2 research code is Node-only and aggregate.
