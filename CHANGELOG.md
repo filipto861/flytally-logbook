@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 D4.3-R2-2 research engineering closed after owner-local tests and 6 KML reports
+
+- Owner-supplied local targeted Node result **97/97 PASS**, 0 fail/skip (1450.3132 ms); `npm run typecheck` PASS. Exact tested git SHA not shown; LOCAL, NOT CI. Six owner-local anonymized KML audits: **6/6 LEGACY_SOURCE_SHAPE_COMPARISON_ONLY / SHADOW_LEGACY_PARITY_VERIFIED**, original legacy signal counts 1/1/10/0/6/3, all non-authoritative physical contact/landings unavailable.
+- Aggregate legacy geometry: 122 source-pattern windows, 42 speed-gate rejections, 1 intermediate-climb rejection, 3 in-span >25m/s rejected windows (sample04 one, sample07 two), 1 source-quality affected window, 61 overlapping windows with >15s observation intervals, 76 pre-group surviving windows, 21 grouped and 21 emitted legacy altitude signals. Counted windows are NOT actual landings or independent missed T&Gs. Sample07 causal linkage to pilot-reported additional rolling manoeuvre unproven.
+- R2-2 **CLOSED AS READ-ONLY RESEARCH ENGINEERING ONLY**; no merge/deploy, legacy detector change, UI, DB, flags, flight count or recency modification. Next R3 independent contact reference evidence plan requires explicit approval. Full tests/build/browser/CI/production smoke NOT RUN; migrations N/A.
+
 ## 2026-10-19 — GPS V2 D4.3-R2-2 frozen shape shadow research staged, NOT released
 
 - Created research/gps-v2-d43-r2-2-shape-audit-20261019 as a child of R2-1 research HEAD after owner approval. Added research-only frozen rolling-altitude 3.5.1 gate shadow (candidate minimum/30m evidence spans, historical 28-145 km/h and 25m/s guard) with fail-closed comparison against original legacy altitude proposals, R1 issue-edge and long-observation interval annotations. Output aggregate-only, NO physical contact/landing count interpretation.
