@@ -51,3 +51,27 @@ User-provided PowerShell log on tracked R2-1 research branch reports four target
 ## 2026-10-19 second owner-local verification (post TypeScript fix)
 
 User ran `git status --short` (clean), `git pull --ff-only` (fast-forward `4cbe7365..129fa308`) on tracked `research/gps-v2-d43-r2-quality-20261019`, followed by targeted four-file Node tests and `npm run typecheck`. **79/79 targeted tests PASS, 0 failures, 0 skipped, duration 879.9284 ms; TypeScript PASS (`tsc --noEmit` completed without diagnostics)**. This is **owner-local evidence at checked-out code HEAD `129fa308`**, not CI and not evidence of GPS physical contact. Of 79 tests, 21 are new R2-1 cases and 24 are R1 cases; remaining 34 are relevant existing track-processing/legacy tests. R2-1 still awaits six **owner-private** native CLI reports and privacy review; merge/deploy/full suite/build/browser/CI NOT RUN, DB/migration N/A. Subsequent documentation-only commits do not retroactively invalidate that code/test evidence, but are not reruns on their own exact HEAD.
+
+## 2026-10-19 final read-only research acceptance: six owner-local KML reports
+
+**STATUS: R2-1 CLOSED AS RESEARCH ENGINEERING, NOT RELEASED OR OPERATIONALLY APPROVED.**
+
+Owner supplied anonymized R2-1 summary reports for all six original KMLs. All returned SOURCE_ALTITUDE_QUALITY_DIAGNOSTIC_ONLY, contact UNRESOLVED, landings UNAVAILABLE, canAffectCanonicalFlight false. No raw private KML data, GPS coordinates, original UTC, GPS height values, registration, paths or source hashes are committed.
+
+| ID | Canonical/finite fixes | Zero | Null | Unique issue edges | Hard boundaries | Reference-assessed pairs | Global >25m/s reference hits | >15s unassessed pairs | Within-block max interval (seconds) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sample03 | 948 | 1 | 0 | 1 | 1 | 935 | 3 | 11 | 20.17 |
+| sample04 | 587 | 5 | 0 | 1 | 1 | 578 | 6 | 7 | 20.84 |
+| sample05 | 893 | 15 | 0 | 3 | 2 | 875 | 0 | 15 | 491.57 |
+| sample06 | 74 | 5 | 0 | 1 | 1 | 69 | 0 | 3 | 50.09 |
+| sample07 | 593 | 3 | 0 | 1 | 1 | 579 | 1 | 12 | 53.06 |
+| sample08 | 1034 | 1 | 0 | 2 | 1 | 991 | 0 | 41 | 94.39 |
+| TOTAL | 4129 | 30 | 0 | 9 | 7 | 4027 | 10 | 89 | not additive |
+
+**Consistency:** Across 6 KMLs, N-1 adjacent canonical pairs sum to 4123; 4027 assessed reference pairs + 89 >15s unassessed within-source pairs + 7 provenance/split boundaries = 4123. This equality holds per sample. Overlapping issue reasons do NOT constitute independent bad edges. Numeric zero is an observed numeric token, not automatically a missing altitude. Sensor height accuracy/datum and intervening motion remain unknown.
+
+**Critical interpretation:** All 10 exceedances are from a GLOBAL candidate-independent source-edge altitude derivative reference. In sample07, the single global exceedance cannot on its own be attributed to the earlier owner-reported missed rolling manoeuvre or a particular legacy evidence span; do NOT mark that window accepted or rejected based on the aggregate output. Time gaps do NOT establish missing or absent contacts.
+
+**Validation:** User previously provided clean branch checkout fast-forwarded to implementation code 129fa308 followed by 79/79 targeted Node tests PASS, TypeScript PASS. This 6-KML report is owner-executed local output supplied in chat, not CI and not independently verified sensor/contact truth. Later docs-only commits do not change the implementation-code validation. Original earlier NOT RUN notes describe historical pre-acceptance states and are superseded by this addendum.
+
+**Final scoped status:** R2-1 closed as read-only diagnostic engineering research; feature flag still OFF, Pilot Review HIDDEN, native V2 multi-block UNSUPPORTED_SOURCE, legacy detection, logbook counts/recency, UI, database and production untouched. R2-2 accepted/rejected altitude-shape comparison separately NOT APPROVED; R3 independent contact evidence remains necessary before accuracy claims. Full test suite/build/browser/CI/deploy NOT RUN, DB/migration N/A, no merge.
