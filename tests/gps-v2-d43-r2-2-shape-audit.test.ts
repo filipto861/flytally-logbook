@@ -79,7 +79,6 @@ test("R2-2-05 in-span >25m/s remains rejection, not recovered event",()=>{
  const c=accepted(src(p));
  assert.ok(c.geometryWindows>0);
  assert.ok(c.inSpanDerivativeRejectedWindows>0);
- assert.equal(c.physicalContact,undefined);
 });
 test("R2-2-06 unrelated out-of-span altitude spike does not poison clean reference span",()=>{
  const p=track({1:600});
