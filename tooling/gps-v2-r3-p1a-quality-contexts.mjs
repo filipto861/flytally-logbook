@@ -6,7 +6,7 @@
 import {readFileSync,statSync} from "node:fs";
 import {extname} from "node:path";
 import {parseKml} from "../lib/track-processing.ts";
-import {R3_P1A_REVISION,inspectR3P1AQualityContexts} from
+import {R3_P1A_REVISION,R3_P1A_FROZEN_LEGACY_REFERENCE,inspectR3P1AQualityContexts} from
  "../research/gps-detection-r21/stage-r3-p1a-source-quality-contexts.ts";
 import {inspectD43R2LegacyShapeAudit} from
  "../research/gps-detection-r21/stage-d43-r2-2-legacy-shape-audit.ts";
@@ -38,7 +38,8 @@ else{
    if(result.status==="UNAVAILABLE")unavailable(result.reason);
    else{
     const legacy=inspectD43R2LegacyShapeAudit({sourceText,splitCuts});
-    if(legacy.status!=="LEGACY_SOURCE_SHAPE_COMPARISON_ONLY")
+    if(legacy.status!=="LEGACY_SOURCE_SHAPE_COMPARISON_ONLY"||
+       legacy.legacyReference!==R3_P1A_FROZEN_LEGACY_REFERENCE)
      unavailable("FROZEN_REFERENCE_UNAVAILABLE");
     else{
      const windows=result.contexts.reduce((n,c)=>n+c.affectedGeometryWindows,0);
