@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 D4.3-R2-2 frozen shape shadow research staged, NOT released
+
+- Created research/gps-v2-d43-r2-2-shape-audit-20261019 as a child of R2-1 research HEAD after owner approval. Added research-only frozen rolling-altitude 3.5.1 gate shadow (candidate minimum/30m evidence spans, historical 28-145 km/h and 25m/s guard) with fail-closed comparison against original legacy altitude proposals, R1 issue-edge and long-observation interval annotations. Output aggregate-only, NO physical contact/landing count interpretation.
+- Added 18 synthetic/adversarial test cases and owner-local privacy-bounded CLI. Added standalone contract and validation plan. Targeted tests, TypeScript and six owner-private R2-2 KML runs NOT RUN; full suite/build/CI/Playwright NOT RUN; DB/migration N/A; no merge/deploy or production imports. R3 independent contact truth and all release approvals remain absent.
+
 ## 2026-10-19 — GPS V2 D4.3-R2-1 research engineering closed after six owner-local KML runs
 
 - Owner-local post-fix engineering tests: 79/79 targeted Node PASS, TypeScript PASS at implementation code 129fa308. Six private original KMLs: 6/6 read-only diagnostic status, 4,129 finite canonical fixes, 30 numeric zeros, no null heights, 9 unique quality issue edges, 7 source boundaries, 4,027 assessed short-interval altitude reference edges, 10 GLOBAL source-edge >25m/s reference exceedances, 89 >15s unassessed intervals; consistent totals 4,123 = 4,027+89+7 across six per-file N-1 pairs. Owner-supplied anonymized aggregate only; no raw private tracks on GitHub.
