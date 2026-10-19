@@ -57,3 +57,19 @@ Repeat for sample04..08 with the corresponding original local files. Or use a pr
 Correctness > convenience: do not weaken existing V2/legacy T&G rules for successful output. D4.3-R1 is NOT DONE until current source/tests HEAD targeted Node24 + TypeScript PASS and all six owner-local source CLI reports plus review of gap terminology/privacy and required docs. Targeted local testing is NOT CI. Full tests/build/Playwright/browser/DB/deploy NOT RUN/N/A unless separately done. PR #366 remains Draft, parent #364 Draft; pilot review HIDDEN, feature OFF, production native multi-gx KML still UNAVAILABLE/UNSUPPORTED_SOURCE. No physical contact, movement count, recency or source authentication authority.
 
 **Additional cases:** D43-R1-23 executes the read-only CLI against a deliberately absent synthetic filename to verify no raw local path or unsanitized sample ID is echoed; D43-R1-24 verifies that an observed 100s inter-block pair retains both SOURCE_BLOCK_BOUNDARY and existing V2_TIME_EDGE_INVALID, without counting two physical events. These are authored, NOT RUN. Total new R1 tests: **24**, expected combined targeted tests: **107** (previous 83 + new 24).
+
+
+## Independent six-source interval check (assistant-local Python — NOT a Node R1 test)
+
+Before the owner-local R1 CLI, a separate read-only Python XML/time inspection of the six private original owner KML files reconstructed adjacent near-position/same-UTC canonical duplicate removal, excluded inter-gx:Track edges, and calculated positive within-block source timestamp differences. This analysis was NOT an invocation of the newly authored research module; it is only independent source-shape evidence. No source filenames, UTC timestamps, aircraft registration, coordinates or raw KML were committed.
+
+| Sample | Blocks | Normalized fixes | Median positive within-block interval (s) | Maximum (s) | Second largest (s) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| sample03 | 2 | 948 | 2.010 | 20.17 | 19.93 |
+| sample04 | 2 | 587 | 1.600 | 20.84 | 17.41 |
+| sample05 | 3 | 893 | 2.685 | 491.57 | 50.17 |
+| sample06 | 2 | 74 | 2.795 | 50.09 | 46.32 |
+| sample07 | 2 | 593 | 2.510 | 53.06 | 19.64 |
+| sample08 | 2 | 1034 | 4.390 | 94.39 | 35.35 |
+
+These values independently match earlier D4.2A source cadence summaries. Crucially sample08 contains both 94.39s and 35.35s *within-source* intervals. The new R1 Node24 implementation must reproduce these after its exact-HEAD tests. **Do not interpret the unobserved intervening motion as no contact, and do not label every below-60s interval fully observed.**
