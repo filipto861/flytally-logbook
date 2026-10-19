@@ -122,6 +122,7 @@ test("R2-2-11 zero and missing altitude are different; no fake zero minimum",()=
  assert.ok(q.geometryWindows>0);
  // A null height cannot silently become a synthetic numeric-zero minimum.
  assert.ok(c.geometryWindows<=q.geometryWindows);
+ assert.notEqual(c.legacyEmittedAltitudeProposals,q.legacyEmittedAltitudeProposals);
 });
 test("R2-2-12 no result may contain route, raw UTC, source height, registration or fingerprints",()=>{
  const text=src(track()).replace("<kml ","<kml id=\"REG_SECRET\" ");
