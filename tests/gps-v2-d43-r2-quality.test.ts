@@ -25,7 +25,7 @@ function kml(blocks:readonly (readonly Pt[])[]):string{
    '</gx:Track>').join("")+'</kml>';
 }
 const source=(times:readonly number[],heights?:readonly (number|null)[])=>
- kml([times.map((s,i)=>pt(s,heights?.[i]??180))]);
+ kml([times.map((s,i)=>pt(s,heights===undefined?180:heights[i]))]);
 function ok(sourceText:string,splitCuts:number[]=[]){
  const r=inspectD43R2AltitudeQuality({sourceText,splitCuts});
  if(r.status==="UNAVAILABLE")throw Error(r.reason);
