@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 R3-P1A owner-local engineering verification, research-only CLOSED
+
+- Owner supplied clean checkout of research implementation code HEAD `8af85d46`, targeted **142/142 Node tests PASS**, 0 failed/skipped, `npm run typecheck` PASS, and six owner-private original KML anonymous runner reports. 6/6 frozen legacy R2-2 rejection count parity confirmed: sample04 one quality context / one rejected source window; sample07 one context / two overlapping rejected source windows with one >15s unassessed interval context; other four no qualifying diagnostic. No new physical-contact truth established, all `actualLandings=UNAVAILABLE` and `canAffectCanonicalFlight=false`.
+- R3-P1A read-only research milestone CLOSED; Draft PR remains unmerged and not deployed. No changes to production V2 unsupported multi-gx handling, legacy landing count, UI, DB, flags, certification or recency. Node owner-local tests are NOT CI; full suite/build/browser/CI NOT RUN, DB/migration N/A. Next separately gated P1B UI pilot-review card. No source filenames, absolute UTC, coordinates, raw altitudes or flight identifiers were committed.
+
 ## 2026-10-19 — GPS V2 R3-P1A isolated quality-context source inspector staged (NOT YET VERIFIED)
 
 - New feat/gps-v2-r3-p1a-quality-contexts-20261019 from R3-P1 design. Added research-only pure/browser-compatible R3-P1A source-quality context module with strict D4 canonical and gx:Track provenance validation, explicit source-block/flight-cut isolation, frozen 3.5.1 altitude-window/25m/s guard diagnostic replay, shared-bad-edge grouping, missing >15s interval flag and fail-closed unknown results. No TOUCHDOWN/T&G event emitted or counted.
