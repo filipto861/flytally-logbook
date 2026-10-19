@@ -115,3 +115,13 @@ test("P1B-14 no unverified position seeking or ambiguous candidate action",()=>{
  assert.doesNotMatch(ui,/scrollIntoView|seek\(|normalizedIndex|sourceEdgeBeforeFix|onClick=/);
  assert.match(ui,/Review the altitude graph/);
 });
+
+test("P1B-15 Node strip-types runtime bridge uses explicit .ts research import",()=>{
+ const source=adapter();
+ assert.match(source,/from "\.\.\/research\/gps-detection-r21\/stage-r3-p1a-source-quality-contexts\.ts"/);
+ // This file imports the bridge at module load. If extension resolution breaks,
+ // the P1B tests fail before these assertions execute.
+ const result=inspectGpsR3QualityReview("<gpx></gpx>",[],[]);
+ assert.equal(result.status,"UNAVAILABLE");
+ assert.equal(hasGpsR3QualityReview(result),false);
+});
