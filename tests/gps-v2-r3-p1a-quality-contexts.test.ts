@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import {spawnSync} from "node:child_process";
 import {parseKml,landingCount,touchAndGoEvents} from "../lib/track-processing.ts";
 import {inspectGpsV2HorizontalTrack} from "../lib/gps-v2-advisory.ts";
 import {inspectD43R2LegacyShapeAudit} from
@@ -109,7 +110,7 @@ test("P1A-08 malformed split, duplicate split and out-of-range split fail closed
   assert.equal(r.status,"UNAVAILABLE");
   assert.equal(r.contexts,null);
  }
- for(const splitCuts of [[1],[2,19]]){
+ for(const splitCuts of [[1],[2,18]]){
   const r=analyze(text,splitCuts);
   assert.notEqual(r.status,"UNAVAILABLE");
   if(r.status==="QUALITY_REVIEW_ONLY")
@@ -202,4 +203,19 @@ test("P1A-17 module is browser-safe and never imported by production paths",()=>
   "lib/track-processing.ts","app/(protected)/flights/actions.ts"]){
   assert.ok(!readFileSync(path,"utf8").includes("stage-r3-p1a-source-quality-contexts"));
  }
+});
+test("P1A-18 private CLI invalid input never echoes private file name",()=>{
+ const privateName="PRIVATE_AIRCRAFT_OWNER_SECRET.kml";
+ const args=["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
+   "--experimental-strip-types","tooling/gps-v2-r3-p1a-quality-contexts.mjs",
+   "--file",privateName,"--id","sample07"];
+ const p=spawnSync(process.execPath,args,{encoding:"utf8"});
+ assert.equal(p.status,2);
+ assert.ok(p.stdout.includes("LOCAL_SOURCE_UNREADABLE"));
+ assert.equal((p.stdout+p.stderr).includes(privateName),false);
+ const q=spawnSync(process.execPath,[...args.slice(0,-1),"PRIVATE_SECRET"],
+  {encoding:"utf8"});
+ assert.equal(q.status,2);
+ assert.ok(q.stdout.includes("INVALID_CONTEXT"));
+ assert.equal((q.stdout+q.stderr).includes("PRIVATE_SECRET"),false);
 });
