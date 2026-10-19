@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 R2-1 first local test pass, TypeScript failure fixed in research (RERUN PENDING)
+
+- Owner PowerShell log: 79/79 targeted regression tests PASS, 0 failures, across R2-1/R1/legacy/parser. Exact local SHA not printed. `npm run typecheck` FAIL with 2 TS2345 errors in newly authored research module when parsing nullable GPS timestamps.
+- Fix `b22439ca`: capture before/after nullable timestamp values and narrow before `Date.parse`, preserving semantics. Post-fix typecheck and targeted tests NOT RUN, owner rerun required. Six private KML R2 CLI evaluations NOT RUN. No R2-1 closure, production changes, merge or deploy.
+
 ## 2026-10-19 — GPS V2 D4.3-R2-1 source altitude quality research staged (NO RELEASE)
 
 - Created child research branch research/gps-v2-d43-r2-quality-20261019 from PR #366 research head 3ea5f9bc after owner chose to skip optional external review and proceed with R2-1. Added candidate-independent source altitude-quality module under research/gps-detection-r21, privacy-bounded owner-local CLI under tooling and 21 authored tests under tests. Strict existing source lineage and coverage rules remain intact; no legacy T&G candidate generator or operational contact conclusions.
