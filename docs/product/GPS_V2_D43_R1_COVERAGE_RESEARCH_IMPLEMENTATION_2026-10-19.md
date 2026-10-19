@@ -1,6 +1,6 @@
 # GPS V2 — D4.3-R1 source coverage and evidence gaps (research-only)
 
-**2026-10-19. State: OWNER-APPROVED IMPLEMENTATION STAGED; Node24 exact-HEAD tests/typecheck and six owner-KML corpus NOT RUN.**
+**2026-10-19. Current state: OWNER-LOCAL TARGETED TESTS 107/107 PASS + TYPECHECK PASS AT `d3b263bb`; six original KML native R1 coverage reports PENDING. Engineering research R1 NOT DONE / NOT SHIPPED.**
 Repo: flytally-logbook, branch research/gps-v2-stage-d-comparator-20261018, PR #366 Draft (base feat/gps-v2-release-critical-engine, PR #364 Draft). No production runtime, lib/ refactor, UI/DB, flight-count or feature-flag authorization.
 
 ## Authority and source reconstruction
@@ -73,3 +73,19 @@ Before the owner-local R1 CLI, a separate read-only Python XML/time inspection o
 | sample08 | 2 | 1034 | 4.390 | 94.39 | 35.35 |
 
 These values independently match earlier D4.2A source cadence summaries. Crucially sample08 contains both 94.39s and 35.35s *within-source* intervals. The new R1 Node24 implementation must reproduce these after its exact-HEAD tests. **Do not interpret the unobserved intervening motion as no contact, and do not label every below-60s interval fully observed.**
+
+
+## Owner-local D4.3-R1 first verification — exact source/test HEAD `d3b263bb` (2026-10-19)
+
+Evidence: product owner's Windows PowerShell transcript. `git fetch origin`, `git switch research/gps-v2-stage-d-comparator-20261018`, `git pull --ff-only`, `git rev-parse --short HEAD` printed **`d3b263bb`**, and `node -v` printed **`v24.19.0`**.
+
+Executed:
+
+    npm run test:target -- tests/gps-v2-d43-r1-coverage.test.ts tests/gps-v2-d42-shadow.test.ts tests/gps-v2-d4-multi-gx-lineage.test.ts tests/gps-v2-stage-d-comparator.test.ts tests/gps-v2-stage-d-event-quality.test.ts tests/gps-v2-advisory.test.ts tests/gps-v2-import-lineage.test.ts
+    npm run typecheck
+
+Observed targeted Node tests: **107 total / 107 PASS / 0 FAIL / 0 skipped**, including all **24** newly authored D43-R1-01..24 tests. TypeScript `tsc --noEmit` exited without any diagnostic: **PASS**. This is **OWNER-LOCAL testing, NOT CI**, and demonstrates the specific synthetic/adversarial contracts only. No full suite, production runtime, browser, migration or deployment verified.
+
+**Next acceptance gate, still NOT RUN:** owner-local read-only `tooling/gps-v2-d43-r1-coverage.mjs` on the same six original private KML files. Check source block counts `2/2/3/2/2/2`, canonical fixes `948/587/893/74/593/1034` and source interval statistics against previous independent reconstructions; particularly sample05 `491.57s` and sample08 `94.39s` plus second-largest `35.35s` without interpreting any as true touchdown. The summaries are source-quality diagnostics only. No expected invalid edge/reason counts are asserted without observing CLI evidence.
+
+Documentation-only commits after `d3b263bb` contain no research source/test/CLI edits; verify exact diff before accepting its earlier local test evidence for the newest docs HEAD. R1 is NOT DONE pending 6-file corpus and final governance reconciliation; no merge or deployment.
