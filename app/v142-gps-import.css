@@ -36,3 +36,10 @@
 .gps-v2-event-list li strong{font-size:.85rem;line-height:1.35}
 .gps-v2-event-list li span{font-size:.74rem;color:var(--muted);line-height:1.45}
 @media(max-width:600px){.gps-v2-preview{padding:11px}.gps-v2-event-list{grid-template-columns:1fr}}
+
+/* R3-P1B: source quality is not a T&G event or an automatic landing. */
+.gps-r3-quality-review{display:grid;gap:7px;margin:12px 0;padding:13px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.gps-r3-quality-review>strong{font-size:.88rem;line-height:1.4;color:var(--text)}
+.gps-r3-quality-review>p{margin:0;font-size:.78rem;line-height:1.5;color:var(--text)}
+.gps-r3-quality-review>.gps-r3-quality-review-note{font-size:.74rem;color:var(--muted)}
+@media(max-width:600px){.gps-r3-quality-review{padding:11px 12px}}
