@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-19 — D4.3-R1 targeted 107/107 tests and TypeScript verified OWNER-LOCAL
+
+- Owner checked out research branch at exact source/test `d3b263bb` with Node.js v24.19.0 and ran the seven specified V2/D1/D2/D4/D42/D43 targeted files: **107/107 PASS, 0 fail** (including all 24 D43-R1 tests); `npm run typecheck` (`tsc --noEmit`) completed without diagnostics: **PASS**. These checks are **LOCAL, not CI**, and do not verify actual GPS sensor truth.
+- R1 independent private six-KML coverage CLI **NOT RUN** in provided terminal log; earlier Python interval audit and D4.2A KML shadow success do not replace the new native R1 corpus acceptance. Leave R1 OPEN, next owner-local read-only six-KML outputs anonymized; do not invent expected blocked-edge counts or declare actual zero touchdowns.
+- Documentation-only ledger updates after tested code SHA; no production lib, UI, DB, source acceptance, landing counts, feature flags or legacy logic changes. Full suite/build/browser/CI/production smoke NOT RUN; migration N/A; research PR #366 Draft, parent PR #364 Draft, no merge or deploy.
+
 ## 2026-10-19 — GPS V2 D4.3-R1 source coverage research module staged (OWNER-APPROVED; TESTS NOT RUN)
 
 - Implemented isolated `stage-d43-r1-coverage.ts`, calling previously verified D4.1 canonical source-lineage and frozen V2 algorithm revision without altering production. Reports exact source fix endpoints, provenance and manual-split evidence breaks, independent V2-invalid time/speed edges, source-local interval cadence and bounded longest intervals. It NEVER claims continuous motion between fixes or true landing/contact and never invents a global >15/>35s continuity threshold.
