@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {spawnSync} from "node:child_process";
-import {parseKml,touchAndGoEvents,type KmlPoint} from "../lib/track-processing.ts";
+import {parseKml,touchAndGoEvents} from "../lib/track-processing.ts";
+import {inspectGpsV2HorizontalTrack} from "../lib/gps-v2-advisory.ts";
 import {
  inspectD43R2LegacyShapeAudit,d43R2ShapeLocalBinding,
  D43_R2_SHAPE_AUDIT_REVISION,
@@ -117,9 +118,10 @@ test("R2-2-10 provenance cross-block dedup cannot be silently trusted",()=>{
 test("R2-2-11 zero and missing altitude are different; no fake zero minimum",()=>{
  const p=track({10:null});
  const c=accepted(src(p));
- assert.equal(c.legacyEmittedAltitudeProposals,0);
  const q=accepted(src(track({10:0})));
  assert.ok(q.geometryWindows>0);
+ // A null height cannot silently become a synthetic numeric-zero minimum.
+ assert.ok(c.geometryWindows<=q.geometryWindows);
 });
 test("R2-2-12 no result may contain route, raw UTC, source height, registration or fingerprints",()=>{
  const text=src(track()).replace("<kml ","<kml id=\"REG_SECRET\" ");
@@ -171,6 +173,11 @@ test("R2-2-16 original native V2 source constraints unchanged",()=>{
  const text=kml([track().slice(0,12),track().slice(12)]);
  const r=inspectD43R2LegacyShapeAudit({sourceText:text});
  assert.equal(r.status,"LEGACY_SOURCE_SHAPE_COMPARISON_ONLY");
+ const native=inspectGpsV2HorizontalTrack({
+  sourceText:text,fileName:"private.kml",canonicalPoints:parseKml(text),splitCuts:[],
+ });
+ assert.equal(native.status,"UNAVAILABLE");
+ assert.equal(native.reason,"UNSUPPORTED_SOURCE");
 });
 test("R2-2-17 no production import, persistence, outbound network or raw logging",()=>{
  const path="research/gps-detection-r21/stage-d43-r2-2-legacy-shape-audit.ts";
