@@ -18,7 +18,7 @@ Verified existing runtime:
 ## Code staged
 
 - `research/gps-detection-r21/stage-r3-p1a-source-quality-contexts.ts`: pure browser-compatible synchronous source-quality inspection; NO Node builtins. Calls already reviewed D4 `inspectD4MultiGxLineage(sourceText,canonicalPoints)`, so the original input is re-parsed and must match **every** canonical point before source-local edge indexes can exist.
-- `tests/gps-v2-r3-p1a-quality-contexts.test.ts`: 18 authored synthetic/adversarial cases. Status: **NOT RUN; no CI claim**.
+- `tests/gps-v2-r3-p1a-quality-contexts.test.ts`: 21 authored synthetic/adversarial cases. Status: **NOT RUN; no CI claim**.
 - `tooling/gps-v2-r3-p1a-quality-contexts.mjs`: OWNER-LOCAL Node CLI, which compares the number of P1A affected frozen-rejection windows with existing independent R2-2 frozen research comparator; fail-closed on mismatch. Prints only anonymous aggregates, never source edge indexes or source filenames.
 - `tooling/gps-v2-r3-p1a-six-kml.ps1`: one-dialog private selection of exactly six original KMLs, maps source identity by previously verified (gx blocks, canonical fix counts) and outputs six approved anonymous result fields. No file contents saved or committed.
 
@@ -88,4 +88,4 @@ Select all six originals simultaneously. Report ONLY the script's anonymous summ
 
 ## Current closing status — NOT DONE YET
 
-P1A module, 18 test cases, CLI, six-KML local runner and this implementation ledger are staged. **No native tests, `npm run typecheck`, full suite, build, Playwright, CI, owner-local new P1A CLI results, DB or deploy have run during this P1A implementation**. P1A is NOT engineering-closed. R2 historical 97/97 local PASS does not validate the new code. Main, legacy touchAndGoEvents/landingCount, native V2, UI/DB, certification, recency, flags and production are untouched. Parent R3-P1 design and parent research PRs remain Draft.
+P1A module, 21 test cases, CLI, six-KML local runner and this implementation ledger are staged. **No native tests, `npm run typecheck`, full suite, build, Playwright, CI, owner-local new P1A CLI results, DB or deploy have run during this P1A implementation**. P1A is NOT engineering-closed. R2 historical 97/97 local PASS does not validate the new code. Main, legacy touchAndGoEvents/landingCount, native V2, UI/DB, certification, recency, flags and production are untouched. Parent R3-P1 design and parent research PRs remain Draft.
