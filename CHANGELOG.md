@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-19 — D4.3-R1 native six-KML coverage acceptance and research milestone closure (NO RELEASE)
+
+- Accepted exact owner-local engineering evidence: research code/test SHA `d3b263bb` Node24 targeted tests **107/107 PASS**, 24 R1 tests, TypeScript PASS; owner fast-forwarded to docs-only `996abffa` and ran read-only R1 CLI over the six original private KML files. **6/6 `SOURCE_COVERAGE_DIAGNOSTIC_ONLY`**, block counts `2/2/3/2/2/2`, canonical fixes `948/587/893/74/593/1034`, blocked source edges `1/1/2/1/1/1`. Per-source median/maximum and second-longest within-block intervals match prior independently inspected timestamps, including sample05 491.57s and sample08 94.39s + 35.35s.
+- Preserved distinction between independently V2-invalid time edges `0/1/2/1/0/1` and provenance boundaries: counts may overlap, not necessarily six unique gaps nor actual maneuvers. R1 reports endpoint observations, not continuous motion, unobserved T&G or true contact. No interpretation as negative landing/recency evidence.
+- D4.3-R1 **COMPLETE IN APPROVED RESEARCH-ONLY ENGINEERING SCOPE**, not a released product feature. Updated source evidence ledger/ROADMAP/FEATURES/CHANGELOG together. Future D4.3-R2 altitude shape and R3 tiered independently supported labels await separate owner decision. No source/test/production algorithm changes in this closing cycle, no data migration/merge/deploy, feature OFF, Pilot Review HIDDEN, multi-gx production V2 UNSUPPORTED_SOURCE. Full suite/build/CI/Playwright/production smoke NOT RUN; DB/migration N/A.
+
 ## 2026-10-19 — D4.3-R1 targeted 107/107 tests and TypeScript verified OWNER-LOCAL
 
 - Owner checked out research branch at exact source/test `d3b263bb` with Node.js v24.19.0 and ran the seven specified V2/D1/D2/D4/D42/D43 targeted files: **107/107 PASS, 0 fail** (including all 24 D43-R1 tests); `npm run typecheck` (`tsc --noEmit`) completed without diagnostics: **PASS**. These checks are **LOCAL, not CI**, and do not verify actual GPS sensor truth.
