@@ -1,5 +1,7 @@
 # GPS V2 D4.2A — Six real KML shadow results and post-corpus review
 
+**Review reconciliation (2026-10-19):** DeepSeek independent read-only response has now been received and independently checked against current source and anonymous corpus evidence. **D4.2A bounded research engineering experiment may be marked COMPLETE**, with rolling T&G recognition **NOT DEMONSTRATED** and production still unsupported. The previous 'review pending' language below is retained as historical evidence, not current status. Corrected overclaims (one slow sample07 edge is not mathematically impossible if it lasts >=5s; sample05 491s gap breaks only its local speed edge; ellipsoid/2–5m accuracy not proven; source 60s edge rule is not a universal coverage threshold). Proposed coverage-only next stage is design only and awaits owner implementation approval; old 'D4.2B/production integration' designation is not silently reused. See `docs/product/GPS_V2_STAGE_D42_POST_CORPUS_DEEPSEEK_RECONCILIATION_2026-10-19.md`.
+
 **Status (2026-10-18): Native 6/6 D4.2A CLI execution PASS. Rolling T&G recognition fitness NOT DEMONSTRATED. Independent post-corpus review PENDING.**
 **Scope:** flytally-logbook, research PR #366 Draft, parent PR #364 Draft. No production or aircraft-training changes.
 
