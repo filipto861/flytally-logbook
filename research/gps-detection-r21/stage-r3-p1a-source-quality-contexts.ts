@@ -132,13 +132,14 @@ function scan(
    if(blockedEdges.has(globalBefore)){invalidSpan=true;continue}
    const interval=dt(points[j-1],points[j]);
    if(interval<=0||interval>=60){invalidSpan=true;continue}
+   // R1/V2 source-speed invalidity applies even where the historic vertical
+   // derivative guard skips >15s. A long telemetry gap is NEVER trusted.
+   if(haversineKm(points[j-1],points[j])/(interval/3600)>900)
+    invalidSpan=true;
    if(interval>MAX_DT){longGap=true;continue}
    const a=points[j-1].alt,b=points[j].alt;
    if(hasAlt(a)&&hasAlt(b)&&Math.abs(b-a)/interval>MAX_VERTICAL_MPS)
     bad.push(globalBefore);
-   // Do not trust implausible source horizontal jumps as bounded evidence.
-   if(haversineKm(points[j-1],points[j])/(interval/3600)>900)
-    invalidSpan=true;
   }
   if(!bad.length)continue;
   if(invalidSpan)return false;
