@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — P1B post-fix owner-local tests and production build passed (BROWSER VERIFICATION PENDING)
+
+- Owner-local clean tracking-branch code HEAD `0a3c1a5c`: **161/161 targeted Node tests PASS** (0 fails/skips; includes all 15 P1B tests), `npm run typecheck` PASS, `npm run build` PASS (Next.js 16.3.2/Turbopack). This supersedes previous old-head 146/147 test failure as an engineering result, while preserving its audit history. All verification LOCAL, NOT CI.
+- Browser/flag OFF/ON, original owner-private sample07 and sample04 visible-warning behavior, other KML negative cases, split-replacement staleness, responsive iPad/mobile/dark and full suite/Playwright/CI/production smoke NOT RUN. P1B remains Draft and not enabled in production; legacy T&G/counts, actual flight records, native V2 multi-gx unsupported and DB/recency unchanged. No merge/deploy. Browser acceptance is next gating step.
+
 ## 2026-10-19 — P1B first owner-local verification and ESM source import fix (UNVERIFIED)
 
 - Owner-local P1B branch HEAD 349c6324: targeted **146/147 PASS, 1 FAIL** at P1B test module resolution (`ERR_MODULE_NOT_FOUND` for extensionless P1A research source inspector), while TypeScript `tsc --noEmit` PASS and Next.js `npm run build` PASS on that original HEAD. NOT CI, NOT a complete green P1B run.
