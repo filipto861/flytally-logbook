@@ -219,3 +219,25 @@ test("P1A-18 private CLI invalid input never echoes private file name",()=>{
  assert.ok(q.stdout.includes("INVALID_CONTEXT"));
  assert.equal((q.stdout+q.stderr).includes("PRIVATE_SECRET"),false);
 });
+test("P1A-19 source-speed invalidity inside altitude evidence fails closed",()=>{
+ const rows=make();
+ rows[9]={...rows[9],lon:rows[9].lon+1};
+ const r=analyze(source([rows]));
+ assert.notEqual(r.status,"QUALITY_REVIEW_ONLY");
+ assert.equal(r.actualLandings,"UNAVAILABLE");
+});
+test("P1A-20 same-timestamp distinct-position collision never yields a context",()=>{
+ const rows=make();
+ rows[14]={...rows[14],time:rows[13].time};
+ const r=analyze(source([rows]));
+ assert.notEqual(r.status,"QUALITY_REVIEW_ONLY");
+ assert.equal(r.canAffectCanonicalFlight,false);
+});
+test("P1A-21 adjacent collapsed duplicate with conflicting height fails closed",()=>{
+ const rows=make();
+ const duplicate={...rows[14],alt:rows[14].alt===null?200:rows[14].alt+100};
+ rows.splice(15,0,duplicate);
+ const r=analyze(source([rows]));
+ assert.notEqual(r.status,"QUALITY_REVIEW_ONLY");
+ assert.equal(r.actualLandings,"UNAVAILABLE");
+});
