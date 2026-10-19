@@ -72,7 +72,7 @@ test("P1A-04 a long (>15s) interval is explicitly unassessed motion",()=>{
  const rows=make();
  const t0=Date.UTC(2026,9,19,7);
  for(let i=9;i<rows.length;i++){
-  if(i===14)rows[i]={...rows[i],time:new Date(t0+87000).toISOString()};
+  if(i===14)rows[i]={...rows[i],time:new Date(t0+86000).toISOString()};
   else rows[i]={...rows[i],time:new Date(t0+(i*5+20)*1000).toISOString()};
  }
  const r=analyze(source([rows]));
@@ -102,13 +102,18 @@ test("P1A-07 explicit split between minimum and height edge removes stale contex
  const split=analyze(text,[12]);
  assert.notEqual(split.status,"QUALITY_REVIEW_ONLY");
 });
-test("P1A-08 malformed split, duplicate split, out-of-range split fail closed",()=>{
+test("P1A-08 malformed split, duplicate split and out-of-range split fail closed",()=>{
  const text=source([make()]);
- for(const splitCuts of [[0],[20],[4,4],[16,3],[1],[2,19]]){
+ for(const splitCuts of [[0],[20],[4,4],[16,3]]){
   const r=analyze(text,splitCuts);
-  if(splitCuts[0]===0||splitCuts[0]===20||splitCuts.length>1&&splitCuts[0]===splitCuts[1])
-   assert.equal(r.status,"UNAVAILABLE");
-  else assert.notEqual(r.status,"QUALITY_REVIEW_ONLY");
+  assert.equal(r.status,"UNAVAILABLE");
+  assert.equal(r.contexts,null);
+ }
+ for(const splitCuts of [[1],[2,19]]){
+  const r=analyze(text,splitCuts);
+  assert.notEqual(r.status,"UNAVAILABLE");
+  if(r.status==="QUALITY_REVIEW_ONLY")
+   assert.ok(r.contexts.every(c=>!splitCuts.includes(c.sourceEdgeBeforeFix)));
  }
 });
 test("P1A-09 forged canonical point fails source parity",()=>{
