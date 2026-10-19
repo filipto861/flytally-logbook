@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — R3-0B sample07 private source rejection mapped (RESEARCH/DOCS ONLY)
+
+- Offline private KML analysis reproduced existing R2-2 sample07 counts (22 geometry windows, two >25m/s in-span rejected windows, 6 grouped legacy altitude proposals) and identified **one common recorded altitude edge**, changing 15m in 0.52s (~28.85m/s), within both rejected evidence spans and the pilot-reported minute. Two source windows do NOT represent two physical landings. A private counterfactual ignoring the guard produced one additional grouped hypothesis, NOT a verified physical touchdown or safe algorithm change. Independent TypeScript per-window tracing, contact corroboration and detector accuracy validation NOT RUN.
+- Added privacy-safe docs/product/GPS_V2_D43_R3_0B_SAMPLE07_SOURCE_REJECTION_DIAGNOSIS_2026-10-19.md. Only docs changed; user supplied minute, source filename, registration, UTC, route and raw GPS altitudes are not committed. No detection threshold, code, UI, feature flag, multi-gx support, DB, landing count, recency, merge or deploy changed; Node/TypeScript/build/browser/CI NOT RUN/N/A for this docs-only activity.
+
 ## 2026-10-19 — GPS R3 sample07 sole firsthand-pilot source clarified (DOCS ONLY)
 
 - Owner confirms that the sample07 rolling T&G report rests solely on first-person pilot experience. This remains PILOT_ATTESTATION / REPORTED_CONTACT_UNCORROBORATED rather than CORROBORATED_CONTACT; no separately verified video/witness/sensor evidence provided or evaluated. Retained as targeted detector-debug context, not a verified accuracy label or automatic landing/recency evidence. Precise time and track remain private. No runtime changes, merge or deploy.
