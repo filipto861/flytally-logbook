@@ -89,3 +89,25 @@ Select all six originals simultaneously. Report ONLY the script's anonymous summ
 ## Current closing status — NOT DONE YET
 
 P1A module, 21 test cases, CLI, six-KML local runner and this implementation ledger are staged. **No native tests, `npm run typecheck`, full suite, build, Playwright, CI, owner-local new P1A CLI results, DB or deploy have run during this P1A implementation**. P1A is NOT engineering-closed. R2 historical 97/97 local PASS does not validate the new code. Main, legacy touchAndGoEvents/landingCount, native V2, UI/DB, certification, recency, flags and production are untouched. Parent R3-P1 design and parent research PRs remain Draft.
+
+## 2026-10-19 owner-local final P1A acceptance (supersedes historical NOT RUN notes above)
+
+**Status: P1A READ-ONLY RESEARCH ENGINEERING VERIFIED AND CLOSED; NOT RELEASED / NOT MERGED.** Owner supplied Windows PowerShell output after clean `git status --short`, `git fetch origin`, tracking-branch checkout and `git rev-parse --short HEAD` = `8af85d46` (full head `8af85d46373c74f21e509f45abe8d79bdf6a8fe0`). **Targeted Node suite 142/142 PASS, 0 fail, 0 skipped** from specified seven test files (including 21 P1A cases); `npm run typecheck` / `tsc --noEmit` returned without errors (**PASS**). These are OWNER-LOCAL test results, not CI. Build/Playwright/full suite/CI/deploy NOT RUN, DB/migration N/A.
+
+Original six owner-private KMLs were reselected ON OWNER PC and the exact R3-P1A local runner reported 6/6 native source quality shadow parity: every sample's `referenceStatus=FROZEN_REJECTION_COUNT_PARITY_VERIFIED`, `actualLandings=UNAVAILABLE`, `canAffectCanonicalFlight=false`. The anonymized results:
+
+| Sample | P1A status | Quality contexts | Frozen rejected windows | Quality contexts containing >15s unassessed evidence |
+|---|---|---:|---:|---:|
+| sample03 | NO_QUALIFYING_DIAGNOSTIC | 0 | 0 | 0 |
+| sample04 | QUALITY_REVIEW_ONLY | 1 | 1 | 0 |
+| sample05 | NO_QUALIFYING_DIAGNOSTIC | 0 | 0 | 0 |
+| sample06 | NO_QUALIFYING_DIAGNOSTIC | 0 | 0 | 0 |
+| sample07 | QUALITY_REVIEW_ONLY | **1** | **2** | **1** |
+| sample08 | NO_QUALIFYING_DIAGNOSTIC | 0 | 0 | 0 |
+| TOTAL | 6/6 parity | **2** | **3** | **1** |
+
+sample07's two rejected overlapping shapes depend on one invalid recorded source altitude edge (and the included >15s gap remains unobserved motion). This is exactly **one read-only source-quality context**, NOT one or two verified touchdown events, and does not prove the pilot-reported manoeuvre to third-party contact standards. `NO_QUALIFYING_DIAGNOSTIC` never means 'zero landings'. No raw owner path, UTC, positions, raw altitudes, registration or source digest is committed. CLI summary only.
+
+**Scope freeze:** Historical legacy `landingCount()` and touchAndGoEvents, native V2 multi-gx `UNSUPPORTED_SOURCE`, current UI, DB, flight counts/recency, flags and production remain untouched. P1A isolated research module and tools only. P1A may be a precondition for proposed P1B UI, but this acceptance **does not authorize auto-apply or detector threshold changes**. All parent research PRs remain Draft. Next separately gated P1B small opt-in, review-only card + tests on a child branch; no new event proposals.
+
+This acceptance reflects verified P1A code head `8af85d46`; docs-only commits after that head do not imply new code tests.
