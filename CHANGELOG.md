@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 R3-P1B review-only quality warning staged (NOT VERIFIED / DEFAULT OFF)
+
+- Following owner-verified P1A (142/142 Node PASS, TypeScript PASS, 6/6 original KML shadow parity), added a **separate, default-OFF opt-in** P1B UI in existing GPS import `Review GPS track`: pure typed `lib/gps-r3-quality-review.ts` adapter, render-only `components/gps-altitude-quality-review.tsx`, minimal exact-source/split `useMemo` and section auto-open only for positive source quality warnings in `components/kml-import-form.tsx`, and dark/light/responsive token styling in `app/v142-gps-import.css`. User-facing notice covers recorded height step and unknown motion during >15s source intervals without suggesting a landing/contact event. No point seek or raw source metadata displayed.
+- Added 14 authored P1B unit/static contract tests (NOT RUN) and documentation. Native V2 `UNSUPPORTED_SOURCE` for multi-gx unchanged, legacy `landingCount`/markers and manually reviewed fields unchanged, no new form fields, server actions, DB, recency, feature enablement, merge or deploy. P1B tests, typecheck, build, browser responsive/flag ON/OFF, Playwright, CI NOT RUN; DB/migration N/A. Production OFF until separate owner approval.
+
 ## 2026-10-19 — GPS V2 R3-P1A owner-local engineering verification, research-only CLOSED
 
 - Owner supplied clean checkout of research implementation code HEAD `8af85d46`, targeted **142/142 Node tests PASS**, 0 failed/skipped, `npm run typecheck` PASS, and six owner-private original KML anonymous runner reports. 6/6 frozen legacy R2-2 rejection count parity confirmed: sample04 one quality context / one rejected source window; sample07 one context / two overlapping rejected source windows with one >15s unassessed interval context; other four no qualifying diagnostic. No new physical-contact truth established, all `actualLandings=UNAVAILABLE` and `canAffectCanonicalFlight=false`.
