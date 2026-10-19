@@ -152,10 +152,11 @@ export function inspectD43R2AltitudeQuality(input:unknown):D43R2Quality{
   finitePairs++;
   // R1 issue reasons are additive. No edge with ANY known quality issue
   // may be used to call a derivative reference comparison trustworthy.
-  if((reasons.get(i)?.length??0)>0)continue;
   if(dt>LEGACY_DERIVATIVE_MAX_DT_S){
+   // Also count unassessed >60s endpoints: V2 invalidity is independent.
    skippedOver15++;continue;
   }
+  if((reasons.get(i)?.length??0)>0)continue;
   assessed++;
   if(Math.abs(h1-h0)/dt>LEGACY_DERIVATIVE_REFERENCE_MPS)exceeded++;
  }
