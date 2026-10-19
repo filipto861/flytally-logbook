@@ -52,7 +52,7 @@ test("D43-R1-02 4.9-second inter-block join is a hard source break",()=>{
  const second={...pt(10),time:utc(9.9)};
  const c=accepted(kml([[pt(0),pt(5)],[second,pt(15),pt(20)]]));
  assert.equal(c.sourceBlocks,2);
- assert.equal(c.sourceBlockedEdges,1);
+ assert.equal(c.provenanceBlockedEdges,1);
  const edge=c.issueEdges.find(x=>x.beforeFix===1);
  assert.ok(edge);
  assert.equal(edge.durationSeconds,4.9);
@@ -88,7 +88,7 @@ test("D43-R1-06 collapsed duplicate across source-block join propagates quaranti
  const c=accepted(kml([[pt(0),pt(5)],[{...pt(5)},pt(10),pt(15)]]));
  assert.equal(c.rawFixes,5);
  assert.equal(c.canonicalFixes,4);
- assert.equal(c.sourceBlockedEdges,2);
+ assert.equal(c.provenanceBlockedEdges,2);
  assert.ok(c.issueEdges.some(x=>x.reasons.includes("CROSS_BLOCK_DEDUP")));
  assert.equal(c.v2UsableVelocityEdges,1);
 });
@@ -112,7 +112,7 @@ test("D43-R1-08 distinct 9-digit UTC timestamps in same JS ms remain collision q
 test("D43-R1-09 manual flight split is independent of gx source block and preserved",()=>{
  const c=accepted(kml([[pt(0),pt(5),pt(10)],[pt(15),pt(20),pt(25)]]),[1]);
  assert.equal(c.sourceBlocks,2);
- assert.equal(c.sourceBlockedEdges,1);
+ assert.equal(c.provenanceBlockedEdges,1);
  assert.equal(c.manualFlightSplitEdges,1);
  assert.ok(c.issueEdges.some(x=>x.beforeFix===1&&
   x.reasons.includes("MANUAL_FLIGHT_SPLIT")));
