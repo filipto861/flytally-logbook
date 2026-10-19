@@ -1,4 +1,10 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 D4.3-R1 source coverage research module staged (OWNER-APPROVED; TESTS NOT RUN)
+
+- Implemented isolated `stage-d43-r1-coverage.ts`, calling previously verified D4.1 canonical source-lineage and frozen V2 algorithm revision without altering production. Reports exact source fix endpoints, provenance and manual-split evidence breaks, independent V2-invalid time/speed edges, source-local interval cadence and bounded longest intervals. It NEVER claims continuous motion between fixes or true landing/contact and never invents a global >15/>35s continuity threshold.
+- Added owner-local privacy-bounded `tooling/gps-v2-d43-r1-coverage.mjs`, requiring anonymized sample identifiers; no GPS coordinates, route, UTC, altitudes, raw KML path/source text or input SHA printed. Added 22 AUTHORED R1 regressions for uniform 5s, 4.9s segment boundary, 35.35s, 94.39s, 491.57s, cross-block dedup, altitude conflicts, same-ms UTC collisions, manual split independence, old >=60s / >900kmh restrictions, malformed sources, staleness and production unsupported state.
+- Owner-local Node24 new R1 tests/typecheck and six private-KML R1 reports NOT RUN; expected combined targeted test total 105, not a PASS claim. Prior D4.2A 83/83 targeted tests and 6/6 source shadow runs are DIFFERENT acceptance evidence. Production V2/legacy T&G, UI/DB, flight counts, pilot Review HIDDEN, flag OFF untouched; no merge/deploy, PR #366 Draft. Full suite/build/browser/CI NOT RUN; DB/migration N/A.
+
 ## 2026-10-19 — GPS V2 D4.2A independent post-corpus review reconciled (DOCS ONLY)
 
 - DeepSeek read-only code/evidence audit received and cross-checked with actual frozen horizontal V2, D4.1 source-lineage, D42 shadow and local six-KML reports. **Closed D4.2A only as a bounded engineering research experiment:** targeted Node24 83/83 tests and TypeScript PASS on `83635bc4`, six real source CLI runs on docs-only `c5cd44b2`, but zero real horizontal STOP_GO proposals and no demonstrated rolling-contact recognition utility or empirical positive source-boundary suppression. No population accuracy, negative landing count or authoritative contact claims.
