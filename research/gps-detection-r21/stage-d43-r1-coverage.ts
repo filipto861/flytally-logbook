@@ -94,9 +94,9 @@ function allowedInput(raw:Record<string,unknown>):boolean {
   "sourceText","splitCuts","uploadRevision","splitRevision","expectedBinding",
  ].includes(k))&&typeof raw.sourceText==="string"&&
   (raw.splitCuts===undefined||Array.isArray(raw.splitCuts))&&
-  (raw.uploadRevision===undefined&&true||
+  (raw.uploadRevision===undefined||
    typeof raw.uploadRevision==="string"&&raw.uploadRevision.length<=128)&&
-  (raw.splitRevision===undefined&&true||
+  (raw.splitRevision===undefined||
    typeof raw.splitRevision==="string"&&raw.splitRevision.length<=128)&&
   (raw.expectedBinding===undefined||typeof raw.expectedBinding==="string");
 }
@@ -154,13 +154,14 @@ export function inspectD43R1Coverage(input:unknown):D43Coverage {
    add(j,"ALTITUDE_CONFLICT_CONTEXT");
  }
  const allowedCadence:number[]=[];
+ const sourceBlockedSet=new Set(proof.blockedEdges),cutSet=new Set(cuts);
  let v2Valid=0,invalidTime=0,invalidSpeed=0;
  const longer:{beforeFix:number;afterFix:number;durationSeconds:number;
   v2TimeEdge:"WITHIN_EXISTING_LIMIT"|"EXCEEDS_EXISTING_LIMIT"}[]=[];
  for(let i=0;i<size-1;i++){
   const dt=edgeTime(points[i],points[i+1]);
-  const sourceBoundary=proof.blockedEdges.includes(i);
-  const split=cuts.includes(i);
+  const sourceBoundary=sourceBlockedSet.has(i);
+  const split=cutSet.has(i);
   // Provenance and manual boundaries invalidate any motion evidence,
   // even when a mathematical average speed could be calculated.
   if(!sourceBoundary&&!split&&dt!==null&&dt>0){
