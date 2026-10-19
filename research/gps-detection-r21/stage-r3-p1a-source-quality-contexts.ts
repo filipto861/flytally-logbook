@@ -11,6 +11,7 @@ import {haversineKm,parseKml,type KmlPoint} from "../../lib/track-processing.ts"
 import {D4_LINEAGE_REVISION,inspectD4MultiGxLineage} from "./multi-gx-track-lineage.ts";
 
 export const R3_P1A_REVISION="GPS_R3_P1A_SOURCE_QUALITY_CONTEXT_V1" as const;
+export const R3_P1A_FROZEN_LEGACY_REFERENCE="V351_28_145_KMH_30M_10FIX_25MPS_15S" as const;
 const PINNED_D4="GPS_D4_MULTI_GX_SIDECAR_V1" as const;
 const SPEED_LOW=28,SPEED_HIGH=145,MIN_RISE=30,MAX_DT=15,MAX_VERTICAL_MPS=25;
 const MAX_CONTEXTS=64;
@@ -39,6 +40,7 @@ type Context=Readonly<{
 type Base=Readonly<{
  revision:typeof R3_P1A_REVISION;
  sourceLineageRevision:typeof PINNED_D4;
+ frozenLegacyReference:typeof R3_P1A_FROZEN_LEGACY_REFERENCE;
  observationBasis:"SOURCE_HEIGHT_ENDPOINTS_NOT_CONTINUOUS_MOTION";
  physicalContact:"UNRESOLVED";actualLandings:"UNAVAILABLE";
  recencyEvidence:"UNAVAILABLE";canAffectCanonicalFlight:false;
@@ -51,6 +53,7 @@ export type R3P1AQualityContexts =
    }>;
 const base={
  revision:R3_P1A_REVISION,sourceLineageRevision:PINNED_D4,
+ frozenLegacyReference:R3_P1A_FROZEN_LEGACY_REFERENCE,
  observationBasis:"SOURCE_HEIGHT_ENDPOINTS_NOT_CONTINUOUS_MOTION",
  physicalContact:"UNRESOLVED",actualLandings:"UNAVAILABLE",
  recencyEvidence:"UNAVAILABLE",canAffectCanonicalFlight:false,
