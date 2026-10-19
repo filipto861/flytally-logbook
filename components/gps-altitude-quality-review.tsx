@@ -1,33 +1,19 @@
 "use client";
 
-import {useMemo} from "react";
-import type {KmlPoint} from "@/lib/track-processing";
-import {
-  inspectR3P1AQualityContexts,R3_P1A_REVISION,
-} from "@/research/gps-detection-r21/stage-r3-p1a-source-quality-contexts";
+import type {GpsR3QualityReport} from "@/lib/gps-r3-quality-review";
+import {hasGpsR3QualityReview} from "@/lib/gps-r3-quality-review";
 
 /**
- * Experimental, opt-in local source-quality notice only.
- * No source indices, UTC, GPS location, height, touchdown label, or form values
- * leave this component. Not part of native V2 source eligibility.
+ * Render-only experimental quality notice. Exact original source/provenance is
+ * checked by P1A in a separate, opt-in parent useMemo; this component cannot
+ * change a flight, invent a T&G marker or emit owner-private GPS measurements.
  */
 export function GpsAltitudeQualityReview({
-  sourceText,canonicalPoints,splitCuts,
-}:{
-  sourceText:string;
-  canonicalPoints:readonly KmlPoint[];
-  splitCuts:readonly number[];
-}){
-  // Source/cuts are exact current owner-local upload state; never cache across
-  // file replacement or manual split changes. P1A independently re-parses
-  // original KML and validates canonical/source equality.
-  const report=useMemo(()=>inspectR3P1AQualityContexts({
-    sourceText,canonicalPoints,splitCuts,expectedRevision:R3_P1A_REVISION,
-  }),[sourceText,canonicalPoints,splitCuts]);
-
-  // UNKNOWN, unsupported or no qualifying diagnostic must not imply no
-  // landing; simply leave original import/manual-review UI unchanged.
-  if(report.status!=="QUALITY_REVIEW_ONLY"||report.contexts.length===0)return null;
+  report,
+}:{report:GpsR3QualityReport|null}){
+  // NO_QUALIFYING/UNAVAILABLE is not a proof of no touchdown or GPS accuracy.
+  if(!hasGpsR3QualityReview(report)||report?.status!=="QUALITY_REVIEW_ONLY")
+    return null;
   const count=report.contexts.length;
   const longGap=report.contexts.some(context=>
     context.coverage==="LONG_INTERVALS_UNASSESSED");
