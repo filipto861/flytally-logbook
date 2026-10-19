@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 D4.3-R2-1 research engineering closed after six owner-local KML runs
+
+- Owner-local post-fix engineering tests: 79/79 targeted Node PASS, TypeScript PASS at implementation code 129fa308. Six private original KMLs: 6/6 read-only diagnostic status, 4,129 finite canonical fixes, 30 numeric zeros, no null heights, 9 unique quality issue edges, 7 source boundaries, 4,027 assessed short-interval altitude reference edges, 10 GLOBAL source-edge >25m/s reference exceedances, 89 >15s unassessed intervals; consistent totals 4,123 = 4,027+89+7 across six per-file N-1 pairs. Owner-supplied anonymized aggregate only; no raw private tracks on GitHub.
+- **R2-1 CLOSED solely as read-only research engineering**, not a detector, GPS-height authenticity/contact claim, flight count or recency evidence. R2-2 still needs explicit owner approval and eventual R3 reference truth for production accuracy. No merge/deploy; full suite/build/Playwright/CI NOT RUN, DB/migration N/A; main/production untouched.
+
 ## 2026-10-19 — GPS V2 R2-1 post-fix local verification PASS (corpus pending)
 
 - Owner verified clean tracked R2-1 research branch and fast-forward `4cbe7365..129fa308`, then **79/79 targeted Node tests PASS (0 fail/skipped)** across R2-1/R1/legacy/parser, duration 879.9284 ms, and `npm run typecheck` PASS (no diagnostics) after null-narrowing fix. This supersedes the immediately prior TypeScript failure. **LOCAL, NOT CI.**
