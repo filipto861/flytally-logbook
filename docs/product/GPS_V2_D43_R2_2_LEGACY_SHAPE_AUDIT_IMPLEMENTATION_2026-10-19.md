@@ -44,3 +44,18 @@ Acceptance: all six return LEGACY_SOURCE_SHAPE_COMPARISON_ONLY with SHADOW_LEGAC
 ## Completion and scope
 
 R2-2 OPEN until exact-HEAD local Node tests/typecheck, six owner-private CLI diagnostics, privacy check and matched documentation are evidenced. Full suite/build/browser/CI NOT RUN; DB/migration N/A; merge/deploy none; production flag OFF and native multi-gx V2 still unsupported. R3 independent contact truth is required before operational detector validity claims. R2-2 completion, even with clean reports, does not authorize release.
+
+## Preliminary independent private-corpus reconstruction — NOT R2-2 runtime verification
+
+On the six owner-uploaded private KML files, a separate local Python reconstruction of the previously frozen legacy altitude-window conditions produced the following anonymous totals. This reconstruction is **independent exploratory evidence only**, not a pass for the new TypeScript audit module, CLI, test suite or its parity gate. No raw KML, coordinates, times, altitudes, filenames or registrations are committed.
+
+| Anonymous recording | Frozen-style grouped source-altitude shapes before speed-event suppression | Qualifying speed+intermediate-climb geometry windows rejected by in-evidence-span >25m/s guard |
+|---|---:|---:|
+| sample03 | 1 | 0 |
+| sample04 | 1 | 1 |
+| sample05 | 10 | 0 |
+| sample06 | 0 | 0 |
+| sample07 | 6 | 2 |
+| sample08 | 3 | 0 |
+
+**Important:** These are SOURCE-WINDOW counts. The two rejected sample07 windows can overlap and **do not imply two extra landings** or independently verified wheel contact. This is consistent with a potential in-span cause for a previously pilot-reported missed rolling T&G, but is not evidence of contact or validation of its timing. sample04 also has one rejected source-geometry window. The TypeScript comparator MUST independently reproduce frozen legacy proposal totals and rejection-window counts or return UNAVAILABLE for investigation; do not tune thresholds to force the above numbers. All 18 new tests and user-local R2-2 CLI remain **NOT RUN**.
