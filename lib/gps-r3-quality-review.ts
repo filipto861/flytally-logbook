@@ -7,7 +7,7 @@ import type {KmlPoint} from "./track-processing";
 import {
   inspectR3P1AQualityContexts,R3_P1A_REVISION,
   type R3P1AQualityContexts,
-} from "../research/gps-detection-r21/stage-r3-p1a-source-quality-contexts";
+} from "../research/gps-detection-r21/stage-r3-p1a-source-quality-contexts.ts";
 
 export type GpsR3QualityReport=R3P1AQualityContexts;
 
