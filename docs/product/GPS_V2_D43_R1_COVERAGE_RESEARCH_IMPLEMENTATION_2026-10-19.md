@@ -1,6 +1,6 @@
 # GPS V2 — D4.3-R1 source coverage and evidence gaps (research-only)
 
-**2026-10-19. Current state: OWNER-LOCAL TARGETED TESTS 107/107 PASS + TYPECHECK PASS AT `d3b263bb`; six original KML native R1 coverage reports PENDING. Engineering research R1 NOT DONE / NOT SHIPPED.**
+**2026-10-19. Current state: D4.3-R1 COMPLETED IN APPROVED RESEARCH-ONLY SCOPE; owner-local 107/107 TARGETED TESTS + TYPECHECK PASS at source HEAD `d3b263bb`; native coverage 6/6 ORIGINAL KML PASS at docs-only `996abffa`. NOT RELEASED / NO PRODUCTION COVERAGE OR CONTACT CLAIM.**
 Repo: flytally-logbook, branch research/gps-v2-stage-d-comparator-20261018, PR #366 Draft (base feat/gps-v2-release-critical-engine, PR #364 Draft). No production runtime, lib/ refactor, UI/DB, flight-count or feature-flag authorization.
 
 ## Authority and source reconstruction
@@ -89,3 +89,25 @@ Observed targeted Node tests: **107 total / 107 PASS / 0 FAIL / 0 skipped**, inc
 **Next acceptance gate, still NOT RUN:** owner-local read-only `tooling/gps-v2-d43-r1-coverage.mjs` on the same six original private KML files. Check source block counts `2/2/3/2/2/2`, canonical fixes `948/587/893/74/593/1034` and source interval statistics against previous independent reconstructions; particularly sample05 `491.57s` and sample08 `94.39s` plus second-largest `35.35s` without interpreting any as true touchdown. The summaries are source-quality diagnostics only. No expected invalid edge/reason counts are asserted without observing CLI evidence.
 
 Documentation-only commits after `d3b263bb` contain no research source/test/CLI edits; verify exact diff before accepting its earlier local test evidence for the newest docs HEAD. R1 is NOT DONE pending 6-file corpus and final governance reconciliation; no merge or deployment.
+## 2026-10-19 — R1 native six-private-KML corpus acceptance (FINAL CURRENT STATUS)
+
+Owner's Windows PowerShell terminal verified `git pull --ff-only` from `d3b263bb` to docs-only `996abffa`, then `git rev-parse --short HEAD` printed `996abffa`. The same six ordered private KML originals were processed locally with `tooling/gps-v2-d43-r1-coverage.mjs`, with stable anonymous IDs sample03..08. The loop completed with no nonzero exit or missing source and every response status was `SOURCE_COVERAGE_DIAGNOSTIC_ONLY`.
+
+| Sample | Status | gx source blocks | Canonical fixes | D4.1 provenance blocked edges | Invalid V2 time edges | Median positive within-block interval (s) | Max within-block (s) | Second longest (s) |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sample03 | SOURCE_COVERAGE_DIAGNOSTIC_ONLY | 2 | 948 | 1 | 0 | 2.010 | 20.17 | 19.93 |
+| sample04 | SOURCE_COVERAGE_DIAGNOSTIC_ONLY | 2 | 587 | 1 | 1 | 1.600 | 20.84 | 17.41 |
+| sample05 | SOURCE_COVERAGE_DIAGNOSTIC_ONLY | 3 | 893 | 2 | 2 | 2.685 | 491.57 | 50.17 |
+| sample06 | SOURCE_COVERAGE_DIAGNOSTIC_ONLY | 2 | 74 | 1 | 1 | 2.795 | 50.09 | 46.32 |
+| sample07 | SOURCE_COVERAGE_DIAGNOSTIC_ONLY | 2 | 593 | 1 | 0 | 2.510 | 53.06 | 19.64 |
+| sample08 | SOURCE_COVERAGE_DIAGNOSTIC_ONLY | 2 | 1034 | 1 | 1 | 4.390 | 94.39 | 35.35 |
+
+**Reconciled acceptance:** All six source block and canonical-fix counts agree with D4.1, all medians/maxima/second-longest within-provenance intervals agree with separate independent offline source inspection, including two distinct sample08 within-block intervals 94.39s and 35.35s. The new R1 output establishes source timing/coverage diagnostics ONLY, not continuous aircraft motion, source altitude validity, landings or observed T&G absence.
+
+**Interpretation of InvalidTime:** the code counts every adjacent canonical fix edge with invalid, nonpositive or >=60s V2 time delta, independently of D4.1 provenance blocking; an edge may carry *both* `SOURCE_BLOCK_BOUNDARY` and `V2_TIME_EDGE_INVALID`. The 0/1/2/1/0/1 aggregate across the six files does NOT establish five telemetry outages *inside* source blocks, and does NOT count physical maneuvers. The 7 provenance blocked edges are a separate dimension; overlap must not be double-counted as events. The printed summary lacks per-edge reason associations, so their exact overlap with time-invalid reasons cannot be inferred from this table alone.
+
+**Verification ledger and decision:** New R1 research/source/test code exact HEAD `d3b263bb` already passed owner-local Node v24.19.0 **107/107 targeted tests**, including all 24 R1 cases, plus `npm run typecheck` PASS. Owner-local R1 native six-KML CLI on `996abffa` (only documentation changed since code HEAD) passed 6/6 and numerically agrees with independent source reconstruction. Therefore **CLOSE D4.3-R1 as a bounded engineering research-only milestone**, without declaring runtime production source eligibility, contact-recognition suitability, regulatory recency or approval. No new numerical threshold invented, no source/production `lib/`, UI, DB, flight, recency, legacy or feature flag modification, no merge/deploy. Full suite/build/browser/CI/prod smoke NOT RUN; DB migration N/A.
+
+**Next potential research work (NOT APPROVED FOR CODING by R1 authorization):** D4.3-R2 altitude-shape / source-height quality DESIGN review, D4.3-R3 independently corroborated labels. Require explicit owner decision and independent source/applicability review before new detector rules. Keep multi-gx production V2 UNSUPPORTED_SOURCE, Pilot Review HIDDEN, experimental flag OFF.
+
+Historical 'pending' statuses and commands above are retained as previous-stage evidence and are superseded by this section and the updated top-level state.
