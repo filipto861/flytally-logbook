@@ -59,3 +59,29 @@ On the six owner-uploaded private KML files, a separate local Python reconstruct
 | sample08 | 3 | 0 |
 
 **Important:** These are SOURCE-WINDOW counts. The two rejected sample07 windows can overlap and **do not imply two extra landings** or independently verified wheel contact. This is consistent with a potential in-span cause for a previously pilot-reported missed rolling T&G, but is not evidence of contact or validation of its timing. sample04 also has one rejected source-geometry window. The TypeScript comparator MUST independently reproduce frozen legacy proposal totals and rejection-window counts or return UNAVAILABLE for investigation; do not tune thresholds to force the above numbers. All 18 new tests and user-local R2-2 CLI remain **NOT RUN**.
+
+## 2026-10-19 — Final owner-local acceptance: research engineering CLOSED
+
+**Research milestone status: CLOSED — READ-ONLY DIAGNOSTIC ENGINEERING ONLY.** This status does not authorize production, source eligibility changes, logbook counts, recency, flight contact inference, legacy refactoring or release.
+
+**Owner-local verification evidence:** The owner provided PowerShell output after a clean git status, git fetch and checkout of the tracking research branch. Node.js targeted test invocation across R2-2/R2-1/R1/legacy parser tests reported **97 tests, 97 pass, 0 fail, 0 skip** (duration **1450.3132 ms**). `npm run typecheck` / `tsc --noEmit` returned without diagnostics (**PASS**). A local commit SHA was not printed in the supplied terminal output, so this is a tracked-branch local test claim, NOT a separately verified exact-SHA or CI execution. Only documentation is amended following the supplied evidence.
+
+**Six original owner-private KML executions:** All six produced `LEGACY_SOURCE_SHAPE_COMPARISON_ONLY` and `SHADOW_LEGACY_PARITY_VERIFIED`, retaining `physicalContact=UNRESOLVED`, `actualLandings=UNAVAILABLE`, `canAffectCanonicalFlight=false`. The historical emitted legacy altitude signals match exactly (1/1/10/0/6/3); these are *proposals*, not independently verified wheel contacts. The following owner-supplied aggregate outputs are anonymous and do not disclose original paths, source UTC, GPS positions, raw heights, registration or hash.
+
+| Sample | Geometry windows | Speed gate rejected | Timed intermediate-climb rejected | In-span >25m/s rejected | Source-quality affected windows | >15s interval windows | Eligible before grouping | Grouped legacy shapes | Emitted altitude proposals |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sample03 | 5 | 3 | 0 | 0 | 0 | 2 | 2 | 1 | 1 |
+| sample04 | 24 | 19 | 0 | 1 | 0 | 7 | 4 | 1 | 1 |
+| sample05 | 48 | 8 | 0 | 0 | 0 | 29 | 40 | 10 | 10 |
+| sample06 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| sample07 | 22 | 0 | 0 | 2 | 0 | 19 | 20 | 6 | 6 |
+| sample08 | 23 | 12 | 1 | 0 | 1 | 4 | 10 | 3 | 3 |
+| TOTAL | **122** | **42** | **1** | **3** | **1** | **61** | **76** | **21** | **21** |
+
+**Interpretation limits:** These are overlapping source-index geometry windows, not aircraft events; counts of affected windows and long source intervals can overlap gate rejections and must not be interpreted as separate physical contacts or error rates. `sample07` has **two rejected source geometry windows** under the frozen within-evidence-span >25m/s rule. R2-1 separately found **one global** >25m/s source edge in that recording. The aggregate reports do not expose enough local index linkage to prove that both windows depend on the same edge, nor that either corresponds to the owner-reported unrecognized T&G. No limit is relaxed. `sample04` also contains one rejected in-span window. `sample08` has one geometry window with an R1 quality issue; not necessarily a legacy-emitted proposal. The **61** geometry windows containing >15s observation intervals are NOT safe or continuous merely because the legacy derivative guard skips those intervals; geometry observations cannot bridge missing physical motion.
+
+**Shadow-parity limitation:** Matching the frozen legacy output is evidence of a consistent diagnostic replay only. It is not evidence that legacy logic is aeronautically correct, that the EGM96-labeled source datum is authenticated, that a reported contact occurred, or that native V2 accepts multi-gx source. In particular, the research scan may describe legacy geometry which crosses a source provenance break; a quality flag is attached, NOT treated as verified continuous aircraft movement. No independent physical-contact reference labels were provided in this acceptance.
+
+**Verification scope:** LOCAL targeted 97/97 PASS, TypeScript PASS, six owner-local privacy-bounded corpus reports 6/6 PASS. Full suite, build, Playwright/browser, CI, DB migration, production smoke NOT RUN / DB N/A. No code merge or deploy; Draft PR kept Draft; main, production detection, flags, legacy landing count and recency unchanged.
+
+**Next gating decision:** R2-2 research is complete. Proceed to an R3 *independent contact evidence/annotation protocol* before proposing changes to actual landing detection. R3 must distinguish pilot-reported manoeuvre labels from independently corroborated touchdown and confirmed non-touchdown reference evidence. No algorithm tuning against six private logs or automatic landing count changes.
