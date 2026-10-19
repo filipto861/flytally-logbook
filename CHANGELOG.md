@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 D4.3-R3-0 independent contact evidence protocol (DOCUMENTATION ONLY)
+
+- Created an isolated R3 evidence-protocol research documentation branch stacked after research-only R2-2. Added docs/product/GPS_V2_D43_R3_INDEPENDENT_CONTACT_EVIDENCE_PROTOCOL_DESIGN_2026-10-19.md: claim/evidence/contact/matching separation, evidence provenance and observed-coverage gates, pilot report versus independently corroborated contact and negative, privacy/append-only decisions, benchmark inclusion and no source-window label leakage. Added blank private worksheet docs/product/GPS_V2_D43_R3_OWNER_LOCAL_REFERENCE_CASE_TEMPLATE_2026-10-19.md. No real event labels, independent contact evidence, code or private KML committed.
+- R3-0 design for product-owner review; R3-1 validator/capture not approved. Tests/typecheck/build/Playwright/CI/R3 source processing NOT RUN/N/A for docs-only changes; DB/migration N/A; no merge/deploy, runtime detector/UI/flags/flight counts/recency unchanged. R2-2 remains closed as nonproduction research.
+
 ## 2026-10-19 — GPS V2 D4.3-R2-2 research engineering closed after owner-local tests and 6 KML reports
 
 - Owner-supplied local targeted Node result **97/97 PASS**, 0 fail/skip (1450.3132 ms); `npm run typecheck` PASS. Exact tested git SHA not shown; LOCAL, NOT CI. Six owner-local anonymized KML audits: **6/6 LEGACY_SOURCE_SHAPE_COMPARISON_ONLY / SHADOW_LEGACY_PARITY_VERIFIED**, original legacy signal counts 1/1/10/0/6/3, all non-authoritative physical contact/landings unavailable.
