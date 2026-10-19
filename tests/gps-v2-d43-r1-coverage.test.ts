@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import {spawnSync} from "node:child_process";
 import {parseKml} from "../lib/track-processing.ts";
 import {inspectGpsV2HorizontalTrack} from "../lib/gps-v2-advisory.ts";
 import {
@@ -247,4 +248,33 @@ test("D43-R1-22 static research-only module has no file write/network paths",()=
  const canonical=readFileSync("lib/gps-v2-import-lineage.ts","utf8");
  assert.equal(v2.includes("stage-d43-r1-coverage"),false);
  assert.equal(canonical.includes("stage-d43-r1-coverage"),false);
+});
+
+test("D43-R1-23 CLI never echoes the local source path or an unsanitized sample identifier",()=>{
+ const bogus="PRIVATE_REGISTRATION_HIDDEN__DO_NOT_ECHO.kml";
+ const command=["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
+  "--experimental-strip-types","tooling/gps-v2-d43-r1-coverage.mjs",
+  "--file",bogus,"--id","sample03"];
+ const result=spawnSync(process.execPath,command,{encoding:"utf8"});
+ assert.equal(result.status,2);
+ assert.ok(result.stdout.includes("LOCAL_SOURCE_UNREADABLE"));
+ assert.equal((result.stdout+result.stderr).includes(bogus),false);
+ const disallowed=spawnSync(process.execPath,[
+  ...command.slice(0,-1),"SENSITIVE_REGISTRATION"
+ ],{encoding:"utf8"});
+ assert.equal(disallowed.status,2);
+ assert.ok(disallowed.stdout.includes("INVALID_CONTEXT"));
+ assert.equal(disallowed.stdout.includes("SENSITIVE_REGISTRATION"),false);
+});
+test("D43-R1-24 100s block transition retains BOTH source and V2-invalid edge reasons",()=>{
+ const c=accepted(kml([[pt(0),pt(5)],[pt(105),pt(110)]]));
+ assert.equal(c.sourceBlocks,2);
+ assert.equal(c.provenanceBlockedEdges,1);
+ assert.equal(c.independentlyInvalidTimeEdges,1);
+ const crossing=c.issueEdges.find(x=>x.beforeFix===1);
+ assert.ok(crossing);
+ assert.equal(crossing.durationSeconds,100);
+ assert.ok(crossing.reasons.includes("SOURCE_BLOCK_BOUNDARY"));
+ assert.ok(crossing.reasons.includes("V2_TIME_EDGE_INVALID"));
+ assert.equal(c.sourceCadenceMaxSeconds,5);
 });
