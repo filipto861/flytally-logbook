@@ -140,8 +140,10 @@ export function inspectD43R2AltitudeQuality(input:unknown):D43R2Quality{
  for(let i=0;i<points.length-1;i++){
   // Never join provenance source edges, dedup-conflicts or manual splits.
   if(sourceOrSplit.has(i))continue;
-  const t0=points[i].time?Date.parse(points[i].time):NaN;
-  const t1=points[i+1].time?Date.parse(points[i+1].time):NaN;
+  // Capture the optional timestamps once so TypeScript can narrow nullable values.
+  const beforeTime=points[i].time,afterTime=points[i+1].time;
+  const t0=beforeTime!==null?Date.parse(beforeTime):NaN;
+  const t1=afterTime!==null?Date.parse(afterTime):NaN;
   const dt=(t1-t0)/1000;
   if(!Number.isFinite(dt)||dt<=0){invalidElapsed++;continue;}
   positive++;
