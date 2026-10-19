@@ -1,0 +1,57 @@
+# GPS V2 — D4.3-R1 source coverage and evidence gaps (research-only)
+
+**2026-10-19. State: OWNER-APPROVED IMPLEMENTATION STAGED; Node24 exact-HEAD tests/typecheck and six owner-KML corpus NOT RUN.**
+Repo: flytally-logbook, branch research/gps-v2-stage-d-comparator-20261018, PR #366 Draft (base feat/gps-v2-release-critical-engine, PR #364 Draft). No production runtime, lib/ refactor, UI/DB, flight-count or feature-flag authorization.
+
+## Authority and source reconstruction
+
+- Source-of-truth data are original in-memory local KML plus production canonical parseKml, subject to strict D4.1 research source-lineage parity. Source provenance revision pinned to GPS_D4_MULTI_GX_SIDECAR_V1; frozen V2 edge revision GPS_V2_HORIZONTAL_V3. No unsupported multi-block input is enabled in native production V2.
+- D4.2A research shadow reached bounded engineering completion: code-HEAD 83635bc4 owner-local Node24 tests 83/83 PASS and typecheck PASS; six owner-KML D4.2A CLI 6/6 at documentation-only c5cd44b2, zero horizontal STOP_GO proposals in each. Zero proposals are NOT no physical touchdowns or adequate sampling.
+- Independent DeepSeek post-corpus review and repository reconciliation recorded at docs/product/GPS_V2_STAGE_D42_POST_CORPUS_DEEPSEEK_RECONCILIATION_2026-10-19.md. Owner specifically approved the proposed D4.3-R1 research-only coverage implementation. D4.3-R2 altitude shape and D4.3-R3 evidence acquisition remain separate decisions.
+
+## Implemented batch
+
+1. research/gps-detection-r21/stage-d43-r1-coverage.ts: pure read-only D4.3-R1 source analysis over strictly parsed D4.1 canonical data. It checks supplied local SHA-256 revision binding, validates explicit manual split cuts, records D4 blocked source/collision/height-conflict edges, extends local altitude-quarantine context as in D4.2A, and records independent V2-invalid time (<=0s or >=60s) and speed (>900km/h) edges without modifying any frozen gate. It returns only relative fix ordinal, relative duration and evidence-reason labels, never coordinates/absolute UTC/height/registration/source text.
+2. tooling/gps-v2-d43-r1-coverage.mjs: owner-local no-write CLI. Reads only the selected local KML, requires anonymous sampleNN/NNN ID, prints only aggregate counts, source-local median/max interval, top eight within-provenance interval durations, and reasons. No original KML, source path, absolute UTC or SHA-256 fingerprint is printed.
+3. tests/gps-v2-d43-r1-coverage.test.ts: 22 AUTHORED regression cases, including uniform clean five-second baseline, 4.9s source boundary, 35.35s / 94.39s / 491.57s within-block intervals, cross-block dedup, conflicting altitude, same-ms UTC collision, manual split independence, exact 60s edge rule, oversized/malformed/unordered sources, >900km/h edge, local staleness, privacy and native V2 unsupported regression.
+4. ROADMAP, FEATURES, CHANGELOG updated in this same work cycle. No edits to lib/, app/, production T&G algorithm, flight records, statistics, recency, database, UI, feature flags, migration, deploy or cross-repo flytally-training.
+
+## Frozen research contract
+
+- **Observed fix:** paired source coordinate/UTC accepted by exact D4.1 source-to-canonical equality. **Between fixes:** motion/flight/contact unobserved and unproven regardless of the observed time difference, even if a derived average speed is V2-eligible. The successful result explicitly returns FIX_ENDPOINTS_ONLY_INTERVENING_MOTION_UNKNOWN, unknownManeuvers=UNAVAILABLE, actualLandings=UNAVAILABLE, physicalContact=UNRESOLVED and canAffectCanonicalFlight=false.
+- **Source discontinuity:** D4.1 source blocked edges always hard breaks, even only 4.9 seconds apart. Canonical altitude-conflict retained fixes, collapsed cross-block duplicate and same-JS-millisecond timestamp collision retain separate quarantines. Manual flight split is separate and NEVER inferred from a source block.
+- **Time/speed restrictions:** the existing >=60s V2 velocity-edge limit and >900km/h plausibility rule are reported as independent invalid-velocity reasons, NOT a universal GPS continuity/gap threshold. A 35.35s pair can remain a mathematically allowable V2 velocity edge but never proves continuous observation; a 491.57s pair is visible and >=60s V2-invalid. No new 15/35/60s source coverage threshold invented.
+- **Source cadence summary:** within-provenance positive pair median, maximum, and up to eight longest intervals plus their ratio to the source-local median. This ratio is descriptive; it does not classify a touchdown or generate an inferred event, invalid candidate or threshold-based source break.
+- **Candidate independence:** R1 does NOT call the legacy, D4.2A or V2 event recognizer, and cannot decide candidate truth or score TP/FP/FN. A gap exists even when the detector returns no candidates. Candidate-to-gap causal linking is deliberately NOT claimed by this standalone source report; future join requires documented candidate evidence-edge windows and a separate owner gate.
+- **Local freshness:** exact source text, manual split cuts, upload/split revision and parser/reference/R1 revision enter a local SHA-256 equality token; no token, UTC, route, source filename, pilot ID or path is included in returned diagnostics or CLI. A changed source/split/revision with stale token yields UNAVAILABLE. An input source that cannot establish D4.1 parity fails closed; missing coverage is not zero.
+
+## Verification and expected corpus behavior (NOT YET VERIFIED)
+
+| Gate | Planned check | Current evidence |
+| --- | --- | --- |
+| G1 | Owner-local Node24 new R1 test file (22 cases), plus existing 83 D42/D4/D1/D2/V2 targeted tests | NOT RUN for D4.3-R1; expected test total 105 |
+| G2 | npm run typecheck exact HEAD | NOT RUN for D4.3-R1 |
+| G3 | Six owner-private original KML, read-only R1 CLI, no raw source in outputs | NOT RUN; previously D4.1 proved 2/2/3/2/2/2 blocks and 948/587/893/74/593/1034 canonical points |
+| G4 | 491.57s sample05 and 94.39s sample08 longest interval visible; evaluate sample08 35.35s interval without magic threshold | NOT RUN on R1; D4.2A prior output provides known max only |
+| G5 | Privacy, source boundary, malformed/unavailable, manual split independence | Authored synthetic tests ONLY, NOT EXECUTED |
+| G6 | Production scope and docs consistency | PR diff/code inspection required; no merge/deploy |
+
+## Owner-local gate (Windows PowerShell / Node 24)
+
+    git fetch origin
+    git switch research/gps-v2-stage-d-comparator-20261018
+    git pull --ff-only
+    git rev-parse --short HEAD
+    node -v
+    npm run test:target -- tests/gps-v2-d43-r1-coverage.test.ts tests/gps-v2-d42-shadow.test.ts tests/gps-v2-d4-multi-gx-lineage.test.ts tests/gps-v2-stage-d-comparator.test.ts tests/gps-v2-stage-d-event-quality.test.ts tests/gps-v2-advisory.test.ts tests/gps-v2-import-lineage.test.ts
+    npm run typecheck
+
+**Only after both commands pass:** use the six owner-private original KML paths, never commit or post their full names/registration. Run the following one at a time, substituting the absolute local private path (keep paths only on the owner's machine):
+
+    node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types tooling/gps-v2-d43-r1-coverage.mjs --file "<PRIVATE_KML_PATH>" --id sample03
+
+Repeat for sample04..08 with the corresponding original local files. Or use a preexisting explicitly ordered `$files` array in the owner PowerShell session, with sample03..08 matched to their prior D4.1/D4.2A source identities. CLI emits aggregate evidence-only JSON, not raw coordinates or source fingerprints.
+
+## Acceptance/closing policy
+
+Correctness > convenience: do not weaken existing V2/legacy T&G rules for successful output. D4.3-R1 is NOT DONE until current source/tests HEAD targeted Node24 + TypeScript PASS and all six owner-local source CLI reports plus review of gap terminology/privacy and required docs. Targeted local testing is NOT CI. Full tests/build/Playwright/browser/DB/deploy NOT RUN/N/A unless separately done. PR #366 remains Draft, parent #364 Draft; pilot review HIDDEN, feature OFF, production native multi-gx KML still UNAVAILABLE/UNSUPPORTED_SOURCE. No physical contact, movement count, recency or source authentication authority.
