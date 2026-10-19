@@ -13,7 +13,7 @@ Repo: flytally-logbook, branch research/gps-v2-stage-d-comparator-20261018, PR #
 
 1. research/gps-detection-r21/stage-d43-r1-coverage.ts: pure read-only D4.3-R1 source analysis over strictly parsed D4.1 canonical data. It checks supplied local SHA-256 revision binding, validates explicit manual split cuts, records D4 blocked source/collision/height-conflict edges, extends local altitude-quarantine context as in D4.2A, and records independent V2-invalid time (<=0s or >=60s) and speed (>900km/h) edges without modifying any frozen gate. It returns only relative fix ordinal, relative duration and evidence-reason labels, never coordinates/absolute UTC/height/registration/source text.
 2. tooling/gps-v2-d43-r1-coverage.mjs: owner-local no-write CLI. Reads only the selected local KML, requires anonymous sampleNN/NNN ID, prints only aggregate counts, source-local median/max interval, top eight within-provenance interval durations, and reasons. No original KML, source path, absolute UTC or SHA-256 fingerprint is printed.
-3. tests/gps-v2-d43-r1-coverage.test.ts: 22 AUTHORED regression cases, including uniform clean five-second baseline, 4.9s source boundary, 35.35s / 94.39s / 491.57s within-block intervals, cross-block dedup, conflicting altitude, same-ms UTC collision, manual split independence, exact 60s edge rule, oversized/malformed/unordered sources, >900km/h edge, local staleness, privacy and native V2 unsupported regression.
+3. tests/gps-v2-d43-r1-coverage.test.ts: 24 AUTHORED regression cases, including uniform clean five-second baseline, 4.9s source boundary, 35.35s / 94.39s / 491.57s within-block intervals, cross-block dedup, conflicting altitude, same-ms UTC collision, manual split independence, exact 60s edge rule, oversized/malformed/unordered sources, >900km/h edge, local staleness, privacy and native V2 unsupported regression.
 4. ROADMAP, FEATURES, CHANGELOG updated in this same work cycle. No edits to lib/, app/, production T&G algorithm, flight records, statistics, recency, database, UI, feature flags, migration, deploy or cross-repo flytally-training.
 
 ## Frozen research contract
@@ -29,7 +29,7 @@ Repo: flytally-logbook, branch research/gps-v2-stage-d-comparator-20261018, PR #
 
 | Gate | Planned check | Current evidence |
 | --- | --- | --- |
-| G1 | Owner-local Node24 new R1 test file (22 cases), plus existing 83 D42/D4/D1/D2/V2 targeted tests | NOT RUN for D4.3-R1; expected test total 105 |
+| G1 | Owner-local Node24 new R1 test file (24 cases), plus existing 83 D42/D4/D1/D2/V2 targeted tests | NOT RUN for D4.3-R1; expected test total 107 |
 | G2 | npm run typecheck exact HEAD | NOT RUN for D4.3-R1 |
 | G3 | Six owner-private original KML, read-only R1 CLI, no raw source in outputs | NOT RUN; previously D4.1 proved 2/2/3/2/2/2 blocks and 948/587/893/74/593/1034 canonical points |
 | G4 | 491.57s sample05 and 94.39s sample08 longest interval visible; evaluate sample08 35.35s interval without magic threshold | NOT RUN on R1; D4.2A prior output provides known max only |
@@ -55,3 +55,5 @@ Repeat for sample04..08 with the corresponding original local files. Or use a pr
 ## Acceptance/closing policy
 
 Correctness > convenience: do not weaken existing V2/legacy T&G rules for successful output. D4.3-R1 is NOT DONE until current source/tests HEAD targeted Node24 + TypeScript PASS and all six owner-local source CLI reports plus review of gap terminology/privacy and required docs. Targeted local testing is NOT CI. Full tests/build/Playwright/browser/DB/deploy NOT RUN/N/A unless separately done. PR #366 remains Draft, parent #364 Draft; pilot review HIDDEN, feature OFF, production native multi-gx KML still UNAVAILABLE/UNSUPPORTED_SOURCE. No physical contact, movement count, recency or source authentication authority.
+
+**Additional cases:** D43-R1-23 executes the read-only CLI against a deliberately absent synthetic filename to verify no raw local path or unsanitized sample ID is echoed; D43-R1-24 verifies that an observed 100s inter-block pair retains both SOURCE_BLOCK_BOUNDARY and existing V2_TIME_EDGE_INVALID, without counting two physical events. These are authored, NOT RUN. Total new R1 tests: **24**, expected combined targeted tests: **107** (previous 83 + new 24).
