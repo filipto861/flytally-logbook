@@ -46,7 +46,7 @@ export type D43Coverage=
      interpretation:"FIX_ENDPOINTS_ONLY_INTERVENING_MOTION_UNKNOWN";
      sourceBlocks:number;rawFixes:number;canonicalFixes:number;
      adjacentFixPairs:number;betweenFixPairsUnobserved:number;
-     sourceBlockedEdges:number;manualFlightSplitEdges:number;
+     provenanceBlockedEdges:number;manualFlightSplitEdges:number;
      independentlyInvalidTimeEdges:number;independentlyInvalidSpeedEdges:number;
      v2UsableVelocityEdges:number;withinBlockPositivePairs:number;
      sourceCadenceMedianSeconds:number|null;sourceCadenceMaxSeconds:number|null;
@@ -204,7 +204,7 @@ export function inspectD43R1Coverage(input:unknown):D43Coverage {
    sourceBlocks:proof.blockCount,rawFixes:proof.rawFixCount,
    canonicalFixes:size,adjacentFixPairs:size-1,
    betweenFixPairsUnobserved:size-1,
-   sourceBlockedEdges:proof.blockedEdges.length,
+   provenanceBlockedEdges:proof.blockedEdges.length,
    manualFlightSplitEdges:cuts.length,
    independentlyInvalidTimeEdges:invalidTime,
    independentlyInvalidSpeedEdges:invalidSpeed,
