@@ -67,3 +67,24 @@ Required: owner-local targeted tests/typecheck/build, responsive/on/off screensh
 **Minimal isolated fix on the same Draft P1B branch:** in `lib/gps-r3-quality-review.ts`, changed the research inspector import to the explicit `.ts` extension required by the Node `--experimental-strip-types` ESM test runner. The underlying P1A algorithm, native V2, legacy detector and flight form logic are untouched. Added P1B-15 regression checking the explicit ESM import; existing P1B test already imports and exercises the bridge at module load, so module-resolution failure fails closed. Review of the post-fix GitHub source confirmed exact extension, independent native V2 flag, build-default P1B flag OFF, one memoized current source/cut report, unchanged legacy import defaults, and no new form input or T&G marker. This is static source inspection, **NOT a new Node PASS**.
 
 **Status: P1B OPEN / DRAFT.** The changed code and 15 P1B cases now require fresh owner-local targeted Node tests, typecheck and build on the NEW HEAD; the earlier PASS build/TypeScript must not be attributed to the new commit. Flag OFF/ON, V2 OFF/ON, sample04/sample07 and responsive desktop/iPad/mobile light/dark browser verification remains NOT RUN. No merge/deploy or production enablement, no DB/migration.
+
+## 2026-10-19 owner-local post-fix verification — engineering GREEN, browser PENDING
+
+**Code revision tested:** `0a3c1a5c` on a clean owner-local Logbook tracking branch, as shown in the PowerShell output. This supersedes the earlier `349c6324` 146/147 failing result **for these engineering checks only**.
+
+- `npm run test:target -- ...` across nine explicitly selected test files: **161/161 tests PASS, zero failures/skips**, including all 15 P1B UI/static/bridge contract cases, 21 P1A synthetic/security cases, strict GPS V2 lineage/UI regressions, R2/R1 diagnostics and frozen legacy track tests. Node.js v24.19.0.
+- `npm run typecheck` (`tsc --noEmit`): **PASS** with no diagnostics.
+- `npm run build` (Next.js 16.3.2/Turbopack): **PASS** compilation, TypeScript validation and generated app-route build. This establishes compilation, NOT live authenticated import functionality, private KML browser display or production stability.
+- All results are **OWNER-LOCAL**, not CI. Full repository test suite, automated Playwright, flag OFF/ON browser smoke, V2 OFF/ON combination, responsive iPad/mobile/night-mode inspection, production smoke **NOT RUN**. DB/migration N/A; no merge, deployment or production flag enablement.
+
+**Current P1B milestone status: IMPLEMENTATION ENGINEERING CHECKS PASS / BROWSER ACCEPTANCE STILL OPEN.** No new automatic T&G or flight record authority. Legacy landingCount/form payload, native V2 multi-gx `UNSUPPORTED_SOURCE`, and flight recency unchanged. PR remains Draft. Docs-only updates after code HEAD `0a3c1a5c` do not imply a new code execution.
+
+### Required next local browser gate
+
+Start local Next.js in separate runs with exact environment flags **before** `npm run dev`:
+- OFF baseline: `NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW` unset (or `0`); expect no R3 quality card and identical legacy/manual flight totals.
+- ON: `NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW=1`, `NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY=0`. Private original sample07 should show one quality notice and explicit unknown motion gap, with existing Review GPS track disclosure open; sample04 one warning without the gap statement; sample03/05/06/08 no R3 warning. No automatic T&G/count change on any source.
+- Combined ON/ON later, if necessary: native V2 must still return `UNAVAILABLE / UNSUPPORTED_SOURCE` for multi-gx sample07 independently of the R3 quality notice.
+- Replacing file or adjusting manual splits must recompute/clear context; no stale warning. Examine desktop and iPad landscape/portrait/mobile, light/dark/night as possible. Do not submit sensitive example imports just to inspect UI; do not upload private KML or screenshots with identifying route/registration to GitHub.
+- Any deviation or visual defect remains open and blocks P1B engineering closure. An exact browser PASS requires actual runtime evidence, not these static tests.
+
