@@ -14,7 +14,7 @@ function unavailable(reason){
 }
 const args=process.argv.slice(2);
 if(args.length!==4||args[0]!=="--file"||args[2]!=="--id"||
- !args[1]||!/^[a-z0-9][a-z0-9_-]{0,31}$/i.test(args[3])){
+ !args[1]||!/^sample\d{2,3}$/.test(args[3])){
  unavailable("INVALID_CONTEXT");
 }else if(extname(args[1]).toLowerCase()!==".kml"){
  unavailable("UNSUPPORTED_SOURCE");
@@ -37,7 +37,7 @@ if(args.length!==4||args[0]!=="--file"||args[2]!=="--id"||
      sourceBlocks:c.sourceBlocks,rawFixes:c.rawFixes,
      canonicalFixes:c.canonicalFixes,adjacentFixPairs:c.adjacentFixPairs,
      betweenFixPairsUnobserved:c.betweenFixPairsUnobserved,
-     sourceBlockedEdges:c.sourceBlockedEdges,
+     provenanceBlockedEdges:c.provenanceBlockedEdges,
      manualFlightSplitEdges:c.manualFlightSplitEdges,
      independentlyInvalidTimeEdges:c.independentlyInvalidTimeEdges,
      independentlyInvalidSpeedEdges:c.independentlyInvalidSpeedEdges,
