@@ -8,6 +8,7 @@ import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,Fl
 import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
 import { inspectGpsV2HorizontalTrack } from "@/lib/gps-v2-advisory";
 import type { ImportReviewEvent } from "@/components/gps-import-review-player";
+import { GpsAltitudeQualityReview } from "@/components/gps-altitude-quality-review";
 import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseOptionalBilling } from "@/lib/billing";
@@ -21,6 +22,7 @@ import type { ConnectedPicOption } from "@/lib/flight-connected-crew";
 import { gpsLandingDayNightSuggestion,gpsNightMinutesSuggestion,gpsPfMovementDayNightSuggestion,type CivilTwilightNightTimeSuggestion } from "@/lib/civil-twilight";
 
 const GPS_V2_ADVISORY_ENABLED=process.env.NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY==="1";
+const GPS_R3_QUALITY_REVIEW_ENABLED=process.env.NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW==="1";
 const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-player").then(module=>module.GpsImportReviewPlayer),{ssr:false,loading:()=> <div className="track-map-loading">Loading visual GPS review…</div>});
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
@@ -248,6 +250,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
           </section>}
           {overrideResetNotice?<p className="track-time-warning" role="status">{overrideResetNotice}</p>:null}
           {visualTrack?<section className="import-player-review"><div className="section-heading"><div><p className="eyebrow">GPS REVIEW</p><h2>Detected flight</h2><p className="muted">Takeoff, landing, touch-and-go and split detections are marked on the altitude/speed profile.</p></div></div><GpsImportReviewPlayer track={visualTrack} events={visualEvents}/><p className="import-player-note">Use this view when the automatic interpretation needs checking. Edit the final flight fields below whenever the track evidence is not sufficient.</p></section>:null}
+          {GPS_R3_QUALITY_REVIEW_ENABLED&&analysis?<GpsAltitudeQualityReview sourceText={analysis.sourceText} canonicalPoints={analysis.points} splitCuts={cuts}/>:null}
            {GPS_V2_ADVISORY_ENABLED&&v2Advisory?<section className="gps-v2-preview" aria-label="GPS Detection 2.0 experimental review" data-gps-v2-preview><div className="section-heading"><div><p className="eyebrow">GPS DETECTION 2.0 · EXPERIMENTAL</p><h2>Movement patterns for pilot review</h2><p className="muted">Separate from the existing detected events. Source quality and wheel contact are not verified. These suggestions cannot change logbook counts or certification.</p></div></div>{v2Advisory.status==="UNAVAILABLE"?<p className="track-time-warning">V2 movement review unavailable for this source ({v2Advisory.reason}). Continue with the existing manual GPS review; no event count is inferred.</p>:v2Advisory.events.length?<ul className="gps-v2-event-list">{v2Advisory.events.map(event=><li key={`${event.splitIndex}-${event.normalizedIndex}-${event.kind}`}><strong>{event.kind==="DEPARTURE_REVIEW_POINT"?"Possible departure movement":event.kind==="ARRIVAL_REVIEW_POINT"?"Possible arrival movement":"Possible stop-and-go movement"}</strong><span>Flight {event.splitIndex+1} · {event.utc.slice(11,19)} UTC · Unresolved</span></li>)}</ul>:<p className="muted">No qualifying horizontal movement patterns in the supported GPS source. This does not mean zero landings. Leave unresolved and review manually.</p>}{v2Advisory.status==="ADVISORY_ONLY"&&v2Advisory.quarantinedSourceFixes>0?<p className="track-time-warning">Duplicate GPS fixes contain conflicting altitude measurements. Nearby motion is excluded from V2 review; altitude accuracy and runway contact remain unverified.</p>:null}<p className="import-player-note">Altitude mode, sensor accuracy and physical contact are unverified. V2 does not update take-offs, landings, PF movements or any submitted form values.</p></section>:null}
         </div>
       </details>
