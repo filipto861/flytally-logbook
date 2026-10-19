@@ -43,3 +43,7 @@ Only anonymous, privacy-reviewed aggregate reports may be shared. Source identit
 R2-1 **STAGED; tests/typecheck/private six-KML acceptance NOT RUN**. Full suite/build/browser/CI/production smoke NOT RUN; DB/migration N/A, merge/deploy NOT DONE, feature OFF, Pilot Review HIDDEN, native multi-block V2 UNSUPPORTED_SOURCE.
 
 R2-1 closure requires exact-head local Node24 tests/typecheck, owner-local six KML diagnostic review, consistency/privacy check and aligned roadmap/features/changelog. R2-2 accepted/rejected geometry is separate, still NOT APPROVED; do not silently create a new detector. R3 independent contact evidence remains required before actual detector accuracy claims. Prior 26 proposed tests cover future R2-2/R3 too; the 21 new R2-1 tests do not imply all 26 are implemented.
+
+## 2026-10-19 first owner-local verification and TypeScript fix
+
+User-provided PowerShell log on tracked R2-1 research branch reports four targeted test files **79/79 PASS** (21 R2-1, 24 R1 and 34 existing parser/legacy cases), 0 failures, total 894.5585ms. Exact local commit SHA was not printed in the log. `npm run typecheck` **FAILED** with two TS2345 nullable GPS timestamp argument errors in `stage-d43-r2-altitude-quality.ts` lines 143–144. Follow-up commit `b22439ca` captures nullable timestamp strings into local variables before Date.parse, preserving runtime semantics and fail-closed behavior. **Post-fix tests and typecheck NOT RUN**; local rerun is required. Six private KML R2 CLI evaluations are still NOT RUN. This is not R2-1 closure evidence yet.
