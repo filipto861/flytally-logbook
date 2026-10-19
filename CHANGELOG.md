@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — GPS V2 R3-P1 inconclusive-altitude pilot-review design staged (DOCS ONLY)
+
+- Read current components/kml-import-form.tsx, components/gps-import-review-player.tsx, lib/gps-v2-advisory.ts, lib/gps-v2-import-lineage.ts, flight import action, GPS styles and existing V2 contracts on stacked research branch. Confirmed legacy landingCount auto-suggests reviewed starts; existing manual edits remain explicit; V2 horizontal-only panel OFF by default; native multi-gx V2 is UNSUPPORTED_SOURCE; R2-2 research code is Node-only and aggregate.
+- Added docs/product/GPS_V2_R3_P1_INCONCLUSIVE_PILOT_REVIEW_DESIGN_2026-10-19.md. Proposed gated P1A source-backed pure quality sidecar first (no events) and P1B experimental quality-review card second (no automatic landing changes); hard source/block/split/revision integrity, overlapping same-edge grouping, privacy and negative regression matrix. This is a proposed implementation plan requiring owner design freeze and read-only independent review; no code/runtime, production UI, DB, flag, landing count, recency, test execution, merge or deploy. Design verification is read-only GitHub inspection; Node/TS/build/browser/CI NOT RUN/N/A, DB/migration N/A.
+
 ## 2026-10-19 — GPS R3 sample07 sole firsthand-pilot source clarified (DOCS ONLY)
 
 - Owner confirms that the sample07 rolling T&G report rests solely on first-person pilot experience. This remains PILOT_ATTESTATION / REPORTED_CONTACT_UNCORROBORATED rather than CORROBORATED_CONTACT; no separately verified video/witness/sensor evidence provided or evaluated. Retained as targeted detector-debug context, not a verified accuracy label or automatic landing/recency evidence. Precise time and track remain private. No runtime changes, merge or deploy.
