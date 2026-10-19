@@ -1,4 +1,9 @@
 # FlyTally changelog
+## 2026-10-19 — R3-0 sample07 pilot report classified, no independent contact label (DOCS ONLY)
+
+- Owner explicitly affirmed one rolling T&G with wheel contact and renewed takeoff in existing anonymous sample07 research source, with an approximate local/UTC minute communicated privately. GitHub stores **only** non-identifying source claim category: PILOT_ATTESTATION; prospective R3 contact classification is REPORTED_CONTACT_UNCORROBORATED. No exact time, registration, GPS coordinates/source path or private evidence uploaded.
+- Two overlapping R2 derivative-rejected geometry windows are still not two confirmed contacts or verified associations. No independent media/witness/sensor evidence evaluated; no actual R3 reference case, benchmark truth, automatic landing or recency change. Docs-only, no code/DB/UI/flags, no tests required/claimed, no merge/deploy.
+
 ## 2026-10-19 — GPS V2 D4.3-R3-0 independent contact evidence protocol (DOCUMENTATION ONLY)
 
 - Created an isolated R3 evidence-protocol research documentation branch stacked after research-only R2-2. Added docs/product/GPS_V2_D43_R3_INDEPENDENT_CONTACT_EVIDENCE_PROTOCOL_DESIGN_2026-10-19.md: claim/evidence/contact/matching separation, evidence provenance and observed-coverage gates, pilot report versus independently corroborated contact and negative, privacy/append-only decisions, benchmark inclusion and no source-window label leakage. Added blank private worksheet docs/product/GPS_V2_D43_R3_OWNER_LOCAL_REFERENCE_CASE_TEMPLATE_2026-10-19.md. No real event labels, independent contact evidence, code or private KML committed.
