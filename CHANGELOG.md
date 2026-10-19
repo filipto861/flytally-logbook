@@ -1,4 +1,8 @@
 # FlyTally changelog
+## 2026-10-19 — GPS R3 sample07 sole firsthand-pilot source clarified (DOCS ONLY)
+
+- Owner confirms that the sample07 rolling T&G report rests solely on first-person pilot experience. This remains PILOT_ATTESTATION / REPORTED_CONTACT_UNCORROBORATED rather than CORROBORATED_CONTACT; no separately verified video/witness/sensor evidence provided or evaluated. Retained as targeted detector-debug context, not a verified accuracy label or automatic landing/recency evidence. Precise time and track remain private. No runtime changes, merge or deploy.
+
 ## 2026-10-19 — R3-0 sample07 pilot report classified, no independent contact label (DOCS ONLY)
 
 - Owner explicitly affirmed one rolling T&G with wheel contact and renewed takeoff in existing anonymous sample07 research source, with an approximate local/UTC minute communicated privately. GitHub stores **only** non-identifying source claim category: PILOT_ATTESTATION; prospective R3 contact classification is REPORTED_CONTACT_UNCORROBORATED. No exact time, registration, GPS coordinates/source path or private evidence uploaded.
