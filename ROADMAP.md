@@ -1,5 +1,7 @@
 # FlyTally Logbook — ROADMAP
 
+**2026-10-20 — D1-A FIRST LOCAL RUN 9/10, WINDOWS-ONLY BLOB GUARD FIX STAGED.** Owner ran initial D1 altitude synthetic suite on Windows: 9 PASS / 1 FAIL, frozen Git SHA guard failed because checkout file bytes use Windows CRLF vs Git LF. Typecheck PASS. Test-only correction canonicalizes line endings before verifying pinned Git blob, adds LF/CRLF and substantive-drift regression. Corrected 11-test HEAD **NOT RUN**; targeted legacy regressions, private original KML diagnostics and any accuracy assessment remain NOT RUN. No production detector changes.
+
 **2026-10-20 — GPS T&G ACCURACY D1-A FIRST RESEARCH IMPLEMENTATION STAGED / TESTS NOT RUN.** Owner waived optional second-AI review for rapid research-only work. Fresh clean-main branch `research/gps-detector-accuracy-d1a-20261020` adds a read-only frozen legacy altitude-candidate first-failing-gate diagnostic, private-local aggregate CLI and synthetic tests; not a detector, and NOT extra UI. Production legacy accepted event count is fetched unmodified; no flight/recency/DB/write. Next: exact-HEAD Node24 targeted parity/privacy and legacy GPS regressions + TypeScript, then owner-local six private KML aggregate summaries. Do not claim recovered physical contacts or accuracy, and do not merge or enable paused P1B #372/P1C #373. [D1-A runbook](docs/product/GPS_DETECTOR_D1A_OFFLINE_DIAGNOSTICS_2026-10-20.md). D1-B speed/ground grouping diagnostics and D2 novel algorithm remain gated.
 
 
