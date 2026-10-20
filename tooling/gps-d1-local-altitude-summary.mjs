@@ -8,6 +8,7 @@ import {readFile,stat} from "node:fs/promises";
 import path from "node:path";
 import {parseTrackFile} from "../lib/track-processing.ts";
 import {summarizeLegacyAltitudeDiagnostics} from "../research/gps-detector-accuracy/d1-altitude-diagnostics.ts";
+import {diagnoseLegacyAdmission} from "../research/gps-detector-accuracy/d1-legacy-admission-diagnostics.ts";
 
 function refuse(){
   console.error("D1 refused: local offline source/permission/format unavailable. No private path or source content printed.");
@@ -29,7 +30,10 @@ if(process.env.CI||process.env.VERCEL||process.env.VERCEL_ENV||process.env.GITHU
     const points=parseTrackFile(original,"input"+extension);
     if(points.length<2)throw Error("insufficient parsed source");
     const report=summarizeLegacyAltitudeDiagnostics(points);
-    console.log(JSON.stringify(report,null,2));
+    const admission=diagnoseLegacyAdmission(points);
+    // Do not emit ambiguous partial reports when research mirror diverges.
+    if(admission.status!=="PARITY_MATCHED")throw Error("unavailable or parity mismatch");
+    console.log(JSON.stringify({...report,admission},null,2));
   }catch{
     refuse();
   }
