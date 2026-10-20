@@ -21,13 +21,29 @@ const valley=[360,350,340,330,320,310,300,290,280,270,260,250,245,248,253,261,27
 const knownPlusEleven=[400,380,360,340,320,300,280,260,245,235,228,224,
  228,232,237,240,244,247,250,252,253,253.7,271,300,330];
 
-test("D1 mirror is pinned to the exact production track-processing Git blob",async()=>{
-  const bytes=await readFile(new URL("../lib/track-processing.ts",import.meta.url));
-  const blob=createHash("sha1").update(Buffer.concat([
+function canonicalGitText(bytes:Buffer):Buffer{
+  // Git stores this text file with LF. Windows autocrlf may check it out as CRLF;
+  // normalize only line endings, never relax actual code-content drift.
+  return Buffer.from(bytes.toString("utf8").replace(/\r\n/g,"\n"),"utf8");
+}
+function gitBlobSha(bytes:Buffer):string{
+  return createHash("sha1").update(Buffer.concat([
     Buffer.from("blob "+bytes.length+"\0"),bytes,
   ])).digest("hex");
+}
+
+test("D1 mirror is pinned to the exact production track-processing Git blob",async()=>{
+  const checkout=await readFile(new URL("../lib/track-processing.ts",import.meta.url));
+  const blob=gitBlobSha(canonicalGitText(checkout));
   assert.equal(blob,D1_LEGACY_SOURCE_BLOB,
     "Legacy detector changed; review/reconcile the mirrored D1 predicates before trusting results.");
+});
+
+test("D1 blob check ignores only Windows CRLF checkout conversion",()=>{
+  const source=Buffer.from("first\nsecond\n","utf8");
+  const win=Buffer.from("first\r\nsecond\r\n","utf8");
+  assert.equal(gitBlobSha(canonicalGitText(source)),gitBlobSha(canonicalGitText(win)));
+  assert.notEqual(gitBlobSha(canonicalGitText(source)),gitBlobSha(canonicalGitText(Buffer.from("first\nCHANGED\n"))));
 });
 
 test("D1 contains no guessed contact and preserves actual production event counts",()=>{
