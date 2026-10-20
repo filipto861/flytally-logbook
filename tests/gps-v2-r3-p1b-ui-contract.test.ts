@@ -146,8 +146,10 @@ test("P1B-17 browser fixture keeps Next local and restores prior env/owned PG on
  const runner=read("../tooling/run-gps-p1b-review-local.ps1");
  assert.match(runner,/dev --hostname 127\.0\.0\.1 --port 3000/);
  assert.match(runner,/Port 3000 occupied/);
- assert.match(runner,/\$env:NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW="1"/);
- assert.match(runner,/\$env:NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY="0"/);
+ assert.match(runner,/\$env:NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW=\$R3Review/);
+ assert.match(runner,/\$env:NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY=\$NativeV2/);
+ assert.match(runner,/\[ValidateSet\("0","1"\)\]\[string\]\$R3Review="1"/);
+ assert.match(runner,/\[ValidateSet\("0","1"\)\]\[string\]\$NativeV2="0"/);
  assert.match(runner,/finally\{/);
  assert.match(runner,/& \$pgctl -D \$dataDir -m fast -w -t 30 stop/);
  assert.match(runner,/if\(\$cleanupAllowed -and \$root/);
@@ -167,4 +169,21 @@ test("P1B-18 canonical v21 fixture safety guard excludes existing 55432 service"
  assert.match(guard,/url\.password===""/);
  assert.match(runner,/apply-currency-v21-disposable\.mjs/);
  assert.match(runner,/bootstrap-browser-smoke-db\.mjs/);
+});
+
+test("P1B-19 synthetic-only local browser smoke never submits flights or accesses production",()=>{
+ const smoke=read("../tooling/gps-p1b-local-browser-smoke.mjs");
+ assert.match(smoke,/node tooling\/gps-p1b-local-browser-smoke\.mjs on\|off/);
+ assert.match(smoke,/const origin="http:\/\/127\.0\.0\.1:3000"/);
+ assert.match(smoke,/synthetic-bad-edge\.kml/);
+ assert.match(smoke,/synthetic-no-step\.kml/);
+ assert.match(smoke,/GPS altitude needs pilot review/);
+ assert.match(smoke,/Split into multiple flights/);
+ assert.match(smoke,/Single flight/);
+ assert.match(smoke,/expect\(notice\)\.toHaveCount\(0/);
+ assert.match(smoke,/page\.setViewportSize/);
+ assert.match(smoke,/document\.documentElement\.dataset\.theme/);
+ assert.match(smoke,/await route\.abort\(\)/);
+ assert.doesNotMatch(smoke,/page\.goto\(["']https:\/\/|Save & certify|Save draft|requestSubmit|\.submit\(/);
+ assert.doesNotMatch(smoke,/sample07|sample04|OK-BID|flytally_browser|55432/);
 });
