@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-20 — D1-B frozen legacy admission and grouping diagnostics (research-only, NOT TESTED)
+
+- Added research/gps-detector-accuracy/d1-legacy-admission-diagnostics.ts for read-only speed-event admission, rolling-altitude candidate <8-index grouping and <=10-index speed overlap suppression, with exact ordered production event parity/fail-closed result.
+- Added tests/gps-d1-admission-diagnostics.test.ts (8 synthetic cases, NOT RUN); extended local anonymized GPS CLI to print admission aggregate only when parity matches; guarded >2048 points as research resource limit.
+- Recorded sample07 owner aggregate evidence (593 source points, legacy six altitude events, 20 altitude-admissible candidate points, two in-span discontinuity rejects); no wheel-contact truth inferred. No runtime/UI/save/DB/release changes.
+
+
 ## 2026-10-20 — D1-A owner-local verification at c46b5441
 
 - Owner Windows: `tests/gps-d1-altitude-diagnostics.test.ts` 11/11 PASS; `tests/v351-gps-tg-reliability.test.ts` plus `tests/track-processing.test.ts` 34/34 PASS; `npm run typecheck` PASS. Total targeted 45/45 local tests. Windows source blob identity parity now PASS.
