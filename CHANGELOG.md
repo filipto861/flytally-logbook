@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-20 — GPS D1-B local acceptance and sample07 aggregate parity
+
+- Owner Windows at code HEAD `93b05c3c`: targeted D1-B Node **8/8 PASS**, TypeScript **PASS**. Owner-private `sample07` CLI showed `PARITY_MATCHED` against unchanged production `touchAndGoEvents()`: 593 points, 20 altitude shape-admissible indices, six grouped and accepted T&G, fourteen grouped-away points, zero speed-based candidates or overlap suppression. Prior two in-span discontinuity-rejected points remain distinct from evidence of physical contact.
+- No real event recovery, accuracy benchmark, source attestation, algorithm/runtime/UI/database change; six-source cross-file aggregate D2 baseline not yet completed. This is local evidence, not CI or deployment.
+
 ## 2026-10-20 — D1-B frozen legacy admission and grouping diagnostics (research-only, NOT TESTED)
 
 - Added research/gps-detector-accuracy/d1-legacy-admission-diagnostics.ts for read-only speed-event admission, rolling-altitude candidate <8-index grouping and <=10-index speed overlap suppression, with exact ordered production event parity/fail-closed result.
