@@ -125,3 +125,46 @@ test("P1B-15 Node strip-types runtime bridge uses explicit .ts research import",
  assert.equal(result.status,"UNAVAILABLE");
  assert.equal(hasGpsR3QualityReview(result),false);
 });
+
+test("P1B-16 local browser fixture MUST own new PG16 cluster before schema bootstrap",()=>{
+ const runner=read("../tooling/run-gps-p1b-review-local.ps1");
+ assert.match(runner,/\$expectedBranch="feat\/gps-v2-r3-p1b-inconclusive-review-ui-20261019"/);
+ assert.match(runner,/\$root=Join-Path \$env:TEMP \("flytally-p1b-owned-"/);
+ assert.match(runner,/initdb -D \$dataDir -U flytally -A trust/);
+ assert.match(runner,/\$port -in @\(5432,55432\)/);
+ assert.match(runner,/\$identity.Count -ne 1/);
+ assert.match(runner,/SHOW data_directory/);
+ assert.match(runner,/GetFullPath\(\$dataDir\)/);
+ assert.match(runner,/\$env:DATABASE_URL="postgresql:\/\/flytally@127\.0\.0\.1:\$port\/flytally_currency_test"/);
+ const identityGate=runner.indexOf("SHOW data_directory");
+ const bootstrap=runner.indexOf("& node $bootstrap");
+ const migration=runner.indexOf("& node $migrate");
+ assert.ok(identityGate>=0&&bootstrap>identityGate&&migration>bootstrap);
+ assert.doesNotMatch(runner,/DROP SCHEMA|DROP DATABASE|TRUNCATE|UPDATE users|DELETE FROM/i);
+});
+test("P1B-17 browser fixture keeps Next local and restores prior env/owned PG on exit",()=>{
+ const runner=read("../tooling/run-gps-p1b-review-local.ps1");
+ assert.match(runner,/dev --hostname 127\.0\.0\.1 --port 3000/);
+ assert.match(runner,/Port 3000 occupied/);
+ assert.match(runner,/\$env:NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW="1"/);
+ assert.match(runner,/\$env:NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY="0"/);
+ assert.match(runner,/finally\{/);
+ assert.match(runner,/& \$pgctl -D \$dataDir -m fast -w -t 30 stop/);
+ assert.match(runner,/if\(\$cleanupAllowed -and \$root/);
+ assert.match(runner,/\[Environment\]::SetEnvironmentVariable\(\$name,\$saved\[\$name\],"Process"\)/);
+ assert.doesNotMatch(runner,/FLYTALLY_LOCAL_POSTGRES\s*=\s*"0"/);
+});
+test("P1B-18 canonical v21 fixture safety guard excludes existing 55432 service",()=>{
+ const currency=read("../tooling/apply-currency-v21-disposable.mjs");
+ const guard=read("../lib/currency-v21-migration-safety.ts");
+ const runner=read("../tooling/run-gps-p1b-review-local.ps1");
+ assert.match(currency,/55432/);
+ assert.match(currency,/flytally_currency_test/);
+ assert.match(currency,/process\.argv\.length!==2/);
+ assert.match(currency,/identity!==/);
+ assert.match(currency,/if\(registered!==expected\)/);
+ assert.match(guard,/url\.port!=="55432"/);
+ assert.match(guard,/url\.password===""/);
+ assert.match(runner,/apply-currency-v21-disposable\.mjs/);
+ assert.match(runner,/bootstrap-browser-smoke-db\.mjs/);
+});
