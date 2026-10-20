@@ -1,3 +1,7 @@
+## 2026-10-20 — P1B local build and repeated OFF browser evidence (Draft, not shipped)
+
+- Owner verified clean source checkout `8daebc1e` and successful `npm run build` (Next.js 16.3.2, compile and TypeScript PASS, 41/41 static pages). Independently pasted two `off` localhost synthetic Playwright runs, **3/3 PASS each** (auth, zero disabled notices, stale-warning source replacement). OFF server startup/flag proof was not included with these outputs, so bound negative release gate remains open. Tests are LOCAL, not CI; private KML matrix, cleanup, keyboard/touch, wider release checks and independent review pending. No merge/deploy/production flag change.
+
 # FlyTally changelog
 ## 2026-10-20 — P1B owner-local synthetic ON browser verification (Draft, not shipped)
 
