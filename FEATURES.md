@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**GPS D1-B verification (owner local, 2026-10-20; NOT RELEASED):** Research-only speed admission and altitude grouping diagnostics PASS 8/8 at exact source HEAD `93b05c3c`, TypeScript PASS. One private original KML yielded exact event parity (20 shape-admissible points -> six grouped altitude T&G events, 14 nearby candidate points consolidated, no speed events). This is diagnostic evidence, **not new T&G detection ability or confirmed contact**. Other-five-source aggregate comparison and D2 offline candidate tests remain pending.
+
 **D1-B GPS admission tracing (2026-10-20, RESEARCH ONLY / NOT SHIPPED):** New offline shadow audit explains why accepted altitude candidate *points* collapse into grouped events or are suppressed by speed overlap; separately reports speed-event admission rejections. Exact ordered event equality with unchanged production touchAndGoEvents() is mandatory before returning counts. Private-local aggregate CLI updated; source contact UNRESOLVED and native source lineage NOT_ATTESTED. New tests NOT RUN. No additional GPS warning cards or production detector/count changes.
 
 **2026-10-20 D1-A local verification (not shipped):** Exact code HEAD `c46b5441` has owner Windows 11/11 new targeted diagnostic PASS, 34/34 frozen track/T&G regression PASS and TypeScript PASS. No production event detector/count change. Real private KML aggregate diagnostic run and any improved detector accuracy NOT RUN.
