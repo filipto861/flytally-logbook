@@ -103,7 +103,7 @@ function hasLegacyDiscontinuity(points:readonly KmlPoint[],start:number,end:numb
  * This result does not include later <8-index grouping or <=10-index speed dedup.
  * ALTITUDE_SHAPE_ADMISSIBLE must NOT be counted as a T&G.
  */
-export function diagnoseLegacyAltitudeAtIndex(points:readonly KmlPoint[],index:number):D1AltitudeProbe{
+function diagnoseWithSpeeds(points:readonly KmlPoint[],index:number,speeds:readonly number[]):D1AltitudeProbe{
   const flags=temporalFlags(points,Math.max(0,index-10),Math.min(points.length-1,index+10));
   const probe=(outcome:D1AltitudeOutcome):D1AltitudeProbe=>({
     outcome,...flags,sourceLineage:"NOT_ATTESTED",physicalContact:"UNRESOLVED",
@@ -112,7 +112,7 @@ export function diagnoseLegacyAltitudeAtIndex(points:readonly KmlPoint[],index:n
      points.filter(p=>validAlt(p.alt)).length<8)return probe("NOT_IN_LEGACY_SCAN_REGION");
   const altitude=points[index].alt;
   if(!validAlt(altitude))return probe("MISSING_ALTITUDE");
-  const speed=legacySpeeds(points)[index];
+  const speed=speeds[index];
   if(speed<28||speed>145)return probe("SPEED_OUTSIDE_LEGACY_RANGE");
   const leftStart=Math.max(0,index-10),rightEnd=Math.min(points.length-1,index+10);
   const left=points.slice(leftStart,index).map(p=>p.alt).filter(validAlt);
@@ -143,18 +143,22 @@ export function diagnoseLegacyAltitudeAtIndex(points:readonly KmlPoint[],index:n
   return probe("ALTITUDE_SHAPE_ADMISSIBLE");
 }
 
+export function diagnoseLegacyAltitudeAtIndex(points:readonly KmlPoint[],index:number):D1AltitudeProbe{
+  return diagnoseWithSpeeds(points,index,legacySpeeds(points));
+}
+
 /**
  * Aggregate-only safe output: no timestamps, source bytes, geo points, filenames,
  * source indices, registration, private identifiers or event coordinates.
  */
 export function summarizeLegacyAltitudeDiagnostics(points:readonly KmlPoint[]):D1AltitudeSummary{
-  const events=touchAndGoEvents([...points]);
+  const events=touchAndGoEvents([...points]),speeds=legacySpeeds(points);
   const outcomes:Partial<Record<D1AltitudeOutcome,number>>={};
   let inspectedAltitudeMinima=0,sourceTimeWindowsWithInvalidEdges=0,sourceTimeWindowsWithOver15sGaps=0;
   for(let index=4;index<points.length-4;index++){
     if(!isLocalAltitudeMinimum(points,index))continue;
     inspectedAltitudeMinima++;
-    const result=diagnoseLegacyAltitudeAtIndex(points,index);
+    const result=diagnoseWithSpeeds(points,index,speeds);
     outcomes[result.outcome]=(outcomes[result.outcome]??0)+1;
     if(result.invalidTimeEdgeInWindow)sourceTimeWindowsWithInvalidEdges++;
     if(result.unobservedOver15sInWindow)sourceTimeWindowsWithOver15sGaps++;
