@@ -1,4 +1,8 @@
 # FlyTally changelog
+## 2026-10-20 — R3-P1C independent design-only investigation proposed (not implemented)
+
+- Staged separate draft proposal for the owner-reported missed rolling T&G: source/parity inventory, bounded source-eligibility and horizontal/temporal observations as non-authoritative review hypotheses, no bad altitude=>contact inference, and explicit independent DeepSeek/Claude read-only review packet. Maintains frozen >25m/s source discontinuity guard, native V2 multi-gx UNSUPPORTED_SOURCE, and the exact original logbook record/count/recency APIs. No new detector, candidate UI, source adapter, source KML, tests, schema or deployment. C0 documentation only; further owner approval and source review required.
+
 ## 2026-10-20 — R3-P1B synthetic-only local browser smoke authored (not yet run or shipped)
 
 - Added `tooling/gps-p1b-local-browser-smoke.mjs` (owned fixture localhost authentication, synthetic source quality notice ON/OFF, strict no remote HTTP requests, no saved flight, source replacement/split invalidation, responsive light/dark) and validated optional review/native V2 flag arguments to the isolated PG16 runner. P1B-19 regression authored and P1B-17 adapted; actual new head targeted test/typecheck/browser **NOT RUN**. Original detector, GPS V2 native source policy, flight model, recency, existing PostgreSQL/Neon and production remain unchanged. P1B Draft.
