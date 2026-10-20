@@ -1,4 +1,8 @@
 # FlyTally changelog
+## 2026-10-20 — P1B owner-local synthetic ON browser verification (Draft, not shipped)
+
+- On `8daebc1e`: 19/19 targeted P1B tests PASS, TypeScript PASS; owned fresh local PG16 v20/v21 physical schema-first and R3 ON/native V2 OFF server PASS. Standalone synthetic-only local Playwright ON **6/6 PASS**, covering authentication, one non-authoritative quality warning, unchanged legacy landing count, four viewport sizes in light/dark without overflow, upload replacement and split invalidation/recovery. Owner also pasted OFF **3/3** output, but it precedes the specifically shown new OFF server boot; OFF negative control must be rerun on that instance before recording accepted OFF gate. No implementation/flight count/detector/database/production modification or release. Build/full browser/a11y/source corpus/cleanup gates remain open.
+
 ## 2026-10-20 — R3-P1B synthetic-only local browser smoke authored (not yet run or shipped)
 
 - Added `tooling/gps-p1b-local-browser-smoke.mjs` (owned fixture localhost authentication, synthetic source quality notice ON/OFF, strict no remote HTTP requests, no saved flight, source replacement/split invalidation, responsive light/dark) and validated optional review/native V2 flag arguments to the isolated PG16 runner. P1B-19 regression authored and P1B-17 adapted; actual new head targeted test/typecheck/browser **NOT RUN**. Original detector, GPS V2 native source policy, flight model, recency, existing PostgreSQL/Neon and production remain unchanged. P1B Draft.
