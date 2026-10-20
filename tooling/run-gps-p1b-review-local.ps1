@@ -3,6 +3,10 @@
 # Script creates one unique cluster, validates identity, bootstraps canonical
 # browser fixture, applies exact approved v20/v21 SQL, then runs loopback Next.
 # Existing DBs never receive migrations. Stop with Ctrl+C for cleanup.
+param(
+  [ValidateSet("0","1")][string]$R3Review="1",
+  [ValidateSet("0","1")][string]$NativeV2="0"
+)
 $ErrorActionPreference="Stop"
 Set-StrictMode -Version Latest
 $repo=(Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -80,8 +84,8 @@ try{
   $env:FLYTALLY_BROWSER_PASSWORD="FlyTally-Browser-2026!"
   $env:SESSION_SECRET=([guid]::NewGuid().ToString("N")+[guid]::NewGuid().ToString("N"))
   $env:SIGNING_SECRET=([guid]::NewGuid().ToString("N")+[guid]::NewGuid().ToString("N"))
-  $env:NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW="1"
-  $env:NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY="0"
+  $env:NEXT_PUBLIC_FLYTALLY_GPS_R3_QUALITY_REVIEW=$R3Review
+  $env:NEXT_PUBLIC_FLYTALLY_GPS_V2_ADVISORY=$NativeV2
   # Existing bootstrap DROPS public; here it targets ONLY owned new cluster.
   & node $bootstrap
   Assert-Exit "New disposable browser bootstrap"
@@ -89,6 +93,7 @@ try{
   & node $migrate
   Assert-Exit "New disposable canonical v20/v21 migration"
   Write-Host "Disposable v21 READY; existing port 55432 untouched." -ForegroundColor Green
+  Write-Host "GPS source-quality review flag: $R3Review; native V2 advisory flag: $NativeV2"
   Write-Host "Open http://127.0.0.1:3000/login and sign in as browser-auth@example.test"
   Write-Host "Use the repository's documented browser fixture password."
   Write-Host "Review sample07 but DO NOT SAVE a real flight."
