@@ -63,3 +63,22 @@ Owner confirmed `git pull --ff-only` to `c46b5441` and ran corrected targeted D1
 Owner executed local CLI on sample07; no route was sent. Output: 593 recorded canonical legacy points, 6 accepted production legacy T&G (0 speed, 6 altitude), 144 sampled altitude local minima. First-failure outcomes across those *points*: 107 speed outside legacy range, 12 no >=30m descent, 3 no >=30m climb, 2 in-evidence-span height discontinuity, and 20 altitude shape admissible. Source-time observations: 0 sampled-minimum scan windows with invalid time edge and 54 scan windows overlapping >15s unobserved interval. These are **overlapping sampled-point/windows counts**, not 54 separate GPS gaps; 20 accepted candidate points are not 20 events; two rejected candidate points do not prove two missed landings. Prior D4.3-R2-2 evidence attributed two overlap windows to ONE bad source edge; this fresh anonymous summary neither corroborates physical contact nor links windows to a particular maneuver. Contact remains UNRESOLVED / owner report REPORTED_CONTACT_UNCORROBORATED. Node MODULE_TYPELESS_PACKAGE_JSON warning was nonfatal and unrelated to GPS validity.
 
 Next D1-B milestone: explain raw altitude candidate 20 -> six deduplicated legacy events, separately diagnose speed/ground admission, require strict event-level parity against unmodified touchAndGoEvents(), and output only aggregate counts (no index/UTC/route). Do NOT tune thresholds or promote rejected source geometry to real touchdown.
+
+## D1-B staged 2026-10-20 — grouping and speed admission, still research-only
+
+New code at `research/gps-detector-accuracy/d1-legacy-admission-diagnostics.ts` shadows only frozen `groundEvents()` speed admission, `altitudeTouchAndGoIndices()` <8-index altitude grouping and `touchAndGoEvents()` <=10-index speed/altitude overlap suppression. It runs D1-A frozen per-index gate predicates to gather raw altitude candidates. **No outcome is published unless the complete reconstructed ordered event list matches production touchAndGoEvents() exactly by index, time, signal and confidence**. On parity mismatch, empty input or >2048-point research limit it returns UNAVAILABLE with no accepted movement count, and the CLI refuses to output a misleading partial report.
+
+Revised owner-local CLI appends a top-level `admission` aggregate object to the previous D1-A output. Key fields: rawAltitudeAdmissiblePoints, altitudeGroupedEvents, altitudeGroupingSuppressedPoints, altitudeSuppressedBySpeedOverlap, speedGroundEvents, speedDurationRejected, speedDirectMotionRejected, speedAltitudeRangeRejected, speedAdmitted, legacyEventCount. These are candidate/window counts **not physical contacts**. No private route/timestamps/indexes/filenames in report. >2048-point records fail closed for bounded research implementation cost, not as an aircraft/GPS validity rule.
+
+New tests: `tests/gps-d1-admission-diagnostics.test.ts` (8 authored, **NOT RUN**) compare exact event parity on five rolling T&G synthetic events, genuine stop/go, known +11 false negative, high-speed low pass, duplicate timestamps, time gap, invalid/oversized input and redacted output. Previously observed D1-A 45/45 local PASS is on code HEAD `c46b5441`; it is **not** evidence that new D1-B code passed.
+
+Verify after fetch on owner PC:
+
+    git pull --ff-only
+    git rev-parse --short HEAD
+    npm run test:target -- tests/gps-d1-admission-diagnostics.test.ts
+    npm run typecheck
+
+If both PASS, rerun owner-local sample07 using unchanged CLI filename and share only aggregate JSON; expect production legacyEventCount=6 if same source/splits, but **do not predict grouping/suppression values**. Any parity mismatch is a blocker requiring research investigation, not a reason to weaken legacy guards.
+
+No production detector/save/auth/recency/DB/UI changed. No merge/deploy or new T&G accuracy achieved.
