@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-20 — D1-A Windows Git blob test portability correction
+
+- Owner-local initial targeted D1 tests: 9/10 PASS; only frozen source SHA comparison failed on Windows checkout CRLF. Owner TypeScript PASS.
+- Updated test-only Git blob comparison to normalize CRLF to LF and added drift-detection regression. Corrected tests NOT RUN; no production algorithm or data changes.
+
+
 ## 2026-10-20 — GPS accuracy D1-A offline diagnostics
 
 - Research-only module for explaining frozen legacy T&G altitude candidate decisions; existing detector and saved flight totals unchanged.
