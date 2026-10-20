@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**D1-A verification addendum (2026-10-20):** Initial owner-local research tests 9/10 PASS; Git blob guard was not Windows line-ending portable. Cross-platform test correction staged without changing runtime GPS detection; TypeScript previously PASS. Corrected 11-test suite remains NOT RUN, no accuracy or physical-contact claims.
+
 **GPS Detector Accuracy D1-A (2026-10-20, RESEARCH-ONLY / NOT SHIPPED):** Isolated frozen legacy altitude acceptance/rejection diagnostics with an owner-local, anonymized KML/GPX/CSV aggregate CLI. Distinguishes in-span discontinuity, missed +30m climb, invalid source time/gaps and eligible geometric minima; explicitly never infers physical contact. Uses production detector for legacy accepted counts, no new UI, landing suggestion, saved flight, schema, recency, flags or deployment. Tests authored but not run on current candidate. [Runbook](docs/product/GPS_DETECTOR_D1A_OFFLINE_DIAGNOSTICS_2026-10-20.md).
 
 
