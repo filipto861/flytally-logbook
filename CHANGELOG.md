@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-20 — D1-A owner-local verification at c46b5441
+
+- Owner Windows: `tests/gps-d1-altitude-diagnostics.test.ts` 11/11 PASS; `tests/v351-gps-tg-reliability.test.ts` plus `tests/track-processing.test.ts` 34/34 PASS; `npm run typecheck` PASS. Total targeted 45/45 local tests. Windows source blob identity parity now PASS.
+- No actual new T&G recovery or improvement claimed. Private original KML D1 reports, D1-B, offline new detector, full suite, build, CI, DB or deploy NOT RUN. No production code change.
+
 ## 2026-10-20 — D1-A Windows Git blob test portability correction
 
 - Owner-local initial targeted D1 tests: 9/10 PASS; only frozen source SHA comparison failed on Windows checkout CRLF. Owner TypeScript PASS.
