@@ -48,3 +48,8 @@ Authored and committed: module, tests, local CLI, runbook and roadmap/feature/ch
 Targeted tests/TypeScript: NOT RUN at authorship. Build/browser/CI: NOT RUN/N/A for this bounded research-only scope.
 DB/migration/deploy/production smoke: NOT RUN. No confirmed new detection accuracy improvement.
 Second AI review: WAIVED by owner for this bounded read-only implementation, not falsely recorded as performed.
+## 2026-10-20 owner-local first run and Windows portability correction
+
+- Owner Windows test run of initial D1-A targeted suite: **9 PASS / 1 FAIL** (10 total); failure was the frozen source Git-blob identity test. Local TypeScript `npm run typecheck`: **PASS**. Neither build nor full/legacy suite shown.
+- GitHub source blob for `lib/track-processing.ts` on research branch verified as `ff24b79c1e65ae911c0703ec8b750eb0d488b4d3`; the initial test hashed checkout bytes, which differ on Windows when LF is checked out as CRLF. **Test-only** correction canonicalizes CRLF to LF before the Git blob calculation and adds an adversarial equivalence/drift test. The pinned blob still rejects substantive source changes.
+- Corrected HEAD test execution **NOT RUN** yet; rerun targeted test (now 11 cases expected) plus targeted legacy regressions and TypeScript after fetching. The unrelated generated `next-env.d.ts` worktree modification must be inspected, not silently discarded.
