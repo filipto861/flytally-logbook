@@ -113,3 +113,28 @@ New P1B-16–18 static contract tests for isolated cluster identity, boot/migrat
 **Scoped acceptance:** local Next + disposable PG16 schema-first authenticated login and sample07 review render **observed PASS** by owner screenshots. The P1B warning, open disclosure and long-gap message render correctly. Legacy T&G recovery **NOT DONE / NOT IN P1B SCOPE**. Full subset tests beyond 18, post-helper typecheck/build, sample04 and four negatives, OFF/ON feature flag combinations, upload/split invalidation, tablet/mobile/light and keyboard accessibility, browser Playwright, full CI and deployment **NOT RUN / not evidenced**. Disposable runner completion/cleanup after Ctrl+C also not yet attested. No production DB or traffic tested. P1B remains Draft/OFF.
 
 **Next:** Close remaining P1B visual/flag/browser gates without relaxing safety. If the product owner wants detection improvement, authorize a separate R3-P1C design/milestone with multi-gx native input eligibility, strict source-provenance-aware evidence model, independent review, exact regression fixtures and no unsupported jump/long gap contact inference. Record the observed missed event as an anonymized defect, NOT a success claim or inferred logbook count.
+
+
+## 2026-10-20 — P1B synthetic authenticated browser smoke staged (NOT RUN)
+
+New standalone `tooling/gps-p1b-local-browser-smoke.mjs` uses installed Playwright against **already-running, loopback-only, owned/disposable** fixture created by `tooling/run-gps-p1b-review-local.ps1`. It does not bootstrap/migrate/save/alter flight records. It intentionally blocks network requests to any non-`127.0.0.1:3000` HTTP(S) host and uses only a completely fictional 21-point gx:Track source copied in shape (not real coordinates/times) from source-quality P1A synthetic regression. The sensitive original KML is NEVER used in the source or test. This standalone test is not registered in the frozen ordinary browser suite and cannot replace the release risk browser gate.
+
+Positive (R3 ON / V2 OFF): login to disposable Browser Smoke Pilot account; upload synthetic bad-height-edge source; assert **one** read-only warning, original manual starts value unchanged, auto-open GPS review and native V2 absent; desktop 1440, iPad landscape/portrait and mobile 390 light/dark no horizontal overflow; upload independently nonqualifying synthetic variant removes warning; re-upload positive source recreates warning; explicit manual split at index 12 removes source-based context and returning to single flight restores it. OFF control separately tests same synthetic source and strictly **no** P1B warning. The player/legacy T&G count is never modified or asserted as contact. No flight submission.
+
+Owned disposable runner now takes optional validated `-R3Review 0|1` and `-NativeV2 0|1` (defaults **1 / 0**) instead of hardcoding both; exact throwaway DB identity/guard unchanged. `P1B-19` static smoke/source-isolation contract authored; previous `P1B-17` updated to guard explicit validated toggles. Source-only code review confirmed new test and runner use no raw owner KML / saved flight path. **All NEW HEAD tests, script runtime and OFF/ON browser smoke NOT RUN until owner-local command evidence arrives**; previous 18/18 targeted PASS applies ONLY to prior head `e46e5434` and is not extended to new edits. Typecheck/build and production acceptance NOT RUN. Flag remains OFF in production; no code change to detector, contacts, landings, recency, DB or saved model.
+
+Owner-local commands after stopping old owned runner, confirming Ctrl+C cleanup, and pulling a clean exact branch:
+
+    npm run test:target -- tests/gps-v2-r3-p1b-ui-contract.test.ts
+    npm run typecheck
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File ".\tooling\run-gps-p1b-review-local.ps1"
+    # in SECOND PowerShell with the same current Git checkout:
+    node tooling/gps-p1b-local-browser-smoke.mjs on
+
+    # stop first runner via Ctrl+C and confirm owned cluster cleanup; then:
+    powershell -NoProfile -ExecutionPolicy Bypass -File ".\tooling\run-gps-p1b-review-local.ps1" -R3Review 0
+    # in second PowerShell:
+    node tooling/gps-p1b-local-browser-smoke.mjs off
+
+If the smoke FAILS, do not declare browser accepted; capture non-private error text. Existing uncommitted `next-env.d.ts` may cause runner to refuse an unclean worktree; inspect/stash only that generated change after confirming content, do not discard unrelated edits. Manual original-source sample04 and four negative sources, combined native V2 ON source eligibility, post-cleanup and additional accessibility still require independent evidence. This staged smoke does not automate all product-release gates.
