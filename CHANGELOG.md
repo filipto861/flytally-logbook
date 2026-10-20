@@ -1,4 +1,8 @@
 # FlyTally changelog
+## 2026-10-20 — R3-P1B synthetic-only local browser smoke authored (not yet run or shipped)
+
+- Added `tooling/gps-p1b-local-browser-smoke.mjs` (owned fixture localhost authentication, synthetic source quality notice ON/OFF, strict no remote HTTP requests, no saved flight, source replacement/split invalidation, responsive light/dark) and validated optional review/native V2 flag arguments to the isolated PG16 runner. P1B-19 regression authored and P1B-17 adapted; actual new head targeted test/typecheck/browser **NOT RUN**. Original detector, GPS V2 native source policy, flight model, recency, existing PostgreSQL/Neon and production remain unchanged. P1B Draft.
+
 ## 2026-10-20 — P1B owner-local authenticated browser observation (not shipped)
 
 - Owner-local `e46e5434` targeted P1B tests **18/18 PASS**; authenticated dashboard and GPS sample07 import observed in screenshots on isolated local fixture. P1B displayed one altitude discontinuity warning and unknown-motion gap; original visual player retained six legacy T&G markers, with a further owner-reported contact not recognized. **No detector fix, no count auto-increment, no schema/production changes.** Remaining release/browser/flag/responsive gates **NOT RUN**; R3-P1C potential detector improvement requires separate design approval.
