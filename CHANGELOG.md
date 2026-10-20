@@ -1,4 +1,8 @@
 # FlyTally changelog
+## 2026-10-20 — P1B owned disposable v21 local browser launcher staged (NOT RUN)
+
+- Debugged owner-local login HTTP 500 against existing PG18 55432 `flytally_browser`: runtime Currency v21 fail-closed prerequisite, not verified password failure. Found strict separate disposable currency v21 migration contract. Added `tooling/run-gps-p1b-review-local.ps1` to create/verify a unique owned local PG16/ephemeral port and run existing approved browser bootstrap + exact v20/v21 migration before loopback-only P1B UI, preserving existing local databases, source files and Neon. The helper is staged but not executed. Added three P1B runner safety static tests (total 18 authored P1B tests); NEW HEAD targeted/TS/build NOT RUN; earlier 161 local PASS/TS/build applied only to old head. No DB migration, UI algorithm, landing count/recency, feature release, merge or deploy. Browser gate remains open.
+
 ## 2026-10-19 — P1B post-fix owner-local tests and production build passed (BROWSER VERIFICATION PENDING)
 
 - Owner-local clean tracking-branch code HEAD `0a3c1a5c`: **161/161 targeted Node tests PASS** (0 fails/skips; includes all 15 P1B tests), `npm run typecheck` PASS, `npm run build` PASS (Next.js 16.3.2/Turbopack). This supersedes previous old-head 146/147 test failure as an engineering result, while preserving its audit history. All verification LOCAL, NOT CI.
