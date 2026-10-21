@@ -1,3 +1,9 @@
+## 2026-10-21 — U2 second-PC local test evidence (DRAFT / VISUAL NOT RUN)
+
+- Windows Node `v24.19.0` after fetched `fix/logbook-u2-legibility-20261021@3f270016`: browser-spec JS syntax PASS; focused source tests **2/2 PASS**; TypeScript **PASS**; Next.js production build **PASS** (41/41). `npm ci` succeeded with transient `@img/colour` tarball retry warnings.
+- Working tree on second PC has modified `next-env.d.ts` carried over from prior research branch; diff and provenance not yet reviewed. This file is **not** included in GitHub PR #379; preserve the change until inspection.
+- U2 live computed-style/browser screenshots and 5×2 viewport/theme matrix **NOT RUN**; do not infer effective 12px acceptance from CSS source tests or build. No verified named disposable local PostgreSQL fixture available on second PC yet. No release, merge or deploy.
+
 ## 2026-10-21 — U2 scoped legibility batch 1 (Draft PR #379 / NOT VERIFIED)
 
 - Source-backed U0 measurements: `Required` 10.4px on New Flight/Settings; New Flight contextual copy 11.2px; Review & finish secondary microcopy 9.6–9.92px. Added scoped late `app/ui-system.css` overrides to `.75rem` (~12px @16px root) and line-height 1.45, without global cascade deletion or changed theme colors/form controls.
