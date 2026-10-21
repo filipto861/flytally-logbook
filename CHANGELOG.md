@@ -1,3 +1,10 @@
+## 2026-10-21 — Logbook U1 local core acceptance PASS (Draft, NOT DEPLOYED)
+
+- Owner-local tested `fix/logbook-u1-flight-tab-cancel-focus-20261021@f6db89b7`: `node --check` PASS; targeted Node source **5/5 PASS**; disposable v21 DB identity/ownership/schema PASS; desktop Chromium Playwright `3.4.0 Manual explicit Save` **1/1 PASS (47.3s)**.
+- Verified full R1 certify → R1 archive/R2 draft → unsaved ArrowLeft Cancel retains focus/selection/arrival → R2 certify and immutable original hash → Enter creates DRAFT. The previously observed 5s action timeouts and 30s total test deadline are resolved by bounded waits and a **scoped** 90s scenario limit, not production-auth/certification changes.
+- Earlier U1 TypeScript typecheck PASS and Next production build PASS (41/41) on the same unmodified production source, **not rerun on exact tested head**. CI/full-suite/native iPad Safari/manual accepted-switch path NOT RUN.
+- Only client tab focus, bounded E2E regression, source assertions and governance documents changed. PR #378 still **DRAFT**, not merged; no production DB or deploy. Earlier failures retained chronologically below.
+
 ## 2026-10-21 — U1 entire-scenario Playwright time budget (DRAFT / NOT VERIFIED)
 
 - Owner-local after 20s R1/R2 waits: targeted Node 4/4 PASS, isolated PostgreSQL v21 preflight PASS. Desktop browser advanced past certified R1, archived R1 / correction R2, unsaved-change keyboard cancellation/focus and recertified R2. It **failed 1/1** at final Enter-generated draft step because the overarching Playwright test hit **30-second total timeout**. The draft-save result is unverified, and no E2E completion PASS is claimed.
