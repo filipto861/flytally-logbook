@@ -34,6 +34,12 @@ The U0 owner-uploaded screenshot/JSON ZIP from 21 Oct 2026 contains 110 screensh
 - Authenticated real-page Playwright computed styles, 20 JPEGs, metrics JSON, iPad Safari, visual wrap/contrast acceptance and broader suite **NOT RUN** on this PC. Existing U0 synthetic disposable DB at `127.0.0.1:5433` was prepared on a *different computer*, not confirmed on this one. Do not use a remote/production DB for visual testing.
 - **Status:** implementation passes owner-local static/build gates, **U2 visual gate open**, Draft PR #379; no merge/deploy/migration.
 
+## Clean-tree and exact-head verification — second PC
+
+- Owner independently ran `git status --short`: **empty**; `git diff -- next-env.d.ts`: **empty**; `git rev-parse HEAD`: **`3f2700167df15498a4f4232029254b31388bbedd`**. This explicitly confirms a clean working tree and exact U2 source head used by the earlier 2/2 focused tests, TypeScript and successful build.
+- The earlier `next-env.d.ts` modification was transient and is **no longer present**; no restore/reset, file removal or user-data change is needed.
+- GitHub branch includes subsequent governance-only commits recording the test results. These docs-only commits do not change the tested app/CSS/test source. Authenticated 5×2 Chromium presentation acceptance remains **NOT RUN**.
+
 ## Acceptance contract
 
 1. `node --check e2e/logbook-u2-legibility.spec.mjs` — **NOT RUN**.
