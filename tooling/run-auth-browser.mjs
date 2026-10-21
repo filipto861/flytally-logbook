@@ -61,11 +61,18 @@ if(schemaFirstIntent){
   if(currencyIntent&&(playwrightArgs.length!==2||playwrightArgs[1]!=="e2e/trash-integrity.spec.mjs")){
     console.error("Currency browser needs exactly its dedicated E2E spec.");process.exit(2);
   }
-  if((!uiAuditV21Intent&&process.env.FLYTALLY_CURRENCY_V21_BROWSER!=="1")
+  if(uiAuditV21Intent){
+    if(process.env.FLYTALLY_AUTH_BROWSER!=="1"
+      ||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"
+      ||process.env.VERCEL!==undefined||process.env.VERCEL_ENV!==undefined){
+      console.error("U0 schema-first browser hosting flags missing or invalid. No bootstrap.");
+      process.exit(2);
+    }
+  }else if(process.env.FLYTALLY_CURRENCY_V21_BROWSER!=="1"
     ||process.env.FLYTALLY_AUTH_BROWSER!=="1"
     ||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"
     ||process.env.VERCEL!==undefined||process.env.VERCEL_ENV!==undefined){
-    console.error("Schema-first browser purpose/hosting flags missing or invalid in Node harness. No bootstrap.");
+    console.error("Currency browser purpose/hosting flags missing or invalid in Node harness. No bootstrap.");
     process.exit(2);
   }
 }else if(process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"){
@@ -96,27 +103,33 @@ if(!new Set(["127.0.0.1","localhost","::1","[::1]"]).has(parsedDatabaseUrl.hostn
 }
 
 if(schemaFirstIntent){
-  const urlMatches=uiAuditV21Intent
-    ?(parsedDatabaseUrl.protocol==="postgresql:"
-      &&parsedDatabaseUrl.hostname==="127.0.0.1"
-      &&parsedDatabaseUrl.port==="5433"
-      &&parsedDatabaseUrl.pathname==="/flytally_ui_u0_20261021"
-      &&parsedDatabaseUrl.username==="flytally_ui_u0_20261021"
-      &&parsedDatabaseUrl.password!==""
-      &&parsedDatabaseUrl.search===""&&parsedDatabaseUrl.hash==="")
-    :(parsedDatabaseUrl.protocol==="postgresql:"
-      &&parsedDatabaseUrl.hostname==="127.0.0.1"
-      &&parsedDatabaseUrl.pathname==="/flytally_currency_test"
-      &&parsedDatabaseUrl.username==="flytally"
-      &&parsedDatabaseUrl.password===""
-      &&parsedDatabaseUrl.port!==""
-      &&parsedDatabaseUrl.port!=="5432"
-      &&parsedDatabaseUrl.port!=="55432");
-  if(!urlMatches){
-    console.error("Schema-first browser URL is not the exact dedicated disposable fixture. No bootstrap.");
-    process.exit(2);
+  if(uiAuditV21Intent){
+    if(parsedDatabaseUrl.protocol!=="postgresql:"
+      ||parsedDatabaseUrl.hostname!=="127.0.0.1"
+      ||parsedDatabaseUrl.port!=="5433"
+      ||parsedDatabaseUrl.pathname!=="/flytally_ui_u0_20261021"
+      ||parsedDatabaseUrl.username!=="flytally_ui_u0_20261021"
+      ||parsedDatabaseUrl.password===""
+      ||parsedDatabaseUrl.search!==""||parsedDatabaseUrl.hash!==""){
+      console.error("U0 browser URL is not the exact disposable fixture. No bootstrap.");
+      process.exit(2);
+    }
+    console.log("U0 browser pre-bootstrap purpose and database URL checks PASS.");
+  }else{
+    // Original Currency acceptance guard: intentionally unchanged.
+    if(parsedDatabaseUrl.protocol!=="postgresql:"
+      ||parsedDatabaseUrl.hostname!=="127.0.0.1"
+      ||parsedDatabaseUrl.pathname!=="/flytally_currency_test"
+      ||parsedDatabaseUrl.username!=="flytally"
+      ||parsedDatabaseUrl.password!==""
+      ||parsedDatabaseUrl.port===""
+      ||parsedDatabaseUrl.port==="5432"
+      ||parsedDatabaseUrl.port==="55432"){
+      console.error("Currency browser URL is not the dedicated disposable fixture. No bootstrap.");
+      process.exit(2);
+    }
+    console.log("Currency browser pre-bootstrap purpose and database URL checks PASS.");
   }
-  console.log("Schema-first browser pre-bootstrap purpose and URL checks PASS.");
 }
 let browserEnv;
 try{
