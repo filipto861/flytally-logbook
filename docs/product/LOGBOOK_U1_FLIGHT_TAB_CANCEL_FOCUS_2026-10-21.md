@@ -44,6 +44,14 @@ Flight Detail uses `role=tablist` with roving `tabIndex`. ArrowLeft/ArrowRight/H
 - Targeted source test gains a synchronization contract assertion; new-head tests/browser **NOT RUN**. The fixture now contains synthetic certified data and must be verified before another run.
 - This resolves the diagnosed **test waiting defect in source only**; a successful Playwright rerun remains required for U1 acceptance. If the real redirect or certificate state is absent within 20 s, **fail closed** and inspect trace/DB, do not increase the timeout repeatedly.
 
+## Second owner-local E2E attempt — R2 observation blocked (21 Oct 2026)
+
+- Owner reported clean targeted Node source tests **3/3 PASS**, exact disposable DB identity/owner/v21 preflight PASS, then desktop Chromium targeted Playwright **1 FAIL**.
+- The initial `Save & certify` redirect + R1 lock badge **both passed** with corrected waiting. The next step clicked `Open correction R2`, but old 5s default `toContainText("CORRECTION R2")` still read `CERTIFIED R1`. The later U1 keyboard regression remained **NOT REACHED**. Owner did not yet supply a new trace or query of current correction revision: R2 mutation completion in this run is **UNVERIFIED**, not assumed.
+- Source review of `startCertifiedCorrection` (server action): explicit correction writes the archived R1 snapshot, conditionally opens the draft R2, updates sharing/verification state, then awaits `refreshRecencySnapshot` and revalidates the detail page; it does **not** redirect. The existing 5s browser-visible badge expectation may expire before a legal UI refresh, but the current logs alone do not prove the action eventually completed.
+- Staged narrow **E2E-only** correction: wait up to 20s for `CORRECTION R2` on the existing detail page; immediately assert synthetic DB `record_revision=2|DRAFT` and exactly one archived revision R1. These are strict fail-closed acceptance checks, not a runtime bypass. All existing keyboard cancellation, unsaved arrival and recertification hash checks remain.
+- New-head targeted Node/Playwright/build **NOT RUN**. If the badge fails at 20s or the DB invariants disagree, collect fresh trace/DB evidence before touching actual certified-correction logic. No production DB, migration, main merge or deploy.
+
 ## Branch and evidence
 - Branch: `fix/logbook-u1-flight-tab-cancel-focus-20261021`, created from main `8099149f72d493c34dd59babf65bdb064ff99fc9`; no dependency on pending U0 PR #377.
 - Local Node/Playwright/build/typecheck/DB: NOT RUN on this branch at time of authoring.
