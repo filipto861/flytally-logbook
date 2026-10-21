@@ -1,15 +1,23 @@
 # FlyTally changelog
 
+## 2026-10-21 — GPS Detection 2.0 retirement cleanup (branch only; not deployed)
+
+- At owner's explicit request, created isolated `chore/retire-gps-v2-20261021` from `main` and removed two standalone GPS 2.0 research modules, three research-only tests, and two inactive GPS V2 research documents. Original state remains recoverable from Git history.
+- Retained the existing production GPS KML/GPX/CSV import, legacy detector, charts/maps, flight/saved data, source parsers and merged CSV input correctness fixes. The 2026-10-18 CSV parser fix documentation stays because it describes a legitimate production bug fix.
+- Superseded previous V2 plans; links to deleted V2 documents have been repointed to pre-retirement immutable Git revision. Additional unmerged GPS V2 PRs must not be merged or deployed.
+- Tests/typecheck/build/browser: NOT RUN on this cleanup branch. DB migration: N/A. No merge/production deployment or historical flight deletion occurred.
+
+
 ## 2026-10-18 — GPS Detection 2.0 D3 Batch 1 offline DTO (draft, tests not yet run)
 
 - Added offline-only `research/gps-detection-r21/pilot-review-dto.ts`: exact in-memory CSV source text, local SHA-256 equality-bound upload/split context, strict revision/schema and previous-session validation. No caller-forged trusted source, available pilot candidate, review note, physical-contact inference or flight-count write can result. Source parse diagnostics never include raw coordinates/timestamps in DTO. Genuine sensor quality/datum/altitude mode remains unavailable.
 - Added 13 synthetic tests for malformed/forged source context, missing-vs-zero, invalid source, wrong split/file/algorithm, stale review/session/notes, raw data exclusion and zero movement authority. **TESTS/TYPECHECK/BUILD/RELEASE NOT RUN** for this new exact executable HEAD; evidence awaits owner.
-- No production `app/`, `lib/`, `components/`, DB, migration, private GPS, main merge, certification or deploy. [Contract and acceptance](docs/product/GPS_DETECTION_2_0_R21_D3_OFFLINE_DTO_2026-10-18.md).
+- No production `app/`, `lib/`, `components/`, DB, migration, private GPS, main merge, certification or deploy. [Contract and acceptance](https://github.com/filipto861/flytally-logbook/blob/0fb33a88eb1335d712073f2a76238b52fb641e2a/docs/product/GPS_DETECTION_2_0_R21_D3_OFFLINE_DTO_2026-10-18.md).
 
 ## 2026-10-18 — GPS R2.1c D2-B2 clean-main research bridge (DRAFT / NOT MERGED)
 
 - Staged pure offline `research/gps-detection-r21/csv-lineage.ts` with its original ten-case test suite from formerly owner-tested source SHA `25d0efdb...`, plus 3 new cross-check cases against the merged D2-C.1 production CSV parser. No changes to production runtime, GPS detector, persistence, schema, privacy, or certifier. The research output cannot authorize pilot motion candidates or landing counts.
-- **New branch test status NOT RUN**: previously tested research code is byte-identical but this merged-main context and three new assertions need exact-head targeted Node/typecheck/plan. No production UI, review, DB, merge or deployment. [Scope and handoff](docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_MAIN_REBASELINE_2026-10-18.md).
+- **New branch test status NOT RUN**: previously tested research code is byte-identical but this merged-main context and three new assertions need exact-head targeted Node/typecheck/plan. No production UI, review, DB, merge or deployment. [Scope and handoff](https://github.com/filipto861/flytally-logbook/blob/0fb33a88eb1335d712073f2a76238b52fb641e2a/docs/product/GPS_DETECTION_2_0_R2_1C_D2B2_MAIN_REBASELINE_2026-10-18.md).
 
 ## 2026-10-18 — GPS D2-C.1 merged to main (not deployed)
 
