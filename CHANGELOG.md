@@ -1,3 +1,9 @@
+## 2026-10-21 — U1 Playwright evidence-driven wait correction (DRAFT / NOT VERIFIED)
+
+- Owner trace + screenshot prove original 5 s assertion fired with `Save & certify` pending and `POST /flights/new` outstanding. Owner read-only DB proves the synthetic record was persisted `CERTIFIED R1`, so do not alter production certification logic.
+- Existing `e2e/manual-authority-certification.spec.mjs` now synchronizes initial save on a real detail redirect (20 s, matching existing GPS/certification test), R2 confirmation on explicit banner (20 s) and Enter-created draft on redirect (20 s). Success/lock badges and database evidence assertions preserved. Focused source test adds guard for completed-state synchronization.
+- Updated test/source head browser run, typecheck and build **NOT RUN**; no merge/deploy/DB migration or production runtime change.
+
 ## 2026-10-21 — Logbook U1 owner-local verification attempt (DRAFT / BLOCKED)
 
 - Targeted source tests 2/2 PASS, TypeScript PASS, Next production build PASS (41/41), isolated PG18 DB v21 fixture preflight PASS.
