@@ -1,6 +1,7 @@
 import {test,expect} from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
+import {ensureDetailsOpen} from "./browser-actions.mjs";
 
 const fixturesEnabled=process.env.FLYTALLY_U2_LEGIBILITY_BROWSER==="1"
   &&process.env.FLYTALLY_AUTH_BROWSER==="1"
@@ -95,12 +96,22 @@ test("Logbook U2 text sizes remain legible in 5 viewport × 2 theme matrix",asyn
         const available=await registration.locator("option").evaluateAll(opts=>opts.map(o=>o.value).filter(Boolean));
         expect(available.length).toBeGreaterThan(0);
         await registration.selectOption(available.includes("OK-SP2E")?"OK-SP2E":available[0]);
+        // The context note belongs to the native Flight experience disclosure.
+        // The default collapsed state is valid UX, not a typography regression.
+        // Expand the real pilot-facing sections before measuring visible copy.
+        const experience=page.locator("form.flight-form details.entry-section-experience");
+        const optionalDetails=page.locator("form.flight-form details.entry-section-optional");
+        await expect(experience).toBeVisible();
+        await ensureDetailsOpen(experience);
         await expect(page.locator(".entry-context-note")).toBeVisible();
+        await expect(optionalDetails).toBeVisible();
+        await ensureDetailsOpen(optionalDetails);
         const flight={
           page:"new-flight",viewport:viewport.name,theme,
           styles:[
             await checkLegibility(page,".flight-entry-workspace .field-hint"),
             await checkLegibility(page,".flight-entry-workspace .entry-context-note"),
+            await checkLegibility(page,".flight-entry-workspace .optional-detail-heading small"),
             await checkLegibility(page,".flight-entry-workspace .entry-certification-grid > div > span"),
             await checkLegibility(page,".flight-entry-workspace .entry-certification-grid > div > small",{required:false}),
           ],
