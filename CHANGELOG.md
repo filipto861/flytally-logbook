@@ -1,3 +1,9 @@
+## 2026-10-21 — U2 scoped legibility batch 1 (DRAFT / NOT VERIFIED)
+
+- Source-backed U0 measurements: `Required` 10.4px on New Flight/Settings; New Flight contextual copy 11.2px; Review & finish secondary microcopy 9.6–9.92px. Added scoped late `app/ui-system.css` overrides to `.75rem` (~12px @16px root) and line-height 1.45, without global cascade deletion or changed theme colors/form controls.
+- New `e2e/logbook-u2-legibility.spec.mjs` opt-in test runs New Flight/Settings in 5 Chromium viewport presets × light/dark, measures computed font sizes and root overflow, captures 20 JPEGs + JSON. Guard requires exact named local test DB and purpose flags. New `tests/logbook-u2-legibility.test.ts` source contract verifies CSS scope and test matrix.
+- Independent of pending U0 PR #377 and U1 PR #378; app data/model, authentication, recency, certification and Training unchanged. **Node syntax/targeted/typecheck/build/Playwright NOT RUN**, no release, merge or deploy. [U2 contract](docs/product/LOGBOOK_U2_LEGIBILITY_2026-10-21.md).
+
 # FlyTally changelog
 
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
