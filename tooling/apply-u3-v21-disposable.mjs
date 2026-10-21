@@ -1,8 +1,9 @@
 import {spawnSync} from "node:child_process";
 import {readFileSync} from "node:fs";
 
-// Explicit schema-first rehearsal, exclusively for the throwaway Currency browser DB.
-// The normal Next runtime must never create production v21 schema implicitly.
+// Apply canonical v21 SQL only on the named disposable U3 browser database.
+// The generic browser bootstrap and first Next request already applied v20.
+// Runtime must never infer permission to create production v21 schema.
 const env=process.env;
 if(env.FLYTALLY_U3_SCHEMA_FIRST!=="1"){
   throw new Error("U3 schema-first requires explicit purpose flag.");
@@ -25,7 +26,7 @@ const runtime=readFileSync(new URL("../lib/db-optimization.ts",import.meta.url),
 const names=[...plan.matchAll(/\{version:(\d+),name:"([^"]+)"\}/g)]
   .map(m=>({version:Number(m[1]),name:m[2]}));
 if(names.length!==21||names.some((item,index)=>item.version!==index+1)){
-  throw new Error("Currency fixture migration plan changed; do not infer migration history.");
+  throw new Error("U3 fixture migration plan changed; do not infer migration history.");
 }
 for(const version of [20,21]){
   if(!runtime.includes(`${version}:"${names[version-1].name}"`)){
@@ -43,13 +44,12 @@ function statements(version,nextMarker){
   }
   const blocks=[...section.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
   if(blocks.length!==(version===20?39:9)||blocks.some(sql=>sql.includes("${"))){
-    throw new Error(`Currency v${version} SQL blocks changed or contain interpolation.`);
+    throw new Error(`U3 v${version} SQL blocks changed or contain interpolation.`);
   }
   // Runtime sends each sql`` as a separate statement. psql requires
   // a semicolon between them when assembled into one atomic script.
   return blocks.map(statement=>statement.trimEnd().replace(/;+$/,"")+";");
 }
-const v20=statements(20,"if(version===21)return[");
 const v21=statements(21,"  throw new Error(`Unknown database migration");
 const options=["-d",databaseUrl,"-X","-w","-v","ON_ERROR_STOP=1","-qAt"];
 function psql(input){
@@ -61,19 +61,17 @@ function psql(input){
 }
 const identity=psql("SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||inet_server_port()");
 if(identity!==`flytally_ui_u3_20261021|flytally_u3|127.0.0.1|55433`){
-  throw new Error("Currency fixture server/database identity mismatch. No schema changes.");
+  throw new Error("U3 fixture server/database identity mismatch. No schema changes.");
 }
 const registered=psql("SELECT COALESCE(string_agg(version::text||':'||name,'|' ORDER BY version),'') FROM public.flytally_schema_migrations");
-const expected=names.slice(0,19).map(row=>`${row.version}:${row.name}`).join("|");
+const expected=names.slice(0,20).map(row=>`${row.version}:${row.name}`).join("|");
 if(registered!==expected){
-  throw new Error("Currency fixture requires exact canonical registry v1-v19. No schema changes.");
+  throw new Error("U3 fixture requires exact canonical registry v1-v20. No schema changes.");
 }
 const escapeLiteral=value=>`'${value.replaceAll("'","''")}'`;
 const migrationSql=[
   "BEGIN;",
   "SELECT pg_advisory_xact_lock(704190104);",
-  ...v20,
-  `INSERT INTO public.flytally_schema_migrations(version,name) VALUES(20,${escapeLiteral(names[19].name)});`,
   ...v21,
   `INSERT INTO public.flytally_schema_migrations(version,name) VALUES(21,${escapeLiteral(names[20].name)});`,
   "COMMIT;",
@@ -91,4 +89,4 @@ const evidence=psql(`SELECT
     'rates_exact_currency_tuple_v21_check','aircraft_exact_currency_tuple_v21_check',
     'flights_exact_currency_tuple_v21_check','expenses_amount_encoding_v21_check'))`);
 if(evidence!=="1|12|4")throw new Error("Disposable v21 physical schema postcheck failed.");
-console.log("Disposable U3 schema-first v20/v21: registry 21, columns 12, CHECKs 4 PASS.");
+console.log("Disposable U3 schema-first v21 only: registry 21, columns 12, CHECKs 4 PASS.");
