@@ -78,8 +78,8 @@ if(identity!==expectedIdentity){
   throw new Error("Currency fixture server/database identity mismatch. No schema changes.");
 }
 if(uiAuditV21Intent){
-  const owner=psql("SELECT pg_get_userbyid((SELECT datdba FROM pg_database WHERE datname=current_database()))||'|'||rolsuper||'|'||rolcreatedb FROM pg_roles WHERE rolname=current_user");
-  if(owner!=="flytally_ui_u0_20261021|false|false"){
+  const owner=psql("SELECT pg_get_userbyid((SELECT datdba FROM pg_database WHERE datname=current_database()))||'|'||(CASE WHEN rolsuper THEN 't' ELSE 'f' END)||'|'||(CASE WHEN rolcreatedb THEN 't' ELSE 'f' END) FROM pg_roles WHERE rolname=current_user");
+  if(owner!=="flytally_ui_u0_20261021|f|f"){
     throw new Error("U0 disposable DB owner or privilege identity changed. No migration.");
   }
 }
