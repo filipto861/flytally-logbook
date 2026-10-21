@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**2026-10-21 — LOGBOOK U0 AUTOMATED SCREENSHOT CAPTURE (OWNER-LOCAL TEST PASS, REVIEW PENDING):** Opt-in disposable Chromium Playwright U0 screenshot/metrics capture 1/1 PASS, 2.9 min, on `1ce6cc0e`. U0 visual measurements/screenshots not yet reviewed; no UX fixes released or native Safari validation. Remains Draft PR #377.
+
 **2026-10-21 — LOGBOOK U0 EVIDENCE BLOCKER (STAGED FIX, NOT RELEASED):** First isolated U0 capture attempt failed before login due expected Currency v21 migration preflight; proposed exact-identity schema-first test-only remedy in the open Draft PR reuses canonical migration SQL and no production runtime. No actual UI observations established yet; corrected Playwright NOT RUN.
 
 **2026-10-21 — LOGBOOK UI/UX CONVERGENCE (PLANNED, U0 BASELINE IN PROGRESS):** Existing approved FlyTally design language, SVG icon contract, pending-feedback primitives, light/dark theme and responsive browser tests are retained. Proposed U1–U5 improvements cover source-verified accessibility/focus fixes, effective typography/spacing, existing Flight/Aircraft workflow clarity and restrained motion, gated by U0 browser evidence. U0 itself adds only opt-in visual capture instrumentation (320px + computed-style observations); it is NOT a new product capability or a released UI redesign. No new GPS V2, offline editing, automatic last-aircraft prefill, regulatory authority claim, data model or Training change. [U0 evidence and acceptance](docs/product/LOGBOOK_APPLE_UX_U0_BASELINE_2026-10-21.md).
