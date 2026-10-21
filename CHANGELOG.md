@@ -1,3 +1,9 @@
+## 2026-10-21 — Logbook U1 owner-local verification attempt (DRAFT / BLOCKED)
+
+- Targeted source tests 2/2 PASS, TypeScript PASS, Next production build PASS (41/41), isolated PG18 DB v21 fixture preflight PASS.
+- Desktop Chromium Playwright **1 FAIL**, pre-existing initial Save & certify success banner expected within 5 seconds, not seen; U1 keyboard focus regression not reached. Screenshot, error context and trace need inspection. No runtime regression proven, do not mark browser acceptance PASS.
+- No merge, deploy, production DB mutation or new code changes in this evidence-only update.
+
 ## 2026-10-21 — Logbook U1 tab focus cancel safety (Draft / not released)
 
 - `components/flight-detail-workspace.tsx`: `selectTab` reports acceptance; keyboard navigation only focuses a new tab when selection is actually accepted. Cancelling unsaved-change confirmation preserves focus on the selected logbook tab.
