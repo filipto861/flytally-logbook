@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**2026-10-21 — GPS V2 retirement FINAL branch disposition:** All 23 unmerged experiment remote branches are deleted, together with three local experiment research branches and the remaining local cleanup branch. Only four original GPS-related flight-entry remote branches and the unrelated local `fix/3.4.1-gps-night-time-reliability` branch were observed. Canonical existing GPS import and legacy GPS review remain preserved. No V2 product feature remains active.
+
 **2026-10-21 — GPS V2 retirement cleanup:** GitHub confirms all 23 obsolete experimental GPS V2 remote branches deleted; only four original flight-entry GPS branches retained. `main` retains classic GPS import, track processing, GPS review player and integrity guards. A locally protected cleanup branch awaits final safe manual pruning; no app features removed beyond unpublished research.
 
 **2026-10-21 — GPS V2 EXPERIMENT RETIRED FROM MAIN.** Original KML/GPX/CSV import, map/profile, legacy T&G event suggestions, and accepted CSV integrity fixes remain intact. GPS 2.0 standalone research and experimental warning UI are discontinued, not shipped. Clean-up PR #376 is MERGED (main `d94c4736`); no stored flights affected. Pending task is to prune only 23 obsolete GPS V2 branches; preserve unrelated original GPS importer branches.
