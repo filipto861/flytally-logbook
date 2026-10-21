@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-21 — GPS V2 retired from main (verified merged)
+
+- Merged GPS V2 retirement cleanup PR [#376](https://github.com/filipto861/flytally-logbook/pull/376) as `d94c4736f750c9db2d24bf586e7407387419b1a0`; post-merge main and original GPS parser/import/review components verified. No runtime code or saved flight touched.
+- Owner-local targeted GPS test suite 47/47 PASS, TypeScript PASS, Next.js build PASS (41/41 static pages) on cleanup source HEAD `4ee27120` before docs-only closeout. Local only; no CI, E2E or deployment claimed.
+- 23 experimental GPS V2 PRs closed, issue #348 `not_planned`; GitHub auto-deleted merged cleanup branch. Remaining 23 obsolete remote research branches require explicit user-local safe prune; unrelated flight-entry GPS branches retained. No database migration.
+
+
 ## 2026-10-21 — GPS V2 cleanup: owner-local acceptance at candidate 4ee27120
 
 - Owner Windows local legacy GPS regression/import/track tests **47/47 PASS**; `npm run typecheck` **PASS**; `npm run build` **PASS** with 41/41 static pages generated. Non-blocking Next.js parent package-lock warning noted. Test source branch was cleanup head `4ee27120c290b0aab3ffc8fe1c39b31392b304b0` before docs-only closeout additions.
