@@ -30,3 +30,10 @@ test("certification E2E synchronizes on redirects before success and retained R2
   assert.ok(browser.includes('await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");'));
   assert.ok(browser.includes('await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R2");'));
 });
+
+test("R2 correction acceptance waits for visible draft state and verifies archived R1",()=>{
+  assert.ok(browser.includes('await expect(page.locator(".flight-lock-badge")).toContainText("CORRECTION R2",{timeout:20_000});'));
+  assert.match(browser,/record_revision::text.*CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END/);
+  assert.match(browser,/\.toBe\("2\|DRAFT"\)/);
+  assert.match(browser,/\.toBe\("1"\)/);
+});
