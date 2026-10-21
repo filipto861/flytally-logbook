@@ -726,3 +726,22 @@ button[data-loading="true"]::after{
 .leaflet-container .flytally-map-settings-static{margin:0;font-size:.79rem;color:var(--text-soft)}
 @media(max-width:600px){.leaflet-container .flytally-map-settings-trigger{padding-inline:11px}.leaflet-container .flytally-map-settings-panel{padding:13px;max-height:min(420px,calc(100dvh - 110px))}}
 @media(prefers-reduced-motion:reduce){.leaflet-container .flytally-map-settings-trigger,.leaflet-container .flytally-map-settings-chevron,.leaflet-container .flytally-map-settings-panel button{transition:none}}
+
+/* Logbook U2 — observed secondary-copy legibility.
+   U0 measured Required hints at 10.4px, New Flight contextual copy at
+   11.2px, and completion microcopy at 9.6–9.92px. These scoped declarations
+   intentionally override the later global .field-hint rule without changing
+   other workflows, color tokens, control dimensions or the original cascade. */
+.flight-entry-workspace .field-hint,
+.u33-settings-workspace .field-hint{
+  font-size:.75rem;
+  line-height:1.45;
+}
+.flight-entry-workspace .entry-context-note,
+.flight-entry-workspace .optional-detail-note,
+.flight-entry-workspace .optional-detail-heading small,
+.flight-entry-workspace .entry-certification-grid>div>span,
+.flight-entry-workspace .entry-certification-grid>div>small{
+  font-size:.75rem;
+  line-height:1.45;
+}
