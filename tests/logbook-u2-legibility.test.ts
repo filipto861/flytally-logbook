@@ -50,7 +50,7 @@ test("U2 browser acceptance retains strict disposable DB opt-in and exact visual
 
 test("U2 browser explicitly opens the native Flight experience disclosure before sampling context copy",()=>{
   assert.ok(browser.includes('import {ensureDetailsOpen} from "./browser-actions.mjs";'));
-  const selected=browser.indexOf('await registration.selectOption(available.includes("OK-SP2E")');
+  const selected=browser.indexOf('await registration.selectOption("OK-SP2E")');
   const experience=browser.indexOf('const experience=page.locator("form.flight-form details.entry-section-experience")');
   const opened=browser.indexOf("await ensureDetailsOpen(experience)");
   const visible=browser.indexOf('await expect(page.locator(".entry-context-note")).toBeVisible()');
@@ -59,4 +59,24 @@ test("U2 browser explicitly opens the native Flight experience disclosure before
   assert.ok(selected>=0&&selected<experience&&experience<opened&&opened<visible&&visible<optional&&optional<measured,
     "Do not require visibility for a note inside a closed details element; open the native disclosure first.");
   assert.ok(browser.includes('await checkLegibility(page,".flight-entry-workspace .optional-detail-heading small")'));
+});
+
+test("U2 browser waits for actual client hydration and strict seeded aircraft state",()=>{
+  const goto=browser.indexOf('await page.goto("/flights/new?mode=manual"');
+  const gpsClick=browser.indexOf("await gpsMode.click()");
+  const gpsState=browser.indexOf('await expect(gpsMode).toHaveAttribute("aria-pressed","true"');
+  const manualClick=browser.indexOf("await manualMode.click()");
+  const manualState=browser.indexOf('await expect(manualMode).toHaveAttribute("aria-pressed","true"');
+  const select=browser.indexOf('await registration.selectOption("OK-SP2E")');
+  const controlled=browser.indexOf('await expect(registration).toHaveValue("OK-SP2E")');
+  const category=browser.indexOf('await expect(form).toHaveAttribute("data-aircraft-category",/^(?!unselected$).+/)');
+  const opened=browser.indexOf("await ensureDetailsOpen(experience)");
+  assert.ok(goto>=0&&goto<gpsClick&&gpsClick<gpsState&&gpsState<manualClick
+    &&manualClick<manualState&&manualState<select&&select<controlled
+    &&controlled<category&&category<opened,"Browser must verify hydration and controlled aircraft state before disclosure.");
+  assert.ok(browser.includes('expect(available,"Missing canonical synthetic OK-SP2E aircraft").toContain("OK-SP2E")'));
+  assert.ok(browser.includes('experience.locator(".entry-context-note")'));
+  assert.ok(browser.includes("selectedRegistration:choice?.value"));
+  assert.ok(browser.includes("noteCount:details?.querySelectorAll"));
+  assert.doesNotMatch(browser,/selectOption\(available\.includes\("OK-SP2E"\)\?/);
 });
