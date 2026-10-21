@@ -1,3 +1,9 @@
+## 2026-10-21 — U2 first visual test exposed E2E disclosure setup defect (Draft / NOT VERIFIED)
+
+- Owner second PC verified isolated PG18 v21 synthetic browser fixture and Next.js build PASS (41/41). Targeted authenticated desktop Chromium **1 FAIL**: rendered `Aeroplane · Part-FCL · SEP` inside collapsed `Flight experience` native disclosure; `toBeVisible` on hidden note timed out. 5×2 full visual acceptance NOT RUN to completion. Later standalone PowerShell `PASS` echo is invalid after thrown error.
+- Minimal test-only amendment explicitly opens native Flight experience and Optional details using existing helper before measuring small copy; includes optional-detail-heading computed font-size assertion and source-order regression test. **Revised-head syntax, tests and browser NOT RUN.** No production CSS or app data logic changed.
+- Draft PR #379 remains unmerged/undeployed; no production DB work.
+
 ## 2026-10-21 — U2 clean source-head evidence confirmed (Draft / not released)
 
 - Owner on second PC: `git status --short` **empty**, `git diff -- next-env.d.ts` **empty**, and exact `git rev-parse HEAD=3f2700167df15498a4f4232029254b31388bbedd`. Confirms that earlier U2 2/2 focused tests, TypeScript and Next.js build PASS were performed on a clean exact source head.
