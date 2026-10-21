@@ -38,9 +38,9 @@ async function login(page,returnTo="/dashboard"){
   await page.getByRole("button",{name:"Sign in"}).click();
   // The standard authenticated browser helper already allows 15 seconds.
   // Keep U0 consistent; local Windows scrypt/SSR can exceed the default 5s.
-  const expected=new RegExp(`${returnTo.replace(/[.*+?^$\\{\\}()|[\\]\\\\]/g,"\\\\$&")}(?:\\\\?|$)`);
+  // Compare only the pathname; login may legally append search params.
   try{
-    await expect(page).toHaveURL(expected,{timeout:15000});
+    await expect.poll(()=>new URL(page.url()).pathname,{timeout:15000}).toBe(returnTo);
   }catch(error){
     // Surface only test UI feedback. Never emit passwords, cookies, headers,
     // DATABASE_URL or a full trace into CI stdout.
