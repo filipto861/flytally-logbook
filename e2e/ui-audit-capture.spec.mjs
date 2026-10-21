@@ -10,10 +10,10 @@ const outputDir=path.join(process.cwd(),"test-results","ui-audit");
 
 const viewports=[
   {name:"desktop",width:1440,height:1100},
-  {name:"ipad-landscape",width:1024,height:768},
-  {name:"ipad-portrait",width:768,height:1024},
-  {name:"mobile",width:390,height:844},
-  {name:"mobile-narrow",width:320,height:720},
+  {name:"ipad-landscape",width:1024,height:768,touch:true},
+  {name:"ipad-portrait",width:768,height:1024,touch:true},
+  {name:"mobile",width:390,height:844,touch:true},
+  {name:"mobile-narrow",width:320,height:720,touch:true},
 ];
 const themes=["light","dark"];
 
@@ -173,7 +173,7 @@ test("capture deterministic UI UX audit screenshots",{annotation:{type:"flytally
   test.skip(!captureEnabled,"UI audit capture runs only for the dedicated audit branch or explicit local opt-in.");
   test.skip(!authenticatedBrowser,"Authenticated UI audit capture requires the isolated browser fixture.");
   test.skip(testInfo.project.name!=="desktop-chromium","The audit test manages its own viewport matrix.");
-  test.setTimeout(12*60*1000);
+  test.setTimeout(18*60*1000);
   fs.mkdirSync(outputDir,{recursive:true});
 
   const metrics=[];
@@ -182,6 +182,8 @@ test("capture deterministic UI UX audit screenshots",{annotation:{type:"flytally
       const context=await browser.newContext({
         viewport:{width:viewport.width,height:viewport.height},
         colorScheme:theme,
+        hasTouch:viewport.touch===true,
+        isMobile:viewport.touch===true,
       });
       const page=await context.newPage();
 
@@ -205,6 +207,7 @@ test("capture deterministic UI UX audit screenshots",{annotation:{type:"flytally
     path.join(outputDir,"ui-audit-metrics.json"),
     JSON.stringify({
       schemaVersion:2,
+      emulation:"Chromium viewport and coarse touch emulation; NOT native iPadOS/Safari",
       note:"Observed computed presentation values only; browser reproduction and CSS cascade provenance are separate acceptance gates.",
       capturedAt:new Date().toISOString(),
       commit:process.env.GITHUB_SHA||"local",
