@@ -1,5 +1,36 @@
 # FlyTally changelog
 
+## 2026-10-21 — U0 visual evidence review (Draft documentation)
+
+- Reviewed the owner-supplied 110-screenshot manifest, all 110 JSON measurement rows and representative JPEG visuals (11 states × 5 viewports × 2 themes); not an individual visual audit of all 110 images. Document root overflow 0 for all rows. Evidence linked in `docs/product/LOGBOOK_APPLE_UX_U0_VISUAL_EVIDENCE_2026-10-21.md`; uploaded ZIP SHA-256 recorded, screenshots not copied into Git.
+- Confirmed 10.4px `.field-hint` font (70 samples), New Flight 11.2px helper (50), sampled input desktop 12.16px/touch 16px, 9.6–9.92px Completion secondary copy in effective CSS. Internal horizontal control scroll and individual touch targets remain **NEEDS REPRODUCTION**; fullPage sticky header screenshots are not proof of runtime bug.
+- Only audit documentation updated; browser results attach to earlier owner-tested head, not the new docs SHA. **U1/U2 implementation and acceptance NOT RUN**, no merge/deploy or DB work.
+
+## 2026-10-21 — U0 Playwright screenshot collection PASS (local evidence, draft)
+
+- Owner-local tested `1ce6cc0e17d2845f7dc6b5925301e15fb9552478`: isolated database identity and pre-destructive owner check PASS; fixture bootstrap and source-exact v20/v21 migrations + physical postcheck PASS; opt-in Chromium audit **1/1 PASS in 2.9 minutes**.
+- Screenshot and CSS metrics ZIP NOT RECEIVED / NOT REVIEWED, so UI correctness, readability, consistency and accessibility findings NOT YET ESTABLISHED. Physical iPadOS/Safari N/A; no product/CSS changes, DB release migration, main merge or deploy. Historical failed attempts preserved below.
+
+## 2026-10-21 — U0 login timeout instrumentation (DRAFT / NOT VERIFIED)
+
+- Owner-local exact prior U0 commit `c9eb1b44`: JavaScript syntax 3/3 PASS, targeted Node 11/11 PASS. Local DB identity and canonical v20/v21 schema-first PASS; Playwright 1 FAIL at /login despite valid test-only 64-char SESSION_SECRET/SIGNING_SECRET. Actual application login error is not yet established.
+- Changed **only** `e2e/ui-audit-capture.spec.mjs` to use 15-second login wait matching the existing browser helper and to log sanitized form alert/pending state/URL pathname if navigation does not complete. No credentials/cookies/DB URLs are logged.
+- New code exact-head Node/browser/build NOT RUN; existing production runtime, CSS, authentication and DB unaffected.
+
+## 2026-10-21 — U0 isolated visual-capture schema-first corrective batch (DRAFT / NOT VERIFIED)
+
+- Owner-local initial U0 candidate `58ec2da4`: test DB identity/empty/owner/privileges confirmed, Next.js build + TypeScript PASS (41/41 static pages). Playwright 1 FAIL because generic browser fixture carries schema migrations 1..19 only and v21 runtime correctly refused implicit DDL; login remained on /login.
+- Added strictly opt-in `--ui-audit-v21` test runner gated to the exact user-owned localhost:5433 U0 database, exact screenshot spec/options and flags, pre-destructive owner/non-superuser check and existing canonical v20/v21 schema-first path with registry/physical postcheck; original Currency browser contract preserved. App runtime, production schema and flight data unchanged.
+- Added fail-closed regression assertions for incorrect purpose, database identity and URL. **Post-change branch tests/build/Playwright NOT RUN**; no successful screenshot audit or release claim.
+- U0 can continue only after owner-local rerun and screenshot review. Independent read-only review recommended before merging any database-affecting test harness change. [Contract](docs/product/LOGBOOK_APPLE_UX_U0_BASELINE_2026-10-21.md).
+
+## 2026-10-21 — Logbook Apple UX U0 visual audit instrumentation (draft / NOT VERIFIED)
+
+- Started a **Logbook-only** U0 source-grounded baseline, with roadmap/feature ownership and a dedicated visual/acceptance contract. Prior historical UX audit findings remain closed unless new runtime evidence demonstrates a regression.
+- Expanded the existing opt-in authenticated screenshot capture to include 320px mobile in addition to desktop/iPad/390px and to record selected computed presentation values, horizontal overflow and non-assertive small-target candidates. No product runtime, CSS, actual flight data, auth, DB/schema, or Training changes.
+- **Testing status:** exact branch TypeScript, Node tests, Playwright screenshot capture, build, physical Safari/iPad NOT RUN; browser requires verified disposable localhost PostgreSQL fixture. PR remains draft/unmerged; no deploy.
+- Next: owner-local visual capture with screenshots and JSON, classify actual bugs, then U1 small verified fixes. [Contract](docs/product/LOGBOOK_APPLE_UX_U0_BASELINE_2026-10-21.md).
+
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
 
 - Owner manually deleted remaining local `chore/retire-gps-v2-20261021` at Git HEAD `4ee27120` after the expected newer-commit/tree preconditions had failed. Follow-up independent GitHub comparison confirms this HEAD precedes previously merged `c105e037` by only two governance documentation commits, and the latter commit tree matches PR #376 squash `d94c4736` exactly. No unique source code was lost.
