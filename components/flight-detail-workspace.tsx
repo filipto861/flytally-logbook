@@ -42,11 +42,13 @@ export function FlightDetailWorkspace({
     window.history.replaceState(window.history.state,"",window.location.pathname+(query?`?${query}`:""));
   },[completion]);
 
-  const selectTab=(value:Tab)=>{
-    if(value===tab||submitting)return;
-    if(unsaved&&!window.confirm("You have unsaved flight changes. Switch tabs and discard them?"))return;
+  const selectTab=(value:Tab):boolean=>{
+    if(value===tab)return true;
+    if(submitting)return false;
+    if(unsaved&&!window.confirm("You have unsaved flight changes. Switch tabs and discard them?"))return false;
     if(unsaved)setUnsaved(false);
     setTab(value);
+    return true;
   };
   const onTabKeyDown=(event:KeyboardEvent<HTMLButtonElement>,value:Tab)=>{
     const current=TABS.indexOf(value);let next=current;
@@ -55,7 +57,7 @@ export function FlightDetailWorkspace({
     else if(event.key==="Home")next=0;
     else if(event.key==="End")next=TABS.length-1;
     else return;
-    event.preventDefault();const nextTab=TABS[next];selectTab(nextTab);document.getElementById(`flight-tab-${nextTab}`)?.focus();
+    event.preventDefault();const nextTab=TABS[next];if(selectTab(nextTab))document.getElementById(`flight-tab-${nextTab}`)?.focus();
   };
 
   const item=(value:Tab,label:string,badge?:number)=><button type="button" role="tab" id={`flight-tab-${value}`} aria-controls={`flight-panel-${value}`} className={tab===value?"active":""} aria-selected={tab===value} tabIndex={tab===value?0:-1} onClick={()=>selectTab(value)} onKeyDown={event=>onTabKeyDown(event,value)}><span>{label}</span>{badge!==undefined?<b>{badge}</b>:null}</button>;
