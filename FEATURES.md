@@ -1,3 +1,5 @@
+**2026-10-21 — LOGBOOK U2 READABILITY LOCAL SOURCE/BUILD PASS (NOT RELEASED):** Owner tested U2 Draft PR #379 `3f270016` on second Windows PC: syntax PASS, scoped source assertions 2/2 PASS, `tsc --noEmit` PASS and Next build PASS (41/41). Actual computed font sizes/screenshots not yet measured; visual browser acceptance pending isolated local DB on this PC. No merge/deploy. [Contract](docs/product/LOGBOOK_U2_LEGIBILITY_2026-10-21.md).
+
 **2026-10-21 — LOGBOOK U2 READABILITY (STAGED / NOT RELEASED):** Targeted secondary typography consistency in New Flight and Settings, including 12px `Required` cues, contextual explanations and Review & finish microcopy. Exact scoped CSS and explicit 5-viewport/two-theme visual acceptance are in a separate Draft implementation branch. No general-purpose theme/font overhaul, no runtime flight data changes, no native Safari acceptance; tests NOT RUN. [Contract](docs/product/LOGBOOK_U2_LEGIBILITY_2026-10-21.md).
 
 # FlyTally Logbook — FEATURE LIST
