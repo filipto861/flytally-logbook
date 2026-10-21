@@ -40,6 +40,16 @@ The U0 owner-uploaded screenshot/JSON ZIP from 21 Oct 2026 contains 110 screensh
 - The earlier `next-env.d.ts` modification was transient and is **no longer present**; no restore/reset, file removal or user-data change is needed.
 - GitHub branch includes subsequent governance-only commits recording the test results. These docs-only commits do not change the tested app/CSS/test source. Authenticated 5×2 Chromium presentation acceptance remains **NOT RUN**.
 
+## First second-PC Chromium run — blocked by collapsed native disclosure (21 Oct 2026)
+
+- After `git pull --ff-only` to `d3fcd1b7` (governance-only advancement from previously tested `3f270016`), exact local PostgreSQL v21 identity/owner/nonprivileged synthetic pilot preflight **PASS**.
+- Next.js 16.3.2 production build **PASS**: compilation, TypeScript and 41/41 static route generation.
+- U2 authenticated Playwright desktop-chromium target **1 FAIL**, before complete 5×2 visual acceptance. Locator `.entry-context-note` *exists* with text `Aeroplane · Part-FCL · SEP` but is **hidden** under the native `<details class="entry-section entry-section-experience">`, which normally begins collapsed. Old E2E selected aircraft and immediately asserted this nested note was visible without expanding the disclosure. This is a **test setup defect**, not proof of incorrect typography. Settings may have rendered, but no end-to-end acceptance was completed and output JSON/20 JPEGs was not verified.
+- Source review: `components/flight-form.tsx` line ~141–142 puts the note inside the conditional native `Flight experience` details body; the application intentionally maintains collapsed/expanded disclosure state. No product UX/certification logic change authorized.
+- Narrow **test-only** correction: import canonical `ensureDetailsOpen` helper from `e2e/browser-actions.mjs`, open Flight experience before expecting nested note, open Optional details before measuring its helper text, and measure `.optional-detail-heading small` as part of targeted typography coverage. No app/CSS/DB mutation, no weakening of font-size >=12px or overflow <=1px assertions. Add source-order regression guard.
+- **Revised-head syntax/source/typecheck/build/browser NOT RUN**. The owner-local last `PASS: U2 visual Playwright acceptance` line in PowerShell followed a thrown exception and is not test evidence: the sole browser result was **FAIL**. Playwright also printed `Internal error: step id not found: fixture@58`; treat as untriaged reporter output unless it persists after the primary hidden-note failure is fixed.
+- Next: pull test-only fix, confirm DB v21 and flags, rerun targeted JS/source and Playwright. Inspect 20 screenshots/metrics before closing U2.
+
 ## Acceptance contract
 
 1. `node --check e2e/logbook-u2-legibility.spec.mjs` — **NOT RUN**.
