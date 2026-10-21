@@ -1,6 +1,6 @@
 # Logbook U2 — secondary-copy legibility, Batch 1 (21 Oct 2026)
 
-**Status:** Implemented in Draft branch; owner-local tests/build/browser **NOT RUN**. No merge/deploy.  
+**Status:** Implemented in [Draft PR #379](https://github.com/filipto861/flytally-logbook/pull/379); owner-local tests/build/browser **NOT RUN**. No merge/deploy.  
 **Repository:** `flytally-logbook` only. Base `main@8099149f72d493c34dd59babf65bdb064ff99fc9`. Independent of U0 Draft PR #377 and U1 Draft PR #378.
 
 ## Source of the requirement
