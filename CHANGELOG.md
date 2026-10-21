@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-21 — U3 isolated responsive browser follow-up staged (Draft; NOT RUN)
+
+- Moved special destructive U3 E2E outside the frozen standard `e2e/` test inventory into `tooling/u3-browser/aircraft-delete-focus.spec.mjs`; added `playwright.u3.config.mjs` for a dedicated one-worker/zero-retry Chromium project with `reuseExistingServer:false`.
+- Preserved previous synthetic desktop delete/confirmation-focus/second-Escape/saved-flight checks and added serial 8-case 320/390/768/1024 × light/dark Chrome-touch emulation. Each case checks real resolved theme, lack of horizontal overflow, focused deletion status, persistent DB deletion and return-to-opener focus, with two screenshot attachments for manual visual inspection.
+- New test/config **NOT RUN** on this HEAD; previously observed desktop 1/1 PASS applies only to original test before its relocation. Standard browser suite structural baseline is expected to remain unchanged, but its regression **NOT RUN**. No runtime UI, auth, domain, main, production DB or deployment modifications. [Evidence](docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md).
+
+
 ## 2026-10-21 — U3 isolated authenticated desktop browser verification (Draft; not deployed)
 
 - Owner-local browser test `e2e/logbook-u3-aircraft-delete-focus.spec.mjs` **1/1 PASS (9.7 s)** with Desktop Chromium on dedicated localhost PostgreSQL 18 fixture `flytally_ui_u3_20261021` (port 55433). Covers deletion of synthetic profile, success-status focus, no stale focus replay after later Escape, and disabled delete for aircraft with saved flight.
