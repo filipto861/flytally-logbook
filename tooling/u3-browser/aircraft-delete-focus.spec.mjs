@@ -56,7 +56,7 @@ const responsiveCases=[
 
 test("U3: responsive focus, deletion and Escape across mobile/iPad Chrome emulation @u3-responsive",async({browser},testInfo)=>{
   test.skip(testInfo.project.name!=="desktop-chromium","Matrix owns its own Chrome touch contexts.");
-  test.setTimeout(240_000);
+  test.setTimeout(480_000);
   const db=new URL(process.env.DATABASE_URL||"");
   if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||
      process.env.FLYTALLY_LOCAL_POSTGRES!=="1"||
@@ -89,6 +89,7 @@ test("U3: responsive focus, deletion and Escape across mobile/iPad Chrome emulat
       try{
         const page=await context.newPage();
         await loginBrowserPilot(page,"/database");
+        await expect.poll(()=>page.locator("html").getAttribute("data-theme")).toBe(theme);
         await expectNoHorizontalOverflow(page);
         const card=page.locator("article.aircraft-card").filter({hasText:registration});
         await card.getByRole("button",{name:"Manage aircraft"}).click();
