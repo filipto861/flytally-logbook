@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-21 — U3 local static PASS (first head), later focus-replay safeguard staged (Draft)
+
+- Owner tested U3 first branch checkout `916a8a88` with targeted tests **2/2 PASS**, TypeScript **PASS** and Next.js build **PASS**, 41/41. This is second-PC owner-local evidence, not CI. Exact local `rev-parse HEAD` was not printed; remote HEAD was this commit at checkout.
+- Subsequent source review caught a re-focus edge case: reopening/closing another Aircraft dialog after a successful delete changes `selectedId` and triggers prior effect again with a retained old `libraryStatus`. Changed only success-focus effect to guard once per unique success result identity, preserving normal opener restoration. Added source regression for repeat-close handling.
+- Updated head syntax/targeted tests/typecheck/build/authenticated browser **NOT RUN**. No changes to deletion business rules, persistent records, database, or production deployment.
+
 ## 2026-10-21 — U3 Aircraft delete keyboard-focus continuity (Draft / NOT VERIFIED)
 
 - Read-only audit of previously unsampled Aircraft modal / photo editor, Flight Detail edit tabs and GPS import found one source-confirmed Aircraft accessibility defect: successful delete unmounted its dialog without returning keyboard focus; the opening card may itself disappear. Crop already had Escape/tab/focus handling; Flight Detail fix is separate U1 Draft.
