@@ -36,7 +36,24 @@ async function login(page,returnTo="/dashboard"){
   await page.getByLabel("Email").fill("browser-auth@example.test");
   await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(page).toHaveURL(new RegExp(`${returnTo.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&")}(?:\\?|$)`));
+  // The standard authenticated browser helper already allows 15 seconds.
+  // Keep U0 consistent; local Windows scrypt/SSR can exceed the default 5s.
+  const expected=new RegExp(`${returnTo.replace(/[.*+?^$\\{\\}()|[\\]\\\\]/g,"\\\\$&")}(?:\\\\?|$)`);
+  try{
+    await expect(page).toHaveURL(expected,{timeout:15000});
+  }catch(error){
+    // Surface only test UI feedback. Never emit passwords, cookies, headers,
+    // DATABASE_URL or a full trace into CI stdout.
+    const alert=await page.locator(".login-form [role='alert']").allTextContents().catch(()=>[]);
+    const submit=await page.locator(".login-form button[type='submit']").first()
+      .evaluate(button=>({
+        busy:button.getAttribute("aria-busy")==="true",
+        disabled:button.disabled,
+        label:(button.textContent||"").trim().slice(0,80),
+      })).catch(()=>null);
+    const location=new URL(page.url());
+    throw new Error(`U0 fixture sign-in did not reach expected route. loginAlert=${JSON.stringify(alert.map(value=>value.trim()).slice(0,2))}; submitState=${JSON.stringify(submit)}; locationPath=${location.pathname}; stillOnLogin=${location.pathname==="/login"}`,{cause:error});
+  }
 }
 
 async function measure(page,label,viewport,theme){
