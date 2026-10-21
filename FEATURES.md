@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**2026-10-21 — U3 AIRCRAFT DELETE FOCUS OWNER-LOCAL 2/2 PASS (EARLIER HEAD), FOLLOW-UP OPEN:** Source test 2/2, TypeScript and build (41/41) PASS on first checkout `916a8a88`; source review then found repeat focus to a stale success message when closing another modal. Added one-shot success-result guard and third source regression, **new head NOT TESTED**; browser focus acceptance pending. Draft PR #381, no merge/deploy. [Evidence](docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md).
+
 **2026-10-21 — AIRCRAFT MANAGE DELETE COMPLETION FOCUS (U3 STAGED, NOT RELEASED):** On successful profile deletion the confirmation outside the removed dialog is keyboard-focusable and receives focus; existing role/status message, action, saved-flight deletion block, pending/failed states and Escape behavior remain. Source-only Draft, targeted/typecheck/browser **NOT RUN**. Does not change stored flights or server deletion logic. [Contract](docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md).
 
 **2026-10-21 — GPS V2 retirement FINAL branch disposition:** All 23 unmerged experiment remote branches are deleted, together with three local experiment research branches and the remaining local cleanup branch. Only four original GPS-related flight-entry remote branches and the unrelated local `fix/3.4.1-gps-night-time-reliability` branch were observed. Canonical existing GPS import and legacy GPS review remain preserved. No V2 product feature remains active.
