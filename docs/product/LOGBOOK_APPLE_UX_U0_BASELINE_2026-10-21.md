@@ -43,7 +43,7 @@ Capture output remains under test-results/ui-audit/: screenshots plus ui-audit-m
 
 Capture does not include authenticated private flight screenshots from real users. The runner initializes disposable test fixtures and may reset them.
 
-## Safe owner-local execution (NOT RUN in this milestone)
+## Safe owner-local execution (first attempt BLOCKED; corrected runner NOT RUN)
 
 1. Obtain latest branch and install dependencies locally with Node version matching repo configuration.
 2. Verify DATABASE_URL points to a disposable localhost PostgreSQL cluster with no real data. Never point the fixture reset at Neon/production or a valuable local database.
