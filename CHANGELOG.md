@@ -1,3 +1,9 @@
+## 2026-10-21 — U1 entire-scenario Playwright time budget (DRAFT / NOT VERIFIED)
+
+- Owner-local after 20s R1/R2 waits: targeted Node 4/4 PASS, isolated PostgreSQL v21 preflight PASS. Desktop browser advanced past certified R1, archived R1 / correction R2, unsaved-change keyboard cancellation/focus and recertified R2. It **failed 1/1** at final Enter-generated draft step because the overarching Playwright test hit **30-second total timeout**. The draft-save result is unverified, and no E2E completion PASS is claimed.
+- Scoped `test.setTimeout(90_000)` to the single comprehensive `3.4.0 Manual explicit Save & certify` test, consistent with existing `e2e/gps-rolecrew.spec.mjs` and `e2e/airport-elevation.spec.mjs` patterns. Existing per-action 20s gates, database integrity, and final Enter-draft checks are unchanged. Source contract test added.
+- **Updated code not yet locally tested**; app runtime/DB/certification unchanged; no merge or deploy.
+
 ## 2026-10-21 — U1 R2 correction E2E completion gate (DRAFT / NOT VERIFIED)
 
 - Owner-local retest: targeted source 3/3 PASS, exact local test DB preflight PASS; Playwright **1 FAIL** at existing 5s `CORRECTION R2` expectation after initial R1 certification checks passed. U1 keyboard assertion still NOT REACHED.
