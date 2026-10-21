@@ -251,6 +251,10 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await expect(form.getByRole("button",{name:"Save draft"})).toBeEnabled();
   await expect(form.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
   await form.getByRole("button",{name:"Save & certify flight"}).click();
+  // Production server actions can persist the row and certify it before
+  // the RSC response/redirect finishes. Wait for the actual detail route,
+  // then verify BOTH the completed UI banner and persisted certification.
+  await expect(page).toHaveURL(/\/flights\/\d+(?:\?.*)?$/,{timeout:20_000});
   await expect(page.getByText("Flight saved and certified.")).toBeVisible();
   await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
   expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='12:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");
@@ -291,7 +295,9 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await expect(revisionForm.locator('input[name="arrival"]')).toHaveValue("LKMT");
   expect(browserSqlScalar(`SELECT arrival||'|'||CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKPR|DRAFT");
   await revisionForm.getByRole("button",{name:"Save & certify",exact:true}).click();
-  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
+  // This update begins on the flight detail route already; an immediate URL
+  // assertion would be a false positive. Await the R2 completion state.
+  await expect(page.getByText("Flight saved and certified.")).toBeVisible({timeout:20_000});
   await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R2");
   expect(browserSqlScalar(`SELECT arrival||'|'||record_revision::text||'|'||length(certification_hash)::text FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKMT|2|64");
   expect(browserSqlScalar(`SELECT snapshot_data->>'arrival' FROM flight_certified_revisions WHERE flight_id=${correctedFlightId} AND user_id=9001 AND revision_number=1`)).toBe("LKPR");
@@ -304,6 +310,7 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await page.goto("/flights/new");
   form=await completeManual("13:00","13:05","13:55","14:00");
   await form.locator('input[name="arrival"]').press("Enter");
+  await expect(page).toHaveURL(/\/flights\/\d+(?:\?.*)?$/,{timeout:20_000});
   await expect(page.getByText("Flight saved as draft.")).toBeVisible();
   expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='13:00' ORDER BY id DESC LIMIT 1")).toBe("DRAFT");
   await expectNoHorizontalOverflow(page);
