@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**2026-10-21 — LOGBOOK U0 REVIEWED VISUAL EVIDENCE (NOT SHIPPED):** 110 screenshots and computed-style metrics received and examined; four source-backed typographic legibility issues identified in New Flight/Settings; document overflow 0 across tested matrix. Planned U1 keyboard focus correctness, U2 targeted legibility, U3 wider workflow coverage. No runtime UX corrections released; physical iPad Safari not validated. [Evidence](docs/product/LOGBOOK_APPLE_UX_U0_VISUAL_EVIDENCE_2026-10-21.md).
+
 **2026-10-21 — LOGBOOK U0 AUTOMATED SCREENSHOT CAPTURE (OWNER-LOCAL TEST PASS, REVIEW PENDING):** Opt-in disposable Chromium Playwright U0 screenshot/metrics capture 1/1 PASS, 2.9 min, on `1ce6cc0e`. U0 visual measurements/screenshots not yet reviewed; no UX fixes released or native Safari validation. Remains Draft PR #377.
 
 **2026-10-21 — LOGBOOK U0 EVIDENCE BLOCKER (STAGED FIX, NOT RELEASED):** First isolated U0 capture attempt failed before login due expected Currency v21 migration preflight; proposed exact-identity schema-first test-only remedy in the open Draft PR reuses canonical migration SQL and no production runtime. No actual UI observations established yet; corrected Playwright NOT RUN.
