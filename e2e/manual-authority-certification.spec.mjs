@@ -274,6 +274,21 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await discarded;
   await expect(page.getByRole("tab",{name:"Logbook data"})).toHaveAttribute("aria-selected","true");
   await expect(revisionForm.locator('input[name="arrival"]')).toHaveValue("LKMT");
+
+  // U1 keyboard regression: cancelling an unsaved switch must not move focus
+  // to an unselected tab or discard the in-progress correction.
+  const activeLogbookTab=page.getByRole("tab",{name:"Logbook data"});
+  await activeLogbookTab.focus();
+  const cancelledKeyboardSwitch=page.waitForEvent("dialog").then(async dialog=>{
+    expect(dialog.message()).toContain("unsaved flight changes");
+    await dialog.dismiss();
+  });
+  await activeLogbookTab.press("ArrowLeft");
+  await cancelledKeyboardSwitch;
+  await expect(activeLogbookTab).toBeFocused();
+  await expect(activeLogbookTab).toHaveAttribute("aria-selected","true");
+  await expect(page.getByRole("tab",{name:/GPS track/})).toHaveAttribute("aria-selected","false");
+  await expect(revisionForm.locator('input[name="arrival"]')).toHaveValue("LKMT");
   expect(browserSqlScalar(`SELECT arrival||'|'||CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKPR|DRAFT");
   await revisionForm.getByRole("button",{name:"Save & certify",exact:true}).click();
   await expect(page.getByText("Flight saved and certified.")).toBeVisible();
