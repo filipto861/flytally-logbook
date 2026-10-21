@@ -1,3 +1,5 @@
+**2026-10-21 — U1 BROWSER PARTIAL VERIFICATION (NOT RELEASED):** Owner-local Chromium reached and passed the unsaved-change keyboard tab-focus assertions and R1/R2 revision evidence. Complete browser E2E still **1 FAIL** due to Playwright whole-test 30s timeout during final Enter-as-draft step; final draft save unverified. Scoped 90s test budget staged and NOT RUN; no runtime behavior or production feature released. [Evidence](docs/product/LOGBOOK_U1_FLIGHT_TAB_CANCEL_FOCUS_2026-10-21.md).
+
 **2026-10-21 — PLANNED LOGBOOK U1 KEYBOARD CORRECTNESS (NOT RELEASED):** Flight Detail tab selection/keyboard focus remains aligned after user cancels an unsaved-change prompt. Minimal client behavior fix plus source/E2E regression staged in independent Draft PR; no production functionality, flight data, or certification changes. [Contract](docs/product/LOGBOOK_U1_FLIGHT_TAB_CANCEL_FOCUS_2026-10-21.md).
 
 # FlyTally Logbook — FEATURE LIST
