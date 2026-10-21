@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-21 — U3 revised focus guard tested locally (Draft / browser OPEN)
+
+- Exact owner fetched branch `c257ec9c` (fast-forward from `916a8a88`) and reported revised source contract tests **3/3 PASS**, TypeScript **PASS**, optimized Next.js build **PASS** with **41/41** pages. This is second-PC owner-local evidence, not CI or authenticated browser acceptance.
+- Revised once-per-delete-status focus guard passed static gates; confirm actual delete, focus and later Escape/Close in synthetic browser before acceptance. Browser NOT RUN; no DB/schema, merge or deployment changes.
+
 ## 2026-10-21 — U3 local static PASS (first head), later focus-replay safeguard staged (Draft)
 
 - Owner tested U3 first branch checkout `916a8a88` with targeted tests **2/2 PASS**, TypeScript **PASS** and Next.js build **PASS**, 41/41. This is second-PC owner-local evidence, not CI. Exact local `rev-parse HEAD` was not printed; remote HEAD was this commit at checkout.
