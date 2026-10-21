@@ -266,7 +266,12 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await correction.locator("summary").click();
   await correction.locator('textarea[name="reason"]').fill("Correct the originally recorded arrival airport.");
   await correction.getByRole("button",{name:"Open correction R2"}).click();
-  await expect(page.locator(".flight-lock-badge")).toContainText("CORRECTION R2");
+  // The correction action archives R1, opens R2 and refreshes recency before
+  // its RSC response can update the page. Wait for the actual correction state,
+  // not the generic five-second assertion window.
+  await expect(page.locator(".flight-lock-badge")).toContainText("CORRECTION R2",{timeout:20_000});
+  expect(browserSqlScalar(`SELECT record_revision::text||'|'||CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("2|DRAFT");
+  expect(browserSqlScalar(`SELECT COUNT(*) FROM flight_certified_revisions WHERE flight_id=${correctedFlightId} AND user_id=9001 AND revision_number=1`)).toBe("1");
   await page.getByRole("tab",{name:"Logbook data"}).click();
   const revisionForm=page.locator("form.flight-form");
   await revisionForm.locator('input[name="arrival"]').fill("LKMT");
