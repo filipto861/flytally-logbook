@@ -1,3 +1,5 @@
+**2026-10-21 — PLANNED LOGBOOK U1 KEYBOARD CORRECTNESS (NOT RELEASED):** Flight Detail tab selection/keyboard focus remains aligned after user cancels an unsaved-change prompt. Minimal client behavior fix plus source/E2E regression staged in independent Draft PR; no production functionality, flight data, or certification changes. [Contract](docs/product/LOGBOOK_U1_FLIGHT_TAB_CANCEL_FOCUS_2026-10-21.md).
+
 # FlyTally Logbook — FEATURE LIST
 
 **2026-10-21 — GPS V2 retirement FINAL branch disposition:** All 23 unmerged experiment remote branches are deleted, together with three local experiment research branches and the remaining local cleanup branch. Only four original GPS-related flight-entry remote branches and the unrelated local `fix/3.4.1-gps-night-time-reliability` branch were observed. Canonical existing GPS import and legacy GPS review remain preserved. No V2 product feature remains active.
