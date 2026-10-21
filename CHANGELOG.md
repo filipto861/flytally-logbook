@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-21 — GPS V2 unmerged work retired without merge
+
+- Closed 23 unmerged draft GPS V2 experimental PRs (#349–#359 and #364–#375) without merging or deleting history; closed research issue #348 as not planned. This is cessation of work, not successful completion or a production release.
+- Dedicated cleanup PR #376 remains Draft and unmerged; no production runtime or stored flight changes. Branch deletion and exact-candidate local verification remain pending.
+
 ## 2026-10-21 — GPS Detection 2.0 retirement cleanup (branch only; not deployed)
 
 - At owner's explicit request, created isolated `chore/retire-gps-v2-20261021` from `main` and removed two standalone GPS 2.0 research modules, three research-only tests, and two inactive GPS V2 research documents. Original state remains recoverable from Git history.
