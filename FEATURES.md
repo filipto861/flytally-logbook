@@ -1,3 +1,5 @@
+**2026-10-21 — LOGBOOK U2 READABILITY (STAGED / NOT RELEASED):** Targeted secondary typography consistency in New Flight and Settings, including 12px `Required` cues, contextual explanations and Review & finish microcopy. Exact scoped CSS and explicit 5-viewport/two-theme visual acceptance are in a separate Draft implementation branch. No general-purpose theme/font overhaul, no runtime flight data changes, no native Safari acceptance; tests NOT RUN. [Contract](docs/product/LOGBOOK_U2_LEGIBILITY_2026-10-21.md).
+
 # FlyTally Logbook — FEATURE LIST
 
 **2026-10-21 — GPS V2 retirement FINAL branch disposition:** All 23 unmerged experiment remote branches are deleted, together with three local experiment research branches and the remaining local cleanup branch. Only four original GPS-related flight-entry remote branches and the unrelated local `fix/3.4.1-gps-night-time-reliability` branch were observed. Canonical existing GPS import and legacy GPS review remain preserved. No V2 product feature remains active.
