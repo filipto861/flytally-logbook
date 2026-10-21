@@ -70,7 +70,7 @@ function RateTimeline({aircraft,rates,calendarDefault,defaultCurrency,saveAction
 
 export function AircraftManager({defaultCurrency,aircraft,rates,connections,calendarDefault,saveAction,toggleAction,saveRateAction,deleteRateAction,deleteAction,savePhotoAction,removePhotoAction,shareAction}:{defaultCurrency:string;aircraft:Row[];rates:Row[];connections:Row[];calendarDefault:SaveableCalendarDefault;saveAction:SaveAction;toggleAction:Action;saveRateAction:Action;deleteRateAction:Action;deleteAction:DeleteAction;savePhotoAction:PhotoSaveAction;removePhotoAction:Action;shareAction:ShareAction}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
-  const modalRef=useRef<HTMLElement|null>(null),closeRef=useRef<HTMLButtonElement|null>(null),openerRef=useRef<HTMLButtonElement|null>(null),libraryStatusRef=useRef<HTMLParagraphElement|null>(null);
+  const modalRef=useRef<HTMLElement|null>(null),closeRef=useRef<HTMLButtonElement|null>(null),openerRef=useRef<HTMLButtonElement|null>(null),libraryStatusRef=useRef<HTMLParagraphElement|null>(null),focusedLibraryStatusRef=useRef<AircraftDeleteResult|null>(null);
   const [profileStatus,setProfileStatus]=useState<{ok:boolean;message:string}|null>(null),[newStatus,setNewStatus]=useState<{ok:boolean;message:string}|null>(null),[deleteStatus,setDeleteStatus]=useState<AircraftDeleteResult|null>(null),[libraryStatus,setLibraryStatus]=useState<AircraftDeleteResult|null>(null);
   const [savingProfile,setSavingProfile]=useState(false),[savingNew,setSavingNew]=useState(false),[deleting,setDeleting]=useState(false);
   const selected=aircraft.find(item=>t(item.id)===selectedId)??null,selectedFlightCount=Number(selected?.flight_count||0);
@@ -94,10 +94,14 @@ export function AircraftManager({defaultCurrency,aircraft,rates,connections,cale
   },[selected]);
   useEffect(()=>{setProfileStatus(null);setDeleteStatus(null)},[selectedId]);
   // The deleted card (including its Manage opener) may no longer exist.
-  // Move keyboard focus to the persistent success message after the modal unmounts.
+  // Focus each successful delete announcement once, after its modal closes.
+  // Closing another aircraft later must restore its opener, not steal focus.
   useEffect(()=>{
-    if(!libraryStatus?.ok||selectedId)return;
-    const frame=requestAnimationFrame(()=>libraryStatusRef.current?.focus());
+    if(!libraryStatus?.ok||selectedId||focusedLibraryStatusRef.current===libraryStatus)return;
+    const frame=requestAnimationFrame(()=>{
+      focusedLibraryStatusRef.current=libraryStatus;
+      libraryStatusRef.current?.focus();
+    });
     return()=>cancelAnimationFrame(frame);
   },[libraryStatus,selectedId]);
   const saveSelected=async(form:FormData)=>{setSavingProfile(true);setProfileStatus(null);try{setProfileStatus(await saveAction(form))}catch{setProfileStatus({ok:false,message:"Aircraft profile could not be saved."})}finally{setSavingProfile(false)}};
