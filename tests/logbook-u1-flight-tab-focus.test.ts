@@ -37,3 +37,15 @@ test("R2 correction acceptance waits for visible draft state and verifies archiv
   assert.match(browser,/\.toBe\("2\|DRAFT"\)/);
   assert.match(browser,/\.toBe\("1"\)/);
 });
+
+test("multi-action certification and correction scenario has a scoped 90s total time budget",()=>{
+  const start=browser.indexOf('test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only"');
+  const end=browser.indexOf('test("3.5.0 certified flight can be voided',start);
+  assert.ok(start>=0&&end>start,"The exact 3.4.0 scenario must exist.");
+  const scenario=browser.slice(start,end);
+  assert.match(scenario,/test\.setTimeout\(90_000\)/);
+  assert.match(scenario,/await activeLogbookTab\.press\("ArrowLeft"\)/);
+  assert.match(scenario,/await form\.locator\('input\[name="arrival"\]'\)\.press\("Enter"\)/);
+  assert.match(scenario,/expect\(page\)\.toHaveURL\(/);
+  assert.match(scenario,/CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED'/);
+});
