@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-21 — U3 isolated authenticated desktop browser verification (Draft; not deployed)
+
+- Owner-local browser test `e2e/logbook-u3-aircraft-delete-focus.spec.mjs` **1/1 PASS (9.7 s)** with Desktop Chromium on dedicated localhost PostgreSQL 18 fixture `flytally_ui_u3_20261021` (port 55433). Covers deletion of synthetic profile, success-status focus, no stale focus replay after later Escape, and disabled delete for aircraft with saved flight.
+- Initial browser run **FAIL** at missing v21 (before U3 behavior). Verified migration v20 existed; added bounded U3-only helper `tooling/apply-u3-v21-disposable.mjs` and corrected its initial v1–v19 assumption to accept exact canonical v1–v20 and apply **only v21**. Owner-local syntax check **PASS**, schema-first **PASS** (`registry 21`, `12 columns`, `4 CHECKs`). No production schema/migration gate changes.
+- Previously reported owner-local source tests **3/3 PASS** and TypeScript/build **PASS** (Next.js 16.3.2, 41/41) on unchanged runtime code. Mobile/iPad, native Safari, light/dark visual inspection, forced delete failure, full suite/CI **NOT RUN**. PR #381 still **Draft/unmerged/undeployed**. Older changelog records remain historical snapshots. [Evidence](docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md).
+
+
 ## 2026-10-21 — U3 revised focus guard tested locally (Draft / browser OPEN)
 
 - Exact owner fetched branch `c257ec9c` (fast-forward from `916a8a88`) and reported revised source contract tests **3/3 PASS**, TypeScript **PASS**, optimized Next.js build **PASS** with **41/41** pages. This is second-PC owner-local evidence, not CI or authenticated browser acceptance.
