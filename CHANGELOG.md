@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-21 — U3 Aircraft delete keyboard-focus continuity (Draft / NOT VERIFIED)
+
+- Read-only audit of previously unsampled Aircraft modal / photo editor, Flight Detail edit tabs and GPS import found one source-confirmed Aircraft accessibility defect: successful delete unmounted its dialog without returning keyboard focus; the opening card may itself disappear. Crop already had Escape/tab/focus handling; Flight Detail fix is separate U1 Draft.
+- `components/aircraft-manager.tsx` now focuses the surviving existing `role=status` deletion confirmation in a scheduled post-commit effect and cancels the scheduled callback on cleanup. It is only active for a successful result after the modal closes, with `tabIndex=-1`; no visible layout or text changes.
+- Added `tests/logbook-u3-aircraft-delete-focus.test.ts` and dated U3 source/acceptance contract. Focused Node/typecheck/build/authenticated real-browser **NOT RUN**; no change to deletion eligibility, flight records, photos, rates, auth, DB, GPS, or Training. No merge/deploy.
+
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
 
 - Owner manually deleted remaining local `chore/retire-gps-v2-20261021` at Git HEAD `4ee27120` after the expected newer-commit/tree preconditions had failed. Follow-up independent GitHub comparison confirms this HEAD precedes previously merged `c105e037` by only two governance documentation commits, and the latter commit tree matches PR #376 squash `d94c4736` exactly. No unique source code was lost.
