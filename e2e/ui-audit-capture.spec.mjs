@@ -13,6 +13,7 @@ const viewports=[
   {name:"ipad-landscape",width:1024,height:768},
   {name:"ipad-portrait",width:768,height:1024},
   {name:"mobile",width:390,height:844},
+  {name:"mobile-narrow",width:320,height:720},
 ];
 const themes=["light","dark"];
 
@@ -53,6 +54,49 @@ async function measure(page,label,viewport,theme){
     const details=all("details");
     const requiredHints=all(".field-hint").filter(element=>/required/i.test(element.textContent||""));
     const primaryActions=all(".primary-button, button[type=submit]").map(element=>(element.textContent||element.getAttribute("aria-label")||"").trim()).filter(Boolean);
+    // U0 observations, not acceptance assertions. Effective values can only
+    // identify a candidate mismatch; screenshot + cascade inspection confirms it.
+    const sampleTargets=[
+      ["pageHeader",".page-header"],
+      ["pageStack",".ui-page-stack"],
+      ["sidebar",".sidebar"],
+      ["primaryAction",".page-header .primary-link, .page-header .primary-button"],
+      ["panel",".panel"],
+      ["dashboardWidget",".dashboard-widget"],
+      ["flightRow",".flight-list-row"],
+      ["flightEntryMode",".flight-entry-workspace .entry-choice button"],
+      ["flightEntryHelper",".entry-context-note, .optional-detail-note, .entry-save-state small"],
+      ["formHint",".field-hint"],
+      ["formInput",".flight-form input:not([type=hidden]), .flight-form select"],
+      ["flightEssentials",".entry-section-primary"],
+      ["recordTabs",".detail-tabs"],
+    ];
+    const effectiveStyles=sampleTargets.map(([role,selector])=>{
+      const element=all(selector)[0];
+      if(!element)return null;
+      const style=getComputedStyle(element);
+      const rect=element.getBoundingClientRect();
+      return{
+        role,selector,tag:element.tagName.toLowerCase(),
+        width:Math.round(rect.width*10)/10,
+        height:Math.round(rect.height*10)/10,
+        fontSize:style.fontSize,lineHeight:style.lineHeight,
+        fontWeight:style.fontWeight,color:style.color,
+        backgroundColor:style.backgroundColor,
+        borderRadius:style.borderRadius,
+        padding:style.padding,gap:style.gap,
+        minHeight:style.minHeight,minWidth:style.minWidth,
+        transitionDuration:style.transitionDuration,
+        touchAction:style.touchAction,
+      };
+    }).filter(Boolean);
+    // This is deliberately a candidate count: plain inline links are not
+    // automatically required to be square 44px controls.
+    const smallTargetCandidates=controls.filter(element=>{
+      const rect=element.getBoundingClientRect();
+      return rect.width<44||rect.height<44;
+    });
+    const horizontalOverflowPx=Math.max(0,document.documentElement.scrollWidth-document.documentElement.clientWidth);
     return{
       label,
       path:location.pathname+location.search,
@@ -68,6 +112,9 @@ async function measure(page,label,viewport,theme){
       openDetailsCount:details.filter(element=>element.open).length,
       requiredHintCount:requiredHints.length,
       primaryActions,
+      horizontalOverflowPx,
+      smallTargetCandidateCount:smallTargetCandidates.length,
+      effectiveStyles,
       h1:(document.querySelector("h1")?.textContent||"").trim(),
     };
   },{label,viewport,theme});
@@ -157,6 +204,8 @@ test("capture deterministic UI UX audit screenshots",{annotation:{type:"flytally
   fs.writeFileSync(
     path.join(outputDir,"ui-audit-metrics.json"),
     JSON.stringify({
+      schemaVersion:2,
+      note:"Observed computed presentation values only; browser reproduction and CSS cascade provenance are separate acceptance gates.",
       capturedAt:new Date().toISOString(),
       commit:process.env.GITHUB_SHA||"local",
       viewports,
