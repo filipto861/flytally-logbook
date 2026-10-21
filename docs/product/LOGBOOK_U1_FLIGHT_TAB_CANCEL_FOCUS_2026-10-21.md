@@ -36,6 +36,14 @@ Flight Detail uses `role=tablist` with roving `tabIndex`. ArrowLeft/ArrowRight/H
 - Next: inspect sanitized Playwright screenshot/error-context/trace and read-only isolated fixture row for `2026-10-05`, registration `OK-E2E`, off-block `12:00`; only then decide whether to adjust wait/assertion or investigate certification.
 - No production DB, merge, deploy, release or Training changes.
 
+## Failure artifacts reviewed and narrow test correction (21 Oct 2026)
+
+- Owner uploaded `FlyTally-U1-Playwright-Failure.zip`, containing `error-context.md`, failed screenshot and the full Playwright trace; plus read-only PostgreSQL row for fixture `OK-E2E` / `2026-10-05` / off-block `12:00`: `id=2`, `arrival=LKPR`, **CERTIFIED, revision 1**.
+- Browser screenshot and accessibility snapshot at failure: still on `/flights/new`, with both save controls in disabled pending state (`Saving draft…`, `Saving & certifying…`); no validation error. Trace shows `POST /flights/new` initiated and not completed in the captured network record by test teardown. The test's default `toBeVisible` expectation timed out after **5 seconds**. This is a synchronization / late response problem with an otherwise persisted certified fixture row, **not proof that the certification action failed**.
+- Source-equivalent neighboring `e2e/gps-rolecrew.spec.mjs` already waits up to **20 seconds** for the post-save detail redirect before asserting certified state. This precedent is adopted in this one E2E: initial save and draft Enter wait for a real detail URL (20 s); R2 correction already begins on a detail URL, so it explicitly waits up to 20 s for the completion banner instead. Certifying success text, R1/R2 badge, database integrity and old-revision evidence are still independently asserted. No runtime code or certification service changed.
+- Targeted source test gains a synchronization contract assertion; new-head tests/browser **NOT RUN**. The fixture now contains synthetic certified data and must be verified before another run.
+- This resolves the diagnosed **test waiting defect in source only**; a successful Playwright rerun remains required for U1 acceptance. If the real redirect or certificate state is absent within 20 s, **fail closed** and inspect trace/DB, do not increase the timeout repeatedly.
+
 ## Branch and evidence
 - Branch: `fix/logbook-u1-flight-tab-cancel-focus-20261021`, created from main `8099149f72d493c34dd59babf65bdb064ff99fc9`; no dependency on pending U0 PR #377.
 - Local Node/Playwright/build/typecheck/DB: NOT RUN on this branch at time of authoring.
