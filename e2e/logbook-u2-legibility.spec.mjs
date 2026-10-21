@@ -90,20 +90,53 @@ test("Logbook U2 text sizes remain legible in 5 viewport × 2 theme matrix",asyn
         await page.screenshot({path:path.join(outputDir,`settings__${viewport.name}__${theme}.jpg`),type:"jpeg",quality:80,fullPage:true});
         results.push(settings);
 
-        await page.goto("/flights/new",{waitUntil:"domcontentloaded"});
-        const registration=page.locator('select[name="registration"]');
+        await page.goto("/flights/new?mode=manual",{waitUntil:"domcontentloaded"});
+        // A DOMContentLoaded navigation is not a React hydration barrier. Exercise
+        // both real mode handlers and await their aria-pressed state before any
+        // controlled select change. This prevents pre-hydration input changes
+        // being overwritten when the client finishes attaching React handlers.
+        const gpsMode=page.locator(".flight-entry-workspace .entry-choice button",{hasText:"Import GPS track"});
+        const manualMode=page.locator(".flight-entry-workspace .entry-choice button",{hasText:"Manual entry"});
+        await gpsMode.click();
+        await expect(gpsMode).toHaveAttribute("aria-pressed","true",{timeout:10_000});
+        await manualMode.click();
+        await expect(manualMode).toHaveAttribute("aria-pressed","true",{timeout:10_000});
+
+        const form=page.locator("form.flight-form");
+        const registration=form.locator('select[name="registration"]');
         await expect(registration).toBeVisible();
         const available=await registration.locator("option").evaluateAll(opts=>opts.map(o=>o.value).filter(Boolean));
-        expect(available.length).toBeGreaterThan(0);
-        await registration.selectOption(available.includes("OK-SP2E")?"OK-SP2E":available[0]);
-        // The context note belongs to the native Flight experience disclosure.
-        // The default collapsed state is valid UX, not a typography regression.
-        // Expand the real pilot-facing sections before measuring visible copy.
-        const experience=page.locator("form.flight-form details.entry-section-experience");
-        const optionalDetails=page.locator("form.flight-form details.entry-section-optional");
+        // Fixture must provide the exact expected aircraft. Do not silently
+        // switch to an arbitrary first option with unknown applicability.
+        expect(available,"Missing canonical synthetic OK-SP2E aircraft").toContain("OK-SP2E");
+        await registration.selectOption("OK-SP2E");
+        await expect(registration).toHaveValue("OK-SP2E");
+        await expect(form).toHaveAttribute("data-aircraft-category",/^(?!unselected$).+/);
+        // Native Flight experience is initially collapsed for SEP. Open
+        // it explicitly instead of interpreting a hidden note as a font bug.
+        const experience=form.locator("details.entry-section-experience");
+        const optionalDetails=form.locator("details.entry-section-optional");
         await expect(experience).toBeVisible();
         await ensureDetailsOpen(experience);
-        await expect(page.locator(".entry-context-note")).toBeVisible();
+        try{
+          await expect(experience.locator(".entry-context-note")).toBeVisible();
+        }catch(error){
+          // On failure report only synthetic UI state: no tokens, cookies,
+          // URLs, user records or request headers are included in diagnostics.
+          const state=await page.evaluate(()=>{
+            const form=document.querySelector("form.flight-form");
+            const choice=form?.querySelector('select[name="registration"]');
+            const details=form?.querySelector("details.entry-section-experience");
+            return{
+              selectedRegistration:choice?.value||"",
+              aircraftCategory:form?.getAttribute("data-aircraft-category")||"",
+              experienceOpen:details instanceof HTMLDetailsElement?details.open:null,
+              noteCount:details?.querySelectorAll(".entry-context-note").length??0,
+              manualPressed:document.querySelector(".flight-entry-workspace .entry-choice button:first-child")?.getAttribute("aria-pressed"),
+            };
+          });
+          throw new Error(`U2 ${viewport.name}/${theme}: selected-aircraft context missing after hydration and disclosure. ${JSON.stringify(state)}`,{cause:error});
+        }
         await expect(optionalDetails).toBeVisible();
         await ensureDetailsOpen(optionalDetails);
         const flight={
