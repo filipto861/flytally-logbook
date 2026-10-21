@@ -69,3 +69,32 @@ Create an evidence matrix for Aircraft crop/photos, Flight Detail correction, GP
 **Outstanding acceptance / scope:** U3 keyboard-focus behavior is verified on **Desktop Chromium only**. Mobile Chrome/iPad emulation, native Safari, light/dark visual review, forced failure/duplicate-submission behavior and full regression suite/CI remain **NOT RUN**. None of this constitutes general U0 visual audit completion. Review/merge/deploy are owner decisions. **PR #381 remains Draft, unmerged and undeployed.**
 
 **Documentation reconciliation:** Earlier “NOT RUN” lines in the historical sections and initial verification ledger describe **older branch heads**; the current-status statement and this evidence block supersede those statements for the specific tests actually executed, not for other gates.
+
+
+## U3 follow-up: isolated responsive browser matrix STAGED — 21 Oct 2026, NOT RUN
+
+**Reason for harness isolation:** The prior U3 spec lived in \`e2e/\`, but \`tests/browser-suite-structure.test.ts\` freezes a named standard E2E list in \`tooling/browser-suite-baseline.json\`. An extra U3-only spec would alter that baseline and, in the ordinary browser bootstrap, attempt to run the U3-specific database assertion against a different DB. This is **test harness contamination**, not an aircraft runtime bug. To preserve the standard browser suite, the previous dedicated test has been moved to \`tooling/u3-browser/aircraft-delete-focus.spec.mjs\`; the old \`e2e/logbook-u3-aircraft-delete-focus.spec.mjs\` was removed. The new \`playwright.u3.config.mjs\` uses its own test directory, a single desktop Chromium project, one worker, zero retries and \`reuseExistingServer:false\`. No production runtime files or normal \`playwright.config.mjs\` modified.
+
+**Frozen test environment:** the owner already created and initialized an isolated PostgreSQL 18 cluster on \`127.0.0.1:55433\`, role \`flytally_u3\`, DB \`flytally_ui_u3_20261021\`; the prior successful v21-only migration yielded \`registry 21, columns 12, CHECKs 4 PASS\`. The new matrix requires this exact host/port/database/user plus purpose environment flags, and refuses hosted \`VERCEL\` / \`VERCEL_ENV\`. It **never** invokes generic \`npm run test:browser\`, which resets the fixture's public schema. Do not rerun the v21-only helper after it has succeeded; it is intentionally not an idempotent no-op after registry 21.
+
+**Coverage added, not yet verified:** The original desktop deletion/focus test remains within the isolated spec. A second serial test executes **eight** cases: Chrome touch/mobile context widths \`320\`, \`390\`, \`768\` (iPad portrait), \`1024\` (iPad landscape), each with \`light\` and \`dark\` system color scheme. Each case verifies the actual \`html[data-theme]\`, no document horizontal overflow, open/manage/delete of a distinct synthetic no-flight aircraft, dialog disappearance, visible and focused live status message, DB row deletion, subsequent Escape returns focus to another surviving aircraft's Manage opener without stale status replay, and captures screenshots of both focus states. These are **Chrome touch emulations**, not native iPadOS/WebKit/Safari. Screenshots are for subsequent human visual review and are not themselves a visual PASS.
+
+**Local commands (PowerShell), after independently verifying environment again:**
+
+\`\`\`powershell
+git pull --ff-only
+git status --short
+git rev-parse HEAD
+node --check .\playwright.u3.config.mjs
+node --check .\tooling\u3-browser\aircraft-delete-focus.spec.mjs
+npm run test:target -- tests/browser-suite-structure.test.ts
+# Verify $env:DATABASE_URL host=127.0.0.1, port=55433,
+# path=/flytally_ui_u3_20261021, user=flytally_u3, no password;
+# flags FLYTALLY_AUTH_BROWSER, FLYTALLY_LOCAL_POSTGRES,
+# FLYTALLY_U3_SCHEMA_FIRST are 1; no VERCEL/VERCEL_ENV.
+npx playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0
+\`\`\`
+
+**Current verification boundary:** Original 1/1 Desktop Chromium PASS is historical *before relocation* at test code head \`fd67eee235dfd1daa103ed4095a3d8100af0f4fb\`; new dedicated config and the 8-case matrix are **NOT RUN**. Exact-head syntax / frozen suite structure / desktop re-run / responsive tests: **NOT RUN**. Previous unchanged-runtime source 3/3, owner TypeScript and build (41/41) remain prior evidence, not new test-run claims. Full suite, CI, native Safari, manual screenshot/contrast/focus-ring review **NOT RUN**.
+
+**Next single action:** Owner-local run of the exact U3 config above on the verified *existing migrated* disposable fixture, then triage any failures and review the attached screenshots. Do not merge/deploy or modify production DB/flags. \`main\` advanced after branch creation and now contains Project Memory files absent from this older branch; don't create conflicting copies of the rolling handoff until branch synchronization is approved.
