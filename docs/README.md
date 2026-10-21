@@ -40,6 +40,11 @@
 
 **Product release:** `3.7.0` is **DONE / PRODUCTION** as of 11 October (version, Vercel READY, target alias and owner UX acceptance). Direct post-release browser/HTTP smoke was unavailable here, and third-party map-provider rights/coverage/quotas remain separately unverified; do not infer external permissions from product version or functional acceptance.
 
+## Logbook Apple-style U0 evidence review (21 October 2026 — draft)
+
+- [U0 visual baseline contract](product/LOGBOOK_APPLE_UX_U0_BASELINE_2026-10-21.md) — guarded local browser setup, authoritative verification history and screens matrix.
+- [Owner-uploaded U0 visual evidence review](product/LOGBOOK_APPLE_UX_U0_VISUAL_EVIDENCE_2026-10-21.md) — 110 JPEGs, 110 JSON metrics, source-confirmed typography findings, positive evidence, reproduction limits and proposed U1/U2 batches. Images live in owner evidence ZIP and are intentionally not stored in Git.
+
 ## Active cross-cutting contracts
 
 - [Design language](design-language.md) and [UI/UX audit](ux-audit.md) — visual/design audit and historical closeout.
