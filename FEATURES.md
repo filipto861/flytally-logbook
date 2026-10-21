@@ -1,5 +1,7 @@
 # FlyTally Logbook — FEATURE LIST
 
+**2026-10-21 — FLIGHTS MOBILE CATEGORY DISCOVERABILITY (STAGED, NOT RELEASED):** Preserve existing six flight category filters, add current-page accessibility semantics, and make all six visible at ≤390px as a two-row three-column grid. Above 390px retain current scroll strip. Draft source only; 320/390 light/dark visual/keyboard acceptance pending; no changes to flight data or filters. [Scope](docs/product/LOGBOOK_MOBILE_FLIGHTS_CATEGORY_VISIBILITY_2026-10-21.md).
+
 **2026-10-21 — GPS V2 retirement FINAL branch disposition:** All 23 unmerged experiment remote branches are deleted, together with three local experiment research branches and the remaining local cleanup branch. Only four original GPS-related flight-entry remote branches and the unrelated local `fix/3.4.1-gps-night-time-reliability` branch were observed. Canonical existing GPS import and legacy GPS review remain preserved. No V2 product feature remains active.
 
 **2026-10-21 — GPS V2 retirement cleanup:** GitHub confirms all 23 obsolete experimental GPS V2 remote branches deleted; only four original flight-entry GPS branches retained. `main` retains classic GPS import, track processing, GPS review player and integrity guards. A locally protected cleanup branch awaits final safe manual pruning; no app features removed beyond unpublished research.
