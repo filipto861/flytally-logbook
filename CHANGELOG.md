@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-21 — Flights narrow-mobile category visibility staged (Draft / NOT VERIFIED)
+
+- Observed U0-R01 issue is **discoverability** of six flight category links inside an intentionally horizontally-scrollable strip at 320px, not proven clipping or broken scroll. At ≤390px only, `app/ui-system.css` shows a full-width 3-column × 2-row category grid with 44px-minimum targets and wrapping labels; unrelated segmented nav remains unchanged.
+- Added `aria-current="page"` to exactly the selected category link in `app/(protected)/flights/page.tsx`; no changes to category URLs, filtering, data, results, or backend.
+- Added source contract `tests/logbook-mobile-flight-categories.test.ts` and dated acceptance plan. Syntax/targeted Node/typecheck/build/browser **NOT RUN**; visual matrix, keyboard, native iPad and WCAG not yet evidenced. No merge/deploy or DB impact.
+
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
 
 - Owner manually deleted remaining local `chore/retire-gps-v2-20261021` at Git HEAD `4ee27120` after the expected newer-commit/tree preconditions had failed. Follow-up independent GitHub comparison confirms this HEAD precedes previously merged `c105e037` by only two governance documentation commits, and the latter commit tree matches PR #376 squash `d94c4736` exactly. No unique source code was lost.
