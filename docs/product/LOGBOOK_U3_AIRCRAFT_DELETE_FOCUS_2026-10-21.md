@@ -32,6 +32,14 @@ After a **successful** delete action only, focus the visible, non-interactive li
 
 Create an evidence matrix for Aircraft crop/photos, Flight Detail correction, GPS multi-part import, Statistics and notifications on synthetic authenticated pages, including focus, primary CTA, pending/error/empty states, truncation, 320/390/768/1024 widths, light/dark. Treat U0 unsampled areas as **not visually verified**. Prefer one concern per small batch; do not conflate with U1/U2/U0-R01. After evidence review, prioritize fixes by severity/verified frequency.
 
+## Owner-local first source/build run and follow-up source review (21 Oct 2026)
+
+- Owner fetched `origin/fix/logbook-u3-aircraft-delete-focus-20261021` and switched into the branch with `git status --short` empty before checkout, then ran `npm run test:target -- tests/logbook-u3-aircraft-delete-focus.test.ts`: **2/2 PASS**; `npm run typecheck`: **PASS**; `npm run build`: **PASS** (Next.js 16.3.2, TypeScript clean, static page generation **41/41**). Local Windows PowerShell/Node 24 evidence reported by owner. Corresponding remote commit/source head **`916a8a8807a6c009b8babc29dad5b45ccb2a023b`**, based on remote branch state at checkout; no local `git rev-parse HEAD` output, so association is branch-switch evidence rather than independently printed local SHA. This is local, not CI.
+- Post-test read-only source review identified **a follow-up focus-replay edge case**: the original effect depends on `[libraryStatus, selectedId]`. After a successful delete, leaving `libraryStatus` mounted, opening another aircraft and then closing its modal changes `selectedId` back to null and would requeue focus to the **old** delete status, possibly stealing focus from the just-closed modal opener.
+- **Subsequent source-only amendment, NOT RUN:** add `focusedLibraryStatusRef` identity guard and mark the particular successful result once inside the scheduled focus callback. This preserves normal Close/Escape focus to the current Manage opener on later aircraft dialogs. Adds a third focused source regression test (still source-level, not a browser behavioral test). No data deletion/business logic changes.
+- The earlier **2/2 tests/typecheck/build PASS do not validate this later code head**. Rerun focused tests, typecheck and build for the revised SHA; authenticated browser focus acceptance including success→open another card→Escape/Close remains NOT RUN.
+- Review criterion: reopening and closing a second aircraft dialog must **not** focus the earlier deletion success; a second successful deletion (new result object) must focus its own status once.
+
 ## Verification ledger
 
 - Source inspection of current main and PR separation: **DONE** (GitHub connector).
