@@ -6,6 +6,7 @@
 
 - [AI contributor entrypoint](../AGENTS.md) — stable repo-bound guardrails and navigation only; never duplicates current release state.
 - [AI handoff + independent review template](AI_HANDOFF_TEMPLATE.md) — SHA-bound minimal context for new sessions, independent read-only AI review and evidence ledger.
+- [Project memory](PROJECT_MEMORY/README.md) — rolling [session handoff](PROJECT_MEMORY/SESSION_HANDOFF.md), [active work](PROJECT_MEMORY/ACTIVE_WORK.md) and [checkpoint protocol](PROJECT_MEMORY/HANDOFF_PROTOCOL.md), all subordinate to canonical current sources.
 
 1. [ROADMAP](../ROADMAP.md) — current status, release order, frozen decisions, acceptance gates and next step.
 2. [FEATURE LIST](../FEATURES.md) — implemented/planned capability inventory and intentionally unavailable behavior.
