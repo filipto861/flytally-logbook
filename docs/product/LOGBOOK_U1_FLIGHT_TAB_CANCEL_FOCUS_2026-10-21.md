@@ -1,6 +1,6 @@
 # Logbook U1 — keyboard tab focus after cancelled unsaved switch
 
-**Status:** Draft implementation / tests NOT RUN on this source head.  
+**Status:** Core acceptance **PASS** on owner-local source head `f6db89b7` (5/5 targeted source tests; desktop Chromium 1/1 in 47.3 s). Draft PR #378 awaits owner review; no merge/deploy. Later commits modify governance docs only.  
 **Source:** initial U0 source audit + separate Flight Detail implementation review; not falsely attributed to U0 screenshot coverage.  
 **Scope:** `components/flight-detail-workspace.tsx`, one existing E2E regression and one focused source contract test.
 
@@ -20,9 +20,9 @@ Flight Detail uses `role=tablist` with roving `tabIndex`. ArrowLeft/ArrowRight/H
 - Existing certified-correction Playwright scenario now exercises ArrowLeft from `Logbook data` with a deliberately unsaved arrival field, cancels dialog, and checks focus/selection and unchanged unsaved edit.
 - Added `tests/logbook-u1-flight-tab-focus.test.ts` source contract checks. Source assertions are **not** a substitute for E2E.
 
-## Acceptance / verification
-1. Branch exact-head `npm run test:target -- tests/logbook-u1-flight-tab-focus.test.ts`, TypeScript typecheck and related pre-existing tab/certification unit tests — **NOT RUN**.
-2. Browser: `e2e/manual-authority-certification.spec.mjs` on a dedicated verified disposable database with canonical schema v21 — **NOT RUN**; do not reuse or weaken the U0-only browser harness. In particular no production database.
+## Acceptance / verification (original checklist and outcome)
+1. `npm run test:target -- tests/logbook-u1-flight-tab-focus.test.ts` — **5/5 PASS** on `f6db89b7`; TypeScript **PASS** and Next production build **PASS** on earlier head with unchanged runtime; broader related unit suite NOT RUN.
+2. Browser: `e2e/manual-authority-certification.spec.mjs` on precisely verified local disposable PostgreSQL 18 DB with canonical v21 — **1/1 PASS in 47.3 s** on `f6db89b7`; not CI, not physical iPad/Safari. Never run this mutable fixture against any production database.
 3. Manual keyboard: ArrowRight/Left/Home/End works without unsaved edits; switching with unsaved edits and choosing OK still selects/focuses target; Cancel keeps selection/focus/value; while submitting, no other tab focus.
 4. Responsive/dark visual behavior unchanged; screen-reader/native iPad Safari — **NOT RUN**.
 5. Keep PR Draft until targeted tests and independent review; no merge, deploy or migration based on code inspection alone.
