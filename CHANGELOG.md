@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
+
+- Owner manually deleted remaining local `chore/retire-gps-v2-20261021` at Git HEAD `4ee27120` after the expected newer-commit/tree preconditions had failed. Follow-up independent GitHub comparison confirms this HEAD precedes previously merged `c105e037` by only two governance documentation commits, and the latter commit tree matches PR #376 squash `d94c4736` exactly. No unique source code was lost.
+- All 23 GPS V2 experiment remotes deleted, and remote GitHub branch query now shows only four preserved original flight-entry GPS branches; original import and detector remain present in main. Separate original local GPS maintenance branch retained. No CI/deploy/DB work performed in final branch-prune step.
+
 ## 2026-10-21 — GPS V2 branch retirement completed on GitHub
 
 - Owner's safeguarded PowerShell cleanup executed, reported 23 remote GPS V2 branches deleted and three local research branches deleted. GitHub branch search independently confirms zero experiment GPS V2 branches; four unrelated original flight-entry GPS branches preserved.
