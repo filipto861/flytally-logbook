@@ -53,7 +53,8 @@ Capture does not include authenticated private flight screenshots from real user
 $env:FLYTALLY_AUTH_BROWSER = '1'
 $env:FLYTALLY_LOCAL_POSTGRES = '1'
 $env:FLYTALLY_UI_AUDIT_CAPTURE = '1'
-node tooling/run-auth-browser.mjs e2e/ui-audit-capture.spec.mjs --project=desktop-chromium --retries=0 --workers=1
+$env:FLYTALLY_UI_AUDIT_V21 = '1'
+node tooling/run-auth-browser.mjs --ui-audit-v21 e2e/ui-audit-capture.spec.mjs --project=desktop-chromium --retries=0 --workers=1
 ~~~
 
 4. Record the tested Git SHA, fixture DB identity (without credentials), command/exit code and screenshots + JSON evidence. If guard/preconditions fail, stop. Do not bypass the harness.
