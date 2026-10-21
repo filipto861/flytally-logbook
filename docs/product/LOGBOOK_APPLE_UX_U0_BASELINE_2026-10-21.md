@@ -70,7 +70,8 @@ node tooling/run-auth-browser.mjs --ui-audit-v21 e2e/ui-audit-capture.spec.mjs -
 ## Evidence at this commit
 
 - Source/roadmap review: DONE, pinned to stated baseline.
-- Actual screenshot capture and Playwright: NOT RUN.
+- First owner-local screenshot attempt (21 Oct 2026) used the original generic `run-auth-browser.mjs` path: FAIL/BLOCKED. Local Next build and TypeScript passed (41/41 static pages). Browser fixture bootstrap held only v1..v19, application correctly refused implicit Currency v21 DDL. Login stayed on `/login`; Playwright 1 FAIL. No UI conclusions from this run. Existing isolated U0 DB was confirmed owner-owned, empty and unprivileged before that run.
+- Corrective U0-only purpose `--ui-audit-v21` now uses exactly the existing canonical v20/v21 SQL in a guarded migration step between generic fixture reset and Next startup; strict DB name `flytally_ui_u0_20261021`, owner/role same, localhost `127.0.0.1:5433`, explicit flags, source registry and physical postchecks; no production or generic currency bypass. The original Currency v21 purpose remains separate. **New U0 runner Playwright: NOT RUN.**
 - Physical Safari/iPad: NOT RUN.
 - TypeScript, Node, build, DB, deploy: NOT RUN / N/A for this source-only stage.
 - No user data, runtime behavior, CSS or application routes changed.
