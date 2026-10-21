@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-21 — Logbook Apple UX U0 visual audit instrumentation (draft / NOT VERIFIED)
+
+- Started a **Logbook-only** U0 source-grounded baseline, with roadmap/feature ownership and a dedicated visual/acceptance contract. Prior historical UX audit findings remain closed unless new runtime evidence demonstrates a regression.
+- Expanded the existing opt-in authenticated screenshot capture to include 320px mobile in addition to desktop/iPad/390px and to record selected computed presentation values, horizontal overflow and non-assertive small-target candidates. No product runtime, CSS, actual flight data, auth, DB/schema, or Training changes.
+- **Testing status:** exact branch TypeScript, Node tests, Playwright screenshot capture, build, physical Safari/iPad NOT RUN; browser requires verified disposable localhost PostgreSQL fixture. PR remains draft/unmerged; no deploy.
+- Next: owner-local visual capture with screenshots and JSON, classify actual bugs, then U1 small verified fixes. [Contract](docs/product/LOGBOOK_APPLE_UX_U0_BASELINE_2026-10-21.md).
+
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
 
 - Owner manually deleted remaining local `chore/retire-gps-v2-20261021` at Git HEAD `4ee27120` after the expected newer-commit/tree preconditions had failed. Follow-up independent GitHub comparison confirms this HEAD precedes previously merged `c105e037` by only two governance documentation commits, and the latter commit tree matches PR #376 squash `d94c4736` exactly. No unique source code was lost.
