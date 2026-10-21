@@ -1,3 +1,8 @@
+## 2026-10-21 — U2 clean source-head evidence confirmed (Draft / not released)
+
+- Owner on second PC: `git status --short` **empty**, `git diff -- next-env.d.ts` **empty**, and exact `git rev-parse HEAD=3f2700167df15498a4f4232029254b31388bbedd`. Confirms that earlier U2 2/2 focused tests, TypeScript and Next.js build PASS were performed on a clean exact source head.
+- Previous local generated `next-env.d.ts` change is no longer present, no corrective deletion performed. Source code unchanged; authenticated visual test NOT RUN, no merge/deploy.
+
 ## 2026-10-21 — U2 second-PC local test evidence (DRAFT / VISUAL NOT RUN)
 
 - Windows Node `v24.19.0` after fetched `fix/logbook-u2-legibility-20261021@3f270016`: browser-spec JS syntax PASS; focused source tests **2/2 PASS**; TypeScript **PASS**; Next.js production build **PASS** (41/41). `npm ci` succeeded with transient `@img/colour` tarball retry warnings.
