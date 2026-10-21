@@ -47,3 +47,16 @@ test("U2 browser acceptance retains strict disposable DB opt-in and exact visual
   for(const theme of ["light","dark"])assert.ok(browser.includes(`"${theme}"`),theme);
   assert.ok(browser.includes("NOT native Safari/iPadOS"));
 });
+
+test("U2 browser explicitly opens the native Flight experience disclosure before sampling context copy",()=>{
+  assert.ok(browser.includes('import {ensureDetailsOpen} from "./browser-actions.mjs";'));
+  const selected=browser.indexOf('await registration.selectOption(available.includes("OK-SP2E")');
+  const experience=browser.indexOf('const experience=page.locator("form.flight-form details.entry-section-experience")');
+  const opened=browser.indexOf("await ensureDetailsOpen(experience)");
+  const visible=browser.indexOf('await expect(page.locator(".entry-context-note")).toBeVisible()');
+  const optional=browser.indexOf("await ensureDetailsOpen(optionalDetails)");
+  const measured=browser.indexOf('await checkLegibility(page,".flight-entry-workspace .entry-context-note")');
+  assert.ok(selected>=0&&selected<experience&&experience<opened&&opened<visible&&visible<optional&&optional<measured,
+    "Do not require visibility for a note inside a closed details element; open the native disclosure first.");
+  assert.ok(browser.includes('await checkLegibility(page,".flight-entry-workspace .optional-detail-heading small")'));
+});
