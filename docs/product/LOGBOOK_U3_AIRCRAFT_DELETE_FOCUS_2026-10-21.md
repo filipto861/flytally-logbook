@@ -40,6 +40,15 @@ Create an evidence matrix for Aircraft crop/photos, Flight Detail correction, GP
 - The earlier **2/2 tests/typecheck/build PASS do not validate this later code head**. Rerun focused tests, typecheck and build for the revised SHA; authenticated browser focus acceptance including success→open another card→Escape/Close remains NOT RUN.
 - Review criterion: reopening and closing a second aircraft dialog must **not** focus the earlier deletion success; a second successful deletion (new result object) must focus its own status once.
 
+## Revised-head owner-local static verification — 21 October 2026
+
+- `git pull --ff-only` advanced local U3 branch from `916a8a88` to `c257ec9c9aa9b8038ce700f184771193f1d973e8`.
+- `npm run test:target -- tests/logbook-u3-aircraft-delete-focus.test.ts`: **3/3 PASS**, zero fails/skips.
+- `npm run typecheck`: **PASS** (`tsc --noEmit`).
+- `npm run build`: **PASS**, Next.js 16.3.2, compiled successfully, TypeScript clean, generated **41/41** static pages.
+- This owner-local evidence covers the amended once-per-result focus guard. Runtime focus on actual aircraft deletion and follow-up Close/Escape remains **NOT RUN**, as do authenticated browser and native mobile/iPad checks, full suite and CI. No DB/migration or deploy.
+- Older `NOT RUN` and 2/2-first-head notes below remain historical snapshots, superseded **only for static gates** by these 3/3 results. PR #381 remains Draft pending browser acceptance and owner merge decision.
+
 ## Verification ledger
 
 - Source inspection of current main and PR separation: **DONE** (GitHub connector).
