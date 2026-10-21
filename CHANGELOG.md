@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-21 — U0 isolated visual-capture schema-first corrective batch (DRAFT / NOT VERIFIED)
+
+- Owner-local initial U0 candidate `58ec2da4`: test DB identity/empty/owner/privileges confirmed, Next.js build + TypeScript PASS (41/41 static pages). Playwright 1 FAIL because generic browser fixture carries schema migrations 1..19 only and v21 runtime correctly refused implicit DDL; login remained on /login.
+- Added strictly opt-in `--ui-audit-v21` test runner gated to the exact user-owned localhost:5433 U0 database, exact screenshot spec/options and flags, pre-destructive owner/non-superuser check and existing canonical v20/v21 schema-first path with registry/physical postcheck; original Currency browser contract preserved. App runtime, production schema and flight data unchanged.
+- Added fail-closed regression assertions for incorrect purpose, database identity and URL. **Post-change branch tests/build/Playwright NOT RUN**; no successful screenshot audit or release claim.
+- U0 can continue only after owner-local rerun and screenshot review. Independent read-only review recommended before merging any database-affecting test harness change. [Contract](docs/product/LOGBOOK_APPLE_UX_U0_BASELINE_2026-10-21.md).
+
 ## 2026-10-21 — Logbook Apple UX U0 visual audit instrumentation (draft / NOT VERIFIED)
 
 - Started a **Logbook-only** U0 source-grounded baseline, with roadmap/feature ownership and a dedicated visual/acceptance contract. Prior historical UX audit findings remain closed unless new runtime evidence demonstrates a regression.
