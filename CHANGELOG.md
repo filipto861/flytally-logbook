@@ -2,7 +2,7 @@
 
 ## 2026-10-21 — U0 visual evidence review (Draft documentation)
 
-- Reviewed owner-supplied 110 JPEG screenshots + JSON (110 rows; 11 states × 5 viewports × 2 themes). Document root overflow 0 for all rows. Evidence linked in `docs/product/LOGBOOK_APPLE_UX_U0_VISUAL_EVIDENCE_2026-10-21.md`; uploaded ZIP SHA-256 recorded, screenshots not copied into Git.
+- Reviewed the owner-supplied 110-screenshot manifest, all 110 JSON measurement rows and representative JPEG visuals (11 states × 5 viewports × 2 themes); not an individual visual audit of all 110 images. Document root overflow 0 for all rows. Evidence linked in `docs/product/LOGBOOK_APPLE_UX_U0_VISUAL_EVIDENCE_2026-10-21.md`; uploaded ZIP SHA-256 recorded, screenshots not copied into Git.
 - Confirmed 10.4px `.field-hint` font (70 samples), New Flight 11.2px helper (50), sampled input desktop 12.16px/touch 16px, 9.6–9.92px Completion secondary copy in effective CSS. Internal horizontal control scroll and individual touch targets remain **NEEDS REPRODUCTION**; fullPage sticky header screenshots are not proof of runtime bug.
 - Only audit documentation updated; browser results attach to earlier owner-tested head, not the new docs SHA. **U1/U2 implementation and acceptance NOT RUN**, no merge/deploy or DB work.
 
