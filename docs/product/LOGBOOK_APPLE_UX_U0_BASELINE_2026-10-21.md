@@ -43,6 +43,8 @@ Capture output remains under test-results/ui-audit/: screenshots plus ui-audit-m
 
 Capture does not include authenticated private flight screenshots from real users. The runner initializes disposable test fixtures and may reset them.
 
+**Destructive fixture guard:** The generic bootstrap issues `DROP SCHEMA public CASCADE`. For U0, `--ui-audit-v21` refuses execution unless `FLYTALLY_UI_AUDIT_V21=1`, `FLYTALLY_UI_AUDIT_CAPTURE=1`, `FLYTALLY_AUTH_BROWSER=1`, `FLYTALLY_LOCAL_POSTGRES=1`, the exact audit spec/project/args, and the exact named local DB URL. It checks effective DB owner and non-superuser/no-createdb privileges *before* resetting; repeats identity + canonical registry checks before applying v20/v21. Refuse or abort on any mismatch. Existing rows from the first failed run are disposable browser fixtures and will be replaced in this named audit DB only.
+
 ## Safe owner-local execution (first attempt BLOCKED; corrected runner NOT RUN)
 
 1. Obtain latest branch and install dependencies locally with Node version matching repo configuration.
