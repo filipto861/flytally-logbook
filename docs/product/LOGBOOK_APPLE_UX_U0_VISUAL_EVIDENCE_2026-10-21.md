@@ -27,7 +27,7 @@
 - Both themes render the same core information architecture without observable root overflow even at 320px. New Flight expanded 320px tall document is ~3291px versus desktop ~1983px; single-column height is not itself an error.
 - Explicit `Use LKPR` is a user-triggered button. Do **not** silently prefill/auto-apply the last airport, which the owner rejected.
 - **NOT COVERED:** Flight Detail / edit / certify-correction, Aircraft photo/crop/manage, GPS import, Statistics, Map, Data/Print, Licences/Recency, error/loading/destructive states; native iPadOS/Safari, real keyboard + 200% zoom, color-contrast/WCAG assessment. No broad UI pass claim.
-- Head-to-head screenshots were visually reviewed. Human review is qualitative; quantitative contrast ratio and direct touch tests NOT RUN.
+- Representative screenshot variants were visually examined, alongside quantitative review of every JSON row; this was not a pixel-by-pixel visual check of all 110 JPEGs. Quantitative contrast ratio and real touch tests NOT RUN.
 
 ## Planned implementation boundaries
 1. **U1** separate narrow PR: cancel unsaved-change tab switch must not focus an unselected tab; targeted keyboard regression. Avoid flight-model edits.
