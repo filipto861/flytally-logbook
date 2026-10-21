@@ -43,6 +43,7 @@
 ## Active cross-cutting contracts
 
 - [Design language](design-language.md) and [UI/UX audit](ux-audit.md) — visual/design audit and historical closeout.
+- [Logbook Apple UX U0 baseline](product/LOGBOOK_APPLE_UX_U0_BASELINE_2026-10-21.md) — current source-grounded evidence plan, responsive screenshot fixture and acceptance gates; active draft, not completed browser evidence.
 - [Multi-aircraft canonical scale](product/MULTI_AIRCRAFT_SCALE_CONTRACT.md) — profile/flight applicability and future scale validation.
 - [GPS touch-and-go reliability](product/GPS_TOUCH_AND_GO_RELIABILITY.md) — supported fixes and separately evidenced research follow-up.
 - [Safety Pilot / PIC shared flight](product/SAFETY_PILOT_PIC_WORKFLOW.md) and [General PIC invitation](product/GENERAL_PIC_INVITATION.md) — explicit role/participant evidence.
