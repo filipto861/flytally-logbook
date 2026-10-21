@@ -22,6 +22,18 @@ The U0 owner-uploaded screenshot/JSON ZIP from 21 Oct 2026 contains 110 screensh
 - No new color, theme token, control heights, backdrop/motion, state transitions, validation labels, form business logic or user data. Explicit `Required` stays semantically unchanged.
 - No global `.field-hint` override: credentials/aircraft/GPS/other routes maintain their existing cascade until separately audited. Historical overridden declarations in `globals.css` are left intact.
 
+## Owner-local verification on second Windows PC (21 Oct 2026)
+
+- **Tested branch/head inferred from fetch and switch:** `fix/logbook-u2-legibility-20261021@3f2700167df15498a4f4232029254b31388bbedd`. Owner fetched this branch and switched to it immediately before running tests; `git rev-parse HEAD` was not explicitly printed. No later source changes preceding these tests were reported.
+- Windows PowerShell, Node.js `v24.19.0`; `npm ci` exited successfully (`added 37 packages`) after two transient `@img/colour` tarball retry warnings.
+- `node --check e2e/logbook-u2-legibility.spec.mjs`: **PASS** (exit code 0).
+- `npm run test:target -- tests/logbook-u2-legibility.test.ts`: **2/2 PASS**, 0 failed, owner-local.
+- `npm run typecheck`: **PASS** (`tsc --noEmit`, exit code 0).
+- `npm run build`: **PASS**, Next.js 16.3.2, compiled successfully, TypeScript PASS, generated 41/41 static pages. No external-parent package-lock warning shown in this PC's build.
+- **Known local working-tree exception:** `next-env.d.ts` was modified while the PC was on a prior research branch; that modification was carried across to U2 during `git switch`. The user did **not** report the actual diff. Do not attribute its contents to PR #379, automatically discard it or interpret the owner-local workspace as clean. PR branch diff on GitHub contains only the scoped U2 CSS, tests and governance docs.
+- Authenticated real-page Playwright computed styles, 20 JPEGs, metrics JSON, iPad Safari, visual wrap/contrast acceptance and broader suite **NOT RUN** on this PC. Existing U0 synthetic disposable DB at `127.0.0.1:5433` was prepared on a *different computer*, not confirmed on this one. Do not use a remote/production DB for visual testing.
+- **Status:** implementation passes owner-local static/build gates, **U2 visual gate open**, Draft PR #379; no merge/deploy/migration.
+
 ## Acceptance contract
 
 1. `node --check e2e/logbook-u2-legibility.spec.mjs` — **NOT RUN**.
