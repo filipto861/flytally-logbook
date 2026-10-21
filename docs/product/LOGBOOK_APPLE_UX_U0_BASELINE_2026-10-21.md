@@ -37,7 +37,7 @@ Only the source properties above are confirmed. A source-level opportunity is NO
 
 Use the existing opt-in e2e/ui-audit-capture.spec.mjs. U0 augments its captured JSON with representative effective computed values and small-target/overflow observations. It does not assert visual PASS or automatically modify the application.
 
-Viewport matrix: 1440×1100 desktop, 1024×768 iPad landscape, 768×1024 iPad portrait, 390×844 mobile, 320×720 narrow mobile. Both light and dark for every viewport. Maintain the existing isolated-fixture core route coverage: login, dashboard, flights, connections, settings and New Flight states (blank, registration, PIC, DUAL, Safety Pilot, advanced disclosures).
+Viewport matrix: 1440×1100 desktop, 1024×768 iPad landscape, 768×1024 iPad portrait, 390×844 mobile, 320×720 narrow mobile. Both light and dark for every viewport. The test emulates touch/coarse pointer on iPad/mobile in Chromium; this is NOT Safari or physical device evidence. Maintain the existing isolated-fixture core route coverage: login, dashboard, flights, connections, settings and New Flight states (blank, registration, PIC, DUAL, Safety Pilot, advanced disclosures).
 
 Capture output remains under test-results/ui-audit/: screenshots plus ui-audit-metrics.json. Verify calculated styles against screenshot; the computed style alone does not identify the winning CSS source selector. Gather that separately in browser devtools when an issue is confirmed.
 
