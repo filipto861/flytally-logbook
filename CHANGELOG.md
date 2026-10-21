@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-21 — U0 visual evidence review (Draft documentation)
+
+- Reviewed owner-supplied 110 JPEG screenshots + JSON (110 rows; 11 states × 5 viewports × 2 themes). Document root overflow 0 for all rows. Evidence linked in `docs/product/LOGBOOK_APPLE_UX_U0_VISUAL_EVIDENCE_2026-10-21.md`; uploaded ZIP SHA-256 recorded, screenshots not copied into Git.
+- Confirmed 10.4px `.field-hint` font (70 samples), New Flight 11.2px helper (50), sampled input desktop 12.16px/touch 16px, 9.6–9.92px Completion secondary copy in effective CSS. Internal horizontal control scroll and individual touch targets remain **NEEDS REPRODUCTION**; fullPage sticky header screenshots are not proof of runtime bug.
+- Only audit documentation updated; browser results attach to earlier owner-tested head, not the new docs SHA. **U1/U2 implementation and acceptance NOT RUN**, no merge/deploy or DB work.
+
 ## 2026-10-21 — U0 Playwright screenshot collection PASS (local evidence, draft)
 
 - Owner-local tested `1ce6cc0e17d2845f7dc6b5925301e15fb9552478`: isolated database identity and pre-destructive owner check PASS; fixture bootstrap and source-exact v20/v21 migrations + physical postcheck PASS; opt-in Chromium audit **1/1 PASS in 2.9 minutes**.
