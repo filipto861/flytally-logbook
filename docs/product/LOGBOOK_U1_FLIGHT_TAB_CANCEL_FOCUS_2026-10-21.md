@@ -44,6 +44,19 @@ Flight Detail uses `role=tablist` with roving `tabIndex`. ArrowLeft/ArrowRight/H
 - Targeted source test gains a synchronization contract assertion; new-head tests/browser **NOT RUN**. The fixture now contains synthetic certified data and must be verified before another run.
 - This resolves the diagnosed **test waiting defect in source only**; a successful Playwright rerun remains required for U1 acceptance. If the real redirect or certificate state is absent within 20 s, **fail closed** and inspect trace/DB, do not increase the timeout repeatedly.
 
+## Fourth owner-local E2E — complete acceptance PASS (21 October 2026)
+
+**Tested source branch/head:** `fix/logbook-u1-flight-tab-cancel-focus-20261021` at `f6db89b7c7b427f01563811e58753d82640ae92a`, based on owner-local `git pull --ff-only` fast-forward to `f6db89b7` immediately before the commands. Changes after that tested head are governance documentation only; no runtime/E2E/test source modification.
+
+- `node --check e2e/manual-authority-certification.spec.mjs` — **PASS** (local).
+- `npm run test:target -- tests/logbook-u1-flight-tab-focus.test.ts` — **5/5 PASS** (local, 216.5 ms), including 90-second scope and focus source assertions.
+- `npm run typecheck` — **PASS** (earlier U1 local execution on the unchanged runtime source). Optimized `npm run build` — **PASS**, Next.js generated 41/41 static pages (earlier owner-local build on the unchanged app code; not rerun at final head). This is not CI.
+- Verified before browser run: exact local disposable PostgreSQL 18 database `flytally_ui_u0_20261021` @ `127.0.0.1:5433`; database/current user/owner exact match; no superuser, no createdb; registered schema up to v21; local test session secrets >=32 chars. No production DB.
+- `e2e/manual-authority-certification.spec.mjs` `--project=desktop-chromium --grep "3.4.0 Manual explicit Save" --retries=0` — **1/1 PASS (47.3 seconds)**. Explicit assertions passed: new R1 certification; R1 archival; correction draft R2; keyboard ArrowLeft + user Cancel preserved selection, focus and unsaved arrival; persisted draft not silently changed; R2 recertified with archived R1 hash intact; Enter at /flights/new resulted in **DRAFT**, not accidental certification; no root horizontal overflow.
+- Non-blocking Next.js root/package-lock warning; slow-server-task diagnostic output observed. No errors reported by successful browser run.
+- Verification limits: scoped Chromium desktop only, not native Safari/iPad; full-suite, CI, separate accept-dialog navigation, submitting-state focus, screen reader and production smoke **NOT RUN**. Browser tests used a mutable synthetic fixture, **not an empty DB**.
+- Result: **U1 core acceptance PASS, ready for owner review**. Still Draft PR #378; **not merged, not deployed**. Broader device/assistive acceptance remains U5.
+
 ## Third owner-local E2E attempt — test-wide 30s budget exhausted (21 Oct 2026)
 
 - Owner pulled branch `8e459473`, JS syntax PASS, focused Node source tests **4/4 PASS**, verified the exact local disposable DB owner, role, no-superuser and v21 schema.
