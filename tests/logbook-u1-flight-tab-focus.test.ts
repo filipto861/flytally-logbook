@@ -22,3 +22,11 @@ test("browser acceptance dismisses keyboard-switch dialog without moving focus o
   assert.match(browser,/await expect\(activeLogbookTab\)\.toHaveAttribute\("aria-selected","true"\)/);
   assert.match(browser,/await expect\(revisionForm\.locator\('input\[name="arrival"\]'\)\)\.toHaveValue\("LKMT"\)/);
 });
+
+test("certification E2E synchronizes on redirects before success and retained R2 evidence",()=>{
+  // This test is source evidence only. The real browser assertion must still run.
+  assert.ok(browser.includes('await expect(page).toHaveURL(/\\/flights\\/\\d+(?:\\?.*)?$/,{timeout:20_000});'));
+  assert.ok(browser.includes('await expect(page.getByText("Flight saved and certified.")).toBeVisible({timeout:20_000});'));
+  assert.ok(browser.includes('await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");'));
+  assert.ok(browser.includes('await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R2");'));
+});
