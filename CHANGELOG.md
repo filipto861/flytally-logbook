@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-21 — GPS V2 cleanup: owner-local acceptance at candidate 4ee27120
+
+- Owner Windows local legacy GPS regression/import/track tests **47/47 PASS**; `npm run typecheck` **PASS**; `npm run build` **PASS** with 41/41 static pages generated. Non-blocking Next.js parent package-lock warning noted. Test source branch was cleanup head `4ee27120c290b0aab3ffc8fe1c39b31392b304b0` before docs-only closeout additions.
+- PR #376 changes only isolated retired V2 research/test/doc files plus ROADMAP/FEATURES/CHANGELOG. No production KML/GPX/CSV importer, classic T&G, flight saving, database or Vercel deployment code modified. Tests are local, not CI; full suite/browser/verification planner NOT RUN, DB migration N/A.
+- Experimental GPS V2 PRs #349–#359 and #364–#375 already closed without merge; original issue #348 closed not planned. Obsolete branch deletion is separately guarded and not performed via GitHub connector.
+
+
 ## 2026-10-21 — GPS V2 unmerged work retired without merge
 
 - Closed 23 unmerged draft GPS V2 experimental PRs (#349–#359 and #364–#375) without merging or deleting history; closed research issue #348 as not planned. This is cessation of work, not successful completion or a production release.
