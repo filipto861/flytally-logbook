@@ -71,7 +71,7 @@ export default async function FlightsPage({searchParams}:{searchParams:Promise<P
       </details>
     </section>
 
-    <nav className="period-control" aria-label="Logbook category">{categoryTabs.map(value=><Link key={value||"ALL"} className={(params.category||"")===value?"active":""} href={href(params,{category:value||undefined,page:"1"})}>{value?categoryLabels[value]:"All"}</Link>)}</nav>
+    <nav className="period-control" aria-label="Logbook category">{categoryTabs.map(value=><Link key={value||"ALL"} className={(params.category||"")===value?"active":""} aria-current={(params.category||"")===value?"page":undefined} href={href(params,{category:value||undefined,page:"1"})}>{value?categoryLabels[value]:"All"}</Link>)}</nav>
 
     {activeFilters.length?<nav className="active-filter-bar" aria-label="Active flight filters"><span>Showing:</span>{activeFilters.map(([key,value])=><Link key={key} title={`Remove ${labels[key]||key} filter`} href={href(params,{[key]:undefined,page:"1"})}><small>{labels[key]||key}</small>{filterValue(key,value!)} <b aria-hidden="true">×</b></Link>)}<Link className="clear-all-filters" href="/flights">Clear all</Link></nav>:null}
 

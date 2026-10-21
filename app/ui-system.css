@@ -726,3 +726,31 @@ button[data-loading="true"]::after{
 .leaflet-container .flytally-map-settings-static{margin:0;font-size:.79rem;color:var(--text-soft)}
 @media(max-width:600px){.leaflet-container .flytally-map-settings-trigger{padding-inline:11px}.leaflet-container .flytally-map-settings-panel{padding:13px;max-height:min(420px,calc(100dvh - 110px))}}
 @media(prefers-reduced-motion:reduce){.leaflet-container .flytally-map-settings-trigger,.leaflet-container .flytally-map-settings-chevron,.leaflet-container .flytally-map-settings-panel button{transition:none}}
+
+/* U0-R01 follow-up — narrow Flights category reachability.
+   The U0 screenshot showed categories extending beyond a horizontally
+   scrolling strip at 320px (not a clipping bug). Keep every category
+   visible without a hidden horizontal-scroll gesture at narrow widths.
+   Do not change the reusable period/segment controls elsewhere. */
+@media(max-width:390px){
+  .ui-page-stack > nav.period-control[aria-label="Logbook category"]{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    width:100%;
+    max-width:100%;
+    gap:4px;
+    overflow:visible;
+    scroll-snap-type:none;
+  }
+  .ui-page-stack > nav.period-control[aria-label="Logbook category"] a{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0;
+    min-height:44px;
+    padding:8px 5px;
+    text-align:center;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+}
