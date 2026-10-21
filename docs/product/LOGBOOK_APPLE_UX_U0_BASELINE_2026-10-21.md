@@ -69,6 +69,16 @@ node tooling/run-auth-browser.mjs --ui-audit-v21 e2e/ui-audit-capture.spec.mjs -
 - U1: narrow focus/correctness issues first; U2: typography/icons/cascade; U3: Flight/Aircraft workflows; U4: small motion pilots; U5: acceptance and actual-device checks.
 - Separate PRs; no bulk CSS delete, no implicit data prefill, no invented recency authority, no editing certified/immutable flights.
 
+## U0 owner-local Playwright acceptance — 21 Oct 2026 (new evidence)
+
+**Exact tested git head:** `1ce6cc0e17d2845f7dc6b5925301e15fb9552478` (the owner reported `git pull --ff-only` as already up to date before executing the test; independent local SHA printout is still requested if there is any ambiguity).
+
+- Local owner report: `node --check e2e/ui-audit-capture.spec.mjs` PASS; guarded `--ui-audit-v21` pre-bootstrap URL/role/owner validation PASS; disposable fixture bootstrap PASS; canonical v20/v21 registry/12 columns/4 CHECKs PASS.
+- `node tooling/run-auth-browser.mjs --ui-audit-v21 e2e/ui-audit-capture.spec.mjs --project=desktop-chromium --retries=0 --workers=1` → **Playwright 1 passed in 2.9 minutes, 0 failed** and independent disposable schema-first v21 physical postcheck PASS, according to the provided PowerShell log.
+- Screenshot contents and JSON measurement artifact **NOT YET RECEIVED / NOT REVIEWED**. This passes the automation collection gate, not the visual design acceptance gate.
+- Browser run is Chromium viewport/touch emulation, not native iPad Safari. Nonblocking Next.js root/package-lock warning was emitted; no browser error was reported.
+- This is local evidence, not GitHub Actions CI. No merge, deploy, production DB change or app/CSS fix.
+
 ## Evidence at this commit
 
 - Source/roadmap review: DONE, pinned to stated baseline.
