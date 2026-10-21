@@ -1,3 +1,10 @@
+## 2026-10-21 — Logbook U1 tab focus cancel safety (Draft / not released)
+
+- `components/flight-detail-workspace.tsx`: `selectTab` reports acceptance; keyboard navigation only focuses a new tab when selection is actually accepted. Cancelling unsaved-change confirmation preserves focus on the selected logbook tab.
+- Added keyboard unsaved-correction scenario in `e2e/manual-authority-certification.spec.mjs` and focused source contract `tests/logbook-u1-flight-tab-focus.test.ts`.
+- No styling, navigation structure, regulatory logic, database schema, data migrations, or Training changes.
+- Current branch exact-head tests/typecheck/build/Playwright **NOT RUN**; no production deploy, main merge or GitHub Actions evidence. [Contract](docs/product/LOGBOOK_U1_FLIGHT_TAB_CANCEL_FOCUS_2026-10-21.md).
+
 # FlyTally changelog
 
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
