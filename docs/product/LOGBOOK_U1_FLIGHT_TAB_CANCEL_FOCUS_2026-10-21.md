@@ -44,6 +44,14 @@ Flight Detail uses `role=tablist` with roving `tabIndex`. ArrowLeft/ArrowRight/H
 - Targeted source test gains a synchronization contract assertion; new-head tests/browser **NOT RUN**. The fixture now contains synthetic certified data and must be verified before another run.
 - This resolves the diagnosed **test waiting defect in source only**; a successful Playwright rerun remains required for U1 acceptance. If the real redirect or certificate state is absent within 20 s, **fail closed** and inspect trace/DB, do not increase the timeout repeatedly.
 
+## Third owner-local E2E attempt — test-wide 30s budget exhausted (21 Oct 2026)
+
+- Owner pulled branch `8e459473`, JS syntax PASS, focused Node source tests **4/4 PASS**, verified the exact local disposable DB owner, role, no-superuser and v21 schema.
+- Browser made it all the way through R1 creation and certification, archived R1 -> R2 draft correction, canceling unsaved keyboard tab selection with focus/persisted draft invariants, re-certification of R2 and reload. No failing assertion was reported before the test's last Enter-as-draft sequence.
+- At the final `input[name="arrival"].press("Enter")`, `expect(page).toHaveURL(...,{timeout:20_000})` was interrupted by the **test-wide 30,000ms timeout** while the page still showed `/flights/new`. **No evidence yet that Enter failed to submit**: a shorter outer test deadline superseded the step's remaining wait. A final draft row and full E2E PASS remain UNVERIFIED.
+- Repo precedent: `e2e/gps-rolecrew.spec.mjs`, `e2e/airport-elevation.spec.mjs`, and `e2e/trash-integrity.spec.mjs` scope longer, multi-action browser tests to 60–90s. Narrow fix adds `test.setTimeout(90_000)` only to this `3.4.0` scenario. 20s response bounds, real redirects and persisted certification/archived-hash checks remain unchanged; test source contract verifies that final Enter/draft checks remain.
+- **New head syntax, Node, build, Playwright: NOT RUN**. On rerun, if final Enter still fails within its 20s step budget, capture fresh browser trace and fixture row (13:00) before altering behavior. No data model, Server Action, production or Training changes.
+
 ## Second owner-local E2E attempt — R2 observation blocked (21 Oct 2026)
 
 - Owner reported clean targeted Node source tests **3/3 PASS**, exact disposable DB identity/owner/v21 preflight PASS, then desktop Chromium targeted Playwright **1 FAIL**.
