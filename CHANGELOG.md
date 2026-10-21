@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-21 — U0 Playwright screenshot collection PASS (local evidence, draft)
+
+- Owner-local tested `1ce6cc0e17d2845f7dc6b5925301e15fb9552478`: isolated database identity and pre-destructive owner check PASS; fixture bootstrap and source-exact v20/v21 migrations + physical postcheck PASS; opt-in Chromium audit **1/1 PASS in 2.9 minutes**.
+- Screenshot and CSS metrics ZIP NOT RECEIVED / NOT REVIEWED, so UI correctness, readability, consistency and accessibility findings NOT YET ESTABLISHED. Physical iPadOS/Safari N/A; no product/CSS changes, DB release migration, main merge or deploy. Historical failed attempts preserved below.
+
 ## 2026-10-21 — U0 login timeout instrumentation (DRAFT / NOT VERIFIED)
 
 - Owner-local exact prior U0 commit `c9eb1b44`: JavaScript syntax 3/3 PASS, targeted Node 11/11 PASS. Local DB identity and canonical v20/v21 schema-first PASS; Playwright 1 FAIL at /login despite valid test-only 64-char SESSION_SECRET/SIGNING_SECRET. Actual application login error is not yet established.
