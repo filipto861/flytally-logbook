@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-21 — U0 login timeout instrumentation (DRAFT / NOT VERIFIED)
+
+- Owner-local exact prior U0 commit `c9eb1b44`: JavaScript syntax 3/3 PASS, targeted Node 11/11 PASS. Local DB identity and canonical v20/v21 schema-first PASS; Playwright 1 FAIL at /login despite valid test-only 64-char SESSION_SECRET/SIGNING_SECRET. Actual application login error is not yet established.
+- Changed **only** `e2e/ui-audit-capture.spec.mjs` to use 15-second login wait matching the existing browser helper and to log sanitized form alert/pending state/URL pathname if navigation does not complete. No credentials/cookies/DB URLs are logged.
+- New code exact-head Node/browser/build NOT RUN; existing production runtime, CSS, authentication and DB unaffected.
+
 ## 2026-10-21 — U0 isolated visual-capture schema-first corrective batch (DRAFT / NOT VERIFIED)
 
 - Owner-local initial U0 candidate `58ec2da4`: test DB identity/empty/owner/privileges confirmed, Next.js build + TypeScript PASS (41/41 static pages). Playwright 1 FAIL because generic browser fixture carries schema migrations 1..19 only and v21 runtime correctly refused implicit DDL; login remained on /login.
