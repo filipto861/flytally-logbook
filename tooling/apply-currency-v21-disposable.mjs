@@ -10,6 +10,10 @@ try{url=new URL(databaseUrl);}catch{throw new Error("Currency fixture requires a
 // Keep the original Currency contract unchanged. U0 adds a *separate*, exact,
 // unprivileged owner-created fixture; there is no generic DB override.
 const uiAuditV21Intent=process.argv.length===3&&process.argv[2]==="--ui-audit-v21";
+// Preserve the existing no-Vercel gate for both test purposes.
+if(env.VERCEL!==undefined||env.VERCEL_ENV!==undefined){
+  throw new Error("Schema-first fixture cannot run under deployment environment.");
+}
 const shared=env.FLYTALLY_AUTH_BROWSER==="1"&&env.FLYTALLY_LOCAL_POSTGRES==="1"
   &&env.VERCEL===undefined&&env.VERCEL_ENV===undefined
   &&url.protocol==="postgresql:"&&url.hostname==="127.0.0.1";
