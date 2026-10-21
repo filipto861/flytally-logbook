@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import {spawnSync} from "node:child_process";
+import {fileURLToPath} from "node:url";
 import {readFileSync} from "node:fs";
 import test from "node:test";
 import {backupContainsExactMonetaryData,type PortableBackup} from "../lib/portable-backup.ts";
@@ -167,4 +169,60 @@ test("signed v13 desktop recovery waits for an explicit Server Action result bef
   const status=signed.indexOf('page.locator(".backup-center [role=status]")');
   const persisted=signed.indexOf("SELECT price_currency_code||");
   assert.ok(status>0&&persisted>status,"Check the actual authenticated restore result before PostgreSQL values");
+});
+
+test("U0-only schema-first refuses wrong purpose and mismatched DB before bootstrap",()=>{
+  const harness=fileURLToPath(new URL("../tooling/run-auth-browser.mjs",import.meta.url));
+  const args=["--ui-audit-v21","e2e/ui-audit-capture.spec.mjs","--project=desktop-chromium","--retries=0","--workers=1"];
+  const safeEnv={
+    ...process.env,
+    FLYTALLY_UI_AUDIT_V21:"1",
+    FLYTALLY_UI_AUDIT_CAPTURE:"1",
+    FLYTALLY_AUTH_BROWSER:"1",
+    FLYTALLY_LOCAL_POSTGRES:"1",
+    FLYTALLY_CURRENCY_V21_BROWSER:"0",
+    FLYTALLY_V21_RISK_BROWSER:"0",
+    DATABASE_URL:"postgresql://flytally_ui_u0_20261021:dummy@127.0.0.1:5433/flytally_ui_u0_20261021",
+  };
+  const run=(argv:string[],override:Record<string,string>={})=>spawnSync(process.execPath,[harness,...argv],{
+    env:{...safeEnv,...override},encoding:"utf8",timeout:8000,
+  });
+  const wrongTargets=[
+    "postgresql://flytally_ui_u0_20261021:dummy@127.0.0.1:5433/postgres",
+    "postgresql://postgres:dummy@127.0.0.1:5433/flytally_ui_u0_20261021",
+    "postgresql://flytally_ui_u0_20261021:dummy@127.0.0.1:5432/flytally_ui_u0_20261021",
+    "postgresql://flytally_ui_u0_20261021:dummy@db.example.invalid:5433/flytally_ui_u0_20261021",
+    "postgresql://flytally_ui_u0_20261021:dummy@127.0.0.1:5433/flytally_ui_u0_20261021?sslmode=require",
+  ];
+  for(const url of wrongTargets){
+    const result=run(args,{DATABASE_URL:url});
+    assert.equal(result.status,2,"Wrong URL must fail before psql/bootstrap.");
+    assert.match(result.stderr,/disposable fixture|localhost PostgreSQL fixture/);
+  }
+  const missingFlag=run(args,{FLYTALLY_UI_AUDIT_V21:"0"});
+  assert.equal(missingFlag.status,2);
+  assert.match(missingFlag.stderr,/U0 schema-first audit requires/);
+  const missingCli=run(args.slice(1));
+  assert.equal(missingCli.status,2);
+  assert.match(missingCli.stderr,/U0 schema-first purpose requires/);
+  const wrongSpec=run(["--ui-audit-v21","e2e/trash-integrity.spec.mjs","--project=desktop-chromium","--retries=0","--workers=1"]);
+  assert.equal(wrongSpec.status,2);
+  assert.match(wrongSpec.stderr,/U0 schema-first audit requires/);
+});
+
+test("U0 schema-first SQL requires exact purpose before any migration",()=>{
+  const script=fileURLToPath(new URL("../tooling/apply-currency-v21-disposable.mjs",import.meta.url));
+  const env={
+    ...process.env,
+    FLYTALLY_AUTH_BROWSER:"1",
+    FLYTALLY_LOCAL_POSTGRES:"1",
+    FLYTALLY_UI_AUDIT_CAPTURE:"1",
+    FLYTALLY_UI_AUDIT_V21:"1",
+    FLYTALLY_CURRENCY_V21_BROWSER:"0",
+    FLYTALLY_V21_RISK_BROWSER:"0",
+    DATABASE_URL:"postgresql://flytally_ui_u0_20261021:dummy@127.0.0.1:5432/flytally_ui_u0_20261021",
+  };
+  const result=spawnSync(process.execPath,[script,"--ui-audit-v21"],{env,encoding:"utf8",timeout:8000});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/schema-first test refused/);
 });
