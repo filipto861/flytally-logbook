@@ -1,3 +1,9 @@
+## 2026-10-21 — U2 second Chromium FAIL; explicit hydration/aircraft test precondition staged (Draft)
+
+- On owner-local source `9b316e7e`: U2 JS syntax PASS, focused source checks **3/3 PASS**, named isolated PG18 v21 database identity PASS; desktop Chromium **1 FAIL** at missing `.entry-context-note` after native Flight experience was explicitly opened. Full visual metrics/screenshots acceptance NOT COMPLETE.
+- Only test scenario changed: waits for real React GPS→Manual `aria-pressed` toggles, selects exact `OK-SP2E` fixture, verifies controlled aircraft category, then opens disclosures. On failure prints synthetic UI-only diagnostic context. Previous pre-hydration selection overwrite is a hypothesis, not demonstrated defect. Targeted source regression assertions updated. **New head tests NOT RUN**.
+- No app, CSS, DB, migration, certification, or production changes. Draft PR #379 remains unmerged and undeployed.
+
 ## 2026-10-21 — U2 first visual test exposed E2E disclosure setup defect (Draft / NOT VERIFIED)
 
 - Owner second PC verified isolated PG18 v21 synthetic browser fixture and Next.js build PASS (41/41). Targeted authenticated desktop Chromium **1 FAIL**: rendered `Aeroplane · Part-FCL · SEP` inside collapsed `Flight experience` native disclosure; `toBeVisible` on hidden note timed out. 5×2 full visual acceptance NOT RUN to completion. Later standalone PowerShell `PASS` echo is invalid after thrown error.
