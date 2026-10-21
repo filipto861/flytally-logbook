@@ -8,8 +8,9 @@ const manager=fs.readFileSync(path.join(root,"components/aircraft-manager.tsx"),
 
 test("U3 returns keyboard focus to surviving confirmation after successful aircraft deletion",()=>{
   assert.match(manager,/libraryStatusRef=useRef<HTMLParagraphElement\|null>\(null\)/);
-  assert.match(manager,/if\(!libraryStatus\?\.ok\|\|selectedId\)return;/);
-  assert.match(manager,/requestAnimationFrame\(\(\)=>libraryStatusRef\.current\?\.focus\(\)\)/);
+  assert.match(manager,/focusedLibraryStatusRef=useRef<AircraftDeleteResult\|null>\(null\)/);
+  assert.match(manager,/if\(!libraryStatus\?\.ok\|\|selectedId\|\|focusedLibraryStatusRef\.current===libraryStatus\)return;/);
+  assert.match(manager,/requestAnimationFrame\(\(\)=>\{\s*focusedLibraryStatusRef\.current=libraryStatus;\s*libraryStatusRef\.current\?\.focus\(\);\s*\}\)/);
   assert.match(manager,/return\(\)=>cancelAnimationFrame\(frame\)/);
   assert.match(manager,/\[libraryStatus,selectedId\]/);
 
@@ -34,4 +35,15 @@ test("U3 preserves aircraft deletion eligibility, async feedback and cancellatio
   assert.match(manager,/role=\{deleteStatus\.ok\?"status":"alert"\}/);
   assert.match(manager,/const closeModal=\(\)=>\{setSelectedId\(null\);requestAnimationFrame\(\(\)=>openerRef\.current\?\.focus\(\)\)\}/);
   assert.match(manager,/if\(event\.key==="Escape"\)\{event\.preventDefault\(\);closeModal\(\);return\}/);
+});
+
+test("U3 does not replay an old delete-success focus transfer when closing another aircraft",()=>{
+  const effectStart=manager.indexOf("if(!libraryStatus?.ok||selectedId||focusedLibraryStatusRef.current===libraryStatus)return;");
+  const effectEnd=manager.indexOf("},[libraryStatus,selectedId]);",effectStart);
+  assert.ok(effectStart>=0&&effectEnd>effectStart,"Delete success transfer must guard the previously focused result identity.");
+  const effect=manager.slice(effectStart,effectEnd);
+  assert.match(effect,/focusedLibraryStatusRef\.current=libraryStatus/);
+  assert.match(effect,/libraryStatusRef\.current\?\.focus\(\)/);
+  assert.match(effect,/cancelAnimationFrame\(frame\)/);
+  assert.match(manager,/const closeModal=\(\)=>\{setSelectedId\(null\);requestAnimationFrame\(\(\)=>openerRef\.current\?\.focus\(\)\)\}/);
 });
