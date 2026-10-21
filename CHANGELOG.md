@@ -1,3 +1,9 @@
+## 2026-10-21 — U1 R2 correction E2E completion gate (DRAFT / NOT VERIFIED)
+
+- Owner-local retest: targeted source 3/3 PASS, exact local test DB preflight PASS; Playwright **1 FAIL** at existing 5s `CORRECTION R2` expectation after initial R1 certification checks passed. U1 keyboard assertion still NOT REACHED.
+- Source review: correction action commits archived revision/write, refreshes recency and revalidates server view, with no redirect. Test now waits up to 20s on R2 badge and independently verifies persisted `R2 DRAFT` plus one archived R1 record. Source-only regression assertion added; no production certification/UI changes.
+- Revised branch TypeScript/Node/browser acceptance **NOT RUN**. No merge, deploy or production DB changes.
+
 ## 2026-10-21 — U1 Playwright evidence-driven wait correction (DRAFT / NOT VERIFIED)
 
 - Owner trace + screenshot prove original 5 s assertion fired with `Save & certify` pending and `POST /flights/new` outstanding. Owner read-only DB proves the synthetic record was persisted `CERTIFIED R1`, so do not alter production certification logic.
