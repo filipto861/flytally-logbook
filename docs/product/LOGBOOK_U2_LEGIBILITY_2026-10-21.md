@@ -50,6 +50,14 @@ The U0 owner-uploaded screenshot/JSON ZIP from 21 Oct 2026 contains 110 screensh
 - **Revised-head syntax/source/typecheck/build/browser NOT RUN**. The owner-local last `PASS: U2 visual Playwright acceptance` line in PowerShell followed a thrown exception and is not test evidence: the sole browser result was **FAIL**. Playwright also printed `Internal error: step id not found: fixture@58`; treat as untriaged reporter output unless it persists after the primary hidden-note failure is fixed.
 - Next: pull test-only fix, confirm DB v21 and flags, rerun targeted JS/source and Playwright. Inspect 20 screenshots/metrics before closing U2.
 
+## Second second-PC Chromium run — missing selected aircraft note after disclosure (21 Oct 2026)
+
+- Owner fast-forwarded to `9b316e7e65fae15386dc0f3024be713aa168503a` (no new CSS/app change), JavaScript syntax **PASS**, focused source tests **3/3 PASS**, isolated local PG18 synthetic v21 fixture preflight **PASS**.
+- Playwright desktop Chromium targeted test **1 FAIL**, after opening Flight experience: `.entry-context-note` **not found** (rather than hidden as in first attempt). Browser printed `Internal error: step id not found: fixture@190`; screenshots and retained trace paths were supplied in terminal output but binaries were not uploaded. Do not infer root cause or present a visual PASS from subsequent PowerShell echo.
+- Code analysis: `components/flight-form.tsx` renders `.entry-context-note` only when `entryProfile.selected` is true; `entryProfile` depends on controlled React `registration` and aircraft context. `page.goto(...,waitUntil:"domcontentloaded")` does **not** guarantee React hydration before `selectOption`, so a pre-hydration selection overwritten by hydration is a **hypothesis**, not established fact.
+- **Further E2E-only correction staged, NOT RUN:** explicitly click GPS and Manual mode buttons and assert their changing `aria-pressed` values (proves React event handlers are active); require exact seeded `OK-SP2E` instead of silently falling back to another aircraft; assert controlled select retains `OK-SP2E` and `data-aircraft-category` no longer equals `unselected`; then open experience and check nested note. On persistent failure emit only synthetic state (selected registration, category, disclosure status, note count, manual pressed, viewport/theme), never credentials/session/DB URL. Source regression test verifies the ordered contract.
+- New E2E/test head **NOT RUN**. No changes to application code, CSS, aircraft prefill behavior, database or certifications. Full 20-image/JSON visual acceptance remains **OPEN**; Draft PR #379 not merged/deployed.
+
 ## Acceptance contract
 
 1. `node --check e2e/logbook-u2-legibility.spec.mjs` — **NOT RUN**.
