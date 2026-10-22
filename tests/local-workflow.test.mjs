@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { assertLocalFixtureUrl, isLocalDockerEndpoint, assertOwnedContainerMetadata } from "../tooling/local-workflow.mjs";
-import { nativeManifestValid, nativePg16Tools, nativeIdentityMismatches } from "../tooling/local-native-pg16.mjs";
+import { nativeManifestValid, nativePg16Tools, nativeIdentityMismatches, nativeCoreIdentityMismatches } from "../tooling/local-native-pg16.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 const isLogbook = pkg.name === "pilot-logbook-web";
@@ -300,6 +300,7 @@ test("read-only Windows PG16 diagnosis never writes or leaks SQL/credentials", (
   assert.match(source, /new TextDecoder\(encoding, \{ fatal: true \}\)/);
   assert.match(source, /\["utf-8", "windows-1250"\]/);
   assert.match(source, /nativeIdentityMismatches\(full\)/);
+  assert.match(source, /nativeCoreIdentityMismatches\(core\)/);
   assert.match(source, /READ-ONLY COMPLETE/);
   assert.match(source, /existsSync\(join\(home, "owner.json"\)\)/);
   assert.match(source, /existsSync\(join\(root, "\.env.test.local"\)\)/);
@@ -312,4 +313,18 @@ test("read-only Windows PG16 diagnosis never writes or leaks SQL/credentials", (
   });
   assert.equal(check.status, 0,
     "Node parser failed on read-only PG16 diagnostic: " + (check.stderr || check.error?.message || ""));
+});
+
+
+test("native PG16 core identity failure identifies only the mismatching field", () => {
+  const expected = "flytally_logbook_test|flytally_local|127.0.0.1|55439|160015";
+  assert.deepEqual(nativeCoreIdentityMismatches(expected), []);
+  assert.deepEqual(nativeCoreIdentityMismatches(expected.replace("flytally_logbook_test", "different_database")), ["database"]);
+  assert.deepEqual(nativeCoreIdentityMismatches(expected.replace("flytally_local", "postgres")), ["database-user"]);
+  assert.deepEqual(nativeCoreIdentityMismatches(expected.replace("127.0.0.1", "10.0.0.8")), ["server-address"]);
+  assert.deepEqual(nativeCoreIdentityMismatches(expected.replace("55439", "5432")), ["server-port"]);
+  assert.deepEqual(nativeCoreIdentityMismatches(expected.replace("160015", "170001")), ["server-version"]);
+  assert.deepEqual(nativeCoreIdentityMismatches(expected + "|extra"), ["field-count"]);
+  assert.deepEqual(nativeCoreIdentityMismatches("unexpected"), ["field-count"]);
+  assert.deepEqual(nativeCoreIdentityMismatches(""), ["field-count"]);
 });
