@@ -325,6 +325,9 @@ function releaseNeedsDatabase(args) {
   return Boolean(plan?.postgres || plan?.scale || plan?.browser);
 }
 function delegate(action, args = []) {
+  if (action === "db-scale-diagnostic" && (!logbook || args.length !== 0)) {
+    throw new Error("Serial scale diagnostic is Logbook-only and takes no additional arguments.");
+  }
   if (action === "quick" && args.includes("--with-browser")) {
     throw new Error("Browser acceptance requires the guarded full gate or test:browser:local.");
   }
@@ -340,17 +343,19 @@ function delegate(action, args = []) {
     : action === "full"
       ? (logbook ? ["run", "verify:release:risk", "--", ...(args.length ? args : ["--base", "origin/main"])]
         : ["run", "verify"])
+      : action === "db-scale-diagnostic"
+        ? ["run", "test:postgres:scale", "--", "--serial"]
       : action === "db-test"
         ? (logbook ? ["run", "test:postgres:full"] : ["run", "test:no-code-aircraft"])
         : action === "browser-test"
           ? (logbook ? ["run", "test:browser"] : ["exec", "--", "playwright", "test", ...args])
           : null;
   if (!selected) throw new Error("Unknown test command.");
-  const needsDb = action === "db-test" || action === "browser-test"
+  const needsDb = action === "db-test" || action === "db-scale-diagnostic" || action === "browser-test"
     || (action === "full" && releaseNeedsDatabase(args));
   // The authoritative risk planner decides whether the release needs a DB.
   // No Docker requirement or connection for docs-only / source-only releases.
-  const env = safeEnv({ database: needsDb, browser: needsDb && action !== "db-test" });
+  const env = safeEnv({ database: needsDb, browser: needsDb && action !== "db-test" && action !== "db-scale-diagnostic" });
   if (needsDb) console.log("[DB] Verified owned localhost fixture before test execution.");
   checked(npm(selected, env), selected.join(" "));
   if (!logbook && action === "quick") checked(npm(["run", "test:ui"], env), "Training focused UI tests");
@@ -364,8 +369,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       case "doctor": await doctor(); break;
       case "setup": await setup({ requireDb: args.includes("--with-db") }); break;
       case "db": ensureDatabase(); break;
-      case "quick": case "full": case "db-test": case "browser-test": case "db-init": delegate(action, args); break;
-      default: throw new Error("Usage: node tooling/local-workflow.mjs doctor|setup [--with-db]|db|quick|full|db-test|browser-test|db-init");
+      case "quick": case "full": case "db-test": case "db-scale-diagnostic": case "browser-test": case "db-init": delegate(action, args); break;
+      default: throw new Error("Usage: node tooling/local-workflow.mjs doctor|setup [--with-db]|db|quick|full|db-test|db-scale-diagnostic|browser-test|db-init");
     }
   } catch (e) { console.error("[BLOCKED] " + (e instanceof Error ? e.message : String(e))); process.exitCode = 2; }
 }
