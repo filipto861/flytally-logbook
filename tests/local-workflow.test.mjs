@@ -2,6 +2,7 @@ import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 import { assertLocalFixtureUrl, isLocalDockerEndpoint, assertOwnedContainerMetadata } from "../tooling/local-workflow.mjs";
+import { nativeManifestValid, nativePg16Tools } from "../tooling/local-native-pg16.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 const isLogbook = pkg.name === "pilot-logbook-web";
@@ -101,4 +102,49 @@ test("release convenience command keeps exact authoritative risk planner", () =>
   assert.match(script, /verify-plan\.mjs/);
   assert.match(script, /plan\?\.postgres\s*\|\|\s*plan\?\.scale\s*\|\|\s*plan\?\.browser/);
   assert.match(script, /verifyOwnedFixture\(url\)/);
+});
+
+
+test("native owned PostgreSQL marker accepts exact Logbook identity only", () => {
+  const good = {
+    schemaVersion: 1,
+    owner: "flytally-logbook-local-acceptance",
+    engine: "native-pg16",
+    hostname: "127.0.0.1",
+    port: "55439",
+    user: "flytally_local",
+    database: "flytally_logbook_test",
+  };
+  assert.equal(nativeManifestValid(good), true);
+  for (const modified of [
+    { ...good, database: "flytally_training_acceptance_test" },
+    { ...good, engine: "docker" },
+    { ...good, port: "5432" },
+    { ...good, hostname: "remote.neon.tech" },
+    { ...good, user: "postgres" },
+    { ...good, extras: true },
+    null,
+  ]) assert.equal(nativeManifestValid(modified), false);
+});
+
+test("reboot-safe native mode is cluster reuse, not data deletion or unverified adoption", () => {
+  const source = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
+  const facade = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
+  assert.match(source, /if \(!readMarker\(\)\)/);
+  assert.match(source, /if \(!allowCreate\)/);
+  assert.match(source, /Native PG16 ownership marker/);
+  assert.match(source, /"PG_VERSION"/);
+  assert.match(source, /current_setting\('data_directory'\)/);
+  assert.match(source, /"pg_ctl"/);
+  assert.match(facade, /nativeMarkerExists\(\)/);
+  assert.match(facade, /ensureNativePg16\(existingUrl\)/);
+  assert.doesNotMatch(source, /DROP DATABASE|DROP SCHEMA|rmSync\(dataDir/);
+});
+
+test("native PG16 is optional and never assumes that psql alone is the server", () => {
+  if (process.platform !== "win32") assert.equal(nativePg16Tools(), null);
+  const source = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
+  assert.match(source, /"initdb", "pg_ctl", "psql", "createdb"/);
+  assert.match(source, /"16", "bin"/);
+  assert.match(source, /scram-sha-256/);
 });
