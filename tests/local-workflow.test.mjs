@@ -76,8 +76,35 @@ test("one-command scripts exist without replacing canonical product release gate
     assert.match(pkg.scripts[key], /tooling\/local-workflow\.mjs/);
   }
   assert.ok(pkg.scripts.verify);
-  if (isLogbook) assert.ok(pkg.scripts["verify:release:risk"]);
+  if (isLogbook) {
+    assert.ok(pkg.scripts["verify:release:risk"]);
+    assert.equal(pkg.scripts["test:db:scale:local"], "node tooling/local-workflow.mjs db-scale-diagnostic");
+  }
   else assert.ok(pkg.scripts["test:no-code-aircraft"]);
+});
+
+test("serial PG scale diagnostic keeps exact owned-local preflight and original full gate", async () => {
+  if (!isLogbook) return;
+  const { selectPostgresTests } = await import("../tooling/run-postgres-tests.mjs");
+  const registered = selectPostgresTests("scale");
+  assert.deepEqual(registered, [
+    "postgres-scale-readiness.test.ts",
+    "postgres-v169-production-hardening.test.ts",
+    "postgres-v230-large-logbook-performance.test.ts",
+  ]);
+  const full = selectPostgresTests("full");
+  for (const file of registered) assert.ok(full.includes(file), "Full PG gate still includes " + file);
+  assert.ok(full.length > registered.length, "Scale diagnostic must not count as full PG acceptance");
+  const runner = readFileSync(new URL("../tooling/run-postgres-tests.mjs", import.meta.url), "utf8");
+  assert.match(runner, /serial && mode !== "scale"/);
+  assert.match(runner, /serial \? \["--test-concurrency=1"\] : \[\]/);
+  assert.match(runner, /preflightPostgresGate\(env\)/);
+  assert.match(runner, /FLYTALLY_POSTGRES_INTEGRATION: "1"/);
+  const facade = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
+  assert.match(facade, /action === "db-scale-diagnostic" && \(!logbook \|\| args\.length !== 0\)/);
+  assert.match(facade, /\["run", "test:postgres:scale", "--", "--serial"\]/);
+  assert.match(facade, /action === "db-test" \|\| action === "db-scale-diagnostic" \|\| action === "browser-test"/);
+  assert.match(facade, /safeEnv\(\{ database: needsDb, browser: needsDb && action !== "db-test" \}\)/);
 });
 
 test("remote Docker contexts are not accepted as localhost-owned test fixtures", () => {
