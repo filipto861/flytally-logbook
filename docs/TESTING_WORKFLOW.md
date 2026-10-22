@@ -1,5 +1,8 @@
 # FlyTally Logbook — portable Windows testing workflow
 
+**22 Oct 2026 — clean candidate Windows quick validation PASS.** Owner fast-forwarded clean PR #384 branch to executable SHA `e27a11efa0770bb11cac88f1ad5602865743a700` and ran `npm run test:quick` on Windows: automatic local source safety **23/23 PASS**, selected source-contract regression **257/257 PASS**, `tsc --noEmit` **PASS**, `iteration_status=PASS` (candidate `a777868f22a5eae5600c452a8a77c747c6ce1710d136a3f79e4f32aa2925b8cf`). The previous historical-v20 source pin mismatch is resolved by exact SHA-256 re-pin, including M1 positive tests. **This is the reusable development iteration gate, not a release:** aggregate-regression/production-build/postgres-acceptance/browser-risk remain PENDING, `release_status=NOT EVALUATED`. Run only risk-selected additional gates prior to release approval. Untracked local U0/U1 ZIPs remain untouched. PR #384 not merged or deployed.
+
+
 **22 Oct 2026 — owner Windows clean-branch check:** `test:local-workflow` 23/23 PASS, `test:quick` initially blocked by three M1 registry source tests despite typecheck PASS; the reason was a stale SHA-256 pin after the source-backed isolated full-v20 fixture opt-in correction. PR #384 now updates exactly that source hash in `tooling/postgres-partition-registry.json`, preserving the immutable registry membership, count and security scope. The post-fix `npm run test:quick` has not been executed on the owner Windows PC yet; **do not mark it PASS** until rerun. No need to reset PostgreSQL, rerun 50k/100k diagnostics or delete unrelated local ZIP attachments to resolve the hash mismatch. Full release gates remain separate.
 
 
