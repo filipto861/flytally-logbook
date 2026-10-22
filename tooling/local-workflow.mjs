@@ -355,7 +355,7 @@ function delegate(action, args = []) {
     || (action === "full" && releaseNeedsDatabase(args));
   // The authoritative risk planner decides whether the release needs a DB.
   // No Docker requirement or connection for docs-only / source-only releases.
-  const env = safeEnv({ database: needsDb, browser: needsDb && action !== "db-test" });
+  const env = safeEnv({ database: needsDb, browser: needsDb && action !== "db-test" && action !== "db-scale-diagnostic" });
   if (needsDb) console.log("[DB] Verified owned localhost fixture before test execution.");
   checked(npm(selected, env), selected.join(" "));
   if (!logbook && action === "quick") checked(npm(["run", "test:ui"], env), "Training focused UI tests");
