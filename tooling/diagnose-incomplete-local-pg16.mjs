@@ -83,7 +83,7 @@ try {
   const smoke = outcome("SELECT 1", query("SELECT 1"));
   if (smoke === null || smoke !== "1") problem("cannot prove authenticated local connection");
   const core = outcome("identity fields without directory", query(
-    "SELECT current_database() || '|' || current_user || '|' || inet_server_addr()::text || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')"));
+    "SELECT current_database() || '|' || current_user || '|' || host(inet_server_addr()) || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')"));
   if (core === null) problem("core identity query failed");
   const mismatchedCoreFields = nativeCoreIdentityMismatches(core);
   if (mismatchedCoreFields.length) {
@@ -95,7 +95,7 @@ try {
     "SELECT encode(convert_to(current_setting('data_directory'), 'UTF8'), 'hex')"));
   if (dirBytes === null) problem("PGDATA SQL conversion failed; inspect SQLSTATE only, do not retry setup");
   const full = outcome("full physical identity query", query(
-    "SELECT current_database() || '|' || current_user || '|' || encode(convert_to(current_setting('data_directory'), 'UTF8'), 'hex') || '|' || inet_server_addr()::text || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')"));
+    "SELECT current_database() || '|' || current_user || '|' || encode(convert_to(current_setting('data_directory'), 'UTF8'), 'hex') || '|' || host(inet_server_addr()) || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')"));
   if (full === null) problem("full identity query failed; see SQLSTATE");
   const mismatches = nativeIdentityMismatches(full);
   if (mismatches.length) problem("physical identity mismatches: [" + mismatches.join(", ") + "]");
