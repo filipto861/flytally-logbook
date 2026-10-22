@@ -289,3 +289,27 @@ test("PG16 SQL identity uses ASCII hex for Unicode data paths and retains bootst
     markerWritten < envWritten && envWritten < secretRemoved,
     "bootstrap password must survive failures and be removed only after the config has been saved");
 });
+
+
+test("read-only Windows PG16 diagnosis never writes or leaks SQL/credentials", () => {
+  const source = readFileSync(new URL("../tooling/diagnose-incomplete-local-pg16.mjs", import.meta.url), "utf8");
+  assert.match(source, /const pwfile = join\(home, "bootstrap-pwfile"\)/);
+  assert.match(source, /nativePg16Tools\(\)/);
+  assert.match(source, /PGCLIENTENCODING = "UTF8"/);
+  assert.match(source, /VERBOSITY=sqlstate/);
+  assert.match(source, /new TextDecoder\(encoding, \{ fatal: true \}\)/);
+  assert.match(source, /\["utf-8", "windows-1250"\]/);
+  assert.match(source, /nativeIdentityMismatches\(full\)/);
+  assert.match(source, /READ-ONLY COMPLETE/);
+  assert.match(source, /existsSync\(join\(home, "owner.json"\)\)/);
+  assert.match(source, /existsSync\(join\(root, "\.env.test.local"\)\)/);
+  assert.doesNotMatch(source, /\b(?:writeFileSync|appendFileSync|rmSync|unlinkSync|mkdirSync|renameSync|Move-Item)\b/);
+  assert.doesNotMatch(source, /\b(?:ALTER|DROP|CREATE|UPDATE|DELETE|INSERT|TRUNCATE)\b/);
+  assert.doesNotMatch(source, /console\.(?:log|error)\([^;\n]*(?:password|stdout|stderr|pwfile)/);
+  const check = spawnSync(process.execPath, ["--check",
+    fileURLToPath(new URL("../tooling/diagnose-incomplete-local-pg16.mjs", import.meta.url))], {
+    encoding: "utf8", timeout: 15000, windowsHide: true,
+  });
+  assert.equal(check.status, 0,
+    "Node parser failed on read-only PG16 diagnostic: " + (check.stderr || check.error?.message || ""));
+});
