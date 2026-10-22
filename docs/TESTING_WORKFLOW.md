@@ -68,6 +68,9 @@ A randomly generated password and URL are stored **only** in gitignored `.env.te
 
 ## Browser testing and U3
 
+**Critical scope separation (PR #381):** The ongoing `fix/logbook-u3-aircraft-delete-focus-20261021` responsive Aircraft Delete Focus acceptance is NOT part of this generic portable browser workflow. Its sole approved fixture is a distinct owner-local **PostgreSQL 18** `127.0.0.1:55433/flytally_ui_u3_20261021` user `flytally_u3`, previously migrated to v21. The portable core here uses **PostgreSQL 16** `127.0.0.1:55439/flytally_logbook_test` user `flytally_local`. Never copy the URLs/roles/flags across. The generic `npm run test:browser:local` invokes `tooling/bootstrap-browser-smoke-db.mjs`, which contains `DROP SCHEMA public CASCADE` on the **verified disposable** DB; do **not** run it against the U3 fixture. U3 requires its dedicated `playwright.u3.config.mjs` and direct `npx --no-install playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0` after exact preflight of U3 fixture and purpose flags, as described in `docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md` on the U3 branch. Do not repeat the v21-only schema migration after it succeeded. A U3 2-test run is **not** the canonical broad browser-risk acceptance of PR #384, and the generic browser gate is **not** U3 validation. Both remain independent pending evidence.
+
+
 `npm run test:browser:local` requires the physically verified test DB, built application and Playwright Chromium. The portable browser override forces one fresh local Playwright server on `127.0.0.1:3000`, disables retry for the local diagnostic and forbids reusing an unrelated process listening on that port. Existing CI behavior and all U3/browser acceptance assertions remain unchanged. A UI screenshot or source-safety PASS cannot replace executed desktop/mobile Playwright evidence. Stop and inspect logs on build, fixture or browser failure.
 
 ## Reboot and recovery
