@@ -1,3 +1,27 @@
+## 2026-10-22 — Separate U3 browser test safety boundary from portable Windows testing
+
+- Added explicit documentation that Draft U3 PR #381 has a dedicated PG18 local disposable fixture on port 55433 and standalone `playwright.u3.config.mjs`. Portable Windows core PR #384 uses owned PG16 port 55439. No cross-use of database URLs/roles/test flags.
+- Clarified that generic browser bootstrap resets `public` in its disposable fixture and is **not** appropriate for U3, whose v21 fixture was migrated separately. U3 2-test desktop/mobile-iPad emulation acceptance remains NOT RUN after latest test relocation; old desktop 1/1 PASS is historical. No product code/schema/SQL/fixture run/merge/deploy.
+- Core Windows quick gate remains 23/23 safety, 257/257 source, typecheck PASS at exact earlier executable SHA `e27a11ef...`; canonical full release STILL NOT EVALUATED.
+
+## 2026-10-22 — Windows quick gate PASS for clean portable testing PR #384
+
+- Owner Windows clean candidate executable SHA `e27a11efa0770bb11cac88f1ad5602865743a700`: `git pull --ff-only` PASS, `npm run test:quick` PASS, internal `test:local-workflow` **23/23 PASS**, source/regression `verify:iterate` **257/257 PASS**, TypeScript `tsc --noEmit` **PASS**. Exact candidate `a777868f22a5eae5600c452a8a77c747c6ce1710d136a3f79e4f32aa2925b8cf`; no blocked evidence. Previously mismatched historic-v20 fixture source SHA is now verified by strict M1 positive/LF-CRLF/CLI tests.
+- Release `NOT EVALUATED` and aggregate-regression, production-build, postgres-acceptance, browser-risk `PENDING`. Browser/U3, full PostgreSQL, build, CI and reboot-on-both-PC checks NOT RUN at executable SHA. Original 50k/100k performance scale failures remain research PR #385, not implicitly PASS.
+- No production SQL/DB/schema, Training, merge/deploy or feature flags changed; PR #384 remains DRAFT pending approved release evidence.
+
+## 2026-10-22 — Fix pinned PostgreSQL registry hash after protected v20 fixture guard (PR #384 Draft)
+
+- Owner Windows clean core `ba6e5948f3807cd3d8809b1cd538b402fc7b257f`: `test:local-workflow` **23/23 PASS**; `test:quick` **FAIL**, source checks **254/257 PASS, 3/257 FAIL**, all due to one registry pin mismatch for `postgres-v380-full-v20-restore.test.ts`; typecheck **PASS**, release NOT EVALUATED.
+- Independently verified old registry SHA against old canonical LF source (and a separate unchanged entry), then updated only the new approved source's SHA-256 to `52e5c8585f569142b698395e5c66cf2a2dd68146b4126ffff6f9e14d4eeea673`. 42 files, 163 tests, all partition/fixture flags, strict release semantics and runtime code unchanged. This is NOT a waiver of registry integrity; source mutations remain hash-checked and all negative tamper tests remain.
+- Exact post-fix Windows `test:quick` NOT RUN; full PG, browser, build, CI/reboot/second PC NOT RUN; prior separate scale failures remain open. No main merge/deploy/production DB/Training.
+
+## 2026-10-22 — Portable Windows local testing core extracted from Draft PR #383
+
+- Rebuilt the approved home/office local testing capability as a clean, base-`main` developer-only branch `chore/local-windows-workflow-core-20261022`; isolated 23 core safety contract tests (including strict v20 fixture selection), protected native/Docker PG16 ownership and restart/recovery scripts, scoped `package.json` commands, Playwright fresh-server local override and a dedicated permanent runbook.
+- Kept `tooling/run-postgres-tests.mjs`, production SQL, schema, strict 50k/100k benchmark assertions, the existing authoritative release planner unchanged; only the narrow historic v20 fixture test-selection guard was corrected. Left temporary serial-scale diagnostics and benchmark experiments on research PR #385. Nothing was merged into `main`.
+- Previous owner Windows evidence on mixed candidate: local source safety 26/26 PASS and physically verified localhost PG16. Exact new clean branch safety, browser, full PostgreSQL, build, reboot, second PC and CI **NOT RUN**; prior full PG gate FAIL remains unchanged. No production/remote database, Training, migrations, deployment, release flag or data operation.
+
 # FlyTally changelog
 
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified

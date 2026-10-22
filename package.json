@@ -29,7 +29,15 @@
     "verify:browser:with-build": "node tooling/verify-browser-with-build.mjs",
     "verify:iterate": "node tooling/verify-iterate.mjs",
     "verify:browser:risk": "node tooling/verify-browser-risk.mjs",
-    "verify:release:risk": "node tooling/verify-release-risk.mjs"
+    "verify:release:risk": "node tooling/verify-release-risk.mjs",
+    "doctor": "node tooling/local-workflow.mjs doctor",
+    "setup:local": "node tooling/local-workflow.mjs setup",
+    "setup:db": "node tooling/local-workflow.mjs db",
+    "test:quick": "node tooling/local-workflow.mjs quick",
+    "test:full": "node tooling/local-workflow.mjs full",
+    "test:db:local": "node tooling/local-workflow.mjs db-test",
+    "test:browser:local": "node tooling/local-workflow.mjs browser-test",
+    "test:local-workflow": "node --test tests/local-workflow.test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",

@@ -21,8 +21,12 @@ assert.match(currencyTagged,/price_currency_code,price_currency_minor_units,pric
 assert.match(currencyTagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
 assert.match(tagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
 assert.match(advisory,/pg_advisory_xact_lock\(hashtextextended\(concat_ws/);
-const asked=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1"||process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
-const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1"&&process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
+// The generic PostgreSQL full suite enables FLYTALLY_POSTGRES_INTEGRATION,
+// but MUST NOT opt into this distinct full-v20 disposable-database fixture.
+// Explicit opt-in alone selects these tests; the before() hook still requires
+// BOTH flags and the exact separate database identity before any DB operation.
+const asked=process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
+const enabled=asked&&process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const url=process.env.DATABASE_URL||"";
 function safeEnv():NodeJS.ProcessEnv{
   const env:NodeJS.ProcessEnv={...process.env,PGCONNECT_TIMEOUT:"5"};
