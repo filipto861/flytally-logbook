@@ -107,6 +107,18 @@ test("serial PG scale diagnostic keeps exact owned-local preflight and original 
   assert.match(facade, /safeEnv\(\{ database: needsDb, browser: needsDb && action !== "db-test" && action !== "db-scale-diagnostic" \}\)/);
 });
 
+test("100k EXPLAIN diagnostic remains bounded and cannot replace the strict performance assertion", () => {
+  if (!isLogbook) return;
+  const source = readFileSync(new URL("../tests/integration/postgres-v230-large-logbook-performance.test.ts", import.meta.url), "utf8");
+  assert.match(source, /name==="flightListFirstPage100k"&&result\.executionMs>=4_000/);
+  assert.match(source, /longestNodes:nodes\.slice\(1\)\.sort\([\s\S]*?\.slice\(0,12\)/);
+  assert.match(source, /nodesVisited:nodes\.length/);
+  assert.match(source, /assert\.ok\(result\.executionMs<limitMs,/);
+  assert.match(source, /recordMetric\("flightListFirstPage100k",listResult,4_500\)/);
+  assert.match(source, /V230 FLIGHTLIST100K PLAN/);
+  assert.doesNotMatch(source, /console\.log\(JSON\.stringify\(result\.plan\)\)/);
+});
+
 test("remote Docker contexts are not accepted as localhost-owned test fixtures", () => {
   assert.equal(isLocalDockerEndpoint("unix:///var/run/docker.sock"), true);
   assert.equal(isLocalDockerEndpoint("npipe:////./pipe/docker_engine"), true);
