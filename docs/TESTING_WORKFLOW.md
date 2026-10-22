@@ -13,7 +13,7 @@ npm run doctor
 npm run test:quick
 ~~~
 
-Run the same commands on both computers. Git synchronizes the code and automation, while .env.test.local and its random password deliberately stay on each PC. Setup checks npm dependencies and Chromium first, keeping installed versions/browsers where complete. It will never reinstall Node, Git or Docker. It can create an isolated database when a Docker engine exists; absent Docker leaves normal non-DB development available.
+Run the same commands on both computers. Git synchronizes the code and automation, while .env.test.local and its random password deliberately stay on each PC. Setup checks npm dependencies and Chromium first, keeping installed versions/browsers where complete. **The single setup command also runs `npm run test:local-workflow` before reporting completion.** It will never reinstall Node, Git or Docker. It can create an isolated database when a Docker engine exists; absent Docker leaves normal non-DB development available.
 
 Explicit first-time database setup:
 ~~~powershell
