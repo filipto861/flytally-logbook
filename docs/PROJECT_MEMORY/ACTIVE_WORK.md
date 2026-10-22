@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-22T19:38:16.522Z — Apple Design V2 now canonical
+
+- Owner-approved [PR #390](https://github.com/filipto861/flytally-logbook/pull/390) MERGED on main `c68e6a2758423ab862cf9b03f5623515d07433e4`, 17-domain full Apple Design playbook required for Logbook UI tasks. No application runtime deploy occurred during this work. Production runtime/DB/flags UNKNOWN (not rechecked); GitHub documentation/source checks PASS only.
+- [PR #389](https://github.com/filipto861/flytally-logbook/pull/389) remains a separate docs checkpoint Draft (includes these post-merge pointers), not approved for merge. The ChatGPT project instructions setting has not been verified as changed.
+- **One next step:** update ChatGPT Project Instructions for mandatory Apple Design V2 loading and verify it in the next UI session.
+
+
 ## 2026-10-22T18:52:44.393Z — Agent Skills V1 workstream closed by owner-approved merge
 
 - [PR #388](https://github.com/filipto861/flytally-logbook/pull/388) MERGED, main `f1052cac8d518342bfdf10c6f03b51199d78ad69`, nine task-routed skills canonical. ChatGPT Project Instructions update is a separate manual setting action, **not confirmed**. Design playbook V2 only a possible future proposal; nothing approved/implemented. Separate docs-only checkpoint branch `docs/logbook-skills-v1-merge-checkpoint-20261022` is not a product/release PR.
