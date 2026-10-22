@@ -231,6 +231,7 @@ async function setup({ requireDb = false } = {}) {
   await doctor();
 }
 function delegate(action, args = []) {
+  if (action === "quick" || action === "full") checked(npm(["run", "test:local-workflow"], safeEnv()), "local workflow safety tests");
   if (action === "db-init") {
     if (logbook) throw new Error("db-init:local is a Training-only operation.");
     checked(npm(["run", "db:init"], safeEnv({ database: true })), "Training local DB bootstrap");
