@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T07:10:41.267Z — DEV-ENV reboot-persistent Windows PG16 candidate on PR #383 (DRAFT, NOT MERGED/DEPLOYED).**
+
+- Verified GitHub main full SHA `860df276f7044586834871808e7e3843a10daaac`. Verified work branch `chore/portable-local-test-workflow-20261022` HEAD before this checkpoint `ae559459aa8766e0d0547d7955edf0165dfc778a`; PR #383 targets main. This handoff commit advances HEAD.
+- Scope owner-approved: practical one-command Windows home/office reuse without resetting local PG16 after reboot. Native PG16 controlled data directory under .flytally, marker/PG_VERSION/version/data_directory/user/host/port verification, on-demand pg_ctl restart; Docker named volume/auto-restart alternative with no unverified volume takeover. Dependency/Chromium reuse and script safety tests retained. DO NOT merge/deploy, touch remote/prod databases, change migrations/flags, alter Training, delete non-owned local data.
+- New/updated files: `tooling/local-native-pg16.mjs`, `tooling/local-workflow.mjs`, `tests/local-workflow.test.mjs`, `tests/browser-suite-structure.test.ts` (fix stale regex), `docs/TESTING_WORKFLOW.md`, `DEVELOPMENT.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, this rolling handoff. Legacy PG and browser gate policies preserved.
+- Owner-provided actual Windows evidence on historical PR HEAD `c3d86b5bb7af9f7b578ccce8daebfba443e20038`: `setup:local` completed; Node24, npm/Git, psql, Chromium recognized; Docker engine missing; no prior owned local DB. 7/7 `test:local-workflow` PASS; `test:quick` source 256/257 **FAIL** specifically regex expectation for Playwright portable retry change, typecheck PASS, domain N/A, release NOT EVALUATED. Never call this quick run PASS.
+- Corrective code pushed to PR for regex plus persistent native Windows PG16 fallback. **Source-only review:** 11/11 custom V8 pure/mock checks PASS for manifest, regex, wiring and volume/restart, JS function-body parse PASS. These checks do NOT constitute Windows Node/npm/psql/Postgres/Playwright acceptance. **On current new head:** native safety test NOT RUN, quick gate NOT RUN, typecheck NOT RUN, full tests/build NOT RUN, PostgreSQL and browser tests NOT RUN, CI NOT RUN; production DB/migrations/flags/deploy UNKNOWN/NOT RUN (no production action).
+- Risks: Only psql client has been observed, not whether owner has installed all native PG16 server binaries; first-run Windows creation, stop/reboot/start, and cross-machine setup need concrete owner logs. Failure preserves local files and refuses to adopt unknown DBs. Test browser schema remains intentionally disposable despite persistent cluster backing.
+- One next step: owner `git pull --ff-only` on current branch then `npm run setup:local` on this Windows PC; send full diagnostics. Only if setup succeeds, rerun `npm run test:quick` on same HEAD and validate old single source-test failure fixed.
+
+---
+
+**Previous checkpoint (historical):**
+
 **UTC checkpoint:** 2026-10-22T07:08:36.446Z. **Scope: DEV-ENV portable two-PC PG16 persistence + Playwright test contract fix; PR #383 DRAFT, NOT MERGED / NOT DEPLOYED.**
 
 - GitHub verified main SHA: `860df276f7044586834871808e7e3843a10daaac`. Verified work HEAD **before this checkpoint:** `ffb05d301dc2624ca1270f2bb6b22a6501de6e76`, branch `chore/portable-local-test-workflow-20261022`, PR #383 targeting main. This commit advances the branch; refetch HEAD before acting.
