@@ -256,7 +256,23 @@ async function setup({ requireDb = false } = {}) {
   }
   await doctor();
 }
+function releaseNeedsDatabase(args) {
+  const candidate = args.length ? args : ["--base", "origin/main"];
+  const result = exec(process.execPath, [join(root, "tooling", "verify-plan.mjs"), ...candidate, "--json"], {
+    env: safeEnv(), quiet: true,
+  });
+  if (result.error || (result.status !== 0 && result.status !== 3)) {
+    throw new Error("Unable to determine release risk: " + (result.error?.message || String(result.stderr).trim() || "unknown planner error"));
+  }
+  let plan;
+  try { plan = JSON.parse(result.stdout).plan; }
+  catch { throw new Error("Invalid JSON from authoritative release risk planner."); }
+  return Boolean(plan?.postgres || plan?.scale || plan?.browser);
+}
 function delegate(action, args = []) {
+  if (action === "quick" && args.includes("--with-browser")) {
+    throw new Error("Browser acceptance requires the guarded full gate or test:browser:local.");
+  }
   if (action === "quick" || action === "full") checked(npm(["run", "test:local-workflow"], safeEnv()), "local workflow safety tests");
   if (action === "db-init") {
     if (logbook) throw new Error("db-init:local is a Training-only operation.");
@@ -275,12 +291,12 @@ function delegate(action, args = []) {
           ? (logbook ? ["run", "test:browser"] : ["exec", "--", "playwright", "test", ...args])
           : null;
   if (!selected) throw new Error("Unknown test command.");
-  const needsDb = action === "db-test" || action === "browser-test" || action === "full";
-  // For Logbook, a release risk gate can decide that DB/browser evidence is N/A.
-  const configured = existsSync(localFile);
-  const env = safeEnv({ database: needsDb && (configured || action === "db-test" || action === "browser-test"), browser: logbook && needsDb });
-  if (!logbook && action === "full" && !configured) throw new Error("Training full browser gate requires a dedicated localhost database: npm run setup:db.");
-  if (logbook && action === "full" && !configured) console.log("[NOTE] DB/browser evidence will fail closed if required by the risk plan.");
+  const needsDb = action === "db-test" || action === "browser-test"
+    || (action === "full" && releaseNeedsDatabase(args));
+  // The authoritative risk planner decides whether the release needs a DB.
+  // No Docker requirement or connection for docs-only / source-only releases.
+  const env = safeEnv({ database: needsDb, browser: needsDb && action !== "db-test" });
+  if (needsDb) console.log("[DB] Verified owned localhost fixture before test execution.");
   checked(npm(selected, env), selected.join(" "));
   if (!logbook && action === "quick") checked(npm(["run", "test:ui"], env), "Training focused UI tests");
   if (!logbook && action === "full") checked(npm(["exec", "--", "playwright", "test"], env), "Training responsive Playwright");
