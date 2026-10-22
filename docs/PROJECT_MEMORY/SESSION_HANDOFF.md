@@ -1,5 +1,17 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-22T18:52:44.393Z — Agent Skills V1 PR #388 merged; optional post-merge docs-only checkpoint branch
+
+- **Verified:** Logbook main `f1052cac8d518342bfdf10c6f03b51199d78ad69` after squash merge of [PR #388](https://github.com/filipto861/flytally-logbook/pull/388) (state CLOSED/MERGED); merged original docs PR head `7b2aaa16a0faba6f31cb3b3c0a1d9a26a8d4c4f6`. Work branch `docs/logbook-skills-v1-merge-checkpoint-20261022` is a new docs-only follow-up FROM main; its full HEAD must be refreshed after this checkpoint commit. No merge approval for this follow-up.
+- **Scope:** record accurate post-merge facts in ROADMAP and Project Memory only. Skills V1 already in main: nine .agents/skills SKILL.md, README router, AGENTS.md, MIT attribution, ChatGPT Project Instructions addendum. Training untouched. User approval was PR #388 merge only.
+- **Evidence:** exact PR candidate 9/9 skill frontmatter and hard stops, full 18/18 changed paths docs-only, AGENTS registry source checks PASS. Post-merge main SHA/closed merged PR/main AGENTS/design skill readback PASS. No executable tests, typecheck, build, PG, browser or runtime smoke run in this documentation session (NOT RUN). Vercel/Neon deployment runtime UNKNOWN / NOT RECHECKED. No migration, feature flag, DB action, app change or production deploy was initiated.
+- **Design caveat:** apple-design in attached ZIP covers 17 thematic sections; current design-engineering SKILL.md preserves broad design principles but omits detailed velocity/gesture/haptic/rubberband formulas. Optional V2 playbook is separate future scope, not implied by V1 merge.
+- **DO NOT:** no direct main push, do not alter prod DB/flags, merge/deploy, Training, source libraries or unrelated PRs; no private flight/GPS data in docs. User must manually save ChatGPT Project Instructions; this was not changed via GitHub.
+- **ONE NEXT STEP:** manually confirm/insert approved Logbook Agent Skills routing in existing ChatGPT Project Instructions (8k limit) and verify next session pulls skills from main.
+
+---
+
+
 ## 2026-10-22T18:39:44.269Z — Agent Skills V1 final docs checkpoint before handoff
 
 - **Verified GitHub identity before checkpoint commit:** main 34b865bb0ced1222945cecb107589826890ee31a; branch docs/logbook-agent-skills-v1-20261022 @ e4a8aef733e93819f0dda95b3c8159c1b60701f4; Draft PR #388 against main. Branch/PR remain unmerged; this checkpoint advances branch HEAD and requires a subsequent read-only SHA recheck.
