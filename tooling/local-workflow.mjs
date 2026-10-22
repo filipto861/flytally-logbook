@@ -118,7 +118,10 @@ function ownedContainerInfo() {
   let c;
   try { c = JSON.parse(inspected.stdout)[0]; } catch { throw new Error("Docker inspect returned invalid output."); }
   const binding = c?.HostConfig?.PortBindings?.["5432/tcp"] ?? [];
+  const declaredEnv = new Set(c?.Config?.Env ?? []);
   if (c?.Config?.Image !== "postgres:16"
+    || !declaredEnv.has("POSTGRES_DB=" + db.database)
+    || !declaredEnv.has("POSTGRES_USER=flytally_local")
     || binding.length !== 1 || binding[0].HostIp !== "127.0.0.1"
     || binding[0].HostPort !== db.port) {
     throw new Error("A container has the reserved name but is not our expected local-only PG16 fixture.");
@@ -137,6 +140,10 @@ function ensureDatabase() {
   const container = ownedContainerInfo();
   if (container) {
     if (!existingUrl) throw new Error("Reserved Docker container exists but .env.test.local is missing. Refusing to reset or recover credentials automatically.");
+    const containerPassword = new URL(existingUrl).password;
+    if (!(container.Config.Env ?? []).includes("POSTGRES_PASSWORD=" + containerPassword)) {
+      throw new Error("Dedicated container password differs from .env.test.local. Refusing to reuse.");
+    }
     if (!container.State.Running) checked(exec("docker", ["start", db.container]), "Docker start");
     console.log("[DB] Reusing existing dedicated PG16 container; no reset or migration.");
     return;
@@ -214,6 +221,11 @@ async function setup({ requireDb = false } = {}) {
   await doctor();
 }
 function delegate(action, args = []) {
+  if (action === "db-init") {
+    if (logbook) throw new Error("db-init:local is a Training-only operation.");
+    checked(npm(["run", "db:init"], safeEnv({ database: true })), "Training local DB bootstrap");
+    return;
+  }
   const selected = action === "quick"
     ? (logbook ? ["run", "verify:iterate", "--", ...(args.length ? args : ["--base", "origin/main"])]
       : ["run", "typecheck"])
@@ -244,8 +256,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       case "doctor": await doctor(); break;
       case "setup": await setup({ requireDb: args.includes("--with-db") }); break;
       case "db": ensureDatabase(); break;
-      case "quick": case "full": case "db-test": case "browser-test": delegate(action, args); break;
-      default: throw new Error("Usage: node tooling/local-workflow.mjs doctor|setup [--with-db]|db|quick|full|db-test|browser-test");
+      case "quick": case "full": case "db-test": case "browser-test": case "db-init": delegate(action, args); break;
+      default: throw new Error("Usage: node tooling/local-workflow.mjs doctor|setup [--with-db]|db|quick|full|db-test|browser-test|db-init");
     }
   } catch (e) { console.error("[BLOCKED] " + (e instanceof Error ? e.message : String(e))); process.exitCode = 2; }
 }
