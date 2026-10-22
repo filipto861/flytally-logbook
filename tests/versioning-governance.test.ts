@@ -41,10 +41,10 @@ test("3.4.0 design preserves explicit single-flight certification and draft-only
 });
 
 
-test("3.8.0 production version metadata stays aligned while retaining 3.7.0 map release evidence",()=>{
+test("3.8.1 patch release metadata stays aligned while retaining 3.7.0 and 3.8.0 roadmap evidence",()=>{
   const pkg=JSON.parse(read("package.json")) as {version:string};
   const lock=JSON.parse(read("package-lock.json")) as {version:string;packages:Record<string,{version?:string}>};
-  assert.equal(pkg.version,"3.8.0");
+  assert.equal(pkg.version,"3.8.1");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
