@@ -107,25 +107,50 @@ function pgEnv(password) {
   }
   env.PGPASSWORD = password;
   env.PGCONNECT_TIMEOUT = "5";
+  // Windows libpq/psql can default to a legacy Czech code page (e.g. CP1250).
+  // Keep all text exchanged with Node UTF-8, never rely on console encoding.
+  env.PGCLIENTENCODING = "UTF8";
   return env;
 }
+
+// The data-directory field is transmitted as ASCII hex of UTF-8 bytes.
+// Otherwise psql running on Czech Windows can transcode "č"/"í" into CP1250,
+// which spawnSync({ encoding: "utf8" }) would replace with U+FFFD.
+export function nativeIdentityMismatches(output, expectedDir = resolve(dataDir)) {
+  const fields = String(output ?? "").trim().split("|");
+  if (fields.length !== 6) return ["column-count"];
+  const failures = [];
+  if (fields[0] !== cfg.database) failures.push("database");
+  if (fields[1] !== cfg.user) failures.push("database-user");
+  const encodedPath = fields[2];
+  if (!/^(?:[0-9a-f]{2})+$/i.test(encodedPath)) {
+    failures.push("data-directory-encoding");
+  } else {
+    const physicalDir = Buffer.from(encodedPath, "hex").toString("utf8");
+    if (!isAbsolute(physicalDir)
+      || resolve(physicalDir).toLowerCase() !== resolve(expectedDir).toLowerCase()) {
+      failures.push("data-directory");
+    }
+  }
+  if (fields[3] !== cfg.hostname) failures.push("server-address");
+  if (fields[4] !== cfg.port) failures.push("server-port");
+  if (!/^16\d{4}$/.test(fields[5])) failures.push("server-version");
+  return failures;
+}
+
 function observedIdentity(bin, password) {
-  const query = "SELECT current_database() || '|' || current_user || '|' || current_setting('data_directory') || '|' || inet_server_addr()::text || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')";
+  const query = "SELECT current_database() || '|' || current_user || '|' || encode(convert_to(current_setting('data_directory'), 'UTF8'), 'hex') || '|' || inet_server_addr()::text || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')";
   const output = check(run(bin.psql, [
     "-w", "-X", "-qAt", "-v", "ON_ERROR_STOP=1",
     "-h", cfg.hostname, "-p", cfg.port, "-U", cfg.user, "-d", cfg.database,
     "-c", query,
   ], pgEnv(password)), "PostgreSQL physical identity query");
-  const fields = output.split("|");
-  const expectedDir = resolve(dataDir);
-  const physicalDir = fields[2] || "";
-  if (fields.length !== 6
-    || fields[0] !== cfg.database || fields[1] !== cfg.user
-    || !isAbsolute(physicalDir)
-    || resolve(physicalDir).toLowerCase() !== expectedDir.toLowerCase()
-    || fields[3] !== cfg.hostname || fields[4] !== cfg.port
-    || !/^16\d{4}$/.test(fields[5])) {
-    throw new Error("Native PG16 physical identity mismatch. The test suite did NOT run.");
+  const mismatches = nativeIdentityMismatches(output);
+  if (mismatches.length) {
+    // The field names are safe; never print the physical path, username value,
+    // query output, connection string, or PostgreSQL password.
+    throw new Error("Native PG16 physical identity mismatch [" + mismatches.join(", ") +
+      "]. The test suite did NOT run.");
   }
 }
 
