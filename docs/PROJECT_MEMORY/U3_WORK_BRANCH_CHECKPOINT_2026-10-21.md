@@ -1,5 +1,14 @@
 # U3 work-branch checkpoint — 2026-10-21T19:54:09Z
 
+### Final docs-only milestone checkpoint 2026-10-22T12:49:57.931Z
+
+- Main full SHA `860df276f7044586834871808e7e3843a10daaac`, U3 branch pre-checkpoint full SHA `56c6efd1b4463530cb81f266a5620ba459f11c02`, PR #381 OPEN/DRAFT targeting main. This checkpoint advances branch HEAD and must be verified afterward.
+- Source and status: no runtime/tooling/fixture edits after owner executable `a3a6f95158df8fc0950b65796a6f2622e51f5121`. Owner U3 config/spec syntax PASS, frozen E2E structure 15/15 PASS; first U3 Playwright run 2/2 FAIL on missing/invalid `DATABASE_URL` before test SQL. App behavior NOT EVALUATED, DB/process state on today's PC UNKNOWN. Historical U3 migrated-v21 acceptance is not today’s physical preflight.
+- Files touched only `docs/PROJECT_MEMORY/U3_WORK_BRANCH_CHECKPOINT_2026-10-21.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md`. No production DB, app SQL, migrations, flags, deployment, merge, Training, or audit ZIP deletion. Full release/browser/CI still NOT RUN on current test code; 2 browser tests attempted but did not reach behavior.
+- **Exactly one next step:** owner performs read-only PG18 exact 55433 identity + v21 evidence check, sets exact U3 environment flags only after PASS in same PowerShell terminal, reruns dedicated 2-test Playwright acceptance. STOP on DB mismatch/unavailable. Keep generic PG16 55439 completely separate.
+
+---
+
 ## 2026-10-22T12:47:09.749Z — Windows 15/15 source PASS; U3 Playwright setup BLOCKED before DB mutations by unset DATABASE_URL
 
 - **Verified repo/branch:** `filipto861/flytally-logbook`; main `860df276f7044586834871808e7e3843a10daaac`; U3 branch `fix/logbook-u3-aircraft-delete-focus-20261021` exact executable HEAD before this docs-only checkpoint `a3a6f95158df8fc0950b65796a6f2622e51f5121`; PR #381 OPEN/DRAFT, base main, work one main commit behind. Core portable Windows PR #384 remains OPEN/DRAFT, separate PG16 on port 55439. This checkpoint advances only the U3 docs SHA, reverify after commit.
