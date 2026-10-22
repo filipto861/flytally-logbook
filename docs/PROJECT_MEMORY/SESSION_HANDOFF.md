@@ -1,5 +1,17 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-22T19:38:16.522Z — Apple Design V2 PR #390 merged, post-merge verification
+
+- **Verified:** Logbook main `c68e6a2758423ab862cf9b03f5623515d07433e4`, squash merge of PR #390 (MERGED/CLOSED); PR source HEAD `b795b78e886308183481b164ded7365342996cb1`. Work checkpoint branch `docs/logbook-skills-v1-merge-checkpoint-20261022` @ `b6354f389d5018a0dffd8aab03afc18f98918428` before this docs-only update, base main; PR #389 OPEN/DRAFT and NOT AUTHORIZED TO MERGE. Refresh branch full SHA after commit. #390 and #389 are separate approvals.
+- **Content now on main:** first-class .agents/skills/apple-design/SKILL.md, references/APPLE_DESIGN_PLAYBOOK.md (17 domains), .agents/skills/README.md activation routing, updated design-engineering/ui-ux-design skills and AGENTS.md, attribution/MIT and ChatGPT Project Instructions addendum. Only source/docs/governance; no Training, app runtime, new library, database/schema, feature flag or deploy changes.
+- **Verification for PR #390 exact head:** static read-back source checks PASS (17/17 playbook headings, frontmatter, registry + AGENTS routing, MIT attribution, 11/11 changed paths docs only). Post-merge readback PASS on main `c68e6a2758423ab862cf9b03f5623515d07433e4` (skill/playbook/AGENTS), GitHub PR MERGED. **NOT RUN:** local candidate risk planner, Node, TypeScript, build, PostgreSQL, Playwright/CI/native Safari, public/authenticated runtime smoke. No claim of product runtime PASS.
+- **Environment:** Vercel project `filipito/logbook` read-only queried after merge: latest returned deployment `dpl_6kBKjGoUv1ss1evi15wvVbqgnpn1` state CANCELED; no deployment action performed. Production Git SHA/DB/flags not verified = UNKNOWN. Vercel git.deploymentEnabled remains false in verified repo config (prod provider-specific switch not mutated).
+- **Owner authority:** approval applied only to squash merge PR #390. Do not merge PR #389, deploy, migrate/restore/delete DB, modify flags, change Training, add packages or auto-apply/prefill aviation data without separate approval.
+- **Next step (ONE):** manually update/verify ChatGPT FlyTally project UX instructions to load apple-design/SKILL.md and its entire references/APPLE_DESIGN_PLAYBOOK.md for EVERY Logbook UI task.
+
+---
+
+
 ## 2026-10-22T18:52:44.393Z — Agent Skills V1 PR #388 merged; optional post-merge docs-only checkpoint branch
 
 - **Verified:** Logbook main `f1052cac8d518342bfdf10c6f03b51199d78ad69` after squash merge of [PR #388](https://github.com/filipto861/flytally-logbook/pull/388) (state CLOSED/MERGED); merged original docs PR head `7b2aaa16a0faba6f31cb3b3c0a1d9a26a8d4c4f6`. Work branch `docs/logbook-skills-v1-merge-checkpoint-20261022` is a new docs-only follow-up FROM main; its full HEAD must be refreshed after this checkpoint commit. No merge approval for this follow-up.
