@@ -22,18 +22,23 @@ const cfg = Object.freeze({
   database: "flytally_logbook_test",
 });
 
-function run(cmd, args, env = process.env) {
-  return spawnSync(cmd, args, { cwd: repo, env, encoding: "utf8", windowsHide: true });
+function run(cmd, args, env = process.env, timeout = 12_000) {
+  return spawnSync(cmd, args, {
+    cwd: repo, env, encoding: "utf8", windowsHide: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout, maxBuffer: 2 * 1024 * 1024,
+  });
 }
 function check(result, label) {
   if (result.error || result.status !== 0) {
-    // Never echo command arguments or stdout/stderr containing a credential.
-    throw new Error(label + " failed. Local fixture NOT verified; inspect the local PostgreSQL log.");
+    // No credential-bearing command line or raw stdout/stderr in an error.
+    const timeout = result.error?.code === "ETIMEDOUT" ? " (timed out)" : "";
+    throw new Error(label + " failed" + timeout + ". Local fixture NOT verified; inspect the local PostgreSQL log.");
   }
   return String(result.stdout ?? "").trim();
 }
 
-export function nativePg16Tools(env = process.env) {
+export function nativePg16Tools(env = process.env, { diagnostic = false } = {}) {
   if (process.platform !== "win32") return null;
   const roots = [
     env.FLYTALLY_PG16_BIN,
@@ -41,14 +46,20 @@ export function nativePg16Tools(env = process.env) {
   ].filter(Boolean);
   for (const root of roots) {
     if (!isAbsolute(root)) continue;
+    if (diagnostic) console.log("[PG16] Inspecting native PostgreSQL 16 binaries in " + root);
     const bin = Object.fromEntries(["initdb", "pg_ctl", "psql", "createdb"].map(name =>
       [name, join(root, name + ".exe")]));
     if (Object.values(bin).every(existsSync)
       && ["initdb", "pg_ctl", "psql", "createdb"].every(name => {
-        const result = run(bin[name], ["--version"], env);
+        if (diagnostic) console.log("[PG16] Checking " + name + ".exe version...");
+        const result = run(bin[name], ["--version"], env, 7_000);
         return !result.error && result.status === 0 && /\b16\.\d+\b/.test(String(result.stdout));
-      })) return bin;
+      })) {
+      if (diagnostic) console.log("[PG16] All four native PG16 tools detected.");
+      return bin;
+    }
   }
+  if (diagnostic) console.log("[PG16] Complete native PG16 toolchain not found.");
   return null;
 }
 
@@ -134,23 +145,28 @@ export function ensureNativePg16(url, { allowCreate = false } = {}) {
     const pwfile = join(home, "bootstrap-pwfile");
     try {
       writeFileSync(pwfile, parsed.password + "\n", { flag: "wx", mode: 0o600 });
+      console.log("[PG16] First-time initialization of dedicated local data directory (no existing DB replaced).");
       check(run(bin.initdb, ["-D", dataDir, "-U", cfg.user,
         "-A", "scram-sha-256", "--pwfile", pwfile, "--encoding=UTF8", "--no-instructions"],
-      ), "Initialize dedicated disposable native PG16");
+        process.env, 120_000), "Initialize dedicated disposable native PG16");
     } finally {
       rmSync(pwfile, { force: true });
     }
     // Marker remains absent until the full first bootstrap succeeds.
     // Failed setup leaves data untouched for manual investigation.
+    console.log("[PG16] Cluster initialized. Starting owned PostgreSQL 16 process...");
     startNative(bin, parsed.password);
+    console.log("[PG16] Server started. Creating empty, dedicated acceptance database...");
     check(run(bin.createdb, ["-w", "-h", cfg.hostname, "-p", cfg.port,
-      "-U", cfg.user, cfg.database], pgEnv(parsed.password)), "Create local acceptance database");
+      "-U", cfg.user, cfg.database], pgEnv(parsed.password), 20_000), "Create local acceptance database");
     observedIdentity(bin, parsed.password);
+    console.log("[PG16] Physical database identity verified. Saving ownership marker...");
     writeFileSync(marker, JSON.stringify(cfg, null, 2) + "\n", { flag: "wx", mode: 0o600 });
     writeFileSync(envFile, "# Dedicated localhost PostgreSQL acceptance. Never commit.\nDATABASE_URL=" + url + "\n",
       { flag: "wx", mode: 0o600 });
     return "CREATED";
   }
+  console.log("[PG16] Existing owned cluster detected. Checking process and physical identity...");
   startNative(bin, parsed.password);
   observedIdentity(bin, parsed.password);
   return "REUSED";
@@ -160,8 +176,9 @@ function startNative(bin, password) {
   const status = run(bin.pg_ctl, ["-D", dataDir, "status"]);
   if (status.error) throw new Error("Cannot inspect owned native PG16 process.");
   if (status.status !== 0) {
+    console.log("[PG16] Starting stopped owned PG16 process (existing data is preserved)...");
     check(run(bin.pg_ctl, ["-D", dataDir, "-l", log,
-      "-o", "-h 127.0.0.1 -p 55439", "-w", "-t", "30", "start"], pgEnv(password)),
+      "-o", "-h 127.0.0.1 -p 55439", "-w", "-t", "30", "start"], pgEnv(password), 40_000),
     "Start existing owned native PG16");
   }
 }
