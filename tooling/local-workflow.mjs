@@ -97,6 +97,11 @@ function safeEnv({ database = false, browser = false } = {}) {
     "FLYTALLY_BROWSER_EVIDENCE_FILE", "FLYTALLY_PORTABLE_LOCAL_BROWSER",
     "FLYTALLY_AUTH_BROWSER", "FLYTALLY_LOCAL_POSTGRES", "VERCEL", "VERCEL_ENV",
   ]) delete env[name];
+  // Inherited libpq/psql routing settings must never redirect or mutate acceptance.
+  // The inspected fixture URL supplies all necessary host/user/database credentials.
+  for (const name of Object.keys(env)) {
+    if (/^PG[A-Z0-9_]+$/i.test(name)) delete env[name];
+  }
   // Explicit empty process variables prevent Next.js from loading a remote .env.local DB URL.
   env.DATABASE_URL = "";
   env.TRAINING_DATABASE_URL = "";
