@@ -1,3 +1,8 @@
+## 2026-10-22 — Owner Windows local safety acceptance (PR #383, Draft)
+
+- On code SHA `3a1dff314caf25451921aba6704f36679e425b79`, owner `git pull --ff-only` PASS and `npm run test:local-workflow` **23/23 PASS**, 0 failures/skips, including nested Node regression and guarded PG16 identity tests. The prior 22/23 test-runner failure is corrected on this source SHA.
+- No real PG acceptance has been rerun on the new code. Previous 50k flight-list 2648.214 ms > 2500 ms remains unresolved; dedicated full-v20 independent fixture not tested. Aggregate/build/browser/release/CI/reboot NOT RUN. No product/production/remote DB, Training, merge, flag or deployment changes.
+
 ## 2026-10-22 — Nested node:test worker regression repair (PR #383 Draft)
 
 - Owner Windows Node24 tested prior work SHA `4f09e73902e16de906b4531f2682edb5ea3eccfc`: `npm run test:local-workflow` **22 PASS / 1 FAIL (23 total)**; the new nested child test exited 0 with an empty stdout and failed its TAP summary assertion. No PostgreSQL acceptance was run afterward.
