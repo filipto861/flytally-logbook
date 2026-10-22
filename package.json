@@ -36,6 +36,7 @@
     "test:quick": "node tooling/local-workflow.mjs quick",
     "test:full": "node tooling/local-workflow.mjs full",
     "test:db:local": "node tooling/local-workflow.mjs db-test",
+    "test:db:scale:local": "node tooling/local-workflow.mjs db-scale-diagnostic",
     "test:browser:local": "node tooling/local-workflow.mjs browser-test",
     "test:local-workflow": "node --test tests/local-workflow.test.mjs"
   },
