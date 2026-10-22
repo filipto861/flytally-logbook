@@ -3,7 +3,25 @@
 **Date:** 2026-10-21  
 **Repo/branch:** `filipto861/flytally-logbook`, `fix/logbook-u3-aircraft-delete-focus-20261021`  
 **Base:** `main@8099149f72d493c34dd59babf65bdb064ff99fc9`  
-**Status (latest reviewed, 22 Oct 2026):** PR #381 OPEN/DRAFT/unmerged. Owner-local prior executable SHA `3de30a641af17e74d565cfda8c3580df82752963`: **2/2 U3 Playwright PASS (56.6s)** on isolated PG18/v21, desktop + 320/390/768/1024 Chrome touch emulation in light/dark; browser structure **15/15 PASS**. Final review strengthened **test-only** DB safety preflight; **hardened test HEAD NOT RUN**. Product runtime unchanged. Release-candidate risk gates, CI, manual screenshot review and native Safari NOT RUN; no merge/deploy. Historical status paragraphs below are retained by date.
+**Status (latest owner-local evidence, 22 Oct 2026):** PR #381 OPEN/DRAFT/unmerged. Exact executable SHA `9837776aedb3ab10d090a8ef538ccba88da1c479`: isolated local PG18/v21 fail-closed identity/schema PASS, U3 browser syntax PASS, frozen browser structure **15/15 PASS**, and hardened U3 Playwright **2/2 PASS (54.7 s, retries 0)** with desktop and Chrome touch emulation of 320/390/768/1024 × light/dark. Runtime unchanged from earlier source 3/3 and TypeScript/build PASS. Candidate-bound release plan and its selected additional gates, CI, manual screenshot review, native Safari NOT RUN. No merge/deploy. Historical sections below are dated snapshots.
+
+## 22 October 2026 — hardened U3 browser acceptance PASS on exact runnable SHA
+
+Owner provided the full console transcript from `C:\\Users\\filip\\Documents\\GitHub\\Logbook`. `git pull --ff-only` fast-forwarded local U3 checkout to `9837776aedb3ab10d090a8ef538ccba88da1c479` (GitHub verified branch HEAD before documentation-only checkpoint). `node --check .\\tooling\\u3-browser\\aircraft-delete-focus.spec.mjs`: **PASS**. `npm run test:target -- tests/browser-suite-structure.test.ts`: **15/15 PASS**, 0 fail/skip.
+
+After a first direct Playwright attempt ended with **0/2 PASS** because the new PowerShell shell lacked `DATABASE_URL` (fail-closed, before synthetic DB operations), owner executed one atomic PowerShell block: verified exact Git branch/SHA, available local PostgreSQL 18 client, absence of Vercel flags, read-only physical identity of dedicated PG18 `127.0.0.1:55433/flytally_ui_u3_20261021` role `flytally_u3`, existing v21 schema evidence **`1|12|4|21`**, and port 3000 free; then set exact process-only test flags and generated temporary secrets if needed. **Preflight printed `U3 DATABASE PREFLIGHT PASS` after actual SQL/identity guards.** It ran:
+
+```powershell
+npx.cmd --no-install playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0
+```
+
+Result **`2 passed (54.7s)`**, followed by **`U3 PLAYWRIGHT PASS`** and `Previous environment restored.` in `finally`. This is direct evidence for hardened shared DB preflight, desktop delete status focus + no replay, saved-flight delete protection, and 320/390 mobile + 768/1024 iPad **Chromium touch emulation** in light/dark, real-focus/DB assertions. It is **not** native iPadOS Safari, a screen-reader test, or visual screenshot acceptance.
+
+**New head after documentation updates:** product runtime and browser script unchanged since tested executable SHA; documentation commits are evidence only. Exact U3 browser quality gate is **PASS** for the tested executable. The source regressions 3/3, TypeScript and build 41/41 were earlier owner-local on the unchanged runtime module, not rerun in this session. CI, full application suite, candidate-aware release planner/evidence and manual screenshot review remain **NOT RUN**. No production DB/feature-flag/merge/deploy operation.
+
+**One next step:** run read-only `npm run verify:plan -- --base origin/main` from a current clean U3 checkout to discover risk-selected final release gates, then review before any destructive or production-facing command.
+
+---
 
 ## Update 22 Oct 2026 — dedicated U3 browser test was blocked before scripted SQL
 
