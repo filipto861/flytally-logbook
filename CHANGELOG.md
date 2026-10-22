@@ -1,7 +1,7 @@
 ## 2026-10-22 — Developer tooling candidate (NOT MERGED / NOT RELEASED)
 
-- Working branch chore/portable-local-test-workflow-20261022 adds home/office incremental npm/Playwright bootstrap, dedicated loopback-only Docker PG16 acceptance fixture, guarded test aliases, local URL regression tests and docs/TESTING_WORKFLOW.md. Existing release, PG, browser runners are reused, not rewritten.
-- No product behavior, schema migration, production DB, feature flag or deployment change. Windows/CI/browser/DB testing on this candidate head **NOT RUN**; GitHub connector source write is not runtime acceptance.
+- Working branch chore/portable-local-test-workflow-20261022 adds home/office incremental npm/Playwright bootstrap, owned loopback-only Docker PG16 fixture with exact container/credential/port/readiness proof before destructive testing, guarded test aliases, risk-selected DB preflight, and docs/TESTING_WORKFLOW.md. Setup automatically runs non-DB safety regression tests. Existing release, PG, browser runners are reused, not rewritten.
+- No product behavior, schema migration, production DB, feature flag or deployment change. Owner-Windows/Node24/CI/browser/PG16 acceptance on this candidate head **NOT RUN**. Pure source logic was exercised in an isolated V8 simulated-environment harness (8/8 targeted scenarios; not official Node/npm runtime evidence). GitHub connector source writes are not runtime acceptance.
 
 # FlyTally changelog
 
