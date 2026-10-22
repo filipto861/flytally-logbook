@@ -13,7 +13,7 @@ Owner Windows Node24 with physically verified native PG16 localhost `127.0.0.1:5
 
 ## Code and evidence
 
-`tooling/run-postgres-tests.mjs` gains optional `scale --serial` for only the three registered scale files; `tooling/local-workflow.mjs` and `package.json` expose `npm run test:db:scale:local` under the same strict owned-local preflight. Test-only v169 and v230 files log bounded/sanitized EXPLAIN (ANALYZE, BUFFERS) operator metadata on 50k and 100k Flight List fast/slow runs. Dedicated historical v20 restore tests demand their own explicit opt-in; generic integration must never silently authorize that separate fixture.
+`tooling/run-postgres-tests.mjs` gains optional `scale --serial` for only the three registered scale files; `tooling/local-workflow.mjs` and `package.json` expose `npm run test:db:scale:local` under the same strict owned-local preflight. Test-only v169 and v230 files log bounded/sanitized EXPLAIN (ANALYZE, BUFFERS) operator metadata on 50k and 100k Flight List fast/slow runs. The dedicated historical full-v20 restore opt-in guard is already included in core PR #384; this research branch inherits it unchanged. Generic integration must never authorize that separate fixture.
 
 Last owner EXPLAIN run:
 - 50k first-page flight list: WindowAgg over 50,000 rows, top-N Sort to 50, materialized CTEs (`b`, `scoped`, `classified`, `costed`); root ~7868 temp reads / 6809 temp writes blocks, execution 1386.774ms PASS.
