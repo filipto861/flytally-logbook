@@ -215,12 +215,18 @@ function ensureDatabase() {
   if (existingUrl) {
     throw new Error("Local configuration exists without its owned Docker container. Refusing to use an unverified database.");
   }
+  const volumeName = "flytally-logbook-local-pg16-data";
+  const volumeProbe = exec("docker", ["volume", "inspect", volumeName], { quiet: true });
+  if (volumeProbe.error) throw new Error("Unable to inspect existing local Docker volume.");
+  if (volumeProbe.status === 0) {
+    throw new Error("Reserved Docker volume already exists without the matching owned container. Refusing unverified volume reuse.");
+  }
   const password = randomBytes(24).toString("hex");
   const url = "postgresql://flytally_local:" + password + "@127.0.0.1:" + db.port + "/" + db.database;
   const result = exec("docker", [
     "run", "--detach", "--name", db.container, "--restart", "unless-stopped",
     "--publish", "127.0.0.1:" + db.port + ":5432",
-    "--mount", "type=volume,source=flytally-logbook-local-pg16-data,target=/var/lib/postgresql/data",
+    "--mount", "type=volume,source=" + volumeName + ",target=/var/lib/postgresql/data",
     "--env", "POSTGRES_USER=flytally_local",
     "--env", "POSTGRES_DB=" + db.database,
     "--env", "POSTGRES_PASSWORD=" + password,
