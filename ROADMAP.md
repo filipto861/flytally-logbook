@@ -1,5 +1,7 @@
 # FlyTally Logbook — ROADMAP
 
+**2026-10-22 — DEV-ENV WINDOWS PG16 SERVER ADDRESS FIX + OWNED CLUSTER FINALIZATION CANDIDATE:** Owner Windows 20/20 local-safety PASS; diagnostic authenticated and executed core SELECT, with only server-address mismatch. Official PostgreSQL docs confirm inet::text includes /32 while host(inet) returns bare IP; use host(inet_server_addr()) but strictly retain 127.0.0.1 expected. Added explicit guarded local existing-cluster finalization from retained credential; no reinit/archive required. Post-fix owner tests/DB acceptance NOT RUN. No production DB, merge, deploy or migrations.
+
 **2026-10-22 — DEV-ENV Portable Local Testing V1 — WORK BRANCH / NOT MERGED:**
 **2026-10-22 — DEV-ENV LOCAL PG16 SQL QUERY BLOCKER:**
 **2026-10-22 — DEV-ENV READ-ONLY DIAGNOSTIC FIELD CONTRACT FOLLOW-UP:** Owner Windows at cb0a1f76: local safety tests 18/19 (one FAIL from overbroad static test matching benign 'password file was not modified' message); read-only SELECT 1 PASS and core SQL query executed PASS, but core identity comparison FAIL with unspecified field. No write/archival. Updated diagnostic emits only mismatching core field names without values, fixed harmless status wording, added unit coverage of field validation. Post-fix Windows tests and diagnosis NOT RUN; no database/deploy/merge.
