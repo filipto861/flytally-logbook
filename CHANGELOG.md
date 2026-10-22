@@ -1,5 +1,15 @@
 # FlyTally changelog
 
+## 3.8.1 — Production deployed 22 October 2026
+
+- PR [#386](https://github.com/filipto861/flytally-logbook/pull/386) squash-merged to main `34b865bb0ced1222945cecb107589826890ee31a`; package, lockfile and app footer source version `3.8.1`.
+- Owner-approved manual Vercel **production READY** deployment `dpl_4XGBawGy187VyJpG5nyRFe2p2fKW` on exact `main` SHA. Production domain `https://fly-tally.com` verified alias-bound to this build.
+- Cumulative merged changes since 17 Oct production include U3 Aircraft delete successful-focus accessibility (#381) and independent merged GPS importer / altitude and track review corrections; release packaging itself added no new runtime business rules.
+- Owner-local canonical release `PASS`: premerge exact candidate `c6c7ecc60047240c760f544e88f605fbb0a4f33ecd66a8765fa8d9fea52b5b5a`, source 142/142, Node 1653/1653, TypeScript, Next build 41/41, no required PG/browser/scale for version-only delta. Prior U3 executable had separate PG/browser PASS. **No claim that signed-in production workflows were tested.**
+- Read-only Neon production primary v21 registry 21, monetary columns 12, CHECKs 4; no DB migration, restore, deletion, flag change. Public HTTPS smoke 5/5 200; anonymous dashboard redirects/displays sign-in. Vercel recent error scan clean at check. Manual authenticated smoke and native Safari NOT RUN.
+
+
+
 ## 3.8.1 — 2026-10-22 (release candidate; production verification pending)
 
 - Patch release to distinguish the Logbook build delivered after the 17 October production snapshot: `package.json`, `package-lock.json` and the app-visible footer version become **3.8.1**; canonical version regression test updated.
