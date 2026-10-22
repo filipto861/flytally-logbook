@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
-import { assertLocalFixtureUrl } from "../tooling/local-workflow.mjs";
+import { assertLocalFixtureUrl, isLocalDockerEndpoint } from "../tooling/local-workflow.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 const isLogbook = pkg.name === "pilot-logbook-web";
@@ -39,4 +39,12 @@ test("one-command scripts exist without replacing canonical product release gate
   assert.ok(pkg.scripts.verify);
   if (isLogbook) assert.ok(pkg.scripts["verify:release:risk"]);
   else assert.ok(pkg.scripts["test:no-code-aircraft"]);
+});
+
+test("remote Docker contexts are not accepted as localhost-owned test fixtures", () => {
+  assert.equal(isLocalDockerEndpoint("unix:///var/run/docker.sock"), true);
+  assert.equal(isLocalDockerEndpoint("npipe:////./pipe/docker_engine"), true);
+  assert.equal(isLocalDockerEndpoint("ssh://remote.example"), false);
+  assert.equal(isLocalDockerEndpoint("tcp://10.0.0.20:2375"), false);
+  assert.equal(isLocalDockerEndpoint("tcp://127.0.0.1:2375"), false);
 });
