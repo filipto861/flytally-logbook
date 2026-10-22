@@ -1,12 +1,12 @@
 ## 2026-10-22 — PostgreSQL research separated from portable Windows core
 
-- Created distinct research branch based on the clean core Windows workflow PR #384, containing seven research-specific code files, optional serial-scale diagnostics, the historical v20 fixture opt-in correction and bounded 50k/100k EXPLAIN logs.
+- Created distinct research branch based on the clean core Windows workflow PR #384, containing only separate scale diagnostic code, optional serial-scale diagnostics and bounded 50k/100k EXPLAIN logs.
 - Recorded alternating 50k/100k strict benchmark outcomes and last 100k Pilot Insights Career FAIL in `docs/PG_SCALE_INVESTIGATION_20261022.md`. Test-only research remains draft and not deployed; exact new research head tests NOT RUN. Production SQL/schema, canonical full PG/release gate, Training and main unchanged.
 
 ## 2026-10-22 — Portable Windows local testing core extracted from Draft PR #383
 
-- Rebuilt the approved home/office local testing capability as a clean, base-`main` developer-only branch `chore/local-windows-workflow-core-20261022`; isolated 22 core safety contract tests, protected native/Docker PG16 ownership and restart/recovery scripts, scoped `package.json` commands, Playwright fresh-server local override and a dedicated permanent runbook.
-- Kept `tooling/run-postgres-tests.mjs`, production SQL, schema, strict 50k/100k benchmark assertions, independent historic v20 fixture guards and the existing authoritative release planner unchanged. Left temporary serial-scale diagnostics and benchmark experiments on PR #383. Nothing was merged into `main`.
+- Rebuilt the approved home/office local testing capability as a clean, base-`main` developer-only branch `chore/local-windows-workflow-core-20261022`; isolated 23 core safety contract tests (including strict v20 fixture selection), protected native/Docker PG16 ownership and restart/recovery scripts, scoped `package.json` commands, Playwright fresh-server local override and a dedicated permanent runbook.
+- Kept `tooling/run-postgres-tests.mjs`, production SQL, schema, strict 50k/100k benchmark assertions, the existing authoritative release planner unchanged; only the narrow historic v20 fixture test-selection guard was corrected. Left temporary serial-scale diagnostics and benchmark experiments on research PR #385. Nothing was merged into `main`.
 - Previous owner Windows evidence on mixed candidate: local source safety 26/26 PASS and physically verified localhost PG16. Exact new clean branch safety, browser, full PostgreSQL, build, reboot, second PC and CI **NOT RUN**; prior full PG gate FAIL remains unchanged. No production/remote database, Training, migrations, deployment, release flag or data operation.
 
 # FlyTally changelog
