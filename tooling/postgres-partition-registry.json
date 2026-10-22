@@ -207,7 +207,7 @@
       "files": [
         {
           "file": "postgres-v380-full-v20-restore.test.ts",
-          "sha256": "ae8f28ca8c3908644f9dcd60c7f52ab877df7766faa328a24f3fcbbc6beee839",
+          "sha256": "52e5c8585f569142b698395e5c66cf2a2dd68146b4126ffff6f9e14d4eeea673",
           "expectedTests": 8
         }
       ]
