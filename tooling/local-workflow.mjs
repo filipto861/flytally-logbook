@@ -262,6 +262,8 @@ async function setup({ requireDb = false } = {}) {
     console.log("[DB] Not configured and Docker unavailable. Quick non-DB tests remain available; use npm run setup:db after preparing Docker.");
   }
   await doctor();
+  checked(npm(["run", "test:local-workflow"], safeEnv()), "local workflow safety contract");
+  console.log("[Setup] Local dependency and safety-contract setup completed. Use test:quick or test:full for candidate evidence.");
 }
 function releaseNeedsDatabase(args) {
   const candidate = args.length ? args : ["--base", "origin/main"];
