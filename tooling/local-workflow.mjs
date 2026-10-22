@@ -221,6 +221,9 @@ function ensureDatabase() {
   if (volumeProbe.status === 0) {
     throw new Error("Reserved Docker volume already exists without the matching owned container. Refusing unverified volume reuse.");
   }
+  if (!/no such volume/i.test(String(volumeProbe.stderr ?? ""))) {
+    throw new Error("Docker volume inspection was inconclusive. No container will be created.");
+  }
   const password = randomBytes(24).toString("hex");
   const url = "postgresql://flytally_local:" + password + "@127.0.0.1:" + db.port + "/" + db.database;
   const result = exec("docker", [
