@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T10:14:05.100Z — LOCAL NATIVE POSTGRESQL 16 FIXTURE FINALIZED ON OWNER WINDOWS; verification follow-ups pending. PR #383 DRAFT / NOT MERGED.**
+
+- **GitHub state independently verified:** main full SHA `860df276f7044586834871808e7e3843a10daaac`; work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `91aca796d0dbf293ae651192cf7fa278f29eebab`, PR #383 OPEN/DRAFT base main. This docs checkpoint advances work SHA; refetch SHA next session.
+- **Owner evidence at actual code SHA `381cc1fd0d8a4f414985a6202189f16b060f862c`:** Windows `git pull --ff-only` PASS. `npm run test:local-workflow`: **22/22 PASS** (source, security, scripts, native PowerShell parser and PG16 model contracts). `node tooling/diagnose-incomplete-local-pg16.mjs`: read-only exact scoped fixture preflight PASS; SELECT 1 PASS; core identity database/user/host/port/PG16 PASS; server binary postmaster.pid read PASS; full byte-identical physical server-vs-local PID-file identity PASS; READ-ONLY COMPLETE. `node tooling/finalize-incomplete-local-pg16.mjs`: **FINALIZED**, reported persistent local fixture config saved, data preserved, no schema test executed. This is an actual owner Windows acceptance of the explicit in-place first-run finalization, **not** full acceptance of test workflow.
+- Scope and frozen DO NOT: Logbook developer-only, local loopback PG16 port 55439. `filipto861/flytally-training` separate and unmodified. No main direct changes, production/remote Neon DB, actual logbook data, DB migration, deploy, merge, or production feature flags without express owner approval. No automatic reset/deletion of any cluster; older named archives preserved; secret `.env.test.local` and bootstrap credential never recorded in Git/history/chat.
+- **Changes documented this milestone (docs only):** `ROADMAP.md`, `CHANGELOG.md`, `docs/TESTING_WORKFLOW.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, this handoff. Relevant implemented candidates `tooling/local-native-pg16.mjs`, `tooling/local-workflow.mjs`, `tooling/diagnose-incomplete-local-pg16.mjs`, `tooling/finalize-incomplete-local-pg16.mjs` and `tests/local-workflow.test.mjs` did not change in this checkpoint.
+- **Exact-SHA test evidence:** owner Windows safety `test:local-workflow` 22/22 PASS at code SHA 381cc1fd; owner Windows native query/finalizer PASS at same code SHA. Latest documentation-only HEAD code unchanged; **NOT RUN after finalization:** `npm run setup:local` owned-fixture reuse, `npm run test:quick`, full risk-relevant PG integration/Playwright/build/CI, reboot/restart test. No claims those are PASS yet. `PG16` test fixture data/config persisted by owner; runtime after reboot UNKNOWN. Production DB/migrations/flags/deploy status UNKNOWN and unchanged by this work.
+- Remaining risk: code reuse may expose separate failures in setup/quick; reboot-stable reuse is designed but has not been independently tested. Previous blocked Unicode SQL and startup issues superseded for the successfully finalized fixture.
+- **Exactly one next step:** Owner run `npm run setup:local`; only if it finishes successfully, `npm run test:quick`, share complete non-secret output. Follow with risk-scoped DB/browser and restart/reboot evidence in later verification; no merge/deploy until approval.
+
+---
+
+**Previous historical checkpoints:**
+
 **UTC 2026-10-22T08:59:18.562Z — Windows native PG16 SQLSTATE 22021: binary postmaster identity proof candidate. PR #383 OPEN DRAFT / NOT MERGED.**
 
 - GitHub independently verified `main` `860df276f7044586834871808e7e3843a10daaac`, work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `8e6e5b77db8710b6cf76b11ee1b083e30ad8300c`; PR #383 is open Draft targeting main. This docs commit advances work HEAD; reverify.
