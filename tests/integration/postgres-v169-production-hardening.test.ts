@@ -60,9 +60,46 @@ function explain(statement:string){
   const top=parsed[0]??{};
   return{planningMs:Number(top["Planning Time"]??0),executionMs:Number(top["Execution Time"]??0),plan:top.Plan};
 }
+// Bounded diagnostic metadata for the synthetic 50k fixture, not raw SQL or rows.
+// Preserve inclusive PostgreSQL node time and buffer counters for comparison.
+function summarizeFlightListPlan(plan:unknown){
+  const nodes:Array<Record<string,unknown>>=[];
+  const visit=(candidate:unknown,depth:number)=>{
+    if(!candidate||typeof candidate!=="object"||depth>40||nodes.length>=200)return;
+    const p=candidate as Record<string,unknown>;
+    const n=(key:string)=>Number(p[key]??0);
+    nodes.push({
+      node:String(p["Node Type"]??""),
+      relation:String(p["Relation Name"]??""),
+      index:String(p["Index Name"]??""),
+      cte:String(p["CTE Name"]??""),
+      rows:n("Actual Rows"),loops:n("Actual Loops"),
+      totalMs:n("Actual Total Time"),
+      tempRead:n("Temp Read Blocks"),tempWritten:n("Temp Written Blocks"),
+      sharedRead:n("Shared Read Blocks"),sharedHit:n("Shared Hit Blocks"),
+      sortMethod:String(p["Sort Method"]??""),
+      sortSpaceKb:n("Sort Space Used"),
+    });
+    if(Array.isArray(p.Plans))for(const child of p.Plans)visit(child,depth+1);
+  };
+  visit(plan,0);
+  return{
+    root:nodes[0]??null,
+    longestNodes:nodes.slice(1).sort((a,b)=>Number(b.totalMs)*Number(b.loops)-Number(a.totalMs)*Number(a.loops)).slice(0,12),
+    nodesVisited:nodes.length,
+  };
+}
 function recordMetric(name:string,result:{planningMs:number;executionMs:number;plan:unknown},limitMs:number){
   evidence[name]={planningMs:result.planningMs,executionMs:result.executionMs,limitMs};
   console.log(`V169 SCALE ${name}: execution=${result.executionMs.toFixed(3)}ms planning=${result.planningMs.toFixed(3)}ms limit=${limitMs}ms`);
+  // Always show fast AND slow first-page plans: timings have fluctuated on
+  // one verified local PG16 even when independent suites ran serially.
+  if(name==="flightListFirstPage50k"){
+    console.log("V169 FLIGHTLIST50K PLAN "+JSON.stringify({
+      executionMs:result.executionMs,planningMs:result.planningMs,
+      ...summarizeFlightListPlan(result.plan),
+    }));
+  }
   assert.ok(result.executionMs<limitMs,`${name} exceeded ${limitMs}ms on the controlled 50k mixed-category account: ${result.executionMs}ms`);
 }
 function jsonArray(value:unknown){
