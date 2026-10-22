@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname, delimiter } from "node:path";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const packageInfo = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -93,7 +93,16 @@ function safeEnv({ database = false, browser = false } = {}) {
     "FLYTALLY_CURRENCY_V21_BROWSER", "FLYTALLY_V21_RISK_BROWSER",
     "FLYTALLY_BROWSER_EVIDENCE_FILE", "VERCEL", "VERCEL_ENV",
   ]) delete env[name];
-  if (logbook && findPsql()) env.FLYTALLY_PSQL = findPsql();
+  if (logbook && findPsql()) {
+    const psql = findPsql();
+    env.FLYTALLY_PSQL = psql;
+    // Production local adapter and several legacy PG tests spawn literal "psql".
+    // Put the existing psql.exe folder on PATH; don't modify machine PATH.
+    if (psql !== "psql") {
+      const key = Object.keys(env).find(k => k.toLowerCase() === "path") || "PATH";
+      env[key] = dirname(psql) + delimiter + (env[key] || "");
+    }
+  }
   if (database) {
     const url = testUrl();
     if (!url) throw new Error("Missing .env.test.local. Run npm run setup:db first.");
