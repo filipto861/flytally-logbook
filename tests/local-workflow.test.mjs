@@ -36,13 +36,108 @@ test("remote production, Docker-host aliases and the other FlyTally repo are rej
   }
 });
 
+test("generic PG integration cannot authorize the separate full-v20 disposable restore fixture", () => {
+  if (!isLogbook) return;
+  const target = fileURLToPath(new URL("../tests/integration/postgres-v380-full-v20-restore.test.ts", import.meta.url));
+  const run = (integration, fullV20) => {
+    // node:test sets NODE_TEST_CONTEXT in its worker. Passing it to a
+    // nested --test process makes Node silently skip test discovery and exit 0.
+    const env = { ...process.env };
+    delete env.NODE_TEST_CONTEXT;
+    return spawnSync(process.execPath, [
+      "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
+      "--test",
+      "--test-reporter=tap",
+      "--experimental-strip-types",
+      target,
+    ], {
+      encoding: "utf8", timeout: 30_000, windowsHide: true,
+      env: {
+        ...env,
+        DATABASE_URL: "", // The generic scenario must never reach a DB.
+        FLYTALLY_POSTGRES_INTEGRATION: integration,
+        FLYTALLY_D2_FULL_V20_DISPOSABLE: fullV20,
+      },
+    });
+  };
+  const generic = run("1", "");
+  assert.ifError(generic.error);
+  assert.equal(generic.status, 0, "Generic PostgreSQL gate unexpectedly invoked the isolated v20 fixture.");
+  assert.match(generic.stdout, /\bpass\s+1\b/);
+  assert.match(generic.stdout, /\bskipped\s+7\b/);
+  const missingIntegration = run("", "1");
+  assert.ifError(missingIntegration.error);
+  assert.notEqual(missingIntegration.status, 0, "Isolated v20 opt-in must also require the integration flag.");
+  assert.match(missingIntegration.stdout + missingIntegration.stderr, /Both full-v20 disposable flags must be set/);
+});
+
 test("one-command scripts exist without replacing canonical product release gates", () => {
   for (const key of ["doctor", "setup:local", "setup:db", "test:quick", "test:full", "test:db:local", "test:browser:local"]) {
     assert.match(pkg.scripts[key], /tooling\/local-workflow\.mjs/);
   }
   assert.ok(pkg.scripts.verify);
-  if (isLogbook) assert.ok(pkg.scripts["verify:release:risk"]);
+  if (isLogbook) {
+    assert.ok(pkg.scripts["verify:release:risk"]);
+    assert.equal(pkg.scripts["test:db:scale:local"], "node tooling/local-workflow.mjs db-scale-diagnostic");
+  }
   else assert.ok(pkg.scripts["test:no-code-aircraft"]);
+});
+
+test("serial PG scale diagnostic keeps exact owned-local preflight and original full gate", async () => {
+  if (!isLogbook) return;
+  const { selectPostgresTests } = await import("../tooling/run-postgres-tests.mjs");
+  const registered = selectPostgresTests("scale");
+  assert.deepEqual(registered, [
+    "postgres-scale-readiness.test.ts",
+    "postgres-v169-production-hardening.test.ts",
+    "postgres-v230-large-logbook-performance.test.ts",
+  ]);
+  const full = selectPostgresTests("full");
+  for (const file of registered) assert.ok(full.includes(file), "Full PG gate still includes " + file);
+  assert.ok(full.length > registered.length, "Scale diagnostic must not count as full PG acceptance");
+  const runner = readFileSync(new URL("../tooling/run-postgres-tests.mjs", import.meta.url), "utf8");
+  assert.match(runner, /serial && mode !== "scale"/);
+  assert.match(runner, /serial \? \["--test-concurrency=1"\] : \[\]/);
+  assert.match(runner, /preflightPostgresGate\(env\)/);
+  assert.match(runner, /FLYTALLY_POSTGRES_INTEGRATION: "1"/);
+  const facade = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
+  assert.match(facade, /action === "db-scale-diagnostic" && \(!logbook \|\| args\.length !== 0\)/);
+  assert.match(facade, /\["run", "test:postgres:scale", "--", "--serial"\]/);
+  assert.match(facade, /action === "db-test" \|\| action === "db-scale-diagnostic" \|\| action === "browser-test"/);
+  assert.match(facade, /safeEnv\(\{ database: needsDb, browser: needsDb && action !== "db-test" && action !== "db-scale-diagnostic" \}\)/);
+});
+
+test("100k EXPLAIN diagnostic remains bounded and cannot replace the strict performance assertion", () => {
+  if (!isLogbook) return;
+  const source = readFileSync(new URL("../tests/integration/postgres-v230-large-logbook-performance.test.ts", import.meta.url), "utf8");
+  assert.match(source, /if\(name==="flightListFirstPage100k"\)/);
+  assert.match(source, /longestNodes:nodes\.slice\(1\)\.sort\([\s\S]*?\.slice\(0,12\)/);
+  assert.match(source, /nodesVisited:nodes\.length/);
+  assert.match(source, /assert\.ok\(result\.executionMs<limitMs,/);
+  assert.match(source, /recordMetric\("flightListFirstPage100k",listResult,4_500\)/);
+  assert.match(source, /V230 FLIGHTLIST100K PLAN/);
+  assert.doesNotMatch(source, /console\.log\(JSON\.stringify\(result\.plan\)\)/);
+});
+
+test("50k and 100k flight-list diagnostics compare fast and slow plans without weakening acceptance", () => {
+  if (!isLogbook) return;
+  const fifty = readFileSync(new URL("../tests/integration/postgres-v169-production-hardening.test.ts", import.meta.url), "utf8");
+  const hundred = readFileSync(new URL("../tests/integration/postgres-v230-large-logbook-performance.test.ts", import.meta.url), "utf8");
+  assert.match(fifty, /if\(name==="flightListFirstPage50k"\)/);
+  assert.match(hundred, /if\(name==="flightListFirstPage100k"\)/);
+  for (const [source, label, functionName] of [
+    [fifty, "V169 FLIGHTLIST50K PLAN", "summarizeFlightListPlan"],
+    [hundred, "V230 FLIGHTLIST100K PLAN", "diagnosticPlanSummary"],
+  ]) {
+    assert.ok(source.includes(label));
+    assert.ok(source.includes(functionName + "(result.plan)"));
+    assert.match(source, /longestNodes:nodes\.slice\(1\)\.sort\([\s\S]*?\.slice\(0,12\)/);
+    assert.match(source, /nodesVisited:nodes\.length/);
+    assert.match(source, /assert\.ok\(result\.executionMs<limitMs,/);
+    assert.doesNotMatch(source, /console\.log\(JSON\.stringify\(result\.plan\)\)/);
+  }
+  assert.match(fifty, /recordMetric\("flightListFirstPage50k",listResult,2500\)/);
+  assert.match(hundred, /recordMetric\("flightListFirstPage100k",listResult,4_500\)/);
 });
 
 test("remote Docker contexts are not accepted as localhost-owned test fixtures", () => {
