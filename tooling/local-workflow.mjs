@@ -18,10 +18,10 @@ const db = logbook
   : { container: "flytally-training-local-pg16", database: "flytally_training_acceptance_test", port: "55440", key: "TRAINING_ACCEPTANCE_DATABASE_URL" };
 const localFile = join(root, ".env.test.local");
 
-function exec(binary, args, { env = process.env, quiet = false } = {}) {
+function exec(binary, args, { env = process.env, quiet = false, timeout } = {}) {
   const result = spawnSync(binary, args, {
     cwd: root, env, encoding: "utf8", stdio: quiet ? "pipe" : "inherit",
-    windowsHide: true,
+    windowsHide: true, ...(timeout ? { timeout } : {}),
   });
   return result;
 }
@@ -138,10 +138,11 @@ export function isLocalDockerEndpoint(value) {
     (endpoint.startsWith("npipe:") && endpoint.includes("/./pipe/"));
 }
 function dockerInfo() {
-  const context = exec("docker", ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"], { quiet: true });
-  const endpoint = String(process.env.DOCKER_HOST ?? "").trim() || (context.status === 0 ? context.stdout.trim() : "");
+  const context = exec("docker", ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"], { quiet: true, timeout: 8_000 });
+  const endpoint = String(process.env.DOCKER_HOST ?? "").trim() || (!context.error && context.status === 0 ? context.stdout.trim() : "");
   if (!isLocalDockerEndpoint(endpoint)) return false; // remote Docker contexts are NOT local fixtures
-  return has("docker", ["info", "--format", "{{.ServerVersion}}"]);
+  const info = exec("docker", ["info", "--format", "{{.ServerVersion}}"], { quiet: true, timeout: 8_000 });
+  return !info.error && info.status === 0;
 }
 export function assertOwnedContainerMetadata(container, raw, { requireRunning = true } = {}) {
   assertLocalFixtureUrl(raw);
@@ -161,7 +162,7 @@ export function assertOwnedContainerMetadata(container, raw, { requireRunning = 
   return true;
 }
 function ownedContainerInfo() {
-  const inspected = exec("docker", ["container", "inspect", db.container], { quiet: true });
+  const inspected = exec("docker", ["container", "inspect", db.container], { quiet: true, timeout: 8_000 });
   if (inspected.error) throw new Error("Docker inspect failed: " + inspected.error.message);
   if (inspected.status !== 0) return null;
   try { return JSON.parse(inspected.stdout)[0] ?? null; }
@@ -219,7 +220,7 @@ function ensureDatabase() {
     throw new Error("Local configuration exists without its owned Docker container. Refusing to use an unverified database.");
   }
   const volumeName = "flytally-logbook-local-pg16-data";
-  const volumeProbe = exec("docker", ["volume", "inspect", volumeName], { quiet: true });
+  const volumeProbe = exec("docker", ["volume", "inspect", volumeName], { quiet: true, timeout: 8_000 });
   if (volumeProbe.error) throw new Error("Unable to inspect existing local Docker volume.");
   if (volumeProbe.status === 0) {
     throw new Error("Reserved Docker volume already exists without the matching owned container. Refusing unverified volume reuse.");
@@ -229,6 +230,7 @@ function ensureDatabase() {
   }
   const password = randomBytes(24).toString("hex");
   const url = "postgresql://flytally_local:" + password + "@127.0.0.1:" + db.port + "/" + db.database;
+  console.log("[DB] Creating owned local Docker PG16 container; first image download can take longer.");
   const result = exec("docker", [
     "run", "--detach", "--name", db.container, "--restart", "unless-stopped",
     "--publish", "127.0.0.1:" + db.port + ":5432",
