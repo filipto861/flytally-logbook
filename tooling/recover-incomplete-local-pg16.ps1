@@ -59,7 +59,41 @@ try {
   $pgCtl = Join-Path $pgBin "pg_ctl.exe"
   Require (Test-Path -LiteralPath $pgCtl -PathType Leaf) "The PostgreSQL16 pg_ctl.exe is missing"
   $v = & $pgCtl --version
-  Require ($LASTEXITCODE -eq 0 -and $v -match '^pg_ctl \(PostgreSQL\) 16\.[0-9]+(?:\s|$)') "The pg_ctl version is not PG16"
+  Require ($LASTEXITCODE -eq 0 -and $v -match '^\s*pg_ctl \(PostgreSQL\) 16\.[0-9]+\s*) "The pg_ctl version is not PG16"
+  & $pgCtl -D $data status | Out-Null
+  Require ($LASTEXITCODE -eq 0) "pg_ctl does not recognize this data directory as running"
+
+  Write-Host "Verified isolated FlyTally native PG16 bootstrap:"
+  Write-Host "  PID: $postmasterPid"
+  Write-Host "  Port: $($expectedIp):$port"
+  Write-Host "  Cluster path: $data"
+  Write-Host "  Bootstrap: INCOMPLETE (.env.test.local and owner.json both absent)"
+  if (-not $ArchiveIncompleteOwnedCluster) {
+    Write-Host "READ-ONLY audit complete. No processes stopped and no files changed."
+    Write-Host "To archive this verified-only cluster, rerun with -ArchiveIncompleteOwnedCluster."
+    return
+  }
+
+  # Disruption is limited to the exact PostgreSQL process/data dir verified above.
+  # Keep all files in an archival sibling; never recursively delete user data.
+  Write-Host "Stopping ONLY the verified FlyTally PG16 cluster (fast shutdown)..."
+  & $pgCtl -D $data -m fast -w -t 30 stop
+  Require ($LASTEXITCODE -eq 0) "Owned cluster shutdown failed"
+  Require ($null -eq (Get-Process -Id $postmasterPid -ErrorAction SilentlyContinue)) "Owner PID is still running"
+  $remaining = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
+  Require ($remaining.Count -eq 0) "Port is still owned by a running process"
+
+  $parent = Split-Path -Parent $target
+  $archive = Join-Path $parent ("persistent-local-pg16-interrupted-" + (Get-Date -Format "yyyyMMdd-HHmmss") + "-" + [guid]::NewGuid().ToString("N").Substring(0,8))
+  Require (-not (Test-Path -LiteralPath $archive)) "Archive destination already exists"
+  Move-Item -LiteralPath $target -Destination $archive -ErrorAction Stop
+  Write-Host "ARCHIVED (not deleted): $archive"
+  Write-Host "Only the verified incomplete FlyTally cluster was stopped and archived."
+  Write-Host "You can now run npm run setup:local on the updated branch."
+} finally {
+  Pop-Location
+}
+) "The pg_ctl version is not PG16"
   & $pgCtl -D $data status | Out-Null
   Require ($LASTEXITCODE -eq 0) "pg_ctl does not recognize this data directory as running"
 
