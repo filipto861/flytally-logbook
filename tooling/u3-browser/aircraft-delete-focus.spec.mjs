@@ -23,7 +23,7 @@ function assertU3DisposableTarget(){
     "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||"+
     "inet_server_port()||'|'||current_setting('server_version_num');"
   );
-  if(!/^flytally_ui_u3_20261021\\|flytally_u3\\|127\\.0\\.0\\.1\\|55433\\|18\\d{4}$/.test(observed)){
+  if(!/^flytally_ui_u3_20261021\|flytally_u3\|127\.0\.0\.1\|55433\|18\d{4}$/.test(observed)){
     throw new Error("U3 database physical identity mismatch. No fixture changes.");
   }
   if(browserSqlScalar(
