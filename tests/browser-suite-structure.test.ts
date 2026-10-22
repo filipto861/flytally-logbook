@@ -92,7 +92,9 @@ test("Phase 0C keeps the serialized two-project Playwright contract",()=>{
   const config=read("playwright.config.mjs");
   assert.match(config,/fullyParallel:false/);
   assert.match(config,/workers:1/);
-  assert.match(config,/retries:process\.env\.CI\?1:0/);
+  // The canonical retry policy is unchanged outside the explicit local portable browser mode.
+  assert.match(config,/retries:process\\.env\\.FLYTALLY_PORTABLE_LOCAL_BROWSER==="1"\\?0:\\(process\\.env\\.CI\\?1:0\\)/);
+  assert.match(config,/reuseExistingServer:process\\.env\\.FLYTALLY_PORTABLE_LOCAL_BROWSER==="1"\\?false:/);
   for(const project of baseline.playwright.projects){
     assert.match(config,new RegExp('name:"'+escapeRegExp(project)+'"'));
   }
