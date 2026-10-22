@@ -128,3 +128,20 @@ Likely root cause: the working directory contains Czech-accented characters. On 
 The updated first-run bootstrap preserves the generated `bootstrap-pwfile` inside the gitignored fixture directory **until both marker and .env.test.local have been written**; on failure it stays for owner-reviewed recovery (never auto-adopt a partial cluster), and on success it is deleted. It is a secret: never display, commit, upload or share that file. The already-failed owner first run used the older code that removed its pwfile, so that instance still requires one more guarded archival recovery as documented above, followed by fresh `npm run setup:local`. Do not skip the explicit read-only preflight or archive any cluster that no longer matches its exact PID/path/port.
 
 Before another archive/setup, pull current PR branch and run `npm run test:local-workflow` to check source contracts and the Windows PowerShell parser. After the guarded archive, run setup and stop if any new `[BLOCKED]` diagnostic appears; do not repeatedly reinitialize. PostgreSQL acceptance, browser and build claims require separate exact-SHA evidence.
+
+
+## 22 Oct retained-credential read-only diagnostic (current blocker)
+
+After the third native setup attempt the owner reported initdb PASS, pg_ctl startup PASS, and createdb PASS, but a PostgreSQL physical identity query failed rather than a field-specific identity mismatch. The prior PGCLIENTENCODING=UTF8 and SQL convert_to changes are hypotheses until we inspect the SQL failure. The current attempt used the revised bootstrap that retains the private password file at .flytally/persistent-local-pg16/bootstrap-pwfile until both owner marker and .env.test.local exist; so **do not archive, delete, print secrets or rerun setup**.
+
+On the updated Logbook work branch, the following commands only inspect local fixture files and execute SELECT via the exact loopback PostgreSQL instance:
+
+~~~powershell
+git pull --ff-only
+npm run test:local-workflow
+node .\tooling\diagnose-incomplete-local-pg16.mjs
+~~~
+
+The diagnostic refuses completed fixtures, checks exact PG16 version, real data-directory path, postmaster.pid, port, running state and retained credential, and sanitizes its results. It emits only query step PASS/FAIL, exit codes, SQLSTATE when extractable, field-name mismatches and no raw paths/passwords/stderr. If it fails, stop; do not run the existing archival recovery on this recoverable cluster. If it passes, use the diagnosis to design and separately verify a guarded one-time resume/finalize that reuses this exact test database; do not silently create owner.json or .env.test.local from a URL alone.
+
+The earlier archived directories remain intact. Product schema, remote Neon, Training, merge and deployment remain out of scope. Current diagnostic test/runtime result and completed setup remain NOT RUN until the owner runs the new command.
