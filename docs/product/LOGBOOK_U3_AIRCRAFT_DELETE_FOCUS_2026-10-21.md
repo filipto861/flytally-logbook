@@ -3,7 +3,7 @@
 **Date:** 2026-10-21  
 **Repo/branch:** `filipto861/flytally-logbook`, `fix/logbook-u3-aircraft-delete-focus-20261021`  
 **Base:** `main@8099149f72d493c34dd59babf65bdb064ff99fc9`  
-**Status (latest, 21 Oct 2026):** Draft PR #381; owner-local authenticated Desktop Chromium **1/1 PASS** on isolated U3 fixture after explicit canonical v21 migration; source tests **3/3 PASS**, TypeScript/build **PASS** (41/41). Mobile/iPad, native Safari, full suite and CI NOT RUN. No merge/deploy. Earlier verification notes below are historical snapshots.
+**Status (latest reviewed, 22 Oct 2026):** PR #381 OPEN/DRAFT/unmerged. Owner-local prior executable SHA `3de30a641af17e74d565cfda8c3580df82752963`: **2/2 U3 Playwright PASS (56.6s)** on isolated PG18/v21, desktop + 320/390/768/1024 Chrome touch emulation in light/dark; browser structure **15/15 PASS**. Final review strengthened **test-only** DB safety preflight; **hardened test HEAD NOT RUN**. Product runtime unchanged. Release-candidate risk gates, CI, manual screenshot review and native Safari NOT RUN; no merge/deploy. Historical status paragraphs below are retained by date.
 
 ## Update 22 Oct 2026 — dedicated U3 browser test was blocked before scripted SQL
 
@@ -104,3 +104,24 @@ npx playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0
 **Current verification boundary:** Original 1/1 Desktop Chromium PASS is historical *before relocation* at test code head \`fd67eee235dfd1daa103ed4095a3d8100af0f4fb\`; new dedicated config and the 8-case matrix are **NOT RUN**. Exact-head syntax / frozen suite structure / desktop re-run / responsive tests: **NOT RUN**. Previous unchanged-runtime source 3/3, owner TypeScript and build (41/41) remain prior evidence, not new test-run claims. Full suite, CI, native Safari, manual screenshot/contrast/focus-ring review **NOT RUN**.
 
 **Next single action:** Owner-local run of the exact U3 config above on the verified *existing migrated* disposable fixture, then triage any failures and review the attached screenshots. Do not merge/deploy or modify production DB/flags. \`main\` advanced after branch creation and now contains Project Memory files absent from this older branch; don't create conflicting copies of the rolling handoff until branch synchronization is approved.
+
+## 22 Oct 2026 — Final PR #381 source review and open release gate
+
+### Verified source and base
+
+- Actual GitHub `main`: `860df276f7044586834871808e7e3843a10daaac`. Reviewed PR #381 OPEN/DRAFT, `mergeable=true`; branch behind by **one main docs-only Project Memory commit**, ahead 41 commits at start of review; main contains canonical Project Memory files not added to this earlier U3 branch. GitHub mergeability is not approval to merge.
+- U3 production runtime diff: `components/aircraft-manager.tsx` only, 13 added / 2 deleted lines. Reuses existing deletion `role=status` and transfers focus once after modal unmount; normal Escape restores surviving Manage opener and failed/blocked deletion handling unchanged. No server action/DB/auth/certification/CSS/flight records or GPS runtime changes.
+- Supporting U3-scoped source regression, isolated Playwright config/spec, disposable-v21 helper, and dated canonical docs are additional PR files. Ordinary frozen `e2e/` suite is not modified.
+
+### Review finding addressed: differing safety preflight on destructive tests
+
+The earlier **desktop** U3 browser case checked only partial database URL and two purpose flags before test-only SQL `DELETE`/`INSERT`, while the responsive case checked additional flags/password/hosting. In a direct `--grep` run, the first case could execute against a syntactically matching URL without a physical database identity check. No unsafe connection or production impact has been observed; this is a preventive test-harness safeguard.
+
+- **Test-only fix staged:** one shared `assertU3DisposableTarget()` called at the beginning of both browser tests. Requires explicit named PostgreSQL URL `postgresql://flytally_u3@127.0.0.1:55433/flytally_ui_u3_20261021`, password/query/hash absent, `FLYTALLY_AUTH_BROWSER=1`, `FLYTALLY_LOCAL_POSTGRES=1`, `FLYTALLY_U3_SCHEMA_FIRST=1`, no Vercel hosting markers. Read-only `psql` probe verifies **actual PG18 host/port/database/role** and exact **21-row migration registry with named v21** before test mutations. Desktop fixture refuses its synthetic registration if any saved flights already exist. A code-level regex sanity check against the expected PG18 identity and incorrect port/version was performed. No schema/migration is executed by this guard.
+- **Regression qualification:** this changes the U3 test code after the owner-local **2/2 PASS on executable SHA `3de30a64...`**; previous browser PASS is evidence for earlier behavior, **not a PASS for the newly hardened test code**. Application runtime component is unchanged. Dedicated config/spec syntax, frozen structure regression, U3 full two-case rerun and candidate-bound final release gate **NOT RUN** on new HEAD.
+
+### Final review disposition
+
+**No demonstrated application-runtime blocker in U3 focus change; final acceptance PENDING exact-head test-only hardening verification and relevant candidate gates.** Existing 2/2 desktop/responsive Chrome emulation remains useful historical evidence. Original test screenshots were attached during Playwright but **not visually inspected in this review**; screen-reader and native iPad Safari evidence **NOT RUN**. The test does not force a failed server delete or a second successful deletion; those are explicit coverage limits, not claimed success.
+
+**One next action:** owner-local `git pull --ff-only` into U3 work branch, `node --check playwright.u3.config.mjs`, `node --check tooling/u3-browser/aircraft-delete-focus.spec.mjs`, `npm run test:target -- tests/browser-suite-structure.test.ts`, and a **direct** `npx.cmd --no-install playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0` after read-only exact U3 PG18/v21/environment verification. Do **not** run `npm run test:browser`, reapply v21, reset database, or run generic risk gates pointed at the U3 database. After targeted PASS, inspect read-only candidate plan `npm run verify:plan -- --base origin/main` and decide which additional required isolated fixtures/gates are possible. PR must remain Draft; explicit owner merge authorization and deploy authorization are distinct.
