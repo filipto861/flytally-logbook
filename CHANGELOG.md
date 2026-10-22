@@ -1,5 +1,15 @@
 # FlyTally changelog
 
+## 3.8.1 — 2026-10-22 (release candidate; production verification pending)
+
+- Patch release to distinguish the Logbook build delivered after the 17 October production snapshot: `package.json`, `package-lock.json` and the app-visible footer version become **3.8.1**; canonical version regression test updated.
+- Includes the already-merged **U3 Aircraft Manager** keyboard-focus fix (PR #381): focus transfers to the persistent delete-success announcement and does not replay when another modal closes; existing flight-linked aircraft delete protection preserved.
+- Carries cumulative previously merged Logbook improvements since last known production SHA `6a67a02475ab09c3271f8646427f7956ed6e590a`, including GPS parser/altitude fidelity and track-review fixes, GPS V2 experimental cleanup, and Project Memory handoffs. No new runtime behavior beyond those earlier merged changes is introduced by this release branch.
+- Production preflight 2026-10-22: correct Vercel `filipito/logbook` project and main Git link confirmed; read-only Neon project `muddy-dust-14049657`, production default branch `br-raspy-fog-b1btvu5t`, database `neondb`: schema registry **21/21**, v21 entry **1**, expected columns **12/12** and constraints **4/4**; no new migration authorized or required for these changes. `vercel.json` keeps automatic Git deployments off.
+- Prior exact U3 executable SHA `a1e0be99bd5dbfdc893277222fee919dcff8efc6` passed risk release: source 257/257, domain 20/20, Node 1653/1653, TypeScript, build, isolated owned PG16 163/163, browser-risk 8/8, dedicated U3 2/2. **Release-v3.8.1 branch tests/build, production deployment and smoke are NOT RUN at this stage**. Do not report shipped before deployment READY and smoke verification.
+
+
+
 ## 2026-10-22 — U3 PR #381 canonical candidate verification PASS (Draft, not merged)
 
 - Git-reviewed U3 executable SHA `a1e0be99bd5dbfdc893277222fee919dcff8efc6`, candidate ID `b1a5e3e5497bb4b77ad726c1936e98468ff86577f666093e290c02ccb072b343`: owner-local `npm run verify:release:risk -- --base origin/main` printed **`release_status=PASS`**, source **257/257 PASS**, domain **20/20 PASS**, typecheck PASS, aggregate Node **1653/1653 PASS**, build **PASS reused** (41/41 static), six-cluster owned PostgreSQL **163/163 PASS reused**, browser-risk eight planned desktop/mobile cases **PASS reused**, `scale=N/A`, `blocked_evidence=none`.
