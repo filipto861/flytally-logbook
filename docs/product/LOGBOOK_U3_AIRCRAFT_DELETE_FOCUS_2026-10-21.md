@@ -3,7 +3,40 @@
 **Date:** 2026-10-21  
 **Repo/branch:** `filipto861/flytally-logbook`, `fix/logbook-u3-aircraft-delete-focus-20261021`  
 **Base:** `main@8099149f72d493c34dd59babf65bdb064ff99fc9`  
-**Status (latest owner-local evidence, 22 Oct 2026):** PR #381 OPEN/DRAFT/unmerged. Exact executable SHA `9837776aedb3ab10d090a8ef538ccba88da1c479`: isolated local PG18/v21 fail-closed identity/schema PASS, U3 browser syntax PASS, frozen browser structure **15/15 PASS**, and hardened U3 Playwright **2/2 PASS (54.7 s, retries 0)** with desktop and Chrome touch emulation of 320/390/768/1024 × light/dark. Runtime unchanged from earlier source 3/3 and TypeScript/build PASS. Candidate-bound release plan and its selected additional gates, CI, manual screenshot review, native Safari NOT RUN. No merge/deploy. Historical sections below are dated snapshots.
+**Status (latest GitHub/owner evidence, 22 Oct 2026):** PR #381 OPEN/DRAFT/unmerged. Canonical owner-local `verify:release:risk` **`release_status=PASS`** for exact code/test SHA `a1e0be99bd5dbfdc893277222fee919dcff8efc6`, candidate `b1a5e3e5497bb4b77ad726c1936e98468ff86577f666093e290c02ccb072b343`: source 257/257 PASS, domain 20/20 PASS, typecheck PASS, aggregate 1653/1653 PASS, build PASS:reused, owned PG16 163/163 PASS:reused, standard browser-risk 8/8 PASS:reused, `scale=N/A`, `blocked_evidence=none`. Focused dedicated U3 Playwright 2/2 PASS on previous unchanged UI/test executable. CI, native Safari, screen-reader, manual screenshot review NOT RUN; no merge/deploy/production data or flags change. Historical paragraphs below retain their dated status.
+
+## 22 October 2026 — exact-candidate canonical release PASS, ready for owner merge decision
+
+The owner provided a Windows PowerShell transcript of the full canonical U3 candidate release verification. Git checkout, remote topic HEAD and `origin/main` were checked; the worktree was clean. At the start of the successful gate, the exact U3 executable SHA was `a1e0be99bd5dbfdc893277222fee919dcff8efc6`, against main `860df276f7044586834871808e7e3843a10daaac`. The candidate-aware ledger reported `candidate_id=b1a5e3e5497bb4b77ad726c1936e98468ff86577f666093e290c02ccb072b343`.
+
+Preflight reported `postgres_reuse=true`, `build_reuse=true`, `browser_reuse=true`, `postgres_passed=163`, `browser_passed=8`, then `U3 CANDIDATE LEDGER PREFLIGHT PASS`. The verifier `npm run verify:release:risk -- --base origin/main` ran successfully, producing:
+
+```text
+candidate_id=b1a5e3e5497bb4b77ad726c1936e98468ff86577f666093e290c02ccb072b343
+release_status=PASS
+source=PASS
+domain=PASS
+typecheck=PASS
+aggregate=PASS
+build=PASS:reused
+postgres=PASS:reused
+scale=N/A
+browser=PASS:reused
+required_evidence=application-source-contract,browser-acceptance,domain-unit,postgres-acceptance
+blocked_evidence=none
+U3 FINAL RELEASE VERIFIER PASS
+Previous environment restored.
+```
+
+The same log shows source **257/257**, domain **20/20**, aggregate Node **1653/1653** PASS, without failed/skipped tests. Reused build, PG and browser gate acceptance was grounded by exact candidate/ledger identity and preflight; the earlier isolated owned PG16 release acceptance passed **six partitions / 163 of 163**, and canonical risk-selected Playwright passed **eight of eight** desktop/mobile Chromium targets with a newly owned PG16 fixture and canonical v20/v21 prebootstrap. The dedicated U3 focus acceptance separately passed **two of two** tests on isolated PostgreSQL 18/v21, including 320/390/768/1024 Chrome touch emulation/light/dark. No tests were run against production DB.
+
+An earlier preflight attempt using `node --input-type=module -e $check` had a Windows native argument quoting syntax error **before canonical gate execution**. Corrected PowerShell piped the code over stdin. That attempt is a historical command-line failure, not a product or data integrity failure.
+
+**Disposition:** For exact executable SHA `a1e0be99...`, the **planned canonical release gate is PASS (owner local)**. This permits requesting **explicit owner approval to merge PR #381** once branch/base and production deployment separation are rechecked. It does not constitute CI, real iPad Safari, manual visual/accessibility review, production deployment authority, a live DB migration or permissions to merge autonomously. The branch remained one main-only Project Memory docs commit behind at latest Github check; GitHub reported `mergeable=true` and PR still OPEN/DRAFT. Commit(s) containing only this acceptance documentation advance the branch HEAD and **do not carry a separate release verdict for the new SHA**; preserve the exact test evidence reference above. No runtime/test files changed after that SHA.
+
+**One next action:** Present this verified candidate for the owner's **separate explicit merge decision**; before performing any merge, independently verify fresh GitHub head/base/mergeability, the actual Vercel automatic deployment setting and any required governance checklist. Do not deploy or access production DB/flags without new explicit approval.
+
+---
 
 ## 22 October 2026 — hardened U3 browser acceptance PASS on exact runnable SHA
 
