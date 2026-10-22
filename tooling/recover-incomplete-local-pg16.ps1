@@ -59,7 +59,7 @@ try {
   $pgCtl = Join-Path $pgBin "pg_ctl.exe"
   Require (Test-Path -LiteralPath $pgCtl -PathType Leaf) "The PostgreSQL16 pg_ctl.exe is missing"
   $v = & $pgCtl --version
-  Require ($LASTEXITCODE -eq 0 -and $v -match '^\s*pg_ctl \(PostgreSQL\) 16\.[0-9]+\s*) "The pg_ctl version is not PG16"
+  Require ($LASTEXITCODE -eq 0 -and $v -match '^\s*pg_ctl \(PostgreSQL\) 16\.[0-9]+\s*$') "The pg_ctl version is not PG16"
   & $pgCtl -D $data status | Out-Null
   Require ($LASTEXITCODE -eq 0) "pg_ctl does not recognize this data directory as running"
 
