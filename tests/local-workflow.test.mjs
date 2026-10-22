@@ -189,3 +189,25 @@ test("Docker context and daemon detection must not block a disconnected workstat
   assert.match(source, /"docker", \["info"[\s\S]{0,120}timeout: 8_000/);
   assert.match(source, /info\.status === 0/);
 });
+
+
+test("partial native PG16 recovery is read-only by default and physically pinned to one owned cluster", () => {
+  const source = readFileSync(new URL("../tooling/recover-incomplete-local-pg16.ps1", import.meta.url), "utf8");
+  assert.match(source, /param\(\[switch\]\$ArchiveIncompleteOwnedCluster\)/);
+  assert.match(source, /if \(-not \$ArchiveIncompleteOwnedCluster\)/);
+  assert.match(source, /README|READ-ONLY audit complete/);
+  assert.match(source, /\$target = Join-Path \$root "\.flytally\\persistent-local-pg16"/);
+  assert.match(source, /\$marker = Join-Path \$target "owner\.json"/);
+  assert.match(source, /\$envFile = Join-Path \$root "\.env\.test\.local"/);
+  assert.match(source, /Get-Content -LiteralPath \$pidPath -TotalCount 4/);
+  assert.match(source, /\$postmasterPort -eq \$port/);
+  assert.match(source, /\(Canonical \$lines\[1\]\) -ieq \(Canonical \$data\)/);
+  assert.match(source, /\$listeners\[0\]\.OwningProcess -eq \$postmasterPid/);
+  assert.match(source, /\$listeners\[0\]\.LocalAddress -eq \$expectedIp/);
+  assert.match(source, /Assert-NotReparse \$data/);
+  assert.match(source, /"PostgreSQL 16\\\."/);
+  assert.match(source, /& \$pgCtl -D \$data -m fast -w -t 30 stop/);
+  assert.match(source, /Move-Item -LiteralPath \$target -Destination \$archive/);
+  assert.doesNotMatch(source, /Remove-Item|Stop-Process|taskkill|docker rm|rmSync/);
+  assert.doesNotMatch(source, /DROP DATABASE|DROP SCHEMA|initdb/);
+});
