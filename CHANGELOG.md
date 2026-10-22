@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-22 — U3 owner syntax/source PASS, browser launch blocked at absent DATABASE_URL
+
+- PR #381 owner Windows clean branch at tested executable `a3a6f95158df8fc0950b65796a6f2622e51f5121`: both `node --check` PASS, isolated browser suite structure **15/15 PASS**.
+- Direct U3 Playwright config selected both browser cases, **2/2 FAIL before any scripted DB operation** at `new URL(process.env.DATABASE_URL||"")` `TypeError: Invalid URL`. PowerShell session omitted/invalidated `DATABASE_URL`. No claim of U3 functional regression or acceptance PASS. Existing Next parent lock warning is not the cause of those exceptions.
+- Recovery documented: read-only PG18 owner-local identity and v21 checks, then session-only flags and repeat direct isolated config. No general DB reset, new migration, product code/schema, untracked ZIP deletion, main merge or deployment.
+
+
 ## 2026-10-21 — U3 isolated responsive browser follow-up staged (Draft; NOT RUN)
 
 - Moved special destructive U3 E2E outside the frozen standard `e2e/` test inventory into `tooling/u3-browser/aircraft-delete-focus.spec.mjs`; added `playwright.u3.config.mjs` for a dedicated one-worker/zero-retry Chromium project with `reuseExistingServer:false`.
