@@ -1,5 +1,17 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-22T18:37:26.054Z — Agent Skills V1 draft PR #388 created (documentation-only)
+
+- **GitHub verified at checkpoint:** main 34b865bb0ced1222945cecb107589826890ee31a; scoped work branch docs/logbook-agent-skills-v1-20261022 code/docs baseline 7887c31cbd285954a29941cda3c057982fda44c4, PR #388 OPEN/DRAFT, base main, https://github.com/filipto861/flytally-logbook/pull/388. This checkpoint commit will advance work HEAD; re-fetch exact SHA after push. No merge or deploy approved.
+- **Scope/files:** nine task-specific .agents/skills/*/SKILL.md, registry README, AGENTS.md routing, ROADMAP.md proposal pointer, docs/README.md, docs/skills/{THIRD_PARTY_SOURCES,VALIDATION,CHATGPT_PROJECT_INSTRUCTIONS_ADDENDUM}.md. This checkpoint also updates Project Memory handoff/active pointers. Third-party MIT design principles adapted from user-provided skills-main.zip, no library changes.
+- **Verified GitHub source evidence for 7887c31cbd285954a29941cda3c057982fda44c4:** nine skill frontmatters 9/9, matching unique name and description 9/9, hard stops and verification sections 9/9, registry references all skills, AGENTS.md routing present; PR file-list audit docs-only 16/16 PASS. GitHub read-only checks PASS. **NOT RUN:** local Node test suite, typecheck, build, PostgreSQL, Playwright, native Safari, Vercel production smoke, candidate risk planner. No execution PASS implied by documentation checks.
+- **DB/migration/flags/deploy:** no DB, migration, flag or deployment changes made; present production state NOT RECHECKED / UNKNOWN for this task. No Flight/GPS records included. ChatGPT Project Instructions NOT APPLIED remotely; only manual paste addendum prepared for after explicit merge.
+- **DO NOT:** do not modify Training, app runtime, auth/DB/Vercel, auto-prefill behavior, unrelated draft PRs or main. No merge, deployment, production DB migration/restore/delete or flag without separate owner approval.
+- **One next step:** owner/read-only reviewer inspects Draft PR #388 and addendum, then decides revisions or explicit merge approval after appropriate docs-only risk planning.
+
+---
+
+
 ## 2026-10-22T17:29:23.438Z — 3.8.1 release blocked at required candidate build/quality evidence
 
 - **Repository / exact SHA before this docs-only checkpoint:** main `db8abbd90d28ce70fc3c7ae5ba89c00242bab75b`; release branch `release/logbook-v3.8.1-20261022` @ `7cdb01f3c22e22fc6eb9992da541e0c629af38ba`, PR **#386 OPEN/DRAFT**, base `main`, no unrelated work. This checkpoint changes only this handoff document, so exact release HEAD must be refreshed when testing.
