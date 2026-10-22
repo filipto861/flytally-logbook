@@ -261,30 +261,43 @@ test("recovery script has one complete PowerShell body; Windows parser accepts i
 });
 
 
-test("PG16 physical identity survives accented Czech directory names via hex UTF8", () => {
-  const dir = resolve(".flytally", "fixture-prilis-žluťoučký-kůň", "data");
-  const encodedDir = Buffer.from(dir, "utf8").toString("hex");
-  const valid = "flytally_logbook_test|flytally_local|" + encodedDir + "|127.0.0.1|55439|160015";
-  assert.deepEqual(nativeIdentityMismatches(valid, dir), []);
-  assert.deepEqual(nativeIdentityMismatches(valid.replace("|160015", "|170001"), dir), ["server-version"]);
-  assert.deepEqual(nativeIdentityMismatches(valid.replace("127.0.0.1", "10.0.0.1"), dir), ["server-address"]);
-  assert.deepEqual(nativeIdentityMismatches(valid.replace("flytally_local", "postgres"), dir), ["database-user"]);
-  assert.deepEqual(nativeIdentityMismatches(valid.replace(encodedDir, "zz"), dir), ["data-directory-encoding"]);
-  assert.deepEqual(nativeIdentityMismatches(valid.replace(encodedDir, Buffer.from(resolve(".flytally", "wrong", "data"), "utf8").toString("hex")), dir), ["data-directory"]);
-  assert.deepEqual(nativeIdentityMismatches("broken shape", dir), ["column-count"]);
+test("PG16 physical identity compares raw local postmaster bytes despite invalid UTF8 in Czech PGDATA", () => {
+  // A legacy Windows code page can encode an accented path with bytes that are
+  // invalid UTF8. PostgreSQL pg_read_binary_file avoids interpreting those.
+  const pidBytes = Buffer.concat([
+    Buffer.from("51003\nC:/Users/Filip To"),
+    Buffer.from([0xe8, 0xed]),
+    Buffer.from("k/Documents/GitHub/Logbook/.flytally/persistent-local-pg16/data\n1792654000\n55439\n"),
+  ]);
+  const pidHex = pidBytes.toString("hex");
+  const valid = "flytally_logbook_test|flytally_local|" + pidHex + "|127.0.0.1|55439|160015";
+  assert.deepEqual(nativeIdentityMismatches(valid, pidBytes), []);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace("|160015", "|170001"), pidBytes), ["server-version"]);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace("127.0.0.1", "10.0.0.1"), pidBytes), ["server-address"]);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace("flytally_local", "postgres"), pidBytes), ["database-user"]);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace(pidHex, "zz"), pidBytes), ["postmaster-pid-encoding"]);
+  const otherPid = Buffer.from(pidBytes);
+  otherPid[0] ^= 1;
+  assert.deepEqual(nativeIdentityMismatches(valid, otherPid), ["postmaster-identity"]);
+  assert.deepEqual(nativeIdentityMismatches("broken shape", pidBytes), ["column-count"]);
 });
 
-test("PG16 SQL identity uses ASCII hex for Unicode data paths and retains bootstrap credential on failure", () => {
-  const source = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
-  assert.match(source, /encode\(convert_to\(current_setting\('data_directory'\), 'UTF8'\), 'hex'\)/);
-  assert.match(source, /Buffer\.from\(encodedPath, "hex"\)\.toString\("utf8"\)/);
-  assert.match(source, /env\.PGCLIENTENCODING = "UTF8"/);
-  assert.match(source, /Native PG16 physical identity mismatch \[/);
-  const secretCreated = source.indexOf('writeFileSync(pwfile, parsed.password');
-  const dbVerified = source.indexOf('observedIdentity(bin, parsed.password);', secretCreated);
-  const markerWritten = source.indexOf('writeFileSync(marker,', dbVerified);
-  const envWritten = source.indexOf('writeFileSync(envFile,', markerWritten);
-  const secretRemoved = source.indexOf('rmSync(pwfile, { force: true })', envWritten);
+test("PG16 identity SQL reads server PID file as binary and preserves bootstrap credential on failures", () => {
+  const native = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
+  const diagnosis = readFileSync(new URL("../tooling/diagnose-incomplete-local-pg16.mjs", import.meta.url), "utf8");
+  for (const source of [native, diagnosis]) {
+    assert.match(source, /pg_catalog\.pg_read_binary_file\('postmaster\.pid'\)/);
+    assert.doesNotMatch(source, /convert_to\(current_setting\('data_directory'\)/);
+  }
+  assert.match(native, /Buffer\.from\(remotePidHex, "hex"\)\.equals\(expectedPidBytes\)/);
+  assert.match(native, /readFileSync\(join\(dataDir, "postmaster\.pid"\)\)/);
+  assert.match(native, /env\.PGCLIENTENCODING = "UTF8"/);
+  assert.match(native, /Native PG16 physical identity mismatch \[/);
+  const secretCreated = native.indexOf('writeFileSync(pwfile, parsed.password');
+  const dbVerified = native.indexOf('observedIdentity(bin, parsed.password);', secretCreated);
+  const markerWritten = native.indexOf('writeFileSync(marker,', dbVerified);
+  const envWritten = native.indexOf('writeFileSync(envFile,', markerWritten);
+  const secretRemoved = native.indexOf('rmSync(pwfile, { force: true })', envWritten);
   assert.ok(secretCreated >= 0 && secretCreated < dbVerified && dbVerified < markerWritten &&
     markerWritten < envWritten && envWritten < secretRemoved,
     "bootstrap password must survive failures and be removed only after the config has been saved");
