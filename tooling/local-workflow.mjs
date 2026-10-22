@@ -5,7 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join, resolve, dirname, delimiter } from "node:path";
-import { nativePg16Tools, nativeMarkerExists, nativeClusterStatus, ensureNativePg16, createNativePg16 } from "./local-native-pg16.mjs";
+import { nativePg16Tools, nativeMarkerExists, nativePartialClusterExists, nativeClusterStatus, ensureNativePg16, createNativePg16 } from "./local-native-pg16.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const packageInfo = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -188,6 +188,9 @@ function verifyOwnedFixture(raw) {
   }
 }
 function ensureDatabase() {
+  if (nativePartialClusterExists()) {
+    throw new Error("Interrupted native PG16 bootstrap detected. Refusing to recreate or overwrite local database files.");
+  }
   const existingUrl = testUrl(); // validates before any operation
   if (nativeMarkerExists()) {
     if (!existingUrl) throw new Error("Owned native PG16 exists without .env.test.local. No recovery or overwrite performed.");
@@ -289,7 +292,13 @@ async function setup({ requireDb = false } = {}) {
     console.log("[Playwright] Chromium missing; installing browser once.");
     checked(npm(["exec", "--", "playwright", "install", "chromium"]), "Playwright browser install");
   } else console.log("[Playwright] Existing Chromium retained.");
-  if (nativeMarkerExists() || nativePg16Tools() || dockerInfo()) {
+  // Visibility matters: Windows initdb/pg_ctl may be slow and must never look hung.
+  console.log("[DB] Checking owned local PostgreSQL fixtures and native PG16 tools...");
+  if (nativePartialClusterExists()) {
+    throw new Error("Interrupted native PG16 bootstrap detected in .flytally/persistent-local-pg16. No automatic reset or deletion. Inspect local files/processes before retrying.");
+  }
+  const nativeTools = nativePg16Tools(process.env, { diagnostic: true });
+  if (nativeMarkerExists() || nativeTools || dockerInfo()) {
     ensureDatabase();
   } else if (requireDb) {
     throw new Error("Neither native PostgreSQL 16 server tools nor local Docker are available; database setup is blocked.");
