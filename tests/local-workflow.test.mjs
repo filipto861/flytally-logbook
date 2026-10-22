@@ -39,20 +39,27 @@ test("remote production, Docker-host aliases and the other FlyTally repo are rej
 test("generic PG integration cannot authorize the separate full-v20 disposable restore fixture", () => {
   if (!isLogbook) return;
   const target = fileURLToPath(new URL("../tests/integration/postgres-v380-full-v20-restore.test.ts", import.meta.url));
-  const run = (integration, fullV20) => spawnSync(process.execPath, [
-    "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
-    "--test",
-    "--experimental-strip-types",
-    target,
-  ], {
-    encoding: "utf8", timeout: 30_000, windowsHide: true,
-    env: {
-      ...process.env,
-      DATABASE_URL: "", // The generic scenario must never reach a DB.
-      FLYTALLY_POSTGRES_INTEGRATION: integration,
-      FLYTALLY_D2_FULL_V20_DISPOSABLE: fullV20,
-    },
-  });
+  const run = (integration, fullV20) => {
+    // node:test sets NODE_TEST_CONTEXT in its worker. Passing it to a
+    // nested --test process makes Node silently skip test discovery and exit 0.
+    const env = { ...process.env };
+    delete env.NODE_TEST_CONTEXT;
+    return spawnSync(process.execPath, [
+      "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
+      "--test",
+      "--test-reporter=tap",
+      "--experimental-strip-types",
+      target,
+    ], {
+      encoding: "utf8", timeout: 30_000, windowsHide: true,
+      env: {
+        ...env,
+        DATABASE_URL: "", // The generic scenario must never reach a DB.
+        FLYTALLY_POSTGRES_INTEGRATION: integration,
+        FLYTALLY_D2_FULL_V20_DISPOSABLE: fullV20,
+      },
+    });
+  };
   const generic = run("1", "");
   assert.ifError(generic.error);
   assert.equal(generic.status, 0, "Generic PostgreSQL gate unexpectedly invoked the isolated v20 fixture.");
