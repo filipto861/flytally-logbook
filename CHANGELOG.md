@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+## 2026-10-22 — U3 PR #381 final review and test-only isolation hardening (Draft)
+
+- GitHub source diff confirms a narrow client-side focus transfer in `components/aircraft-manager.tsx`, no server action, auth, flight, production schema, CSS or data-domain change. PR #381 is Draft/open/mergeable against main `860df276`, branch behind main by one independent Project Memory commit.
+- New owner-local checkpoint verifies previous executable `3de30a64`: authenticated Playwright 2/2 PASS in 56.6s across desktop plus 320/390/768/1024 Chrome emulated touch/light-dark, structure 15/15 PASS, isolated PG18/v21 evidence PASS. This is user-local, not CI/native Safari/screenshot-human review.
+- Read-only security review found the desktop-only test lacked the responsive test's complete disposable DB opt-in. Tightened the **test-only** isolated U3 script to share URL/purpose checks, prohibit Vercel/password/URL extras, independently verify PostgreSQL 18/port 55433/database/user and canonical v21 migration count before fixture writes, and refuse seed reset if synthetic aircraft has any recorded flights. Application behavior is **unchanged**. Syntax/browser retest on changed test SHA, candidate release planner/selected gates, full suite/CI, native Safari and human screenshot inspection: **NOT RUN**. No merge/deploy/production DB/flag changes.
+
+
+
 ## 2026-10-22 — U3 retry blocked by missing psql.exe; false manual preflight PASS rejected
 
 - Owner Windows at source `6ad4a260...` observed `Get-Command psql` FAIL; subsequent separate commands threw `CommandNotFoundException` for read-only identity/schema queries. Printed `U3 DATABASE AND SCHEMA CHECK PASS` was an unconditional manual message, **NOT a verified database check**.
