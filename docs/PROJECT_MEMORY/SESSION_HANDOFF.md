@@ -1,5 +1,20 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC checkpoint:** 2026-10-22T07:08:36.446Z. **Scope: DEV-ENV portable two-PC PG16 persistence + Playwright test contract fix; PR #383 DRAFT, NOT MERGED / NOT DEPLOYED.**
+
+- GitHub verified main SHA: `860df276f7044586834871808e7e3843a10daaac`. Verified work HEAD **before this checkpoint:** `ffb05d301dc2624ca1270f2bb6b22a6501de6e76`, branch `chore/portable-local-test-workflow-20261022`, PR #383 targeting main. This commit advances the branch; refetch HEAD before acting.
+- Owner requirement: on home and work Windows PCs stop recreating Postgres environment after reboot; reuse installed Node 24, Playwright, psql and, when present, PostgreSQL 16 server binaries. Preserve product/test accuracy and no runtime/prod changes. **DO NOT:** no merge/deploy, no remote or production database, no migrations, no feature-flag changes, no Training edits, no user flight data, no destructive tests on a non-owned local DB.
+- Work files: `tooling/local-native-pg16.mjs` (new), `tooling/local-workflow.mjs`, `tests/local-workflow.test.mjs`, `tests/browser-suite-structure.test.ts`, `docs/TESTING_WORKFLOW.md`, `DEVELOPMENT.md`, `ROADMAP.md`, `CHANGELOG.md`, plus retained PR #383 prior files and this handoff.
+- Solution: **persistent native Windows PostgreSQL 16** cluster under gitignored `.flytally/persistent-local-pg16` initializes only once then starts with pg_ctl on subsequent `npm run setup:local` after Windows reboot. Explicit owner marker, PG_VERSION, nonredirected data-directory, localhost port, connected database/user and PG16 physical identity; no takeover of arbitrary services. When full native PG16 tools are absent, local Docker option with persisted named PG16 volume and restart policy. `.env.test.local` keeps per-machine random credentials. Auth browser resets its *disposable test schema* but not the persistent cluster. No automatic external DB operations.
+- **Owner-supplied Windows evidence on previous PR HEAD `c3d86b5...`:** `npm run setup:local` succeeded; existing dependencies and Chromium detected; Node24, Git and psql available, Docker unavailable, no local owned test DB yet. `test:local-workflow` **7/7 PASS**. `npm run test:quick`: source gate **256/257 FAIL**, exactly one outdated regex in `tests/browser-suite-structure.test.ts` because portable Playwright retry override was added; TypeScript **PASS**; domain N/A; release NOT EVALUATED. Corrective browser test regex change now on work branch; post-fix Windows test NOT RUN.
+- **Source/model evidence for current work:** V8 pure/mock checks of native ownership manifest, source guard and Playwright regex **11/11 PASS**, and JS module bodies parse in a source-only harness. This is **not** native Node24, Windows, PostgreSQL acceptance or Playwright execution. Exact new HEAD: npm guard suite **NOT RUN**, typecheck **NOT RUN**, `test:quick` **NOT RUN**, full tests/build **NOT RUN**, owned PG16/browser **NOT RUN**, CI **NOT RUN**. Existing production DB, migration, flags, deploy status **UNKNOWN/NOT RUN** (no production action attempted).
+- Blocker: cannot execute on owner's Windows host; success of PG16 creation/start/resume after reboot and full quick source gate requires owner-PC log. `psql` by itself does not prove that native `initdb`/`pg_ctl` exist.
+- **Exactly one next step:** owner runs `git pull --ff-only` then `npm run setup:local` on this branch, and supplies output. This will validate installation detection, owned native PG16 first-run or fail-closed missing-server case. Then rerun quick gate on that tested SHA before any merge consideration.
+
+---
+
+**Prior checkpoint (historical, preserved):**
+
 **UTC checkpoint:** 2026-10-22T06:46:39Z. **Status: DEV-ENV PR #383 hardened, owner-PC acceptance NOT RUN; no merge/deploy.**
 
 - Repository filipto861/flytally-logbook. GitHub-verified **main**: `860df276f7044586834871808e7e3843a10daaac`. Work branch `chore/portable-local-test-workflow-20261022`, PR **#383** open Draft targeting main; verified **pre-checkpoint HEAD** `f5f522012a4f5a40ff2098b9d67f1dd3d319fb13`. This checkpoint advances HEAD; refetch PR/base and HEAD next session.
