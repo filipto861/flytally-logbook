@@ -1,5 +1,18 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T11:55:40.241Z — Research PR #385 re-synced after core PR #384 took ownership of isolated v20 selector safety.**
+
+- **GitHub:** Logbook `main` SHA `860df276f7044586834871808e7e3843a10daaac`; core PR #384 `chore/local-windows-workflow-core-20261022` HEAD `ba6e5948f3807cd3d8809b1cd538b402fc7b257f`, OPEN/DRAFT base main; research PR #385 `test/local-pg-scale-research-20261022` pre-checkpoint HEAD `7aaef994f65f47bc71e08fb5ab7809fe3a2c4735`, OPEN/DRAFT based on core. Historical mixed PR #383 CLOSED, unmerged, retained. This docs-only commit changes research HEAD; reverify. Separate Training unaffected.
+- **Current scope reconciliation:** the bounded dedicated historic v20 restore test-selection fix and its nested negative regression moved into **core PR #384** (23 core source-safety tests). Research branch inherits their final implementation unchanged, no longer claims them as independent modifications. Research PR #385 contains only registered serial scale diagnostic `test:db:scale:local`, 50k/100k fast-v-slow EXPLAIN metadata and 3 additional scale-source regression tests, plus research docs, not app SQL/schema/threshold changes. ROADMAP, CHANGELOG, ACTIVE_WORK and `docs/PG_SCALE_INVESTIGATION_20261022.md` reconciled to core authority.
+- **Evidence:** old owner mixed SHA `f2643ca5c1c6fe1d7e70c94e1deaca2cb2eb0728` Windows 26/26 safety PASS, owned native PG16 identity PASS, serial scale 12/13 **FAIL** (100k Insights Career 4250.504ms > unchanged 4000ms). Earlier full PG 121 PASS/3 FAIL/39 SKIP FAIL; dedicated full-v20 historical fixture independently NOT RUN. New core/research exact SHA Windows, browser/CI/build/reboot **NOT RUN**. Prod DB/deploy/flags/migrations UNKNOWN and untouched.
+- **DO NOT:** no merge, deploy, remote/prod DB, Training, rewriting historic #383, masking FAILs, raising scale limits or modifying product SQL until reviewed.
+- **Exactly one next step:** owner checks out clean core PR #384 on Windows and runs `npm run test:local-workflow` then on PASS `npm run test:quick`; read-only performance review of #385 can resume separately later.
+
+---
+
+**Previous historical checkpoints:**
+
+
 **UTC 2026-10-22T11:50:40.113Z — Isolated PG scale research PR #385 DRAFT, stacked on portable core PR #384; no code tests on reconstructed SHA.**
 
 - **GitHub verified:** repo `filipto861/flytally-logbook`, main `860df276f7044586834871808e7e3843a10daaac`, research branch `test/local-pg-scale-research-20261022` pre-checkpoint HEAD `483b9afe7bd84f8fd6c4ba9b8cd7e912d5e8a383`; PR #385 OPEN/DRAFT targeting `chore/local-windows-workflow-core-20261022`; clean core PR #384 OPEN/DRAFT base main, core HEAD `3016aa59634146a178cc22d9efa5a55577f57058`. Historical mixed PR #383 CLOSED without merge; all history/comments retained. This docs write advances research HEAD, reverify after update.
