@@ -180,3 +180,12 @@ test("native PG16 subprocesses have time limits and stream slow bootstrap progre
   assert.match(facade, /\[DB\] Checking owned local PostgreSQL fixtures/);
   assert.match(facade, /diagnostic: true/);
 });
+
+
+test("Docker context and daemon detection must not block a disconnected workstation indefinitely", () => {
+  const source = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
+  assert.match(source, /function dockerInfo\(\)/);
+  assert.match(source, /"docker", \["context", "inspect"[\s\S]{0,150}timeout: 8_000/);
+  assert.match(source, /"docker", \["info"[\s\S]{0,120}timeout: 8_000/);
+  assert.match(source, /info\.status === 0/);
+});
