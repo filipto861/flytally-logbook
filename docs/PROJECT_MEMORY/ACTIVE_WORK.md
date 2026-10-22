@@ -4,6 +4,7 @@
 
 | Workstream | PRs observed open | Gate / caution |
 | --- | --- | --- |
+| Portable local developer tests | [#383](https://github.com/filipto861/flytally-logbook/pull/383) | Draft DEV-ENV scope, two-PC setup/DB/browser acceptance **NOT RUN**; no merge/deploy. Separate Training PR #291 owns Training-specific compatibility blockers. |
 | Logbook UX baseline | [#377](https://github.com/filipto861/flytally-logbook/pull/377) | Baseline and guarded UI capture; independently review current evidence. |
 | Logbook focus and contrast | [#378](https://github.com/filipto861/flytally-logbook/pull/378), [#379](https://github.com/filipto861/flytally-logbook/pull/379), [#381](https://github.com/filipto861/flytally-logbook/pull/381) | Independent draft work; focus/browser/mobile evidence must remain exact-head and not be inferred from source checks. |
 | Narrow Flights category layout | [#380](https://github.com/filipto861/flytally-logbook/pull/380) | Responsive browser validation reported pending in PR snapshot. |
