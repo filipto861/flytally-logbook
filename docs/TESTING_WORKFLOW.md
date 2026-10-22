@@ -85,6 +85,9 @@ Do not print `bootstrap-pwfile` or `.env.test.local` because they may contain pa
 
 ## One-time recovery: verified incomplete native PG16 cluster (22 Oct 2026)
 
+**First owner dry-run correction:** the initial read-only preflight rejected the genuine output `pg_ctl (PostgreSQL) 16.15` because its version regex expected the wrong banner syntax. A fully anchored expression now accepts only the correct `pg_ctl (PostgreSQL) 16.x` form, and version-15/17 or unrelated tool banners still fail closed. Pull the latest PR branch before rerunning the read-only preflight. The failed invocation made no database changes.
+
+
 An owner Windows log established that the newly created test-only PostgreSQL 16.15 process was accepting connections from its intended Logbook data directory on 127.0.0.1:55439 (observed PID 53356), while .env.test.local and owner.json were absent. The old native startup spawned PostgreSQL but did not finish recording bootstrap credentials. The old Node sync child output-pipe behavior is consistent with the observed stall; other causes have not been definitively excluded. Recovery must NOT act on any other PostgreSQL process.
 
 On the current PR branch use the built-in PowerShell recovery guard:
