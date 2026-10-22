@@ -81,3 +81,26 @@ Get-ChildItem .\.flytally\persistent-local-pg16 -Force -ErrorAction SilentlyCont
 ~~~
 
 Do not print `bootstrap-pwfile` or `.env.test.local` because they may contain passwords. Do **not** delete the cluster directory, kill an unidentified process, or retry with a different PostgreSQL database until the actual process/files are reviewed. Without `owner.json`, a partly initialized local directory is explicitly **INCOMPLETE / MANUAL INSPECTION REQUIRED**; no automatic reinitialization or adoption occurs. Non-database test commands can still be used separately, but their results cannot supply missing PostgreSQL/browser acceptance. The status of the owner PC and incomplete cluster is UNKNOWN until observed.
+
+
+## One-time recovery: verified incomplete native PG16 cluster (22 Oct 2026)
+
+An owner Windows log established that the newly created test-only PostgreSQL 16.15 process was accepting connections from its intended Logbook data directory on 127.0.0.1:55439 (observed PID 53356), while .env.test.local and owner.json were absent. The old native startup spawned PostgreSQL but did not finish recording bootstrap credentials. The old Node sync child output-pipe behavior is consistent with the observed stall; other causes have not been definitively excluded. Recovery must NOT act on any other PostgreSQL process.
+
+On the current PR branch use the built-in PowerShell recovery guard:
+
+~~~powershell
+git pull --ff-only
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tooling\recover-incomplete-local-pg16.ps1
+~~~
+
+The default is READ-ONLY and independently checks incomplete ownership state, PG_VERSION, exact data directory, postmaster.pid, live PID, listening loopback address and port. If it prints READ-ONLY audit complete, explicitly opt in to archive only that verified incomplete cluster:
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tooling\recover-incomplete-local-pg16.ps1 -ArchiveIncompleteOwnedCluster
+npm run setup:local
+~~~
+
+The opt-in operation uses PostgreSQL pg_ctl fast shutdown of only the verified owned data directory, proves the previous listener has exited, then MOVES the entire incomplete .flytally/persistent-local-pg16 directory to a uniquely named sibling archive persistent-local-pg16-interrupted-*. It does not delete data, edit existing Windows PostgreSQL services or manipulate production/Neon. The subsequent setup is a genuinely new initialization with newly saved localhost-only credentials. If any preflight fails, STOP and inspect the condition; do not manually remove the data directory or terminate arbitrary postgres processes. The archive remains available for investigation and must not be automatically deleted.
+
+The new native initialization displays actual initdb and pg_ctl output and includes bounded subprocess execution. Confirm setup:local and test:quick on the exact new work branch before claiming success. This recovery is a one-time developer-fixture action, not a production database restore or a release acceptance gate.
