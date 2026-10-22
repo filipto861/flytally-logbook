@@ -130,8 +130,16 @@ export function nativeCoreIdentityMismatches(output) {
   return failed;
 }
 
+function verifiedPostmasterPidBytes() {
+  const pidPath = join(dataDir, "postmaster.pid");
+  if (realpathSync.native(pidPath).toLowerCase() !== resolve(pidPath).toLowerCase()) {
+    throw new Error("PG16 postmaster identity file redirected; no verification.");
+  }
+  return readFileSync(pidPath);
+}
+
 export function nativeIdentityMismatches(
-  output, expectedPidBytes = readFileSync(join(dataDir, "postmaster.pid"))
+  output, expectedPidBytes = verifiedPostmasterPidBytes()
 ) {
   const fields = String(output ?? "").trim().split("|");
   if (fields.length !== 6) return ["column-count"];
