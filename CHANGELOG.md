@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-22 — U3 hardened browser acceptance 2/2 PASS (Draft, not deployed)
+
+- Owner fetched exact executable `9837776aedb3ab10d090a8ef538ccba88da1c479`. U3 browser script syntax **PASS**; standard browser structure regression **15/15 PASS**. Scoped PowerShell read-only PG18 physical identity, v21 schema `1|12|4|21`, purpose flags and no Vercel **PASS**.
+- Direct dedicated `npx.cmd --no-install playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0`: **2 passed (54.7 s)**, retry 0. Covers hardened shared before-write fixture preflight, synthetic aircraft deletion with real confirmation focus, subsequent Escape/no stale focus, deletion-blocked saved flight, Chrome-touch mobile 320/390 and iPad 768/1024 × light/dark. Prior environment-only 0/2 failures remain preserved as historical diagnostics, now resolved.
+- Environment restored after run. Earlier unchanged application runtime source 3/3 regression and TypeScript/build PASS (41/41) remain source-specific evidence; final candidate-aware release plan, additional selected gates, CI, native Safari and manual image review NOT RUN. PR #381 still OPEN/DRAFT, no merge/deploy/production DB changes.
+
+
 ## 2026-10-22 — U3 PR #381 final review and test-only isolation hardening (Draft)
 
 - GitHub source diff confirms a narrow client-side focus transfer in `components/aircraft-manager.tsx`, no server action, auth, flight, production schema, CSS or data-domain change. PR #381 is Draft/open/mergeable against main `860df276`, branch behind main by one independent Project Memory commit.
