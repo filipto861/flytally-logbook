@@ -6,6 +6,10 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 
 The repository config `vercel.json` explicitly disables automatic Git deployments from all branches, **including `main`**: `git.deploymentEnabled = {"*":false,"main":false}`. This is an intentional governance barrier, **not** a production deployment or permission to skip release checks. The standalone config PR must first pass candidate-bound verification and be squash-merged; before merging dependent feature PRs, independently inspect Vercel production deployment metadata after the config merge to confirm no new deployment was triggered. If the config merge does create a new production deployment or if the observable state is ambiguous, **STOP**; do not merge dependent feature PRs. Manual production deploy from an explicitly verified Git SHA requires a separate owner authorization, target preflight, and post-deploy production smoke. The product remains operational on the previously deployed production build until manual deployment is authorized.
 
+## Portable home/office local testing (22 Oct 2026, candidate)
+
+The repeatable Windows PowerShell setup, isolated localhost PostgreSQL 16 fixture, and convenience commands are documented in [docs/TESTING_WORKFLOW.md](docs/TESTING_WORKFLOW.md). Run npm run setup:local once on each PC (idempotent missing-component installation); npm run doctor is read-only. npm run test:quick and npm run test:full delegate to existing exact-candidate verification; npm run test:db:local and npm run test:browser:local require the verified disposable local fixture. Never infer a PASS from setup/doctor or replace existing risk registry, owned PG16, PostgreSQL/browser guards or candidate evidence. Do not use the remote/prod database as a local fixture.
+
 ## Development loop
 
 1. Work locally on a complete slice. Do not push every intermediate edit to the candidate branch.
