@@ -72,6 +72,18 @@ export function assertLocalFixtureUrl(raw) {
   }
   return true;
 }
+function findPsql() {
+  if (process.env.FLYTALLY_PSQL && has(process.env.FLYTALLY_PSQL)) return process.env.FLYTALLY_PSQL;
+  if (has("psql")) return "psql";
+  if (process.platform === "win32") {
+    const base = process.env.ProgramFiles || "C:\\Program Files";
+    for (const v of ["18", "17", "16", "15"]) {
+      const candidate = join(base, "PostgreSQL", v, "bin", "psql.exe");
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return null;
+}
 function safeEnv({ database = false, browser = false } = {}) {
   const env = { ...process.env };
   for (const name of [
@@ -81,6 +93,7 @@ function safeEnv({ database = false, browser = false } = {}) {
     "FLYTALLY_CURRENCY_V21_BROWSER", "FLYTALLY_V21_RISK_BROWSER",
     "FLYTALLY_BROWSER_EVIDENCE_FILE", "VERCEL", "VERCEL_ENV",
   ]) delete env[name];
+  if (logbook && findPsql()) env.FLYTALLY_PSQL = findPsql();
   if (database) {
     const url = testUrl();
     if (!url) throw new Error("Missing .env.test.local. Run npm run setup:db first.");
@@ -147,7 +160,19 @@ function ensureDatabase() {
   writeFileSync(localFile, "# GENERATED LOCAL DISPOSABLE TEST FIXTURE. NEVER COMMIT.\n" + db.key + "=" + url + "\n",
     { flag: "wx", mode: 0o600 });
   console.log("[DB] Created isolated localhost PG16 fixture and .env.test.local (credentials not printed).");
-  if (!logbook) console.log("[DB] Before first Training runtime use: npm run db:init with TRAINING_DATABASE_URL set to this fixture.");
+  if (!logbook) {
+    // Newly created, dedicated localhost Training DB only. Never initialize a remote or reused DB here.
+    let ready = false;
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      if (exec("docker", ["exec", db.container, "pg_isready", "-U", "flytally_local", "-d", db.database], { quiet: true }).status === 0) {
+        ready = true; break;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
+    }
+    if (!ready) throw new Error("New Training PG16 container did not become ready; no schema bootstrap was attempted.");
+    checked(npm(["run", "db:init"], safeEnv({ database: true })), "Training local DB bootstrap");
+    console.log("[DB] Training-local schema initialized and verified.");
+  }
 }
 async function browserInstalled() {
   try {
@@ -164,8 +189,7 @@ async function doctor() {
   console.log("Playwright Chromium: " + (await browserInstalled() ? "OK" : "MISSING"));
   console.log("Docker engine: " + (dockerInfo() ? "READY" : "NOT AVAILABLE (optional when existing local DB is used)"));
   if (logbook) {
-    const pg = process.env.FLYTALLY_PSQL || "psql";
-    console.log("psql client: " + (has(pg) ? "OK" : "MISSING (set FLYTALLY_PSQL or install PostgreSQL client)"));
+    console.log("psql client: " + (findPsql() ? "OK" : "MISSING (set FLYTALLY_PSQL or install PostgreSQL client)"));
   }
   try {
     const configured = testUrl();
