@@ -85,6 +85,17 @@ Do not print `bootstrap-pwfile` or `.env.test.local` because they may contain pa
 
 ## One-time recovery: verified incomplete native PG16 cluster (22 Oct 2026)
 
+**Windows parser safeguard (22 Oct, follow-up):** a later commit erroneously contained a duplicated block after the final `} finally { Pop-Location }`, so the owner observed a PowerShell `ParserError` before execution. The file has been trimmed to exactly one complete script. Before any recovery operation, run the PowerShell parser itself in read-only mode (see below). The npm safety-contract test now checks script uniqueness and invokes the Windows PowerShell parser when running on Windows. No archival or database shutdown occurred on that failed invocation.
+
+~~~powershell
+$scriptPath = (Resolve-Path .\tooling\recover-incomplete-local-pg16.ps1).Path
+$tokens = $null
+$parseErrors = $null
+[System.Management.Automation.Language.Parser]::ParseFile($scriptPath,[ref]$tokens,[ref]$parseErrors) | Out-Null
+if ($parseErrors.Count) { $parseErrors | Select-Object Message; throw 'PowerShell syntax failed' }
+'SYNTAX PASS'
+~~~
+
 **First owner dry-run correction:** the initial read-only preflight rejected the genuine output `pg_ctl (PostgreSQL) 16.15` because its version regex expected the wrong banner syntax. A fully anchored expression now accepts only the correct `pg_ctl (PostgreSQL) 16.x` form, and version-15/17 or unrelated tool banners still fail closed. Pull the latest PR branch before rerunning the read-only preflight. The failed invocation made no database changes.
 
 
