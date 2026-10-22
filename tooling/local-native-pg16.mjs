@@ -113,11 +113,11 @@ function pgEnv(password) {
   return env;
 }
 
-// The data-directory field is transmitted as ASCII hex of UTF-8 bytes.
-// Otherwise psql running on Czech Windows can transcode "č"/"í" into CP1250,
-// which spawnSync({ encoding: "utf8" }) would replace with U+FFFD.
-// Diagnose core identity fields without displaying credentials or actual server values.
-// A mismatch is never permission to adopt an unknown PostgreSQL database.
+// Prove physical identity by comparing the live server's binary postmaster.pid
+// with the exact locally verified PGDATA file, byte-for-byte. This avoids
+// Windows code-page conversions of non-UTF8 paths inside data_directory GUC.
+// The SQL result is ASCII hex; no raw PID file or user path is logged.
+// Diagnose core identity fields without displaying credentials or values.
 export function nativeCoreIdentityMismatches(output) {
   const fields = String(output ?? "").trim().split("|");
   if (fields.length !== 5) return ["field-count"];
@@ -130,30 +130,27 @@ export function nativeCoreIdentityMismatches(output) {
   return failed;
 }
 
-export function nativeIdentityMismatches(output, expectedDir = resolve(dataDir)) {
+export function nativeIdentityMismatches(
+  output, expectedPidBytes = readFileSync(join(dataDir, "postmaster.pid"))
+) {
   const fields = String(output ?? "").trim().split("|");
   if (fields.length !== 6) return ["column-count"];
   const failures = [];
   if (fields[0] !== cfg.database) failures.push("database");
   if (fields[1] !== cfg.user) failures.push("database-user");
-  const encodedPath = fields[2];
-  if (!/^(?:[0-9a-f]{2})+$/i.test(encodedPath)) {
-    failures.push("data-directory-encoding");
-  } else {
-    const physicalDir = Buffer.from(encodedPath, "hex").toString("utf8");
-    if (!isAbsolute(physicalDir)
-      || resolve(physicalDir).toLowerCase() !== resolve(expectedDir).toLowerCase()) {
-      failures.push("data-directory");
-    }
+  const remotePidHex = fields[2];
+  if (!/^(?:[0-9a-f]{2})+$/i.test(remotePidHex)) {
+    failures.push("postmaster-pid-encoding");
+  } else if (!Buffer.from(remotePidHex, "hex").equals(expectedPidBytes)) {
+    failures.push("postmaster-identity");
   }
   if (fields[3] !== cfg.hostname) failures.push("server-address");
   if (fields[4] !== cfg.port) failures.push("server-port");
   if (!/^16\d{4}$/.test(fields[5])) failures.push("server-version");
   return failures;
 }
-
 function observedIdentity(bin, password) {
-  const query = "SELECT current_database() || '|' || current_user || '|' || encode(convert_to(current_setting('data_directory'), 'UTF8'), 'hex') || '|' || host(inet_server_addr()) || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')";
+  const query = "SELECT current_database() || '|' || current_user || '|' || encode(pg_catalog.pg_read_binary_file('postmaster.pid'), 'hex') || '|' || host(inet_server_addr()) || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')";
   const output = check(run(bin.psql, [
     "-w", "-X", "-qAt", "-v", "ON_ERROR_STOP=1",
     "-h", cfg.hostname, "-p", cfg.port, "-U", cfg.user, "-d", cfg.database,
