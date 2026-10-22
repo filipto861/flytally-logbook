@@ -172,17 +172,16 @@ export function ensureNativePg16(url, { allowCreate = false } = {}) {
     }
     mkdirSync(home, { recursive: true });
     const pwfile = join(home, "bootstrap-pwfile");
-    try {
-      writeFileSync(pwfile, parsed.password + "\n", { flag: "wx", mode: 0o600 });
-      console.log("[PG16] First-time initialization of dedicated local data directory (no existing DB replaced).");
-      check(run(bin.initdb, ["-D", dataDir, "-U", cfg.user,
-        "-A", "scram-sha-256", "--pwfile", pwfile, "--encoding=UTF8", "--no-instructions"],
-        process.env, 90_000, { showProgress: true }), "Initialize dedicated disposable native PG16");
-    } finally {
-      rmSync(pwfile, { force: true });
-    }
+    // Keep the first-run credential only inside this dedicated, gitignored fixture
+    // until *both* the ownership marker and .env.test.local are saved successfully.
+    // On failure it remains for owner-reviewed recovery (never auto-adopt a cluster).
+    writeFileSync(pwfile, parsed.password + "\n", { flag: "wx", mode: 0o600 });
+    console.log("[PG16] First-time initialization of dedicated local data directory (no existing DB replaced).");
+    check(run(bin.initdb, ["-D", dataDir, "-U", cfg.user,
+      "-A", "scram-sha-256", "--pwfile", pwfile, "--encoding=UTF8", "--no-instructions"],
+      process.env, 90_000, { showProgress: true }), "Initialize dedicated disposable native PG16");
     // Marker remains absent until the full first bootstrap succeeds.
-    // Failed setup leaves data untouched for manual investigation.
+    // Failed setup leaves data AND its credential untouched for manual investigation.
     console.log("[PG16] Cluster initialized. Starting owned PostgreSQL 16 process...");
     startNative(bin, parsed.password);
     console.log("[PG16] Server started. Creating empty, dedicated acceptance database...");
@@ -193,6 +192,7 @@ export function ensureNativePg16(url, { allowCreate = false } = {}) {
     writeFileSync(marker, JSON.stringify(cfg, null, 2) + "\n", { flag: "wx", mode: 0o600 });
     writeFileSync(envFile, "# Dedicated localhost PostgreSQL acceptance. Never commit.\nDATABASE_URL=" + url + "\n",
       { flag: "wx", mode: 0o600 });
+    rmSync(pwfile, { force: true }); // credential is now persisted in .env.test.local
     return "CREATED";
   }
   console.log("[PG16] Existing owned cluster detected. Checking process and physical identity...");
