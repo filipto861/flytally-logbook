@@ -290,7 +290,9 @@ test("PG16 identity SQL reads server PID file as binary and preserves bootstrap 
     assert.doesNotMatch(source, /convert_to\(current_setting\('data_directory'\)/);
   }
   assert.match(native, /Buffer\.from\(remotePidHex, "hex"\)\.equals\(expectedPidBytes\)/);
-  assert.match(native, /readFileSync\(join\(dataDir, "postmaster\.pid"\)\)/);
+  assert.match(native, /function verifiedPostmasterPidBytes\(\)/);
+  assert.match(native, /realpathSync\.native\(pidPath\)/);
+  assert.match(native, /return readFileSync\(pidPath\)/);
   assert.match(native, /env\.PGCLIENTENCODING = "UTF8"/);
   assert.match(native, /Native PG16 physical identity mismatch \[/);
   const secretCreated = native.indexOf('writeFileSync(pwfile, parsed.password');
