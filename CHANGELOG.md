@@ -1,3 +1,9 @@
+## 2026-10-22 — Separate U3 browser test safety boundary from portable Windows testing
+
+- Added explicit documentation that Draft U3 PR #381 has a dedicated PG18 local disposable fixture on port 55433 and standalone `playwright.u3.config.mjs`. Portable Windows core PR #384 uses owned PG16 port 55439. No cross-use of database URLs/roles/test flags.
+- Clarified that generic browser bootstrap resets `public` in its disposable fixture and is **not** appropriate for U3, whose v21 fixture was migrated separately. U3 2-test desktop/mobile-iPad emulation acceptance remains NOT RUN after latest test relocation; old desktop 1/1 PASS is historical. No product code/schema/SQL/fixture run/merge/deploy.
+- Core Windows quick gate remains 23/23 safety, 257/257 source, typecheck PASS at exact earlier executable SHA `e27a11ef...`; canonical full release STILL NOT EVALUATED.
+
 ## 2026-10-22 — Windows quick gate PASS for clean portable testing PR #384
 
 - Owner Windows clean candidate executable SHA `e27a11efa0770bb11cac88f1ad5602865743a700`: `git pull --ff-only` PASS, `npm run test:quick` PASS, internal `test:local-workflow` **23/23 PASS**, source/regression `verify:iterate` **257/257 PASS**, TypeScript `tsc --noEmit` **PASS**. Exact candidate `a777868f22a5eae5600c452a8a77c747c6ce1710d136a3f79e4f32aa2925b8cf`; no blocked evidence. Previously mismatched historic-v20 fixture source SHA is now verified by strict M1 positive/LF-CRLF/CLI tests.
