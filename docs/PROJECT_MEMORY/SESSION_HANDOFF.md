@@ -1,5 +1,18 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T08:33:53.459Z — DEV-ENV PG16 owner diagnostic field mismatch; sanitized field-level fix candidate on PR #383 (DRAFT).**
+
+- Independently verified GitHub main full SHA `860df276f7044586834871808e7e3843a10daaac`, work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `928f207a49205c081b0df59719f8c8d52cf129e5`; PR #383 open Draft targets main. This checkpoint advances work HEAD; verify before further action.
+- Owner Windows report at work commit `cb0a1f7620e088f113fb771e188e6697f3ccb907`: `git pull --ff-only` PASS. `npm run test:local-workflow`: 18 PASS/1 FAIL of 19. The FAIL at test line 308 is **false-positive** source-level secret lint: it matched the literal harmless success text `No database, password file or marker has been modified`, not code printing the password. `node .\tooling\diagnose-incomplete-local-pg16.mjs` successfully ran read-only `SELECT 1` and core SQL identity SELECT, but aborted `core database identity mismatch; no adoption or writes`. The exact wrong field remains UNKNOWN because old diagnostic only reported a combined mismatch. No local DB writes, reset, archival or production action. Retained private bootstrap-pwfile must be preserved, never printed/committed/exported.
+- Changes in work batch: `tooling/diagnose-incomplete-local-pg16.mjs` now prints a harmless no-files-modified completion text (preserves secret-leak test), and reports **only** mismatching core identity field names without values; `tooling/local-native-pg16.mjs` exports strict `nativeCoreIdentityMismatches` with explicit database/user/host/port/PG16 version comparisons and field-count validation; `tests/local-workflow.test.mjs` adds positive and isolated negative cases per field. Documentation `ROADMAP.md`, `CHANGELOG.md`, `docs/TESTING_WORKFLOW.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md` updated.
+- Source inspection by GitHub/V8 on updated code: false-positive text gone, no SQL write code, core matcher accurately labels example wrong address/version, 6/6 source assertions PASS. Real native Windows Node `npm run test:local-workflow` after the fix **NOT RUN**, read-only SQL diagnostic after fix **NOT RUN**, quick, typecheck, build, PG integration, Playwright, CI **NOT RUN**. Previous owner 18/19 historical evidence, not PASS for new SHA. DB migration/feature flags/deployment UNKNOWN; no changes. Current physical cluster incomplete; owner first-run credential retained.
+- Owner scope/DO NOT: Logbook only (Training separate), do not touch other PG, production/remote Neon, actual pilot/flight data, migration/flags, main, merge or deployment; do not archive/reinitialize/delete the current local test cluster or reveal credentials.
+- **One next step:** owner `git pull --ff-only` then `npm run test:local-workflow`; if tests PASS, rerun `node .\tooling\diagnose-incomplete-local-pg16.mjs`. Share only its sanitized field-name mismatch output. Use result to design a guarded resume/finalize of current cluster without deleting or rebuilding it.
+
+---
+
+**Historical handoff checkpoints:**
+
 **UTC 2026-10-22T08:22:07.387Z — local PG16 SQL query blocker, retained first-run credential; READ-ONLY diagnostic candidate, no third archive. PR #383 DRAFT.**
 
 - GitHub main independently verified `860df276f7044586834871808e7e3843a10daaac`, work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `ef05251d00bdccdc7bd3f6b21197636d1b25ac91`, PR #383 open Draft targeting main. This docs checkpoint advances work SHA; reverify before next change.
