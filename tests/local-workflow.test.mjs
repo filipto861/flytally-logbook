@@ -3,8 +3,9 @@ import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { assertLocalFixtureUrl, isLocalDockerEndpoint, assertOwnedContainerMetadata } from "../tooling/local-workflow.mjs";
-import { nativeManifestValid, nativePg16Tools } from "../tooling/local-native-pg16.mjs";
+import { nativeManifestValid, nativePg16Tools, nativeIdentityMismatches } from "../tooling/local-native-pg16.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 const isLogbook = pkg.name === "pilot-logbook-web";
@@ -257,4 +258,34 @@ test("recovery script has one complete PowerShell body; Windows parser accepts i
     assert.equal(result.status, 0,
       "PowerShell recovery script parse failed: " + (result.stderr || result.error?.message || ""));
   }
+});
+
+
+test("PG16 physical identity survives accented Czech directory names via hex UTF8", () => {
+  const dir = resolve(".flytally", "fixture-prilis-žluťoučký-kůň", "data");
+  const encodedDir = Buffer.from(dir, "utf8").toString("hex");
+  const valid = "flytally_logbook_test|flytally_local|" + encodedDir + "|127.0.0.1|55439|160015";
+  assert.deepEqual(nativeIdentityMismatches(valid, dir), []);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace("|160015", "|170001"), dir), ["server-version"]);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace("127.0.0.1", "10.0.0.1"), dir), ["server-address"]);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace("flytally_local", "postgres"), dir), ["database-user"]);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace(encodedDir, "zz"), dir), ["data-directory-encoding"]);
+  assert.deepEqual(nativeIdentityMismatches(valid.replace(encodedDir, Buffer.from(resolve(".flytally", "wrong", "data"), "utf8").toString("hex")), dir), ["data-directory"]);
+  assert.deepEqual(nativeIdentityMismatches("broken shape", dir), ["column-count"]);
+});
+
+test("PG16 SQL identity uses ASCII hex for Unicode data paths and retains bootstrap credential on failure", () => {
+  const source = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
+  assert.match(source, /encode\(convert_to\(current_setting\('data_directory'\), 'UTF8'\), 'hex'\)/);
+  assert.match(source, /Buffer\.from\(encodedPath, "hex"\)\.toString\("utf8"\)/);
+  assert.match(source, /env\.PGCLIENTENCODING = "UTF8"/);
+  assert.match(source, /Native PG16 physical identity mismatch \[/);
+  const secretCreated = source.indexOf('writeFileSync(pwfile, parsed.password');
+  const dbVerified = source.indexOf('observedIdentity(bin, parsed.password);', secretCreated);
+  const markerWritten = source.indexOf('writeFileSync(marker,', dbVerified);
+  const envWritten = source.indexOf('writeFileSync(envFile,', markerWritten);
+  const secretRemoved = source.indexOf('rmSync(pwfile, { force: true })', envWritten);
+  assert.ok(secretCreated >= 0 && secretCreated < dbVerified && dbVerified < markerWritten &&
+    markerWritten < envWritten && envWritten < secretRemoved,
+    "bootstrap password must survive failures and be removed only after the config has been saved");
 });
