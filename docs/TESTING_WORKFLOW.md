@@ -148,3 +148,26 @@ node .\tooling\diagnose-incomplete-local-pg16.mjs
 The diagnostic refuses completed fixtures, checks exact PG16 version, real data-directory path, postmaster.pid, port, running state and retained credential, and sanitizes its results. It emits only query step PASS/FAIL, exit codes, SQLSTATE when extractable, field-name mismatches and no raw paths/passwords/stderr. If it fails, stop; do not run the existing archival recovery on this recoverable cluster. If it passes, use the diagnosis to design and separately verify a guarded one-time resume/finalize that reuses this exact test database; do not silently create owner.json or .env.test.local from a URL alone.
 
 The earlier archived directories remain intact. Product schema, remote Neon, Training, merge and deployment remain out of scope. Current diagnostic test/runtime result and completed setup remain NOT RUN until the owner runs the new command.
+
+
+## 22 Oct server-address mismatch: PostgreSQL inet::text includes /32
+
+Owner Windows at work HEAD e7b4ac9a: 20/20 local safety tests PASS, read-only authenticated SELECT 1 and core SQL SELECT PASS, but core identity rejected exactly the server-address field. PostgreSQL documents that explicit inet::text produces an unabbreviated IP with netmask (127.0.0.1/32), whereas host(inet) gives the bare address (127.0.0.1). This was a format mismatch, not evidence the server had moved to a different address. We still compare to exactly 127.0.0.1; we do not whitelist other hosts or strip arbitrary prefixes. The native identity query and both read-only diagnostic queries now use host(inet_server_addr()). Source: https://www.postgresql.org/docs/current/functions-net.html
+
+**Complete the currently running local cluster without resetting it** after pulling this PR branch:
+
+~~~powershell
+git pull --ff-only
+npm run test:local-workflow
+node .\tooling\diagnose-incomplete-local-pg16.mjs
+~~~
+
+Only when local safety tests pass AND the diagnostic shows Physical identity: PASS and READ-ONLY COMPLETE, run the explicit one-time local fixture completion:
+
+~~~powershell
+node .\tooling\finalize-incomplete-local-pg16.mjs
+npm run setup:local
+npm run test:quick
+~~~
+
+The finalize command requires an incomplete Logbook-only native cluster with exact expected data directory (no redirections), PG_VERSION16, running pg_ctl, absence of owner.json and .env.test.local, and the retained random password in gitignored bootstrap-pwfile. It uses the credential to authenticate, proves the strict PostgreSQL physical database identity, and only then writes the exact ownership marker and .env.test.local with exclusive creation. The intermediate password file is removed only after those two files are successfully saved. It does not start/restart PostgreSQL, initialize clusters, create or drop databases/tables, import remote data, or access production/Training. If any check fails, STOP; do not archive or reinitialize, and do not share the password file or local env. Existing test-only archives stay untouched. No completed acceptance claims until exact-head owner Windows output.
