@@ -151,6 +151,15 @@ The earlier archived directories remain intact. Product schema, remote Neon, Tra
 
 
 ## 22 Oct server-address mismatch: PostgreSQL inet::text includes /32
+
+**Owner local in-place finalization confirmed (22 Oct 2026):** Tested branch head `381cc1fd0d8a4f414985a6202189f16b060f862c` on owner Windows: `test:local-workflow` 22/22 PASS; read-only SELECT 1, core identity, binary postmaster.pid read and full physical identity **PASS**; `node .\tooling\finalize-incomplete-local-pg16.mjs` **FINALIZED**, reporting persistent local fixture config saved. This was an explicit single completion of an existing test-only PG16 cluster, not a new initdb or restoration. Do not rerun finalizer on the now marked fixture. Verify reuse and application tests next:
+~~~powershell
+npm run setup:local
+npm run test:quick
+~~~
+If these pass, run relevant DB/browser gates separately and test reboot/restart reuse later; no evidence for those yet. Never share credentials or archived fixture files.
+
+
 **Owner SQLSTATE 22021 finding (22 Oct):** At commit 23be4b1f, native Windows source safety tests PASS (22/22), and the read-only localhost `SELECT 1` + core identity PASS. However, the path conversion query (`convert_to(current_setting('data_directory'),'UTF8')`) fails with SQLSTATE 22021, indicating invalid/unrepresentable text bytes. The guarded `finalize-incomplete-local-pg16.mjs` correctly BLOCKED without writing marker or environment configuration. This is NOT a reason to change server encoding, weaken the identity guard or rebuild the database.
 
 PostgreSQL 16 documents `pg_read_binary_file()` returning arbitrary bytes without encoding checks (https://www.postgresql.org/docs/16/functions-admin.html). Updated native identity and diagnostic verify the *physical* PostgreSQL process by reading the server-side binary `postmaster.pid` (ASCII hex output) and comparing it byte-for-byte to the PID file under the exact, nonredirected Logbook-only PGDATA. The field `postmaster-identity` fails if bytes differ. Other guards remain: exact database/user, host 127.0.0.1, port 55439, PG16 server version, credentials and server state. SQL queries remain read-only.
