@@ -1,3 +1,8 @@
+## 2026-10-22 — Developer tooling candidate (NOT MERGED / NOT RELEASED)
+
+- Working branch chore/portable-local-test-workflow-20261022 adds home/office incremental npm/Playwright bootstrap, dedicated loopback-only Docker PG16 acceptance fixture, guarded test aliases, local URL regression tests and docs/TESTING_WORKFLOW.md. Existing release, PG, browser runners are reused, not rewritten.
+- No product behavior, schema migration, production DB, feature flag or deployment change. Windows/CI/browser/DB testing on this candidate head **NOT RUN**; GitHub connector source write is not runtime acceptance.
+
 # FlyTally changelog
 
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
