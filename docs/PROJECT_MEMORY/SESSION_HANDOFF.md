@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T08:22:07.387Z — local PG16 SQL query blocker, retained first-run credential; READ-ONLY diagnostic candidate, no third archive. PR #383 DRAFT.**
+
+- GitHub main independently verified `860df276f7044586834871808e7e3843a10daaac`, work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `ef05251d00bdccdc7bd3f6b21197636d1b25ac91`, PR #383 open Draft targeting main. This docs checkpoint advances work SHA; reverify before next change.
+- Owner Windows at SHA `cd4e7a1407be1f759560bd78950b90c32e70dfa2`: fast-forward PASS, `npm run test:local-workflow` **18/18 PASS**, native PowerShell parser included, owner default READ-ONLY recovery verified partial cluster PID 49932/127.0.0.1:55439 exact Logbook path, then opt-in archive **PASS** (saved as `persistent-local-pg16-interrupted-20261022-101221-97dbc17b`; old archive also retained). New PG16 initdb, pg_ctl start, and createdb **PASS**, but `observedIdentity` SQL query **FAIL** with `[BLOCKED] PostgreSQL physical identity query failed`. Therefore native fixture marker and .env.test.local are NOT present and database tests NOT RUN. New fixture is incomplete but unlike old runs retains bootstrap-pwfile containing a **secret**. Do not share/print it or reinitialize/erase the fixture.
+- Interpretation: previous assumption that Unicode output decoding causes the problem remains UNSUPPORTED as actual SQL query fails before output validation; possible causes include SQL expression, PostgreSQL conversion, locale/encoding or other SQLSTATE. Exact SQLSTATE and cause UNKNOWN. No automatic fallback to wrong DB or weakening identity checks.
+- New file `tooling/diagnose-incomplete-local-pg16.mjs`: dedicated **READ-ONLY** local-only diagnostic, requires missing owner marker/env and retained credential, PG_VERSION16, exact physical data directory (UTF8 or CP1250 PID path), port, pg_ctl running. Uses localhost fixed credentials inside child env, executes only SELECT 1, core identity, directory conversion, full identity; prints sanitized PASS/FAIL/SQLSTATE/field names only. No secret/raw path/SQL stdout in results. New tests in `tests/local-workflow.test.mjs` enforce no-write/no-secret source and node --check. Updated `docs/TESTING_WORKFLOW.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, this handoff.
+- Evidence: previous owner Windows 18/18 **PASS** belongs to earlier SHA `cd4e7a14`; new diagnostic custom V8 source parsing **PASS**, 8/8 read-only source assertions **PASS**. Updated exact-head Windows `npm run test:local-workflow`, diagnostic and SQLSTATE **NOT RUN**; `setup:local` completion, `test:quick`, PG acceptance, browser, typecheck, production build and CI **NOT RUN**. Production DB/migration/flags/deploy NOT TOUCHED; runtime state UNKNOWN. No merge/deploy/other repo changes.
+- Scope/DO NOT: only Logbook local tooling; no production/remote Neon, Training, actual flight data, automated DB destructive recovery, archive/reset, merge, deploy, migrations or flags. Preserve existing incomplete cluster and its private pwfile for recovery.
+- **Exactly one next step:** owner `git pull --ff-only`, `npm run test:local-workflow` and, only if PASS, `node .\tooling\diagnose-incomplete-local-pg16.mjs`; return sanitized stdout to identify SQLSTATE/root issue before adding verified resume/finalize support. No third archival action.
+
+---
+
+**Historical checkpoints:**
+
 **UTC 2026-10-22T08:09:08.679Z — DEV-ENV owner native PG16 archive PASS; new setup fails physical identity; Unicode-safe patch on PR #383 (DRAFT / NOT MERGED).**
 
 - Independently verified GitHub main `860df276f7044586834871808e7e3843a10daaac`; work HEAD before checkpoint `f084e1fb97ec0a78f2b7ee31a82f49c748fdbc59`; branch `chore/portable-local-test-workflow-20261022` PR #383 open Draft, base main. This documentation checkpoint will advance work HEAD.
