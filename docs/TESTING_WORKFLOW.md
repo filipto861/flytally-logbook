@@ -1,5 +1,8 @@
 # FlyTally Logbook — portable Windows testing workflow
 
+**22 Oct 2026 — owner Windows clean-branch check:** `test:local-workflow` 23/23 PASS, `test:quick` initially blocked by three M1 registry source tests despite typecheck PASS; the reason was a stale SHA-256 pin after the source-backed isolated full-v20 fixture opt-in correction. PR #384 now updates exactly that source hash in `tooling/postgres-partition-registry.json`, preserving the immutable registry membership, count and security scope. The post-fix `npm run test:quick` has not been executed on the owner Windows PC yet; **do not mark it PASS** until rerun. No need to reset PostgreSQL, rerun 50k/100k diagnostics or delete unrelated local ZIP attachments to resolve the hash mismatch. Full release gates remain separate.
+
+
 **Scope:** Logbook only (`filipto861/flytally-logbook`). The Training repository uses different fixtures and tooling. This runbook describes a candidate developer-only convenience layer, **not** a new release gate or approval to access a remote database.
 
 ## Goal
