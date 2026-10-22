@@ -131,6 +131,9 @@ Before another archive/setup, pull current PR branch and run `npm run test:local
 
 
 ## 22 Oct retained-credential read-only diagnostic (current blocker)
+**Owner diagnostic follow-up:** At cb0a1f76 Windows safety tests passed 18/19; the single FAIL was a static regex incorrectly rejecting a harmless status text about an unchanged password file, not an actual secret leak. The read-only diagnostic authenticated and ran `SELECT 1` and core identity SELECT, but core identity validation rejected the returned fields. The candidate now labels only failing fields: `field-count`, `database`, `database-user`, `server-address`, `server-port` or `server-version`; it does not print raw SQL output. The status text was adjusted and the test's original secret-output guard retained. Pull then rerun local safety tests and the SELECT-only diagnostic; preserve the current retained-credential fixture until exact cause is known.
+
+
 
 After the third native setup attempt the owner reported initdb PASS, pg_ctl startup PASS, and createdb PASS, but a PostgreSQL physical identity query failed rather than a field-specific identity mismatch. The prior PGCLIENTENCODING=UTF8 and SQL convert_to changes are hypotheses until we inspect the SQL failure. The current attempt used the revised bootstrap that retains the private password file at .flytally/persistent-local-pg16/bootstrap-pwfile until both owner marker and .env.test.local exist; so **do not archive, delete, print secrets or rerun setup**.
 
