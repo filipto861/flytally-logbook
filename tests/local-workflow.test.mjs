@@ -207,7 +207,16 @@ test("partial native PG16 recovery is read-only by default and physically pinned
   assert.match(source, /Assert-NotReparse \$data/);
   assert.match(source, /Assert-NotReparse \(Split-Path -Parent \$target\)/);
   assert.match(source, /& \$pgCtl -D \$data status \| Out-Null/);
-  assert.match(source, /"PostgreSQL 16\\\."/);
+  const guard = source.match(/\$LASTEXITCODE -eq 0 -and \$v -match '([^']+)'/);
+  assert.ok(guard, "missing pinned native pg_ctl version preflight");
+  const versionPattern = new RegExp(guard[1]);
+  assert.equal(versionPattern.test("pg_ctl (PostgreSQL) 16.15"), true);
+  assert.equal(versionPattern.test("pg_ctl (PostgreSQL) 16.0"), true);
+  assert.equal(versionPattern.test("pg_ctl (PostgreSQL) 15.17"), false);
+  assert.equal(versionPattern.test("pg_ctl (PostgreSQL) 17.1"), false);
+  assert.equal(versionPattern.test("psql (PostgreSQL) 16.15"), false);
+  assert.equal(versionPattern.test("pg_ctl (PostgreSQL) 16.15 malicious-extra"), false);
+  assert.equal(versionPattern.test("PostgreSQL 16.15"), false);
   assert.match(source, /& \$pgCtl -D \$data -m fast -w -t 30 stop/);
   assert.match(source, /Move-Item -LiteralPath \$target -Destination \$archive/);
   assert.doesNotMatch(source, /Remove-Item|Stop-Process|taskkill|docker rm|rmSync/);
