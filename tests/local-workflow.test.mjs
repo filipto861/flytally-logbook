@@ -137,7 +137,7 @@ test("reboot-safe native mode is cluster reuse, not data deletion or unverified 
   assert.match(source, /if \(!allowCreate\)/);
   assert.match(source, /Native PG16 ownership marker/);
   assert.match(source, /"PG_VERSION"/);
-  assert.match(source, /current_setting\('data_directory'\)/);
+  assert.match(source, /pg_catalog\.pg_read_binary_file\('postmaster\.pid'\)/);
   assert.match(source, /"pg_ctl"/);
   assert.match(facade, /nativeMarkerExists\(\)/);
   assert.match(facade, /ensureNativePg16\(existingUrl\)/);
