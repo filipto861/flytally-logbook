@@ -8,6 +8,8 @@ The repository config `vercel.json` explicitly disables automatic Git deployment
 
 ## Portable home/office local testing (22 Oct 2026, candidate)
 
+**2026-10-22 plan comparison, PR #383 Draft:** Owner serial scale check at executable SHA `179c0c59` had 12/13 PASS, with 50k flight-list 2961.006ms (limit 2500, FAIL), 100k list 2273.375ms (limit 4500, PASS), reversing the prior run's result. To investigate variance, v169 and v230 scale test files now print bounded EXPLAIN plan metadata for first-page list reads in all fast and slow runs. Test gates, budgets, production SQL, and fixture ownership guards are unchanged. New test code acceptance on Windows NOT RUN; a serial diagnostic never replaces full PostgreSQL release evidence.
+
 **Latest isolated scale evidence (22 Oct 2026):** owner serial run of three registered scale files **12 PASS / 1 FAIL**, not a full PG PASS. 50k list and Insights fit original budgets in isolation, but 100k Flight List was 4983.786ms vs unchanged 4500ms. `tests/integration/postgres-v230-large-logbook-performance.test.ts` now emits limited EXPLAIN plan metadata for 100k flight-list queries at >=4000ms, and the source contract ensures strict budget remains. This is diagnostic only; assess the actual plan before changing queries, index strategy, DB settings or the canonical full runner. On updated head, owner Windows test/serial diagnostics are NOT RUN.
 
 
