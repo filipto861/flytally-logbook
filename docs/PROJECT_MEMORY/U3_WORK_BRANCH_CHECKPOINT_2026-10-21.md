@@ -1,5 +1,16 @@
 # U3 work-branch checkpoint — 2026-10-21T19:54:09Z
 
+#### 2026-10-22T15:10:44.337Z — U3 local PG18 restored; isolated Playwright 2/2 PASS (owner Windows evidence)
+
+- **Verified GitHub immediately before checkpoint:** main `860df276f7044586834871808e7e3843a10daaac`; executable U3 work HEAD `3de30a641af17e74d565cfda8c3580df82752963`, branch `fix/logbook-u3-aircraft-delete-focus-20261021`; PR #381 OPEN/DRAFT, base `main`, no merge or deploy. This docs-only checkpoint advances the work HEAD; browser evidence belongs to the executable SHA above, NOT the new docs SHA.
+- **Owner evidence, second Windows PC, exact U3 executable SHA:** Git worktree clean, Node.js 24.19.0, PostgreSQL client/server 18.6. Isolated pre-existing `%LOCALAPPDATA%\FlyTally\u3-postgres` recovered after verified stale PID archival; bound `127.0.0.1:55433`. Read-only exact identity `flytally_ui_u3_20261021|flytally_u3|127.0.0.1|55433|180006`, migration v21 schema evidence `1|12|4|21` PASS. Earlier isolated fixture browser structure 15/15 PASS at same SHA, `node --check` of U3 config/spec PASS.
+- **U3 acceptance after addressing local environment blockers:** WOODCOMP Next.js occupying port 3000 was positively identified and its single verified development server process stopped; local 3000 free. First browser attempt on second PC reached login but failed `SESSION_SECRET must contain at least 32 characters` (0/2), not U3 app behavior. Owner generated 48 random bytes for process-only `SESSION_SECRET`, set exact purpose flags `FLYTALLY_AUTH_BROWSER=1`, `FLYTALLY_LOCAL_POSTGRES=1`, `FLYTALLY_U3_SCHEMA_FIRST=1`, scoped `DATABASE_URL`, validated no Vercel env and no protected fixtures. Command `npx.cmd --no-install playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0` **2 passed (56.6s), exit 0, PASS**, covering deletion confirmation focus/no replay, Escape focus, protected aircraft, responsive 320/390/768/1024 light/dark Chrome emulation, on executable SHA `3de30a641af17e74d565cfda8c3580df82752963`. Environment values restored by try/finally.
+- **Scope/files:** only this U3 Project Memory checkpoint changed on GitHub; no product code, fixtures, migration files, production DB, flags or deployment modified. Browser tests intentionally mutate only synthetic aircraft in the isolated U3 DB. Local PG18 runtime PASS; production DB/migration/feature flags/deployment UNKNOWN/NOT TOUCHED; CI, broader suite, production smoke NOT RUN for this SHA. Work machine state after test not independently accessed. Keep unrelated PR #384/#385/Training separate.
+- **DO NOT:** direct main push, merge, deploy, production DB/migrations/flags, generic fixture reset/browser suite or cross-project changes without explicit owner approval.
+- **Exactly one next step:** review PR #381 and verify required remaining quality gates against its executable commit; request owner approval separately before any merge.
+
+---
+
 #### 2026-10-22T12:57:13.110Z — psql.exe unavailable on Windows PATH, fail-closed preflight required
 
 - **Verified GitHub:** main `860df276f7044586834871808e7e3843a10daaac`; U3 work branch `fix/logbook-u3-aircraft-delete-focus-20261021` pre-checkpoint HEAD `cf1aa1d6ec8a64d582918c82fc900e71456924fa`; PR #381 still OPEN/DRAFT, base main. This documentation-only checkpoint advances the work HEAD. No code/tool/SQL/schema changed.
