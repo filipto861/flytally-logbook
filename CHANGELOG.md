@@ -1,3 +1,10 @@
+## 2026-10-22 — Serial PG scale evaluation and bounded 100k plan evidence (PR #383 Draft)
+
+- Owner Windows executable SHA `3d19d59b30d8646fd7ac7f635ca06d2584cdbe20`: `npm run test:local-workflow` **24/24 PASS**; `npm run test:db:scale:local` checked exact physically owned native PG16 and ran three manifest scale files serially, **12 PASS, 1 FAIL of 13**. 50k list **1384.705ms < 2500ms** and 50k Insights **2742.845ms < 3000ms**; prior concurrent values 2582.270ms and 3547.546ms. 100k list still **4983.786ms > 4500ms**; earlier parallel 5511.521ms. Original full PostgreSQL gate remains FAIL, 121 PASS/3 FAIL/39 SKIP on previous SHA.
+- Read-only SQL review: `lib/data/flights-fast.ts` materializes selection, classified/cost CTE and full-scope window summaries before first-page LIMIT. The exact expensive plan nodes are UNKNOWN until live EXPLAIN details.
+- Added purely observational **bounded and sanitized** 100k Flight List EXPLAIN node summary in `tests/integration/postgres-v230-large-logbook-performance.test.ts` when runtime >=4000ms. Output includes plan root and 12 slow nodes with rows/loops/times/temp/shared blocks and sorting metadata; no raw SQL, user rows, credentials, filenames, PG settings. The original strict 4500ms limit and all production SQL/runtime remain unchanged. Added local source safety contract. New executable SHA Node24/Windows validation NOT RUN.
+- No production/remote database, schema, Training, main merge, feature flags or deployment changed.
+
 ## 2026-10-22 — PostgreSQL scale diagnostics on owned Windows PG16 (PR #383 Draft)
 
 - Owner `npm run test:db:local` at work `823a3cb50e5df1f0f51ebfc4d123de5afce15941`: physically owned localhost PG16 preflight PASS; 42 files / 163 tests **121 PASS, 3 FAIL, 39 SKIP**, overall **FAIL**. Previously mis-selected eight independent full-v20 scenarios now SKIP as intended; not independently accepted.
