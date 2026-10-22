@@ -153,7 +153,7 @@ export function nativeIdentityMismatches(output, expectedDir = resolve(dataDir))
 }
 
 function observedIdentity(bin, password) {
-  const query = "SELECT current_database() || '|' || current_user || '|' || encode(convert_to(current_setting('data_directory'), 'UTF8'), 'hex') || '|' || inet_server_addr()::text || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')";
+  const query = "SELECT current_database() || '|' || current_user || '|' || encode(convert_to(current_setting('data_directory'), 'UTF8'), 'hex') || '|' || host(inet_server_addr()) || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')";
   const output = check(run(bin.psql, [
     "-w", "-X", "-qAt", "-v", "ON_ERROR_STOP=1",
     "-h", cfg.hostname, "-p", cfg.port, "-U", cfg.user, "-d", cfg.database,
@@ -226,6 +226,51 @@ function startNative(bin, password) {
     "Start existing owned native PG16");
   }
 }
+
+// Explicit one-time completion of this tool's interrupted initial bootstrap.
+// No cluster initialization, restart, database creation, schema writes or
+// credentials rotation. The retained random first-run credential and exact
+// physical PostgreSQL cluster are required before saving final ownership.
+export function finalizeIncompleteNativePg16() {
+  const bin = nativePg16Tools();
+  if (!bin) throw new Error("PG16 server tools missing; no recovery performed.");
+  if (!existsSync(home) || !existsSync(dataDir) || !existsSync(join(home, "bootstrap-pwfile"))
+    || existsSync(marker) || existsSync(envFile)) {
+    throw new Error("Expected incomplete dedicated PG16 bootstrap with retained credential; refusing.");
+  }
+  // Refuse redirected/junction directories rather than accidentally operating
+  // on data outside the exact, gitignored Logbook fixture.
+  for (const dir of [join(repo, ".flytally"), home, dataDir]) {
+    if (realpathSync.native(dir).toLowerCase() !== resolve(dir).toLowerCase()) {
+      throw new Error("Native PG16 fixture path redirected; no recovery.");
+    }
+  }
+  const pwfile = join(home, "bootstrap-pwfile");
+  if (realpathSync.native(pwfile).toLowerCase() !== resolve(pwfile).toLowerCase()) {
+    throw new Error("Bootstrap credential path redirected; no recovery.");
+  }
+  ownedDir();
+  const status = run(bin.pg_ctl, ["-D", dataDir, "status"]);
+  if (status.error || status.status !== 0) {
+    throw new Error("Expected dedicated native PG16 running; no recovery.");
+  }
+  const password = readFileSync(pwfile, "utf8").trim();
+  if (!/^[0-9a-f]{48}$/.test(password)) {
+    throw new Error("Retained first-run PG16 credential invalid; no recovery.");
+  }
+  // Strict SQL authentication and physical identity on the exact localhost
+  // DB. A malformed/wrong/missing field MUST block any marker/env writes.
+  observedIdentity(bin, password);
+  const url = "postgresql://" + cfg.user + ":" + password + "@" +
+    cfg.hostname + ":" + cfg.port + "/" + cfg.database;
+  writeFileSync(marker, JSON.stringify(cfg, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+  writeFileSync(envFile,
+    "# Dedicated localhost PostgreSQL acceptance. Never commit.\nDATABASE_URL=" + url + "\n",
+    { flag: "wx", mode: 0o600 });
+  rmSync(pwfile, { force: true }); // credential now securely persisted in .env.test.local
+  return "FINALIZED";
+}
+
 export function createNativePg16() {
   if (existsSync(home) || existsSync(envFile)) {
     throw new Error("Existing PG16 fixture path or config found. Will not overwrite or reinitialize.");
