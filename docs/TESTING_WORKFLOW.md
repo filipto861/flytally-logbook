@@ -66,3 +66,18 @@ Windows stops the PostgreSQL process at shutdown; it **does not delete its data*
 Docker Desktop must itself run for Docker containers to auto-start at login; the new container uses `--restart unless-stopped`. Native PG16 is restarted on demand by the setup command. Do not delete `.flytally/persistent-local-pg16`, `.env.test.local` or the managed Docker volume if you want the environment to persist.
 
 A standalone `psql` client is not enough for native setup. The Windows installation must also provide PG16 `initdb.exe`, `pg_ctl.exe` and `createdb.exe`. The installer may already have put them in `C:\Program Files\PostgreSQL\16\bin`; for a different install location, the optional machine-local `FLYTALLY_PG16_BIN` variable can point to the verified absolute PG16 bin directory. Otherwise use an installed local Docker engine. Never work around missing tools by pointing the test runner at another PostgreSQL/Neon database.
+
+## First-run PG16 appears to hang / interrupted setup
+
+If `npm run setup:local` stalls after `[Playwright] Existing Chromium retained.`, do not repeatedly run the database bootstrap. The older candidate buffered `initdb`/`pg_ctl` output without showing progress, potentially looking frozen while native PostgreSQL was initializing. This candidate now prints `[DB]` and `[PG16]` phase messages, streams native initialization/startup progress, places explicit bounds on native subprocesses (including 7 s binary probes, 90 s initdb and 40 s pg_ctl startup), and reports an incomplete first-run cluster instead of silently treating it as reusable.
+
+If already stalled, press Ctrl+C once. The interrupted process may leave **valuable local fixture files** or a PG16 process. Inspect read-only in PowerShell:
+
+~~~powershell
+Get-Process initdb,pg_ctl,postgres -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,StartTime
+Test-Path .\.flytally\persistent-local-pg16
+Test-Path .\.env.test.local
+Get-ChildItem .\.flytally\persistent-local-pg16 -Force -ErrorAction SilentlyContinue | Select-Object Name,LastWriteTime
+~~~
+
+Do not print `bootstrap-pwfile` or `.env.test.local` because they may contain passwords. Do **not** delete the cluster directory, kill an unidentified process, or retry with a different PostgreSQL database until the actual process/files are reviewed. Without `owner.json`, a partly initialized local directory is explicitly **INCOMPLETE / MANUAL INSPECTION REQUIRED**; no automatic reinitialization or adoption occurs. Non-database test commands can still be used separately, but their results cannot supply missing PostgreSQL/browser acceptance. The status of the owner PC and incomplete cluster is UNKNOWN until observed.
