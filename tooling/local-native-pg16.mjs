@@ -88,7 +88,9 @@ function readMarker() {
   return value;
 }
 export function nativeMarkerExists() { return existsSync(marker); }
+export function nativePartialClusterExists() { return existsSync(home) && !nativeMarkerExists(); }
 export function nativeClusterStatus(bin = nativePg16Tools()) {
+  if (nativePartialClusterExists()) return "INCOMPLETE (manual inspection required; no automatic reset)";
   if (!nativeMarkerExists()) return "NOT CONFIGURED";
   if (!bin) return "TOOLS MISSING";
   try {
