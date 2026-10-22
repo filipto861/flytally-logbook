@@ -166,3 +166,17 @@ test("test runner sanitizes inherited libpq routing and never trusts remote env 
   assert.match(source, /env\.DATABASE_URL = ""/);
   assert.match(source, /verifyOwnedFixture\(url\)/);
 });
+
+
+test("native PG16 subprocesses have time limits and stream slow bootstrap progress", () => {
+  const source = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
+  const facade = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
+  assert.match(source, /timeout, maxBuffer:/);
+  assert.match(source, /showProgress \? \["ignore", "inherit", "inherit"\]/);
+  assert.match(source, /90_000, \{ showProgress: true \}/);
+  assert.match(source, /run\(bin\[name\], \["--version"\], env, 7_000\)/);
+  assert.match(source, /Interrupted native PG16|INCOMPLETE \(manual inspection required/);
+  assert.match(facade, /nativePartialClusterExists\(\)/);
+  assert.match(facade, /\[DB\] Checking owned local PostgreSQL fixtures/);
+  assert.match(facade, /diagnostic: true/);
+});
