@@ -110,13 +110,34 @@ test("serial PG scale diagnostic keeps exact owned-local preflight and original 
 test("100k EXPLAIN diagnostic remains bounded and cannot replace the strict performance assertion", () => {
   if (!isLogbook) return;
   const source = readFileSync(new URL("../tests/integration/postgres-v230-large-logbook-performance.test.ts", import.meta.url), "utf8");
-  assert.match(source, /name==="flightListFirstPage100k"&&result\.executionMs>=4_000/);
+  assert.match(source, /if\(name==="flightListFirstPage100k"\)/);
   assert.match(source, /longestNodes:nodes\.slice\(1\)\.sort\([\s\S]*?\.slice\(0,12\)/);
   assert.match(source, /nodesVisited:nodes\.length/);
   assert.match(source, /assert\.ok\(result\.executionMs<limitMs,/);
   assert.match(source, /recordMetric\("flightListFirstPage100k",listResult,4_500\)/);
   assert.match(source, /V230 FLIGHTLIST100K PLAN/);
   assert.doesNotMatch(source, /console\.log\(JSON\.stringify\(result\.plan\)\)/);
+});
+
+test("50k and 100k flight-list diagnostics compare fast and slow plans without weakening acceptance", () => {
+  if (!isLogbook) return;
+  const fifty = readFileSync(new URL("../tests/integration/postgres-v169-production-hardening.test.ts", import.meta.url), "utf8");
+  const hundred = readFileSync(new URL("../tests/integration/postgres-v230-large-logbook-performance.test.ts", import.meta.url), "utf8");
+  assert.match(fifty, /if\(name==="flightListFirstPage50k"\)/);
+  assert.match(hundred, /if\(name==="flightListFirstPage100k"\)/);
+  for (const [source, label, functionName] of [
+    [fifty, "V169 FLIGHTLIST50K PLAN", "summarizeFlightListPlan"],
+    [hundred, "V230 FLIGHTLIST100K PLAN", "diagnosticPlanSummary"],
+  ]) {
+    assert.ok(source.includes(label));
+    assert.ok(source.includes(functionName + "(result.plan)"));
+    assert.match(source, /longestNodes:nodes\.slice\(1\)\.sort\([\s\S]*?\.slice\(0,12\)/);
+    assert.match(source, /nodesVisited:nodes\.length/);
+    assert.match(source, /assert\.ok\(result\.executionMs<limitMs,/);
+    assert.doesNotMatch(source, /console\.log\(JSON\.stringify\(result\.plan\)\)/);
+  }
+  assert.match(fifty, /recordMetric\("flightListFirstPage50k",listResult,2500\)/);
+  assert.match(hundred, /recordMetric\("flightListFirstPage100k",listResult,4_500\)/);
 });
 
 test("remote Docker contexts are not accepted as localhost-owned test fixtures", () => {
