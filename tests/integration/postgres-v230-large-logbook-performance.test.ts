@@ -108,8 +108,8 @@ function diagnosticPlanSummary(plan:unknown){
 function recordMetric(name:string,result:{planningMs:number;executionMs:number;plan:unknown},limitMs:number){
   evidence[name]={planningMs:result.planningMs,executionMs:result.executionMs,limitMs};
   console.log(`V230 SCALE ${name}: execution=${result.executionMs.toFixed(3)}ms planning=${result.planningMs.toFixed(3)}ms limit=${limitMs}ms`);
-  // Diagnostics are purely observational and do not relax acceptance budgets.
-  if(name==="flightListFirstPage100k"&&result.executionMs>=4_000){
+  // Collect both fast and slow observed plans for comparison; acceptance unchanged.
+  if(name==="flightListFirstPage100k"){
     console.log("V230 FLIGHTLIST100K PLAN "+JSON.stringify({
       executionMs:result.executionMs,planningMs:result.planningMs,
       ...diagnosticPlanSummary(result.plan),
