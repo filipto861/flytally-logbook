@@ -1,5 +1,8 @@
 # Local test workflow — two Windows PCs (Logbook)
 
+**Owner Windows safety confirmation (22 Oct 2026):** After `git pull --ff-only` to code SHA `3a1dff314caf25451921aba6704f36679e425b79`, `npm run test:local-workflow` completed **23/23 PASS, 0 FAIL/SKIP** (1.56 s), including the nested-Node full-v20 opt-in regression. Prior source-only blocker is cleared. **Next gate:** `npm run test:db:local` on the existing physically verified owned local Logbook PG16. It writes disposable local test data and must not be pointed at production/Neon; stop on FAIL/BLOCKED. Last full-PG attempt at earlier SHA failed 9 cases, and 50k flight-list 2648.214 ms > 2500 ms remains unresolved. Separate full-v20 fixture tests, browser, build and release are not covered by 23/23 PASS.
+
+
 **22 Oct 2026 nested Node test regression (PR #383):** After pulling `4f09e73902e16de906b4531f2682edb5ea3eccfc`, owner Windows `npm run test:local-workflow` yielded **22 PASS / 1 FAIL** (23 tests), so `test:db:local` was correctly not rerun. The new self-contained negative test spawned another `node --test` inside the main `node:test` worker, inheriting `NODE_TEST_CONTEXT`. Node then returned exit 0 **without running/discovering nested tests** and stdout stayed empty. A synthetic Node22 reproducer confirmed removing `NODE_TEST_CONTEXT` from only the nested child and requesting the TAP reporter produces a real executed verdict and rejects incomplete dedicated v20 flags. That precise regression fix is committed to the PR, but the latest owner Windows Node24 validation remains **NOT RUN**. Run only `git pull --ff-only` then `npm run test:local-workflow` first; if PASS, proceed to the separately guarded `npm run test:db:local`. No DB reset or change to the 2500ms performance budget.
 
 
