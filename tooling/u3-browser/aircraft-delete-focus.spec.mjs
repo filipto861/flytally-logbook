@@ -3,14 +3,43 @@ import { loginBrowserPilot,expectNoHorizontalOverflow } from "../../e2e/browser-
 import { runBrowserSql,browserSqlScalar } from "../../e2e/browser-db.mjs";
 
 // U3-only destructive acceptance. Keep outside e2e/ frozen normal-suite baseline.
+function assertU3DisposableTarget(){
+  // Run before any U3 fixture mutation, including direct --grep of either case.
+  let db;
+  try{db=new URL(process.env.DATABASE_URL||"");}catch{
+    throw new Error("U3 browser requires its explicit disposable DATABASE_URL.");
+  }
+  if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||
+     process.env.FLYTALLY_LOCAL_POSTGRES!=="1"||
+     process.env.FLYTALLY_U3_SCHEMA_FIRST!=="1"||
+     process.env.VERCEL!==undefined||process.env.VERCEL_ENV!==undefined||
+     db.protocol!=="postgresql:"||db.hostname!=="127.0.0.1"||
+     db.port!=="55433"||db.pathname!=="/flytally_ui_u3_20261021"||
+     db.username!=="flytally_u3"||db.password!==""||
+     db.search!==""||db.hash!==""){
+    throw new Error("U3 browser refuses non-disposable or hosted database target.");
+  }
+  const observed=browserSqlScalar(
+    "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||"+
+    "inet_server_port()||'|'||current_setting('server_version_num');"
+  );
+  if(!/^flytally_ui_u3_20261021\\|flytally_u3\\|127\\.0\\.0\\.1\\|55433\\|18\\d{4}$/.test(observed)){
+    throw new Error("U3 database physical identity mismatch. No fixture changes.");
+  }
+  if(browserSqlScalar(
+    "SELECT COUNT(*)||'|'||"+
+    "COUNT(*) FILTER(WHERE version=21 AND name='source-backed currency exact-money')"+
+    " FROM public.flytally_schema_migrations;"
+  )!=="21|1"){
+    throw new Error("U3 requires existing canonical v21 migration before fixture writes.");
+  }
+}
+
 test("U3: aircraft deletion restores confirmation focus without replay @u3-delete-focus",async({page},testInfo)=>{
   test.skip(testInfo.project.name!=="desktop-chromium","One serial, destructive acceptance case.");
-  const db=new URL(process.env.DATABASE_URL||"");
-  if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"||
-     db.hostname!=="127.0.0.1"||db.port!=="55433"||
-     db.pathname!=="/flytally_ui_u3_20261021"||db.username!=="flytally_u3"){
-    throw new Error("U3 browser acceptance requires the dedicated disposable DB on 127.0.0.1:55433.");
-  }
+  assertU3DisposableTarget();
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-U3ZZ';"),
+    "U3 disposable aircraft must have no saved flights").toBe("0");
   runBrowserSql(`DELETE FROM aircraft WHERE user_id=9001 AND registration='OK-U3ZZ';
     INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
     VALUES(9001,'OK-U3ZZ','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);`);
@@ -57,16 +86,7 @@ const responsiveCases=[
 test("U3: responsive focus, deletion and Escape across mobile/iPad Chrome emulation @u3-responsive",async({browser},testInfo)=>{
   test.skip(testInfo.project.name!=="desktop-chromium","Matrix owns its own Chrome touch contexts.");
   test.setTimeout(480_000);
-  const db=new URL(process.env.DATABASE_URL||"");
-  if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||
-     process.env.FLYTALLY_LOCAL_POSTGRES!=="1"||
-     process.env.FLYTALLY_U3_SCHEMA_FIRST!=="1"||
-     process.env.VERCEL!==undefined||process.env.VERCEL_ENV!==undefined||
-     db.protocol!=="postgresql:"||db.hostname!=="127.0.0.1"||
-     db.port!=="55433"||db.pathname!=="/flytally_ui_u3_20261021"||
-     db.username!=="flytally_u3"||db.password!==""){
-    throw new Error("U3 responsive browser requires only the verified disposable DB and purpose flags.");
-  }
+  assertU3DisposableTarget();
 
   for(const [index,viewport] of responsiveCases.entries()){
     for(const theme of ["light","dark"]){
