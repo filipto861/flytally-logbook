@@ -104,7 +104,7 @@ test("serial PG scale diagnostic keeps exact owned-local preflight and original 
   assert.match(facade, /action === "db-scale-diagnostic" && \(!logbook \|\| args\.length !== 0\)/);
   assert.match(facade, /\["run", "test:postgres:scale", "--", "--serial"\]/);
   assert.match(facade, /action === "db-test" \|\| action === "db-scale-diagnostic" \|\| action === "browser-test"/);
-  assert.match(facade, /safeEnv\(\{ database: needsDb, browser: needsDb && action !== "db-test" \}\)/);
+  assert.match(facade, /safeEnv\(\{ database: needsDb, browser: needsDb && action !== "db-test" && action !== "db-scale-diagnostic" \}\)/);
 });
 
 test("remote Docker contexts are not accepted as localhost-owned test fixtures", () => {
