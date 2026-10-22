@@ -1,5 +1,18 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC checkpoint:** 2026-10-22T06:20:21Z. **Status: DEV-ENV local test workflow draft PR #383; NOT MERGED / NOT DEPLOYED.**
+
+- **Verified GitHub main:** 860df276f7044586834871808e7e3843a10daaac. **Verified implementation/work branch HEAD before this checkpoint:** f3f08d3d5caed83868d4b65d092074b5d4bc0734 on chore/portable-local-test-workflow-20261022; PR #383, base main. This checkpoint commit itself advances the work branch; refetch live head and PR before continuing.
+- **Filip-approved scope:** two Windows PCs; preserve already installed tools; one-command incremental local setup + isolated disposable PG16 + guarded quick/full/DB/browser test wrappers and durable docs. **DO NOT:** no Training DB, no remote/prod Neon, no flight data, no migrations, no flags, no merge/deploy, no rewriting canonical risk gates. No auto-prefill or product behavior changes.
+- **Changed scope/files:** tooling/local-workflow.mjs, tests/local-workflow.test.mjs, package.json, playwright.config.mjs, docs/TESTING_WORKFLOW.md, AGENTS.md, DEVELOPMENT.md, ROADMAP.md, CHANGELOG.md, and these Project Memory pointers. Existing PostgreSQL/browser gates reused; wrapper prevents Playwright reuse of an unrelated web server.
+- **SHA-bound evidence:** GitHub content, branch, tree and PR creation inspected. Node24 local tests **NOT RUN**, TypeScript **NOT RUN**, npm full tests **NOT RUN**, build **NOT RUN**, PG16 integration **NOT RUN**, Playwright **NOT RUN**, CI **NOT RUN**. Source inspection is not PASS. Disposable DB state **UNKNOWN**, migrations **NOT RUN**, feature flags **UNCHANGED by proposal**, production DB **NOT ACCESSED**, deploy **NOT RUN**.
+- **Blocker:** no access to Filip's home/office Windows environment for true setup/fixture acceptance. Training has separate draft PR #291 with safe non-DB setup and Neon HTTP compatibility blocker.
+- **One next step:** run npm run doctor / setup:local / test:local-workflow on both Windows PCs and post exact command evidence to PR #383; then test selected canonical risk/PG/browser gates before explicit merge consideration.
+
+---
+
+**Previous dated checkpoint (historical; superseded by the current one):**
+
 **Recorded:** 2026-10-21. **Classification:** documentation snapshot; independently verify all references on resumption.
 
 ## Repo and observed baseline
