@@ -1,5 +1,17 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-22T18:39:44.269Z — Agent Skills V1 final docs checkpoint before handoff
+
+- **Verified GitHub identity before checkpoint commit:** main 34b865bb0ced1222945cecb107589826890ee31a; branch docs/logbook-agent-skills-v1-20261022 @ e4a8aef733e93819f0dda95b3c8159c1b60701f4; Draft PR #388 against main. Branch/PR remain unmerged; this checkpoint advances branch HEAD and requires a subsequent read-only SHA recheck.
+- **Doc-only scope:** 9 SKILL.md and registry, AGENTS.md, docs/README.md, ROADMAP.md, Project Memory, third-party MIT attribution, validation plan and compact ChatGPT Project Instructions snippet. Features/Architecture/Development/CHANGELOG reviewed; no actual product capability/runtime release from skills, so no unrelated capability or shipped history entry fabricated.
+- **Evidence:** GitHub source/read-back 9/9 unique skill frontmatters, stops/verification 9/9, AGENTS router/registry/addendum and MIT attribution present; PR changed paths docs-only 18/18. PASS static checks for e4a8aef733e93819f0dda95b3c8159c1b60701f4. **NOT RUN:** local risk planner, Node, TypeScript, build, PG, Playwright/native Safari, CI or Vercel smoke. No assertion about production state (UNKNOWN, not rechecked).
+- **No operations:** DB/migration/flags/deploy UNCHANGED by this work; no production changes; no merge; ChatGPT Project settings NOT CHANGED remotely, manual edit pending after approved merge. No PII/flight/GPS content in handoff.
+- **DO NOT:** Training edits, new dependencies, automatic third-party skill installation, runtime refactors, unrelated draft PRs, production operations or direct push to main.
+- **ONE NEXT ACTION:** owner/read-only review of Draft PR #388; after verification and explicit merge approval, integrate compact routing text into current ChatGPT FlyTally project instructions (respecting their character limit).
+
+---
+
+
 ## 2026-10-22T18:37:26.054Z — Agent Skills V1 draft PR #388 created (documentation-only)
 
 - **GitHub verified at checkpoint:** main 34b865bb0ced1222945cecb107589826890ee31a; scoped work branch docs/logbook-agent-skills-v1-20261022 code/docs baseline 7887c31cbd285954a29941cda3c057982fda44c4, PR #388 OPEN/DRAFT, base main, https://github.com/filipto861/flytally-logbook/pull/388. This checkpoint commit will advance work HEAD; re-fetch exact SHA after push. No merge or deploy approved.
