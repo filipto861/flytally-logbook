@@ -1,5 +1,72 @@
 # FlyTally changelog
 
+## 2026-10-22 — U3 PR #381 canonical candidate verification PASS (Draft, not merged)
+
+- Git-reviewed U3 executable SHA `a1e0be99bd5dbfdc893277222fee919dcff8efc6`, candidate ID `b1a5e3e5497bb4b77ad726c1936e98468ff86577f666093e290c02ccb072b343`: owner-local `npm run verify:release:risk -- --base origin/main` printed **`release_status=PASS`**, source **257/257 PASS**, domain **20/20 PASS**, typecheck PASS, aggregate Node **1653/1653 PASS**, build **PASS reused** (41/41 static), six-cluster owned PostgreSQL **163/163 PASS reused**, browser-risk eight planned desktop/mobile cases **PASS reused**, `scale=N/A`, `blocked_evidence=none`.
+- Immediately before canonical verifier, ledger preflight independently reported `postgres_reuse=true`, `build_reuse=true`, `browser_reuse=true`, `postgres_passed=163`, `browser_passed=8`, same candidate and SHA; it exited PASS. Browser-risk's isolated PG16 v20/v21 fixture, dedicated U3 PG18/v21 Playwright 2/2, source UI 3/3, and all complete release tests remain scoped to their exact previously reported source SHAs.
+- This is owner-local candidate release gate evidence, **not** merge authorization, a verified production deployment or CI/native Safari/screen-reader/manual screenshot validation. PR #381 OPEN/DRAFT/unmerged. No changes to production DB, flags or deployments. Later documentation-only commits do not rewrite or claim a new candidate SHA.
+
+
+## 2026-10-22 — U3 hardened browser acceptance 2/2 PASS (Draft, not deployed)
+
+- Owner fetched exact executable `9837776aedb3ab10d090a8ef538ccba88da1c479`. U3 browser script syntax **PASS**; standard browser structure regression **15/15 PASS**. Scoped PowerShell read-only PG18 physical identity, v21 schema `1|12|4|21`, purpose flags and no Vercel **PASS**.
+- Direct dedicated `npx.cmd --no-install playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0`: **2 passed (54.7 s)**, retry 0. Covers hardened shared before-write fixture preflight, synthetic aircraft deletion with real confirmation focus, subsequent Escape/no stale focus, deletion-blocked saved flight, Chrome-touch mobile 320/390 and iPad 768/1024 × light/dark. Prior environment-only 0/2 failures remain preserved as historical diagnostics, now resolved.
+- Environment restored after run. Earlier unchanged application runtime source 3/3 regression and TypeScript/build PASS (41/41) remain source-specific evidence; final candidate-aware release plan, additional selected gates, CI, native Safari and manual image review NOT RUN. PR #381 still OPEN/DRAFT, no merge/deploy/production DB changes.
+
+
+## 2026-10-22 — U3 PR #381 final review and test-only isolation hardening (Draft)
+
+- GitHub source diff confirms a narrow client-side focus transfer in `components/aircraft-manager.tsx`, no server action, auth, flight, production schema, CSS or data-domain change. PR #381 is Draft/open/mergeable against main `860df276`, branch behind main by one independent Project Memory commit.
+- New owner-local checkpoint verifies previous executable `3de30a64`: authenticated Playwright 2/2 PASS in 56.6s across desktop plus 320/390/768/1024 Chrome emulated touch/light-dark, structure 15/15 PASS, isolated PG18/v21 evidence PASS. This is user-local, not CI/native Safari/screenshot-human review.
+- Read-only security review found the desktop-only test lacked the responsive test's complete disposable DB opt-in. Tightened the **test-only** isolated U3 script to share URL/purpose checks, prohibit Vercel/password/URL extras, independently verify PostgreSQL 18/port 55433/database/user and canonical v21 migration count before fixture writes, and refuse seed reset if synthetic aircraft has any recorded flights. Application behavior is **unchanged**. Syntax/browser retest on changed test SHA, candidate release planner/selected gates, full suite/CI, native Safari and human screenshot inspection: **NOT RUN**. No merge/deploy/production DB/flag changes.
+
+
+
+## 2026-10-22 — U3 retry blocked by missing psql.exe; false manual preflight PASS rejected
+
+- Owner Windows at source `6ad4a260...` observed `Get-Command psql` FAIL; subsequent separate commands threw `CommandNotFoundException` for read-only identity/schema queries. Printed `U3 DATABASE AND SCHEMA CHECK PASS` was an unconditional manual message, **NOT a verified database check**.
+- With manually set U3 environment variables, dedicated 2-case Playwright ran and failed **2/2 before any scripted SQL** at `spawnSync psql ENOENT` in the common browser DB helper. No U3 delete/focus/mobile functional evidence gathered. Root blocker is missing executable in Windows PATH, not proven SQL/app failure.
+- Recovery must locate an existing local `psql.exe` and atomically validate PG18 identity/v21 schema with read-only SQL before any browser write. No database setup/reset/migration, product behavior change, production DB/flags/merge/deployment or unrelated U0/U1 ZIP cleanup.
+
+
+## 2026-10-22 — U3 owner syntax/source PASS, browser launch blocked at absent DATABASE_URL
+
+- PR #381 owner Windows clean branch at tested executable `a3a6f95158df8fc0950b65796a6f2622e51f5121`: both `node --check` PASS, isolated browser suite structure **15/15 PASS**.
+- Direct U3 Playwright config selected both browser cases, **2/2 FAIL before any scripted DB operation** at `new URL(process.env.DATABASE_URL||"")` `TypeError: Invalid URL`. PowerShell session omitted/invalidated `DATABASE_URL`. No claim of U3 functional regression or acceptance PASS. Existing Next parent lock warning is not the cause of those exceptions.
+- Recovery documented: read-only PG18 owner-local identity and v21 checks, then session-only flags and repeat direct isolated config. No general DB reset, new migration, product code/schema, untracked ZIP deletion, main merge or deployment.
+
+
+## 2026-10-21 — U3 isolated responsive browser follow-up staged (Draft; NOT RUN)
+
+- Moved special destructive U3 E2E outside the frozen standard `e2e/` test inventory into `tooling/u3-browser/aircraft-delete-focus.spec.mjs`; added `playwright.u3.config.mjs` for a dedicated one-worker/zero-retry Chromium project with `reuseExistingServer:false`.
+- Preserved previous synthetic desktop delete/confirmation-focus/second-Escape/saved-flight checks and added serial 8-case 320/390/768/1024 × light/dark Chrome-touch emulation. Each case checks real resolved theme, lack of horizontal overflow, focused deletion status, persistent DB deletion and return-to-opener focus, with two screenshot attachments for manual visual inspection.
+- New test/config **NOT RUN** on this HEAD; previously observed desktop 1/1 PASS applies only to original test before its relocation. Standard browser suite structural baseline is expected to remain unchanged, but its regression **NOT RUN**. No runtime UI, auth, domain, main, production DB or deployment modifications. [Evidence](docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md).
+
+
+## 2026-10-21 — U3 isolated authenticated desktop browser verification (Draft; not deployed)
+
+- Owner-local browser test `e2e/logbook-u3-aircraft-delete-focus.spec.mjs` **1/1 PASS (9.7 s)** with Desktop Chromium on dedicated localhost PostgreSQL 18 fixture `flytally_ui_u3_20261021` (port 55433). Covers deletion of synthetic profile, success-status focus, no stale focus replay after later Escape, and disabled delete for aircraft with saved flight.
+- Initial browser run **FAIL** at missing v21 (before U3 behavior). Verified migration v20 existed; added bounded U3-only helper `tooling/apply-u3-v21-disposable.mjs` and corrected its initial v1–v19 assumption to accept exact canonical v1–v20 and apply **only v21**. Owner-local syntax check **PASS**, schema-first **PASS** (`registry 21`, `12 columns`, `4 CHECKs`). No production schema/migration gate changes.
+- Previously reported owner-local source tests **3/3 PASS** and TypeScript/build **PASS** (Next.js 16.3.2, 41/41) on unchanged runtime code. Mobile/iPad, native Safari, light/dark visual inspection, forced delete failure, full suite/CI **NOT RUN**. PR #381 still **Draft/unmerged/undeployed**. Older changelog records remain historical snapshots. [Evidence](docs/product/LOGBOOK_U3_AIRCRAFT_DELETE_FOCUS_2026-10-21.md).
+
+
+## 2026-10-21 — U3 revised focus guard tested locally (Draft / browser OPEN)
+
+- Exact owner fetched branch `c257ec9c` (fast-forward from `916a8a88`) and reported revised source contract tests **3/3 PASS**, TypeScript **PASS**, optimized Next.js build **PASS** with **41/41** pages. This is second-PC owner-local evidence, not CI or authenticated browser acceptance.
+- Revised once-per-delete-status focus guard passed static gates; confirm actual delete, focus and later Escape/Close in synthetic browser before acceptance. Browser NOT RUN; no DB/schema, merge or deployment changes.
+
+## 2026-10-21 — U3 local static PASS (first head), later focus-replay safeguard staged (Draft)
+
+- Owner tested U3 first branch checkout `916a8a88` with targeted tests **2/2 PASS**, TypeScript **PASS** and Next.js build **PASS**, 41/41. This is second-PC owner-local evidence, not CI. Exact local `rev-parse HEAD` was not printed; remote HEAD was this commit at checkout.
+- Subsequent source review caught a re-focus edge case: reopening/closing another Aircraft dialog after a successful delete changes `selectedId` and triggers prior effect again with a retained old `libraryStatus`. Changed only success-focus effect to guard once per unique success result identity, preserving normal opener restoration. Added source regression for repeat-close handling.
+- Updated head syntax/targeted tests/typecheck/build/authenticated browser **NOT RUN**. No changes to deletion business rules, persistent records, database, or production deployment.
+
+## 2026-10-21 — U3 Aircraft delete keyboard-focus continuity (Draft / NOT VERIFIED)
+
+- Read-only audit of previously unsampled Aircraft modal / photo editor, Flight Detail edit tabs and GPS import found one source-confirmed Aircraft accessibility defect: successful delete unmounted its dialog without returning keyboard focus; the opening card may itself disappear. Crop already had Escape/tab/focus handling; Flight Detail fix is separate U1 Draft.
+- `components/aircraft-manager.tsx` now focuses the surviving existing `role=status` deletion confirmation in a scheduled post-commit effect and cancels the scheduled callback on cleanup. It is only active for a successful result after the modal closes, with `tabIndex=-1`; no visible layout or text changes.
+- Added `tests/logbook-u3-aircraft-delete-focus.test.ts` and dated U3 source/acceptance contract. Focused Node/typecheck/build/authenticated real-browser **NOT RUN**; no change to deletion eligibility, flight records, photos, rates, auth, DB, GPS, or Training. No merge/deploy.
+
 ## 2026-10-21 — GPS V2 final local cleanup branch deletion verified
 
 - Owner manually deleted remaining local `chore/retire-gps-v2-20261021` at Git HEAD `4ee27120` after the expected newer-commit/tree preconditions had failed. Follow-up independent GitHub comparison confirms this HEAD precedes previously merged `c105e037` by only two governance documentation commits, and the latter commit tree matches PR #376 squash `d94c4736` exactly. No unique source code was lost.

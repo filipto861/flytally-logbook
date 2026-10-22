@@ -70,7 +70,7 @@ function RateTimeline({aircraft,rates,calendarDefault,defaultCurrency,saveAction
 
 export function AircraftManager({defaultCurrency,aircraft,rates,connections,calendarDefault,saveAction,toggleAction,saveRateAction,deleteRateAction,deleteAction,savePhotoAction,removePhotoAction,shareAction}:{defaultCurrency:string;aircraft:Row[];rates:Row[];connections:Row[];calendarDefault:SaveableCalendarDefault;saveAction:SaveAction;toggleAction:Action;saveRateAction:Action;deleteRateAction:Action;deleteAction:DeleteAction;savePhotoAction:PhotoSaveAction;removePhotoAction:Action;shareAction:ShareAction}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
-  const modalRef=useRef<HTMLElement|null>(null),closeRef=useRef<HTMLButtonElement|null>(null),openerRef=useRef<HTMLButtonElement|null>(null);
+  const modalRef=useRef<HTMLElement|null>(null),closeRef=useRef<HTMLButtonElement|null>(null),openerRef=useRef<HTMLButtonElement|null>(null),libraryStatusRef=useRef<HTMLParagraphElement|null>(null),focusedLibraryStatusRef=useRef<AircraftDeleteResult|null>(null);
   const [profileStatus,setProfileStatus]=useState<{ok:boolean;message:string}|null>(null),[newStatus,setNewStatus]=useState<{ok:boolean;message:string}|null>(null),[deleteStatus,setDeleteStatus]=useState<AircraftDeleteResult|null>(null),[libraryStatus,setLibraryStatus]=useState<AircraftDeleteResult|null>(null);
   const [savingProfile,setSavingProfile]=useState(false),[savingNew,setSavingNew]=useState(false),[deleting,setDeleting]=useState(false);
   const selected=aircraft.find(item=>t(item.id)===selectedId)??null,selectedFlightCount=Number(selected?.flight_count||0);
@@ -93,12 +93,23 @@ export function AircraftManager({defaultCurrency,aircraft,rates,connections,cale
     return()=>{document.body.style.overflow=previous;document.removeEventListener("keydown",keydown)};
   },[selected]);
   useEffect(()=>{setProfileStatus(null);setDeleteStatus(null)},[selectedId]);
+  // The deleted card (including its Manage opener) may no longer exist.
+  // Focus each successful delete announcement once, after its modal closes.
+  // Closing another aircraft later must restore its opener, not steal focus.
+  useEffect(()=>{
+    if(!libraryStatus?.ok||selectedId||focusedLibraryStatusRef.current===libraryStatus)return;
+    const frame=requestAnimationFrame(()=>{
+      focusedLibraryStatusRef.current=libraryStatus;
+      libraryStatusRef.current?.focus();
+    });
+    return()=>cancelAnimationFrame(frame);
+  },[libraryStatus,selectedId]);
   const saveSelected=async(form:FormData)=>{setSavingProfile(true);setProfileStatus(null);try{setProfileStatus(await saveAction(form))}catch{setProfileStatus({ok:false,message:"Aircraft profile could not be saved."})}finally{setSavingProfile(false)}};
   const saveNew=async(form:FormData)=>{setSavingNew(true);setNewStatus(null);try{setNewStatus(await saveAction(form))}catch{setNewStatus({ok:false,message:"Aircraft could not be added."})}finally{setSavingNew(false)}};
   const deleteSelected=async(form:FormData)=>{setDeleting(true);setDeleteStatus(null);try{const result=await deleteAction(form);if(result.ok){setLibraryStatus(result);setSelectedId(null)}else setDeleteStatus(result)}catch{setDeleteStatus({ok:false,message:"Aircraft could not be deleted."})}finally{setDeleting(false)}};
   return <div className="aircraft-manager">
     <details className="add-aircraft-card" open={!aircraft.length}><summary><span className="add-aircraft-icon" aria-hidden="true">＋</span><span className="add-aircraft-copy"><strong>{aircraft.length?"Add aircraft":"Add your first aircraft"}</strong><small>Create an aircraft profile for flight logging, defaults and rates.</small></span><span className="add-aircraft-chevron" aria-hidden="true">⌄</span></summary><div className="add-aircraft-content"><div className="aircraft-add-guidance"><strong>Start with the aircraft identity and normal logbook.</strong><span>Search the aircraft catalogue first; pricing and technical defaults can be added later.</span></div><form action={saveNew}><AircraftFields calendarDefault={calendarDefault} defaultCurrency={defaultCurrency}/><div className="form-actions"><PendingActionButton className="primary-button" disabled={savingNew} pendingLabel="Saving…">Add aircraft</PendingActionButton></div>{newStatus?<p className={newStatus.ok?"form-success":"form-error"} role={newStatus.ok?"status":"alert"}>{newStatus.message}</p>:null}</form></div></details>
-    {libraryStatus?<p className={libraryStatus.ok?"form-success aircraft-library-status":"form-error aircraft-library-status"} role="status">{libraryStatus.message}</p>:null}
+    {libraryStatus?<p ref={libraryStatusRef} tabIndex={-1} className={libraryStatus.ok?"form-success aircraft-library-status":"form-error aircraft-library-status"} role="status">{libraryStatus.message}</p>:null}
     <div className="aircraft-card-list">{aircraft.map(item=>{const active=Boolean(Number(item.active)),identity=[t(item.aircraft_make),t(item.aircraft_model)||t(item.aircraft_type),t(item.aircraft_variant)].filter(Boolean).join(" "),currentRate=Number(item.current_price_per_hour||0),aircraftClass=classLabel(t(item.aircraft_class))||t(item.regulatory_category)||"—",hasPhoto=Boolean(item.has_photo),photoUrl=hasPhoto?`/api/aircraft-photo/${t(item.id)}?v=${encodeURIComponent(t(item.photo_updated_at))}`:"";return <article className={`aircraft-card${active?"":" inactive"}${hasPhoto?" with-photo":""}`} key={t(item.id)}>
       <div className="aircraft-card-cover">{hasPhoto?<img src={photoUrl} alt=""/>:<span className="aircraft-card-placeholder" aria-hidden="true">✈</span>}</div>
       <header><div><strong>{t(item.registration)}</strong><span>{identity||"Type not set"}</span></div><span className={active?"status-on":"status-off"}>{active?"Active":"Inactive"}</span></header>
