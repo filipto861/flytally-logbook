@@ -44,7 +44,7 @@ export function nativePg16Tools(env = process.env) {
     const bin = Object.fromEntries(["initdb", "pg_ctl", "psql", "createdb"].map(name =>
       [name, join(root, name + ".exe")]));
     if (Object.values(bin).every(existsSync)
-      && ["initdb", "pg_ctl", "psql"].every(name => {
+      && ["initdb", "pg_ctl", "psql", "createdb"].every(name => {
         const result = run(bin[name], ["--version"], env);
         return !result.error && result.status === 0 && /\b16\.\d+\b/.test(String(result.stdout));
       })) return bin;
