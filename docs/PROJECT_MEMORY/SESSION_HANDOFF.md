@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T11:54:06.604Z — Core PR #384 includes essential historic-v20 test-selection safety (23 core tests); scale research remains separate #385.**
+
+- **Verified GitHub:** main full SHA `860df276f7044586834871808e7e3843a10daaac`; core work `chore/local-windows-workflow-core-20261022` pre-checkpoint full SHA `a7705bd9392eb5b83a66111f6c8e7a8941784293`; PR #384 OPEN/DRAFT base main, PR #385 OPEN/DRAFT based on core; archived #383 CLOSED/unmerged with history intact. This checkpoint advances core HEAD. Product development U3 remains separate.
+- **Scoped code correction after clean extraction:** `tests/integration/postgres-v380-full-v20-restore.test.ts` now demands explicit independent full-v20 opt-in rather than treating generic PG gate as authorization; `tests/local-workflow.test.mjs` includes the tested nested-node negative regression with NODE_TEST_CONTEXT stripped, total **23** core safety tests. No full v20 restore acceptance performed, no separate DB reset. Original v169/v230 scale SQL/benchmarks and optional serial-scale diagnostic remain **only** in research PR #385. No change to `tooling/run-postgres-tests.mjs`, app SQL, DB schema, performance thresholds, release planner, production features. AGENTS, ROADMAP, CHANGELOG, permanent testing runbook and PR #384 body updated accordingly.
+- **Actual owner evidence:** previous Windows Node24 mixed PR #383 executable SHA `f2643ca5c1c6fe1d7e70c94e1deaca2cb2eb0728`: 26/26 source safety PASS and exact native PG16 local identity PASS. On a previous mixed SHA generic 42-file PG run 121 PASS / 3 FAIL / 39 SKIP (scale FAIL, dedicated full-v20 tests skipped safely). Last serial scale 12/13 FAIL (100k Pilot Insights Career 4250.504ms > 4000ms). Historical evidence **cannot transfer to reconstructed clean HEAD**: exact new core safety 23/23, quick/typecheck, build, Playwright, full PG, CI, reboot reuse, second Windows PC are **NOT RUN**.
+- **DB/deploy/flags:** production remote DB/runtime migration/deploy/feature flag state UNKNOWN; no such change attempted. Only scoped test tools on branch; no merge/deploy/main update. No actual user flight/GPS records or credentials used in checkpoint.
+- **DO NOT:** do not merge either PR without explicit Filip approval and SHA-bound acceptance, no remote/prod DB operations, no false full-PG release PASS or threshold relaxation, no wiping/disabling valid local fixture, no Training changes, no releasing performance research as part of core.
+- **Exactly one next step:** owner Windows `git status --short`, `git fetch origin`, `git switch --track origin/chore/local-windows-workflow-core-20261022`, `npm run test:local-workflow`, then if PASS `npm run test:quick`. Send sanitized logs; if already checked out, omit --track. After exact-head verification, discuss explicit merge authorization, then continue original Browser U3 work.
+
+---
+
+**Previous historical checkpoints:**
+
+
 **UTC 2026-10-22T11:49:55.259Z — Split complete: portable Windows core PR #384 Draft, scale research PR #385 Draft, superseded #383 CLOSED.**
 
 - **Verified GitHub:** repo `filipto861/flytally-logbook`; main `860df276f7044586834871808e7e3843a10daaac`; core branch `chore/local-windows-workflow-core-20261022` pre-checkpoint work HEAD `23f6987ad7e4b253c9129850bec331efe86ab9ac`; PR #384 OPEN/DRAFT, base main. Research branch `test/local-pg-scale-research-20261022` derived from core commit `a91d5a8ade46973539cfd93a8ac59c04bd4568c0`, PR #385 OPEN/DRAFT with base core; original mixed #383 CLOSED unmerged, commits/comments retained. After this checkpoint write work head changes and must be reverified.
