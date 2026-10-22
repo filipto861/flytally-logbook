@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { assertLocalFixtureUrl, isLocalDockerEndpoint, assertOwnedContainerMetadata } from "../tooling/local-workflow.mjs";
 import { nativeManifestValid, nativePg16Tools } from "../tooling/local-native-pg16.mjs";
 
@@ -221,4 +223,38 @@ test("partial native PG16 recovery is read-only by default and physically pinned
   assert.match(source, /Move-Item -LiteralPath \$target -Destination \$archive/);
   assert.doesNotMatch(source, /Remove-Item|Stop-Process|taskkill|docker rm|rmSync/);
   assert.doesNotMatch(source, /DROP DATABASE|DROP SCHEMA|initdb/);
+});
+
+
+test("recovery script has one complete PowerShell body; Windows parser accepts it", () => {
+  const source = readFileSync(new URL("../tooling/recover-incomplete-local-pg16.ps1", import.meta.url), "utf8");
+  assert.equal((source.match(/\}\s*finally\s*\{/g) ?? []).length, 1,
+    "PowerShell recovery script must have exactly one finally block");
+  assert.equal((source.match(/Move-Item -LiteralPath \$target -Destination \$archive/g) ?? []).length, 1,
+    "The optional nondeleting archival action must occur exactly once");
+  assert.equal((source.match(/READ-ONLY audit complete/g) ?? []).length, 1,
+    "The default no-mutation completion must be unique");
+  assert.match(source, /\}\s*finally\s*\{\s*Pop-Location\s*\}\s*$/,
+    "No duplicated statements may follow the script's finally block");
+  if (process.platform === "win32") {
+    // Native PowerShell parser is the authoritative syntax check, not JS regex.
+    const result = spawnSync("powershell.exe", [
+      "-NoProfile", "-NonInteractive", "-Command",
+      '$tokens = $null; $parseErrors = $null; ' +
+      '[System.Management.Automation.Language.Parser]::ParseFile(' +
+      '$env:FLYTALLY_RECOVERY_PS_PATH, [ref]$tokens, [ref]$parseErrors) | Out-Null; ' +
+      'if ($parseErrors.Count -ne 0) { ' +
+      '$parseErrors | ForEach-Object { Write-Error $_.Message }; exit 1 }',
+    ], {
+      cwd: new URL("..", import.meta.url),
+      env: {
+        ...process.env,
+        FLYTALLY_RECOVERY_PS_PATH:
+          fileURLToPath(new URL("../tooling/recover-incomplete-local-pg16.ps1", import.meta.url)),
+      },
+      encoding: "utf8", timeout: 15_000, windowsHide: true,
+    });
+    assert.equal(result.status, 0,
+      "PowerShell recovery script parse failed: " + (result.stderr || result.error?.message || ""));
+  }
 });
