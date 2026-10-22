@@ -1,3 +1,9 @@
+## 2026-10-22 — Windows quick gate PASS for clean portable testing PR #384
+
+- Owner Windows clean candidate executable SHA `e27a11efa0770bb11cac88f1ad5602865743a700`: `git pull --ff-only` PASS, `npm run test:quick` PASS, internal `test:local-workflow` **23/23 PASS**, source/regression `verify:iterate` **257/257 PASS**, TypeScript `tsc --noEmit` **PASS**. Exact candidate `a777868f22a5eae5600c452a8a77c747c6ce1710d136a3f79e4f32aa2925b8cf`; no blocked evidence. Previously mismatched historic-v20 fixture source SHA is now verified by strict M1 positive/LF-CRLF/CLI tests.
+- Release `NOT EVALUATED` and aggregate-regression, production-build, postgres-acceptance, browser-risk `PENDING`. Browser/U3, full PostgreSQL, build, CI and reboot-on-both-PC checks NOT RUN at executable SHA. Original 50k/100k performance scale failures remain research PR #385, not implicitly PASS.
+- No production SQL/DB/schema, Training, merge/deploy or feature flags changed; PR #384 remains DRAFT pending approved release evidence.
+
 ## 2026-10-22 — Fix pinned PostgreSQL registry hash after protected v20 fixture guard (PR #384 Draft)
 
 - Owner Windows clean core `ba6e5948f3807cd3d8809b1cd538b402fc7b257f`: `test:local-workflow` **23/23 PASS**; `test:quick` **FAIL**, source checks **254/257 PASS, 3/257 FAIL**, all due to one registry pin mismatch for `postgres-v380-full-v20-restore.test.ts`; typecheck **PASS**, release NOT EVALUATED.
