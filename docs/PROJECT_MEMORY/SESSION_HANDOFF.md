@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T10:36:44.504Z — owner native Windows full PG16 gate FAIL; isolated-v20 opt-in correction staged on PR #383 (not merged).**
+
+- **GitHub verified:** Logbook repo `filipto861/flytally-logbook`; `main` full SHA `860df276f7044586834871808e7e3843a10daaac`; scoped work `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `08c36059ee430a842c279ba3362dcbd1e023a67d`; PR #383 OPEN/DRAFT to `main`. This checkpoint commit advances work SHA; verify after write.
+- **Owner evidence on prior exact HEAD `8f416baf583969be84ec48d76700892d4bdd5f73`:** Windows `git fetch`, `git pull --ff-only` PASS. `npm run test:db:local` physically verified existing owned native PG16 `flytally_logbook_test` at `127.0.0.1:55439`, then executed **42 files, 163 tests, 122 PASS / 9 FAIL / 32 SKIP** in 86.5s. Full PG gate **FAIL**, not release evidence. Eight fail in `tests/integration/postgres-v380-full-v20-restore.test.ts` because the generic integration flag accidentally requested independently gated historical-v20 tests for a distinct dedicated database. One genuine open performance failure: `flightListFirstPage50k` 2648.214 ms against retained 2500 ms upper bound. Do not relax this bound or assume a warm rerun will pass.
+- **Branch changes staged since owner test:** `tests/integration/postgres-v380-full-v20-restore.test.ts` now uses only explicit `FLYTALLY_D2_FULL_V20_DISPOSABLE=1` to *request* specialized v20 tests, while its `before()` still requires both opt-in flags and exact disposable `flytally_currency_test` URL/username/password/host/port plus PG16 identity. Generic PG full suite runs static source check and skips separate dynamic fixture tests, without fabricating acceptance. `tests/local-workflow.test.mjs` adds child-process negative regression for generic integration vs incomplete dedicated flags. Updated `ROADMAP.md`, `CHANGELOG.md`, `docs/TESTING_WORKFLOW.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, and this handoff.
+- **Evidence for new code HEAD:** GitHub source review only; owner Windows `test:local-workflow` **NOT RUN**, `test:db:local` **NOT RUN**, separate dedicated v20 acceptance **NOT RUN**, aggregate regressions/TypeScript/build/Playwright/release/reboot/CI **NOT RUN**. Prior 22/22 local safety + 257/257 source + typecheck/quick PASS belonged to older SHA `381cc1fd0d8a4f414985a6202189f16b060f862c` and does not automatically transfer. Database is owner-test-only PG16; production DB/migration/flags/deploy runtime **UNKNOWN** and no changes attempted.
+- **Frozen scope / DO NOT:** Logbook development tooling and existing isolated PostgreSQL test gating only. No Training repo change, no real pilot/flight/GPS data, no remote/staging/production DB, no DB reset/archive/reinit, no lowering 50k performance threshold, no production code/query edit without diagnosis, no merge/deploy/prod feature flag without explicit approval. Missing evidence remains NOT RUN; dedicated v20 fixture must never be pointed at the existing `flytally_local` cluster or given manual flag overrides.
+- **Exactly one next step:** Owner performs `git pull --ff-only` on the scoped branch, then `npm run test:local-workflow`; only if PASS, rerun `npm run test:db:local` on the existing verified owned localhost PG16. Stop and share sanitized output on any FAIL/BLOCKED; if 50k metric repeats, investigate query plan/host load as a distinct performance task.
+
+---
+
+**Previous historical checkpoints:**
+
+
 **UTC 2026-10-22T10:20:23.786Z — Owner Windows native PG16 reuse PASS; source quick iteration PASS, real DB/release gates pending (PR #383 DRAFT, NOT MERGED).**
 
 - GitHub main independently verified full SHA `860df276f7044586834871808e7e3843a10daaac`; work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `0e897a0643f6d98d16e2ef92ffd943688a3f3567`; PR #383 OPEN/DRAFT and base main. This documentation commit changes the work HEAD; verify SHA after it.
