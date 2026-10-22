@@ -1,3 +1,9 @@
+## 2026-10-22 — Nested node:test worker regression repair (PR #383 Draft)
+
+- Owner Windows Node24 tested prior work SHA `4f09e73902e16de906b4531f2682edb5ea3eccfc`: `npm run test:local-workflow` **22 PASS / 1 FAIL (23 total)**; the new nested child test exited 0 with an empty stdout and failed its TAP summary assertion. No PostgreSQL acceptance was run afterward.
+- Synthetic local Node22 reproduction established the cause: nested `--test` inherited the parent `NODE_TEST_CONTEXT=child-v8`, silently skipped discovery, and returned exit 0. Removing just this context variable in the child env restored **1 PASS / 7 SKIP** and rejected incomplete separate full-v20 flags; pinned `--test-reporter=tap` for stable assertions. This synthetic proof is **not owner Windows acceptance**.
+- Patched `tests/local-workflow.test.mjs` only; no weakening of separate v20 database preflight, generic full-PG guard, or 2500ms 50k flight-list limit. New HEAD local Windows test, PG, browser, build, release NOT RUN. No app runtime/schema, production/remote DB, Training, flags, merge or deploy.
+
 ## 2026-10-22 — Portable local PostgreSQL acceptance follow-up (PR #383, DRAFT only)
 
 - Owner Windows native PG16 `npm run test:db:local` on pre-fix work HEAD `8f416baf583969be84ec48d76700892d4bdd5f73`: **163 tests, 122 PASS / 9 FAIL / 32 SKIP**. Physical owned-localhost fixture preflight PASS; overall full PostgreSQL gate FAIL.
