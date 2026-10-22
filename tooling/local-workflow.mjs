@@ -119,7 +119,15 @@ function safeEnv({ database = false, browser = false } = {}) {
   }
   return env;
 }
+export function isLocalDockerEndpoint(value) {
+  const endpoint = String(value ?? "").trim().replaceAll("\\", "/").toLowerCase();
+  return endpoint.startsWith("unix:///") ||
+    (endpoint.startsWith("npipe:") && endpoint.includes("/./pipe/"));
+}
 function dockerInfo() {
+  const context = exec("docker", ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"], { quiet: true });
+  const endpoint = String(process.env.DOCKER_HOST ?? "").trim() || (context.status === 0 ? context.stdout.trim() : "");
+  if (!isLocalDockerEndpoint(endpoint)) return false; // remote Docker contexts are NOT local fixtures
   return has("docker", ["info", "--format", "{{.ServerVersion}}"]);
 }
 function ownedContainerInfo() {
