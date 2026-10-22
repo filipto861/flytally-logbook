@@ -1,3 +1,10 @@
+## 2026-10-22 — Portable local PostgreSQL acceptance follow-up (PR #383, DRAFT only)
+
+- Owner Windows native PG16 `npm run test:db:local` on pre-fix work HEAD `8f416baf583969be84ec48d76700892d4bdd5f73`: **163 tests, 122 PASS / 9 FAIL / 32 SKIP**. Physical owned-localhost fixture preflight PASS; overall full PostgreSQL gate FAIL.
+- Eight failures shared the isolated v20 restore `before()` opt-in mismatch, not a failed restore transaction. Staged test-only correction makes independent `FLYTALLY_D2_FULL_V20_DISPOSABLE=1` select that dedicated suite; existing two-flag plus exact separate DB identity checks remain mandatory. Added regression for generic flag vs dedicated opt-in.
+- Separate unresolved performance failure: 50k flight-list query `2648.214 ms` against unchanged `2500 ms` bound. Do not loosen the limit or call the gate PASS. New executable HEAD Windows tests/PostgreSQL/browser/release NOT RUN; protected full-v20 fixture not run.
+- No production logic/schema, remote/production DB, migrations, flags, Training, merge or deploy modified.
+
 ## 2026-10-22 — Developer tooling candidate (NOT MERGED / NOT RELEASED)
 
 - Owner Windows candidate evidence at code SHA `381cc1fd0d8a4f414985a6202189f16b060f862c`: post-finalization `npm run setup:local` **PASS** with `[DB] REUSED dedicated persistent Windows PG16 cluster; data preserved`, native owned PG16 RUNNING, local Chromium/dependencies present, workflow safety 22/22 PASS. `npm run test:quick` **PASS** with 22/22 safety tests, 257/257 selected source-contract regression tests, typecheck PASS, iteration PASS; explicit release NOT EVALUATED with pending aggregate-regression, production-build and browser-risk. PG full integration, browser, build, reboot/restart and CI NOT RUN. No merge/deploy or remote/prod DB changes.
