@@ -91,7 +91,7 @@ function safeEnv({ database = false, browser = false } = {}) {
     "TRAINING_ACCEPTANCE_CONFIRM_DISPOSABLE",
     "FLYTALLY_OWNED_PG16_RELEASE", "FLYTALLY_PR340_PARTITION_RELEASE",
     "FLYTALLY_CURRENCY_V21_BROWSER", "FLYTALLY_V21_RISK_BROWSER",
-    "FLYTALLY_BROWSER_EVIDENCE_FILE", "VERCEL", "VERCEL_ENV",
+    "FLYTALLY_BROWSER_EVIDENCE_FILE", "FLYTALLY_PORTABLE_LOCAL_BROWSER", "VERCEL", "VERCEL_ENV",
   ]) delete env[name];
   if (logbook && findPsql()) {
     const psql = findPsql();
@@ -114,6 +114,7 @@ function safeEnv({ database = false, browser = false } = {}) {
     } else if (browser) {
       env.FLYTALLY_AUTH_BROWSER = "1";
       env.FLYTALLY_LOCAL_POSTGRES = "1";
+      env.FLYTALLY_PORTABLE_LOCAL_BROWSER = "1"; // never reuse an unrelated server on port 3000
     }
   }
   return env;
