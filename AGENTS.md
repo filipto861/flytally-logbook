@@ -9,6 +9,10 @@ This is a **stable navigation contract**, not a second product roadmap or a subs
 3. Read only relevant sections of [DEVELOPMENT](DEVELOPMENT.md), [CHANGELOG](CHANGELOG.md), [docs index](docs/README.md) and the exact dated acceptance/source documents needed. Do not ingest all history by default.
 4. Read [rolling session handoff](docs/PROJECT_MEMORY/SESSION_HANDOFF.md), [active work pointers](docs/PROJECT_MEMORY/ACTIVE_WORK.md) and [checkpoint protocol](docs/PROJECT_MEMORY/HANDOFF_PROTOCOL.md); independently verify their branch/PR/SHA claims. Resolve source conflicts before code. Never promote historical `Draft`, `PASS`, `FAIL`, `NOT RUN` or version numbers into present status without matching date/SHA.
 
+## Task-specific Agent Skills (mandatory routing)
+
+Before any Logbook design, implementation, UI audit or verification, read the [skill registry](.agents/skills/README.md) at the verified work SHA (or main for new work). Select and read the FULL SKILL.md for only the task-relevant skills, combining them for cross-domain changes. The registry is a router, not a replacement for canonical docs. For missing GitHub access report UNVERIFIED; do not pretend skills are auto-installed in ChatGPT Project settings. External design inspiration and copyright are documented in [third-party sources](docs/skills/THIRD_PARTY_SOURCES.md). The companion [Project Instructions addendum](docs/skills/CHATGPT_PROJECT_INSTRUCTIONS_ADDENDUM.md) is a manual update for the ChatGPT Project, not a live settings change.
+
 ## Work safely and efficiently
 
 - Preserve canonical flight integrity, certification/audit evidence and explicit aircraft/regulatory applicability. Missing or conflicting critical data must **fail closed**, never become invented/default approved values.

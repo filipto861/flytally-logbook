@@ -27,6 +27,14 @@
 
 - [Documentation consistency report (optional)](scripts/README.md) — read-only Node command and isolated fixtures; not a merge gate, CI PASS or replacement for source/UX/DB evidence.
 
+
+## Agent Skills V1 (proposed; GitHub branch until merged)
+
+- [Task-specific Agent Skills registry](../.agents/skills/README.md) — mandatory routing from AGENTS.md, with nine focused procedures for aviation integrity, regulatory, UI, mobile, security, testing and release.
+- [Design inspiration attribution](skills/THIRD_PARTY_SOURCES.md) — MIT source and safe adaptation boundaries.
+- [ChatGPT Project Instructions addendum](skills/CHATGPT_PROJECT_INSTRUCTIONS_ADDENDUM.md) — manually paste after owner-approved merge; GitHub does not update Project settings.
+- [Validation plan](skills/VALIDATION.md) — documentation-only acceptance and status vocabulary.
+
 ## 3.7.0 completed release / retained technical acceptance
 
 - [3.7.0 production/owner-acceptance closeout](product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) — release `39ee01b7`, Vercel READY and alias assigned, owner-reported functional signoff, explicitly unverified external rights; version release is NOT provider/commercial clearance.
