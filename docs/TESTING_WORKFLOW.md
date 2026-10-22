@@ -1,5 +1,9 @@
 # Local test workflow — two Windows PCs (Logbook)
 
+
+**Verified owner Windows reuse (22 Oct 2026):** On candidate code SHA `381cc1fd0d8a4f414985a6202189f16b060f862c` after guarded native PG16 finalization, `npm run setup:local` successfully REUSED the existing exactly owned local fixture (no reinitialization) and `test:local-workflow` 22/22 PASS. `npm run test:quick` also returned 22/22 safety, 257/257 source-regression and typecheck PASS with `iteration_status=PASS`, `release_status=NOT EVALUATED`. Remaining tests **NOT RUN** include the real local PostgreSQL integration suite and browser/aggregate/build gates; actual reuse after reboot remains unverified. The next intentionally scoped DB-writing gate is `npm run test:db:local` on the already physically verified disposable Logbook fixture (not on any production/remote database). Stop on FAIL/BLOCKED; do not reset the fixture. Browser and full release tests are separate explicit operations, not proven by quick PASS.
+
+
 **Scope:** filipto861/flytally-logbook only. Training owns its own test database and commands. This is a permanent operation runbook; canonical candidate risk verification remains in DEVELOPMENT.md and tooling/development-modules.json.
 
 ## Daily PowerShell workflow (home or office)
