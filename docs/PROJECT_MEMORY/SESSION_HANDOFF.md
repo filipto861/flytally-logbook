@@ -1,5 +1,17 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T10:20:23.786Z — Owner Windows native PG16 reuse PASS; source quick iteration PASS, real DB/release gates pending (PR #383 DRAFT, NOT MERGED).**
+
+- GitHub main independently verified full SHA `860df276f7044586834871808e7e3843a10daaac`; work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `0e897a0643f6d98d16e2ef92ffd943688a3f3567`; PR #383 OPEN/DRAFT and base main. This documentation commit changes the work HEAD; verify SHA after it.
+- **Owner Windows evidence at underlying code SHA `381cc1fd0d8a4f414985a6202189f16b060f862c`:** following earlier `FINALIZED` local PG16 fixture, `npm run setup:local` completed **PASS**, explicitly `[DB] REUSED dedicated persistent Windows PG16 cluster; data preserved`, PG16 owned cluster RUNNING, DB URL shape verified, installed npm dependencies and Chromium retained, `npm run test:local-workflow` 22/22 PASS. Then `npm run test:quick` **PASS**: repeated safety-contract 22/22 PASS, 257/257 source regression tests PASS, TypeScript `tsc --noEmit` PASS, `iteration_status=PASS`, `source=PASS`, `domain=N/A`, `blocked_evidence=none` for this iteration. Candidate ID from owner's output: `ec24f35d27cf642852db8624efce4758606792482faba014ef0f9d8391f15f25`. Output states `release_status=NOT EVALUATED`; `release_pending=aggregate-regression,production-build,browser-risk`.
+- This is evidence of fixture reuse in a still-running local Windows session, **NOT** after host reboot. It is **NOT** real Postgres integration, aggregate regression, Playwright browser acceptance, production build, release or CI PASS. `npm run test:db:local`, `npm run test:browser:local`, `npm run test:full`, explicit full build, reboot validation, CI all NOT RUN. Production DB/migration/flags/deploy current runtime UNKNOWN; no modifications attempted.
+- Docs updated this milestone on work branch only: `ROADMAP.md`, `CHANGELOG.md`, `docs/TESTING_WORKFLOW.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, this handoff. Relevant source/tooling code unchanged since owner-tested code SHA; no product route/schema/migration/flag changes. Scope DO NOT: no remote/prod DB, no secrets, no actual pilot/flight data, no Training, no merge/deploy/production flags without explicit owner approval. Existing test PG16 fixture is specifically owned disposable localhost `127.0.0.1:55439`; do not manually reset/archive it.
+- **Exactly one next step:** owner runs `npm run test:db:local` on existing verified local Logbook fixture to obtain real PostgreSQL integration evidence. It is DB-writing and expected only against this guarded disposable local DB. Stop on any FAIL/BLOCKED and share non-secret logs; then determine appropriate browser/full gates and actual reboot reuse.
+
+---
+
+**Previous historical checkpoints:**
+
 **UTC 2026-10-22T10:14:05.100Z — LOCAL NATIVE POSTGRESQL 16 FIXTURE FINALIZED ON OWNER WINDOWS; verification follow-ups pending. PR #383 DRAFT / NOT MERGED.**
 
 - **GitHub state independently verified:** main full SHA `860df276f7044586834871808e7e3843a10daaac`; work branch `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `91aca796d0dbf293ae651192cf7fa278f29eebab`, PR #383 OPEN/DRAFT base main. This docs checkpoint advances work SHA; refetch SHA next session.
