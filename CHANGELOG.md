@@ -1,3 +1,9 @@
+## 2026-10-22 — Comparative 50k/100k EXPLAIN instrumentation (PR #383 Draft)
+
+- Owner Windows on source `179c0c598df9642fb23b9eebf7113abd52097337`: `test:local-workflow` **25/25 PASS**; owned local PG16 serial scale test **12 PASS / 1 FAIL out of 13**. New failing metric 50k Flight List **2961.006ms vs 2500ms** (prior serial 1384.705); 100k Flight List **2273.375ms vs 4500ms PASS** (prior 4983.786 FAIL); 50k Insights 2806.319ms vs 3000ms PASS. Thus significant variance remains under serial execution. The earlier conditional 100k diagnostic did not emit because execution <4000ms.
+- Added test-only bounded/sanitized plan summaries `V169 FLIGHTLIST50K PLAN` and `V230 FLIGHTLIST100K PLAN` on every respective metric, enabling fast/slow comparison. Extended local source contract. Existing threshold assertions, app SQL, fixture setup, full PG/release gates unchanged. New Windows/PG/Playwright/CI acceptance **NOT RUN**.
+- No production/remote DB, app migrations/schema, Training, production flags, merge or deploy touched.
+
 ## 2026-10-22 — Serial PG scale evaluation and bounded 100k plan evidence (PR #383 Draft)
 
 - Owner Windows executable SHA `3d19d59b30d8646fd7ac7f635ca06d2584cdbe20`: `npm run test:local-workflow` **24/24 PASS**; `npm run test:db:scale:local` checked exact physically owned native PG16 and ran three manifest scale files serially, **12 PASS, 1 FAIL of 13**. 50k list **1384.705ms < 2500ms** and 50k Insights **2742.845ms < 3000ms**; prior concurrent values 2582.270ms and 3547.546ms. 100k list still **4983.786ms > 4500ms**; earlier parallel 5511.521ms. Original full PostgreSQL gate remains FAIL, 121 PASS/3 FAIL/39 SKIP on previous SHA.
