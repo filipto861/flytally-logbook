@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T07:53:56.271Z — repair malformed READ-ONLY recovery PowerShell script after owner ParserError (PR #383 Draft, not merged).**
+
+- Verified GitHub main `860df276f7044586834871808e7e3843a10daaac`; work HEAD before checkpoint `e572389160de79040f2c708a8e45beb48eaf9f6b`, branch `chore/portable-local-test-workflow-20261022`, PR #383 base main and open Draft. This handoff commit advances work HEAD.
+- Owner Windows evidence on prior work HEAD `4291937b36f3a070bc699142282a6ef6b5602253`: `git pull --ff-only` PASS, then `powershell ... recover-incomplete-local-pg16.ps1` reported ParserError Unexpected token ')' at line 96 and '}' at line 127. ParserError means script body never executed: **no shutdown, no archive, no database change**. Existing partial owned PostgreSQL 16.15 cluster at `127.0.0.1:55439` with historical PID 53356; live state after error must be reverified.
+- Root cause proven from GitHub source: previous JS string replacement treating regex `$'` as special substitution appended the old file suffix after its valid `} finally { Pop-Location }` closure, leaving 1,924 duplicate trailing characters. Fixed `tooling/recover-incomplete-local-pg16.ps1` by preserving exactly the first complete 5,444-character script body and removing duplicate tail. Preserved anchored `pg_ctl (PostgreSQL) 16.x` check and ownership/read-only guards.
+- Added `tests/local-workflow.test.mjs` source uniqueness assertions (one finally, one archive, one read-only audit, exact ending) plus on Windows a **native PowerShell parser test** via `[System.Management.Automation.Language.Parser]::ParseFile`, ensuring malformed source cannot pass the regression suite. Updated `CHANGELOG.md`, `ROADMAP.md`, `docs/TESTING_WORKFLOW.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, this handoff.
+- Owner scope/DO NOT: repair only Logbook dev tooling; no modifying a user/other DB, no forced process kill or delete, no Training changes, no production DB/Neon/migrations, no merge/deploy/feature flags. Recovery archival remains separate opt-in action after successful owner READ-ONLY preflight. No such action attempted.
+- **Evidence for current work:** source-only GitHub analysis and 8 safety/structure assertions PASS, regex 16.15 preflight compatibility verified; current exact Windows parser/test: **NOT RUN**, `setup:local` **NOT RUN**, `test:quick` **NOT RUN**, DB/bootstrap/Playwright/build/CI **NOT RUN**. Runtime PostgreSQL 16.15 READY only historically observed; no current acceptance evidence. Production DB/deploy/flags UNKNOWN and untouched.
+- **Exactly one next step:** owner `git pull --ff-only`, invoke PowerShell native parser in a strictly read-only command; only with no syntax errors rerun default READ-ONLY recovery script and send complete result. Do not use `-ArchiveIncompleteOwnedCluster` until preflight is verified.
+
+---
+
+**Previous checkpoints (historical):**
+
 **UTC 2026-10-22T07:44:59.890Z — Windows read-only recovery guard false-negative corrected (PR #383 DRAFT, NOT MERGED).**
 
 - GitHub main verified `860df276f7044586834871808e7e3843a10daaac`; branch `chore/portable-local-test-workflow-20261022` pre-checkpoint work HEAD `225411c04469553a8c483d3c58588927d55ae87d`; PR #383 open draft, base main. This documentation commit advances HEAD; verify before use.
