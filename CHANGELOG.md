@@ -1,3 +1,9 @@
+## 2026-10-22 — Fix pinned PostgreSQL registry hash after protected v20 fixture guard (PR #384 Draft)
+
+- Owner Windows clean core `ba6e5948f3807cd3d8809b1cd538b402fc7b257f`: `test:local-workflow` **23/23 PASS**; `test:quick` **FAIL**, source checks **254/257 PASS, 3/257 FAIL**, all due to one registry pin mismatch for `postgres-v380-full-v20-restore.test.ts`; typecheck **PASS**, release NOT EVALUATED.
+- Independently verified old registry SHA against old canonical LF source (and a separate unchanged entry), then updated only the new approved source's SHA-256 to `52e5c8585f569142b698395e5c66cf2a2dd68146b4126ffff6f9e14d4eeea673`. 42 files, 163 tests, all partition/fixture flags, strict release semantics and runtime code unchanged. This is NOT a waiver of registry integrity; source mutations remain hash-checked and all negative tamper tests remain.
+- Exact post-fix Windows `test:quick` NOT RUN; full PG, browser, build, CI/reboot/second PC NOT RUN; prior separate scale failures remain open. No main merge/deploy/production DB/Training.
+
 ## 2026-10-22 — Portable Windows local testing core extracted from Draft PR #383
 
 - Rebuilt the approved home/office local testing capability as a clean, base-`main` developer-only branch `chore/local-windows-workflow-core-20261022`; isolated 23 core safety contract tests (including strict v20 fixture selection), protected native/Docker PG16 ownership and restart/recovery scripts, scoped `package.json` commands, Playwright fresh-server local override and a dedicated permanent runbook.
