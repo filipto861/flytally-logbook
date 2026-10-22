@@ -328,3 +328,45 @@ test("native PG16 core identity failure identifies only the mismatching field", 
   assert.deepEqual(nativeCoreIdentityMismatches("unexpected"), ["field-count"]);
   assert.deepEqual(nativeCoreIdentityMismatches(""), ["field-count"]);
 });
+
+
+test("PG16 server address uses PostgreSQL host() rather than network-mask text", () => {
+  const native = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
+  const diagnosis = readFileSync(new URL("../tooling/diagnose-incomplete-local-pg16.mjs", import.meta.url), "utf8");
+  // PostgreSQL inet::text includes /32, while host(inet) is the exact bare IP.
+  for (const source of [native, diagnosis]) {
+    assert.match(source, /host\(inet_server_addr\(\)\)/);
+    assert.doesNotMatch(source, /inet_server_addr\(\)::text/);
+  }
+  assert.match(native, /fields\[3\] !== cfg\.hostname/);
+  assert.match(diagnosis, /mismatchedCoreFields = nativeCoreIdentityMismatches\(core\)/);
+});
+
+test("retained-credential PG16 finalization is explicit and requires physical identity before writing", () => {
+  const native = readFileSync(new URL("../tooling/local-native-pg16.mjs", import.meta.url), "utf8");
+  const script = readFileSync(new URL("../tooling/finalize-incomplete-local-pg16.mjs", import.meta.url), "utf8");
+  const start = native.indexOf("export function finalizeIncompleteNativePg16()");
+  const end = native.indexOf("export function createNativePg16()", start);
+  assert.ok(start >= 0 && end > start);
+  const body = native.slice(start, end);
+  assert.match(body, /nativePg16Tools\(\)/);
+  assert.match(body, /existsSync\(join\(home, "bootstrap-pwfile"\)\)/);
+  assert.match(body, /existsSync\(marker\) \|\| existsSync\(envFile\)/);
+  assert.match(body, /realpathSync\.native\(dir\)/);
+  assert.match(body, /ownedDir\(\)/);
+  assert.match(body, /run\(bin\.pg_ctl, \["-D", dataDir, "status"\]\)/);
+  assert.match(body, /\/\^\[0-9a-f\]\{48\}\$\//);
+  const identity = body.indexOf("observedIdentity(bin, password)");
+  const marker = body.indexOf("writeFileSync(marker,");
+  const config = body.indexOf("writeFileSync(envFile,");
+  const pwClean = body.indexOf("rmSync(pwfile, { force: true })");
+  assert.ok(identity >= 0 && identity < marker && marker < config && config < pwClean);
+  assert.doesNotMatch(body, /initdb|createdb|pg_ctl.*start|DROP DATABASE|DROP SCHEMA|rmSync\(dataDir/);
+  assert.match(script, /finalizeIncompleteNativePg16\(\)/);
+  for (const file of ["../tooling/local-native-pg16.mjs", "../tooling/finalize-incomplete-local-pg16.mjs"]) {
+    const result = spawnSync(process.execPath, ["--check", fileURLToPath(new URL(file, import.meta.url))], {
+      encoding: "utf8", timeout: 15_000, windowsHide: true,
+    });
+    assert.equal(result.status, 0, "Native Node parser failed: " + (result.stderr || result.error?.message || ""));
+  }
+});
