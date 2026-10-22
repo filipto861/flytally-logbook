@@ -1,5 +1,20 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T12:18:21.997Z — Owner Windows complete clean core PR #384 quick validation PASS; release gates remain NOT EVALUATED.**
+
+- **Live repository/PR evidence:** repo `filipto861/flytally-logbook`; main full SHA `860df276f7044586834871808e7e3843a10daaac`; work `chore/local-windows-workflow-core-20261022` pre-checkpoint full SHA `d93dbbc76974f7bed53bc38910df7448a6019f2b`; PR #384 OPEN/DRAFT base `main`. This docs checkpoint advances work HEAD; verify after commit. PR #385 OPEN/DRAFT stacked research, original PR #383 CLOSED/unmerged.
+- **Owner executable SHA-bound Windows results:** `git pull --ff-only` advanced locally `ba6e5948..e27a11ef`, exact source/test executable SHA `e27a11efa0770bb11cac88f1ad5602865743a700`. `npm run test:quick` called nested `npm run test:local-workflow` **23 tests, 23 PASS/0 FAIL/0 SKIP**; canonical `npm run verify:iterate -- --base origin/main` ran **257 tests, 257 PASS/0 FAIL/0 SKIP**; `npm run typecheck` (tsc --noEmit) **PASS**. Candidate id `a777868f22a5eae5600c452a8a77c747c6ce1710d136a3f79e4f32aa2925b8cf`; `iteration_status=PASS`, `source=PASS`, `domain=N/A`, `typecheck=PASS`, `blocked_evidence=none`.
+- **Fixed cause confirmed:** formerly 3 FAIL M1 source tests after changing dedicated historical v20 opt-in logic; canonical LF SHA-256 `52e5c8585f569142b698395e5c66cf2a2dd68146b4126ffff6f9e14d4eeea673` in immutable PostgreSQL registry now matches intended file. On this Windows run M1 positive inventory, LF/CRLF and CLI source checks PASS. Kept original 42/163/6 registry counts, no rule/SQL/schema/threshold changes.
+- **Scope / status:** portable native PG16/Docker loopback guard, incremental Windows setup, safe `test:quick`, `test:full`, `test:db:local`, `test:browser:local`, local DB markers and PowerShell recovery remain in PR #384. The prior owner physical PG16 acceptance occurred on old mixed executable SHA `f2643ca5`; **physical PG identity was NOT rechecked by this quick test** and latest clean branch full PG/browser not run. Browser U3 continuation is independent. Research #385 preserves variable 50k/100k strict FAIL, no waiver.
+- **Release truth:** exact output `release_status=NOT EVALUATED`, `release_pending=aggregate-regression,production-build,postgres-acceptance,browser-risk`. Full PG integration on older mixed SHA **121 PASS /3 FAIL /39 SKIP**; special dedicated historical v20 restore **NOT RUN**; current clean branch build/full PG/browser U3/CI/reboot/second-PC **NOT RUN**. Current changes since executable SHA are **docs-only**, and no new executable test is claimed. Production runtime/DB/migrations/flags/deployment **UNKNOWN**, no actions or merge attempted.
+- **Do not:** count quick PASS as full release PASS or imply that Windows browser U3 works without execution; never alter production/remote DB or discard user ZIP audits; do not loosen performance budgets, mix Training, merge or deploy without explicit owner approval.
+- **Exactly one next step:** assess canonical PR #384 risk-based release requirements and run those relevant to its browser/PG harness before requesting explicit merge approval; reuse 23/257 quick evidence where valid for prior executable SHA. Resume earlier dedicated Browser U3 conversation after incorporating approved core workflow into main.
+
+---
+
+**Previous historical checkpoints:**
+
+
 **UTC 2026-10-22T12:09:53.756Z — Owner Windows core PR #384 test evidence: 23/23 PASS safety, quick source 254/257 FAIL due to registry pin; exact v20 SHA re-pinned, retest pending.**
 
 - **Independent GitHub facts:** repo `filipto861/flytally-logbook`, main full SHA `860df276f7044586834871808e7e3843a10daaac`; work `chore/local-windows-workflow-core-20261022` pre-checkpoint work full SHA `fa9c37001fc3699d0f57d06cf661b01de1bdf0be`; PR #384 `open`/`DRAFT`, base `main`. This docs commit advances work HEAD. Other open PR #385 holds the distinct scale experiment; old mixed #383 CLOSED/unmerged.
