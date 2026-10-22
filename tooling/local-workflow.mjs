@@ -164,9 +164,15 @@ function verifyOwnedFixture(raw) {
   const container = ownedContainerInfo();
   if (!container) throw new Error("Dedicated disposable container missing. Run npm run setup:db first.");
   assertOwnedContainerMetadata(container, raw);
-  const ready = exec("docker", ["exec", db.container, "pg_isready", "-U", "flytally_local", "-d", db.database], { quiet: true });
-  if (ready.error || ready.status !== 0) {
-    throw new Error("Owned disposable PostgreSQL is not ready. Run npm run setup:db and retry.");
+  let ready = false;
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const check = exec("docker", ["exec", db.container, "pg_isready",
+      "-U", "flytally_local", "-d", db.database], { quiet: true });
+    if (!check.error && check.status === 0) { ready = true; break; }
+    if (attempt < 24) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
+  }
+  if (!ready) {
+    throw new Error("Owned disposable PostgreSQL is not ready; no acceptance test executed.");
   }
 }
 function ensureDatabase() {
@@ -200,7 +206,8 @@ function ensureDatabase() {
   // Exclusive write: never overwrite a user's pre-existing machine configuration.
   writeFileSync(localFile, "# GENERATED LOCAL DISPOSABLE TEST FIXTURE. NEVER COMMIT.\n" + db.key + "=" + url + "\n",
     { flag: "wx", mode: 0o600 });
-  console.log("[DB] Created isolated localhost PG16 fixture and .env.test.local (credentials not printed).");
+  verifyOwnedFixture(url); // wait for startup and prove new fixture is usable
+  console.log("[DB] Created and verified isolated localhost PG16 fixture and .env.test.local (credentials not printed).");
   if (!logbook) {
     // Newly created, dedicated localhost Training DB only. Never initialize a remote or reused DB here.
     let ready = false;
