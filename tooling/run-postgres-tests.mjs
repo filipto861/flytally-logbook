@@ -58,7 +58,9 @@ export function preflightPostgresGate(env = process.env) {
   });
 }
 
-export function runPostgresGate(mode, env = process.env) {
+export function runPostgresGate(mode, env = process.env, { serial = false } = {}) {
+  // Diagnostic only: isolate registered scale fixtures without changing the full release gate.
+  if (serial && mode !== "scale") throw new Error("Serial scale diagnostic is valid only for scale mode.");
   const selected = selectPostgresTests(mode);
   if (selected.length === 0) {
     throw new Error(`No PostgreSQL ${mode} tests were selected.`);
@@ -66,12 +68,13 @@ export function runPostgresGate(mode, env = process.env) {
 
   const gateEnv = preflightPostgresGate(env);
 
-  console.log(`Running ${selected.length} PostgreSQL ${mode} test files.`);
+  console.log(`Running ${selected.length} PostgreSQL ${mode} test files${serial ? " (serial diagnostic; not a full PostgreSQL release gate)" : ""}.`);
   const result = spawnSync(
     process.execPath,
     [
       "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
       "--test",
+      ...(serial ? ["--test-concurrency=1"] : []),
       "--experimental-strip-types",
       ...selected.map((name) => join(integrationDir, name)),
     ],
@@ -90,8 +93,10 @@ export function runPostgresGate(mode, env = process.env) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const mode = process.argv[2] ?? "core";
+  const flags = process.argv.slice(3);
   try {
-    process.exit(runPostgresGate(mode));
+    if (flags.some(flag => flag !== "--serial") || flags.length > 1) throw new Error("Only the --serial scale diagnostic option is supported.");
+    process.exit(runPostgresGate(mode, process.env, { serial: flags[0] === "--serial" }));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(2);
