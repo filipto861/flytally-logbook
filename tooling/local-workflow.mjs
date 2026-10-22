@@ -91,7 +91,8 @@ function safeEnv({ database = false, browser = false } = {}) {
     "TRAINING_ACCEPTANCE_CONFIRM_DISPOSABLE",
     "FLYTALLY_OWNED_PG16_RELEASE", "FLYTALLY_PR340_PARTITION_RELEASE",
     "FLYTALLY_CURRENCY_V21_BROWSER", "FLYTALLY_V21_RISK_BROWSER",
-    "FLYTALLY_BROWSER_EVIDENCE_FILE", "FLYTALLY_PORTABLE_LOCAL_BROWSER", "VERCEL", "VERCEL_ENV",
+    "FLYTALLY_BROWSER_EVIDENCE_FILE", "FLYTALLY_PORTABLE_LOCAL_BROWSER",
+    "FLYTALLY_AUTH_BROWSER", "FLYTALLY_LOCAL_POSTGRES", "VERCEL", "VERCEL_ENV",
   ]) delete env[name];
   // Explicit empty process variables prevent Next.js from loading a remote .env.local DB URL.
   env.DATABASE_URL = "";
@@ -110,7 +111,7 @@ function safeEnv({ database = false, browser = false } = {}) {
   if (database) {
     const url = testUrl();
     if (!url) throw new Error("Missing .env.test.local. Run npm run setup:db first.");
-    assertLocalFixtureUrl(url);
+    verifyOwnedFixture(url); // required before any database-writing test command
     env[db.key] = url;
     if (!logbook) {
       env.TRAINING_DATABASE_URL = url; // only the verified dedicated local fixture
@@ -134,45 +135,56 @@ function dockerInfo() {
   if (!isLocalDockerEndpoint(endpoint)) return false; // remote Docker contexts are NOT local fixtures
   return has("docker", ["info", "--format", "{{.ServerVersion}}"]);
 }
+export function assertOwnedContainerMetadata(container, raw, { requireRunning = true } = {}) {
+  assertLocalFixtureUrl(raw);
+  const binding = container?.HostConfig?.PortBindings?.["5432/tcp"] ?? [];
+  const environment = new Set(container?.Config?.Env ?? []);
+  const expectedPassword = new URL(raw).password;
+  if (container?.Name !== "/" + db.container
+    || container?.Config?.Image !== "postgres:16"
+    || !environment.has("POSTGRES_DB=" + db.database)
+    || !environment.has("POSTGRES_USER=flytally_local")
+    || !environment.has("POSTGRES_PASSWORD=" + expectedPassword)
+    || binding.length !== 1 || binding[0].HostIp !== "127.0.0.1"
+    || binding[0].HostPort !== db.port
+    || (requireRunning && container?.State?.Running !== true)) {
+    throw new Error("Database container identity, credentials, binding or running state do not match the owned disposable fixture.");
+  }
+  return true;
+}
 function ownedContainerInfo() {
   const inspected = exec("docker", ["container", "inspect", db.container], { quiet: true });
+  if (inspected.error) throw new Error("Docker inspect failed: " + inspected.error.message);
   if (inspected.status !== 0) return null;
-  let c;
-  try { c = JSON.parse(inspected.stdout)[0]; } catch { throw new Error("Docker inspect returned invalid output."); }
-  const binding = c?.HostConfig?.PortBindings?.["5432/tcp"] ?? [];
-  const declaredEnv = new Set(c?.Config?.Env ?? []);
-  if (c?.Config?.Image !== "postgres:16"
-    || !declaredEnv.has("POSTGRES_DB=" + db.database)
-    || !declaredEnv.has("POSTGRES_USER=flytally_local")
-    || binding.length !== 1 || binding[0].HostIp !== "127.0.0.1"
-    || binding[0].HostPort !== db.port) {
-    throw new Error("A container has the reserved name but is not our expected local-only PG16 fixture.");
+  try { return JSON.parse(inspected.stdout)[0] ?? null; }
+  catch { throw new Error("Docker inspect returned invalid output."); }
+}
+function verifyOwnedFixture(raw) {
+  if (!dockerInfo()) throw new Error("Local Docker engine is required to prove fixture ownership before database-writing tests.");
+  const container = ownedContainerInfo();
+  if (!container) throw new Error("Dedicated disposable container missing. Run npm run setup:db first.");
+  assertOwnedContainerMetadata(container, raw);
+  const ready = exec("docker", ["exec", db.container, "pg_isready", "-U", "flytally_local", "-d", db.database], { quiet: true });
+  if (ready.error || ready.status !== 0) {
+    throw new Error("Owned disposable PostgreSQL is not ready. Run npm run setup:db and retry.");
   }
-  return c;
 }
 function ensureDatabase() {
   const existingUrl = testUrl(); // validates before Docker operations
   if (!dockerInfo()) {
-    if (existingUrl) {
-      console.log("[DB] Existing dedicated localhost URL preserved (Docker unavailable; connectivity NOT VERIFIED).");
-      return;
-    }
-    throw new Error("Docker engine is unavailable. Existing DB is untouched; install/start Docker or configure a dedicated local fixture manually.");
+    throw new Error("Local Docker engine unavailable. No test DB was accessed; non-DB verification remains possible.");
   }
   const container = ownedContainerInfo();
   if (container) {
-    if (!existingUrl) throw new Error("Reserved Docker container exists but .env.test.local is missing. Refusing to reset or recover credentials automatically.");
-    const containerPassword = new URL(existingUrl).password;
-    if (!(container.Config.Env ?? []).includes("POSTGRES_PASSWORD=" + containerPassword)) {
-      throw new Error("Dedicated container password differs from .env.test.local. Refusing to reuse.");
-    }
+    if (!existingUrl) throw new Error("Reserved Docker container exists but .env.test.local is missing. Refusing automatic recovery.");
+    assertOwnedContainerMetadata(container, existingUrl, { requireRunning: false });
     if (!container.State.Running) checked(exec("docker", ["start", db.container]), "Docker start");
-    console.log("[DB] Reusing existing dedicated PG16 container; no reset or migration.");
+    verifyOwnedFixture(existingUrl);
+    console.log("[DB] Reusing verified dedicated PG16 container; no reset or migration.");
     return;
   }
   if (existingUrl) {
-    console.log("[DB] Existing dedicated localhost configuration preserved; no new Docker container created.");
-    return;
+    throw new Error("Local configuration exists without its owned Docker container. Refusing to use an unverified database.");
   }
   const password = randomBytes(24).toString("hex");
   const url = "postgresql://flytally_local:" + password + "@127.0.0.1:" + db.port + "/" + db.database;
@@ -235,8 +247,10 @@ async function setup({ requireDb = false } = {}) {
     console.log("[Playwright] Chromium missing; installing browser once.");
     checked(npm(["exec", "--", "playwright", "install", "chromium"]), "Playwright browser install");
   } else console.log("[Playwright] Existing Chromium retained.");
-  if (testUrl() || dockerInfo() || requireDb) {
+  if (dockerInfo()) {
     ensureDatabase();
+  } else if (requireDb) {
+    throw new Error("Local Docker engine unavailable; database setup is blocked.");
   } else {
     console.log("[DB] Not configured and Docker unavailable. Quick non-DB tests remain available; use npm run setup:db after preparing Docker.");
   }
