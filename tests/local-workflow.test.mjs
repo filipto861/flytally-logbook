@@ -205,6 +205,8 @@ test("partial native PG16 recovery is read-only by default and physically pinned
   assert.match(source, /\$listeners\[0\]\.OwningProcess -eq \$postmasterPid/);
   assert.match(source, /\$listeners\[0\]\.LocalAddress -eq \$expectedIp/);
   assert.match(source, /Assert-NotReparse \$data/);
+  assert.match(source, /Assert-NotReparse \(Split-Path -Parent \$target\)/);
+  assert.match(source, /& \$pgCtl -D \$data status \| Out-Null/);
   assert.match(source, /"PostgreSQL 16\\\."/);
   assert.match(source, /& \$pgCtl -D \$data -m fast -w -t 30 stop/);
   assert.match(source, /Move-Item -LiteralPath \$target -Destination \$archive/);
