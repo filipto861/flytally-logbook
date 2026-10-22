@@ -5,6 +5,12 @@
 **Base:** `main@8099149f72d493c34dd59babf65bdb064ff99fc9`  
 **Status (latest, 21 Oct 2026):** Draft PR #381; owner-local authenticated Desktop Chromium **1/1 PASS** on isolated U3 fixture after explicit canonical v21 migration; source tests **3/3 PASS**, TypeScript/build **PASS** (41/41). Mobile/iPad, native Safari, full suite and CI NOT RUN. No merge/deploy. Earlier verification notes below are historical snapshots.
 
+## Update 22 Oct 2026 — dedicated U3 browser test was blocked before scripted SQL
+
+On work code `a3a6f95158df8fc0950b65796a6f2622e51f5121`, Windows `node --check` dedicated config/spec PASS, `tests/browser-suite-structure.test.ts` **15/15 PASS**. Owner launched the dedicated Playwright suite; both selected tests **FAIL with `TypeError: Invalid URL`** at `new URL(process.env.DATABASE_URL||"")`, before scripted SQL, browser login, deletion or responsive assertions. This shows the new terminal lacked valid U3 `DATABASE_URL`. It is NOT evidence for or against the aircraft-delete focus fix. Any trace/screenshot is only a failure artifact.
+
+**Safety rule for retry:** Do **not** run generic `test:browser` or `test:browser:local` or reapply v21 migration: they are not the U3 workflow. Preserve separately owned PostgreSQL 18 `127.0.0.1:55433/flytally_ui_u3_20261021` role `flytally_u3`; verify local server identity and existing v21 state read-only before setting in-session URL and purpose flags. Expected SQL identity: `flytally_ui_u3_20261021|flytally_u3|127.0.0.1|55433|18xxxx`. Expected existing canonical schema evidence `1|12|4` (named migration v21, 12 currency columns, four validated CHECK constraints). `FLYTALLY_AUTH_BROWSER=1`, `FLYTALLY_LOCAL_POSTGRES=1`, `FLYTALLY_U3_SCHEMA_FIRST=1`; `VERCEL` and `VERCEL_ENV` must not be set. Run exact dedicated `npx --no-install playwright test --config=playwright.u3.config.mjs --workers=1 --retries=0` in that same verified PowerShell session only if all guards PASS. No fixture replacement, SQL writes during preflight, secrets in logs or port-55439 PG16 substitutions.
+
 ## Scope and source finding
 
 The U0 visual capture did **not cover** Aircraft Manage/delete, aircraft photo crop, Flight Detail edit/correction, or GPS import. This U3 milestone inspects these high-value interactive workflows from source rather than claiming additional screenshot coverage.
