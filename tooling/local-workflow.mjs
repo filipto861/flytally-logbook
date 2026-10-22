@@ -5,6 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join, resolve, dirname, delimiter } from "node:path";
+import { nativePg16Tools, nativeMarkerExists, nativeClusterStatus, ensureNativePg16, createNativePg16 } from "./local-native-pg16.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const packageInfo = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -73,6 +74,8 @@ export function assertLocalFixtureUrl(raw) {
   return true;
 }
 function findPsql() {
+  const native = nativePg16Tools();
+  if (native) return native.psql;
   if (process.env.FLYTALLY_PSQL && has(process.env.FLYTALLY_PSQL)) return process.env.FLYTALLY_PSQL;
   if (has("psql")) return "psql";
   if (process.platform === "win32") {
@@ -160,6 +163,10 @@ function ownedContainerInfo() {
   catch { throw new Error("Docker inspect returned invalid output."); }
 }
 function verifyOwnedFixture(raw) {
+  if (nativeMarkerExists()) {
+    ensureNativePg16(raw); // start only our owned persistent PG16, then prove physical identity
+    return;
+  }
   if (!dockerInfo()) throw new Error("Local Docker engine is required to prove fixture ownership before database-writing tests.");
   const container = ownedContainerInfo();
   if (!container) throw new Error("Dedicated disposable container missing. Run npm run setup:db first.");
@@ -176,7 +183,18 @@ function verifyOwnedFixture(raw) {
   }
 }
 function ensureDatabase() {
-  const existingUrl = testUrl(); // validates before Docker operations
+  const existingUrl = testUrl(); // validates before any operation
+  if (nativeMarkerExists()) {
+    if (!existingUrl) throw new Error("Owned native PG16 exists without .env.test.local. No recovery or overwrite performed.");
+    const status = ensureNativePg16(existingUrl);
+    console.log("[DB] " + status + " dedicated persistent Windows PG16 cluster; data preserved.");
+    return;
+  }
+  if (!existingUrl && nativePg16Tools()) {
+    const status = createNativePg16();
+    console.log("[DB] " + status + " persistent native PG16. Next reboot only requires setup:local.");
+    return;
+  }
   if (!dockerInfo()) {
     throw new Error("Local Docker engine unavailable. No test DB was accessed; non-DB verification remains possible.");
   }
@@ -195,8 +213,9 @@ function ensureDatabase() {
   const password = randomBytes(24).toString("hex");
   const url = "postgresql://flytally_local:" + password + "@127.0.0.1:" + db.port + "/" + db.database;
   const result = exec("docker", [
-    "run", "--detach", "--name", db.container, "--restart", "no",
+    "run", "--detach", "--name", db.container, "--restart", "unless-stopped",
     "--publish", "127.0.0.1:" + db.port + ":5432",
+    "--mount", "type=volume,source=flytally-logbook-local-pg16-data,target=/var/lib/postgresql/data",
     "--env", "POSTGRES_USER=flytally_local",
     "--env", "POSTGRES_DB=" + db.database,
     "--env", "POSTGRES_PASSWORD=" + password,
@@ -235,7 +254,9 @@ async function doctor() {
   console.log("Git: " + (has("git") ? "OK" : "MISSING"));
   console.log("npm dependencies: " + (npm(["ls", "--depth=0"], process.env, true).status === 0 ? "OK" : "MISSING/INCOMPLETE"));
   console.log("Playwright Chromium: " + (await browserInstalled() ? "OK" : "MISSING"));
-  console.log("Docker engine: " + (dockerInfo() ? "READY" : "NOT AVAILABLE (optional when existing local DB is used)"));
+  console.log("Native PG16 tools: " + (nativePg16Tools() ? "AVAILABLE" : "NOT FOUND"));
+  console.log("Native PG16 owned cluster: " + nativeClusterStatus());
+  console.log("Docker engine: " + (dockerInfo() ? "READY" : "NOT AVAILABLE (native PG16 may be used instead)"));
   if (logbook) {
     console.log("psql client: " + (findPsql() ? "OK" : "MISSING (set FLYTALLY_PSQL or install PostgreSQL client)"));
   }
@@ -254,12 +275,12 @@ async function setup({ requireDb = false } = {}) {
     console.log("[Playwright] Chromium missing; installing browser once.");
     checked(npm(["exec", "--", "playwright", "install", "chromium"]), "Playwright browser install");
   } else console.log("[Playwright] Existing Chromium retained.");
-  if (dockerInfo()) {
+  if (nativeMarkerExists() || nativePg16Tools() || dockerInfo()) {
     ensureDatabase();
   } else if (requireDb) {
-    throw new Error("Local Docker engine unavailable; database setup is blocked.");
+    throw new Error("Neither native PostgreSQL 16 server tools nor local Docker are available; database setup is blocked.");
   } else {
-    console.log("[DB] Not configured and Docker unavailable. Quick non-DB tests remain available; use npm run setup:db after preparing Docker.");
+    console.log("[DB] No owned database configured and no native PG16/Docker engine found. Non-DB tests remain available.");
   }
   await doctor();
   checked(npm(["run", "test:local-workflow"], safeEnv()), "local workflow safety contract");
