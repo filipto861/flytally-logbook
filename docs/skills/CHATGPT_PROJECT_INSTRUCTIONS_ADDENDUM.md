@@ -1,6 +1,16 @@
 # FlyTally ChatGPT Project Instructions — Skills V1 addendum
 
-Paste the following section into the existing FlyTally project instructions AFTER this PR is reviewed and merged to main. Preserve the existing instructions; this addendum does not supersede them.
+Use the compact insertion below AFTER the PR is reviewed and merged to main. The full section is reference material, not a second block to paste. Preserve existing instructions and character limits.
+
+## Recommended compact insertion for existing project instructions (preferred)
+
+If the project is already close to ChatGPT's character limit, integrate the following into its existing Logbook startup section instead of appending the longer reference text below:
+
+> Logbook Agent Skills: After GitHub main/PR/HEAD verification and canonical docs/Project Memory startup, read .agents/skills/README.md at the verified SHA and the full SKILL.md of ONLY relevant skills before design/code/testing. Apply multiple skills for cross-domain changes. Live code/canonical docs outrank skills; no implicit merge/deploy/DB/flags; no unverified PASS. Logbook skills never apply to flytally-training. If GitHub/skills unavailable, report UNVERIFIED. Checkpoint updates follow HANDOFF_PROTOCOL.md. Draft PR skills are NOT active until merged to main.
+
+This shorter text is intended to fit with the existing full FlyTally rules; remove equivalent duplicate prose first if needed to keep the total within the project's character limit. A GitHub PR cannot change ChatGPT Project settings by itself.
+
+## Full reference wording (optional; do not paste in addition to compact insertion)
 
 ## Mandatory repository skill routing — Logbook ONLY
 
