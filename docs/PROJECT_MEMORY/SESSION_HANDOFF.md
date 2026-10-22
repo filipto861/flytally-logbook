@@ -1,5 +1,20 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T10:50:00.369Z — Windows nested-node safety test FAIL; child test-context inheritance fix staged (PR #383 DRAFT).**
+
+- **Repo status (GitHub):** `filipto861/flytally-logbook`, `main` full SHA `860df276f7044586834871808e7e3843a10daaac`, work `chore/portable-local-test-workflow-20261022`, pre-checkpoint work HEAD `72cf136541e8baafa62635af101189f860e36f9c`, PR #383 OPEN/DRAFT targeting main. This docs write advances HEAD; reverify after commit.
+- **Owner observed on old HEAD `4f09e73902e16de906b4531f2682edb5ea3eccfc`:** Windows `git pull --ff-only` PASS, `npm run test:local-workflow` **FAIL 22/23 PASS, 1 FAIL**. Newly added nested integration-guard test spawned `node --test` from a Node test worker. Child process exit code was 0 but stdout empty, causing assertion `/\\bpass\\s+1\\b/` to FAIL; no `test:db:local` after this blocker.
+- **Root cause independently reproduced outside repo:** Local Node 22 synthetic parent `node:test` gives child inherited `NODE_TEST_CONTEXT=child-v8`. Nested `--test` returned exit 0 with zero output and warning about recursive `node:test run()`; deleting this inherited variable for the child alone produced TAP 1 PASS / 7 SKIP for generic integration and nonzero FAIL for separately requested v20 without integration flag. Reproduction is not product/Windows/Node24 acceptance.
+- **Scoped change:** `tests/local-workflow.test.mjs` now clones parent env then deletes child-only `NODE_TEST_CONTEXT` and pins `--test-reporter=tap`; retained explicit child `DATABASE_URL=""`, special flags, exit status and TAP count assertions. No change to isolated v20 DB identity checks, `tests/integration/postgres-v380-full-v20-restore.test.ts`, app/SQL/schema, production fixture or frozen 2500ms budget. Docs updated: `ROADMAP.md`, `CHANGELOG.md`, `docs/TESTING_WORKFLOW.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, this handoff.
+- **Test evidence:** Earlier full local PG at HEAD `8f416baf583969be84ec48d76700892d4bdd5f73`: owned PG16 localhost identity PASS but full gate **FAIL 122 PASS/9 FAIL/32 SKIP**; 8 isolated v20 mismatches already staged separately, 50k flight list 2648.214 ms against 2500 ms remains unresolved FAIL. Last owner safety gate on `4f09e739`: **FAIL 22/23**. Latest patched work SHA: synthetic local Node22 reproduction **PASS** for failure mechanism, but real `npm run test:local-workflow` on owner Windows Node24 **NOT RUN**, `test:db:local` on latest candidate **NOT RUN**, separate v20 acceptance **NOT RUN**, full Node/build/Playwright/release/CI/reboot **NOT RUN**. Production DB/migration/feature flag/deployment: **UNKNOWN** (no operations attempted).
+- **DO NOT:** do not reset/reinitialize/archive test PG16, override v20 opt-in/DB target, lower 50k threshold, modify Logbook production data or Training, run destructive tests on remote/prod DB, merge/deploy/migrate/change production flags without explicit approval. PR remains Draft.
+- **One next step:** Owner pulls latest `chore/portable-local-test-workflow-20261022` and runs **only `npm run test:local-workflow`**; stop and share sanitized output if it fails. On PASS, advance later to `npm run test:db:local` against the strictly owned localhost DB.
+
+---
+
+**Previous historical checkpoints:**
+
+
 **UTC 2026-10-22T10:36:44.504Z — owner native Windows full PG16 gate FAIL; isolated-v20 opt-in correction staged on PR #383 (not merged).**
 
 - **GitHub verified:** Logbook repo `filipto861/flytally-logbook`; `main` full SHA `860df276f7044586834871808e7e3843a10daaac`; scoped work `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `08c36059ee430a842c279ba3362dcbd1e023a67d`; PR #383 OPEN/DRAFT to `main`. This checkpoint commit advances work SHA; verify after write.
