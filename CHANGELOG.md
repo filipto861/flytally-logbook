@@ -1,3 +1,10 @@
+## 2026-10-22 — PostgreSQL scale diagnostics on owned Windows PG16 (PR #383 Draft)
+
+- Owner `npm run test:db:local` at work `823a3cb50e5df1f0f51ebfc4d123de5afce15941`: physically owned localhost PG16 preflight PASS; 42 files / 163 tests **121 PASS, 3 FAIL, 39 SKIP**, overall **FAIL**. Previously mis-selected eight independent full-v20 scenarios now SKIP as intended; not independently accepted.
+- Remaining three performance failures preserve original strict limits: `flightListFirstPage50k` 2582.270ms / 2500ms, `pilotInsights50k` 3547.546ms / 3000ms, `flightListFirstPage100k` 5511.521ms / 4500ms. 50k insights plan logged materialized CTE / temp file I/O. Do not interpret all full-PG tests as PASS or loosen threshold.
+- New **diagnostic-only** `npm run test:db:scale:local` added to existing owned-loopback facade and registry-selected `test:postgres:scale`, explicitly serializing only the three scale files (Node `--test-concurrency=1`). Standard `npm run test:db:local` and authoritative release gates remain unchanged and failing pending evidence. Source/safety regressions added; new Windows tests NOT RUN.
+- No product query, DB schema, data, production/Neon, Training, production flags, merge or deployment touched.
+
 ## 2026-10-22 — Owner Windows local safety acceptance (PR #383, Draft)
 
 - On code SHA `3a1dff314caf25451921aba6704f36679e425b79`, owner `git pull --ff-only` PASS and `npm run test:local-workflow` **23/23 PASS**, 0 failures/skips, including nested Node regression and guarded PG16 identity tests. The prior 22/23 test-runner failure is corrected on this source SHA.
