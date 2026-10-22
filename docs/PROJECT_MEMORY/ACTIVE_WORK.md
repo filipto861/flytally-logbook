@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-22T18:52:44.393Z — Agent Skills V1 workstream closed by owner-approved merge
+
+- [PR #388](https://github.com/filipto861/flytally-logbook/pull/388) MERGED, main `f1052cac8d518342bfdf10c6f03b51199d78ad69`, nine task-routed skills canonical. ChatGPT Project Instructions update is a separate manual setting action, **not confirmed**. Design playbook V2 only a possible future proposal; nothing approved/implemented. Separate docs-only checkpoint branch `docs/logbook-skills-v1-merge-checkpoint-20261022` is not a product/release PR.
+- **One next step:** update/verify the ChatGPT Project Instructions with the compact routing rule so future development sessions read relevant canonical skills.
+
+
 ## 2026-10-22T18:37:26.054Z — Agent Skills V1 documentation proposal
 
 - New scoped workstream: [Draft PR #388](https://github.com/filipto861/flytally-logbook/pull/388), branch docs/logbook-agent-skills-v1-20261022 from main 34b865bb0ced1222945cecb107589826890ee31a; initial proposed work commit 7887c31cbd285954a29941cda3c057982fda44c4. Nine task-routed skills, AGENTS.md routing and ChatGPT Project Instructions addendum; no runtime/DB/deploy changes. **Not approved for merge.** Verify current head/base before acting.
