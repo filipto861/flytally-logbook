@@ -1,4 +1,6 @@
 ## 2026-10-22 — Developer tooling candidate (NOT MERGED / NOT RELEASED)
+- Owner Windows dry-run at work HEAD 4291937b was blocked by a **PowerShell ParserError** (`Unexpected token ')'` and `'}'`) before any script ran; this was caused by an accidentally duplicated trailing recovery block committed during previous version-regex edits. Removed duplicate tail and added regression checks for unique structure plus a real Windows PowerShell parser verification in local safety tests. New Windows parser/preflight, archival recovery, native PG setup still **NOT RUN**; owner cluster unchanged.
+
 
 - Owner Windows dry-run recovery preflight correctly blocked before database changes on a false-negative pg_ctl version assertion: the actual PostgreSQL 16 banner is `pg_ctl (PostgreSQL) 16.15`, not `PostgreSQL 16.15`. Updated fully anchored PG16 version predicate and added negative regression cases. New Windows preflight, archive and fresh setup NOT RUN. No database was modified by the failed read-only check.
 
