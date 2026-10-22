@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-22T18:37:26.054Z — Agent Skills V1 documentation proposal
+
+- New scoped workstream: [Draft PR #388](https://github.com/filipto861/flytally-logbook/pull/388), branch docs/logbook-agent-skills-v1-20261022 from main 34b865bb0ced1222945cecb107589826890ee31a; initial proposed work commit 7887c31cbd285954a29941cda3c057982fda44c4. Nine task-routed skills, AGENTS.md routing and ChatGPT Project Instructions addendum; no runtime/DB/deploy changes. **Not approved for merge.** Verify current head/base before acting.
+- **One next step:** review PR #388 and user-facing addendum, then request explicit owner merge decision after checks.
+
+
 ## 2026-10-22 — 3.8.1 release in progress (owner-authorized)
 
 Release branch `release/logbook-v3.8.1-20261022` from main `db8abbd90d28ce70fc3c7ae5ba89c00242bab75b` adds `3.8.1` version metadata, test and release governance. Vercel target `filipito/logbook` is linked to this repo; automatic Git deploy remains disabled. Live Neon production primary was read-only checked at v21 shape 21/12/4; production SQL changes NOT APPROVED and NOT NECESSARY for this patch. Pre-release deployment current production Git SHA `6a67a024...`, so planned deploy includes merged GPS changes plus U3. Version PR gates, final merged SHA, Vercel READY and smoke pending. **One next step:** open release PR and verify exact candidate.
