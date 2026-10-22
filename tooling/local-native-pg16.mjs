@@ -22,10 +22,12 @@ const cfg = Object.freeze({
   database: "flytally_logbook_test",
 });
 
-function run(cmd, args, env = process.env, timeout = 12_000) {
+function run(cmd, args, env = process.env, timeout = 12_000, { showProgress = false } = {}) {
   return spawnSync(cmd, args, {
     cwd: repo, env, encoding: "utf8", windowsHide: true,
-    stdio: ["ignore", "pipe", "pipe"],
+    // First-time initdb and pg_ctl startup can take time; show their native progress.
+    // No interactive stdin and no passwords in command-line arguments.
+    stdio: showProgress ? ["ignore", "inherit", "inherit"] : ["ignore", "pipe", "pipe"],
     timeout, maxBuffer: 2 * 1024 * 1024,
   });
 }
@@ -150,7 +152,7 @@ export function ensureNativePg16(url, { allowCreate = false } = {}) {
       console.log("[PG16] First-time initialization of dedicated local data directory (no existing DB replaced).");
       check(run(bin.initdb, ["-D", dataDir, "-U", cfg.user,
         "-A", "scram-sha-256", "--pwfile", pwfile, "--encoding=UTF8", "--no-instructions"],
-        process.env, 120_000), "Initialize dedicated disposable native PG16");
+        process.env, 90_000, { showProgress: true }), "Initialize dedicated disposable native PG16");
     } finally {
       rmSync(pwfile, { force: true });
     }
@@ -180,7 +182,8 @@ function startNative(bin, password) {
   if (status.status !== 0) {
     console.log("[PG16] Starting stopped owned PG16 process (existing data is preserved)...");
     check(run(bin.pg_ctl, ["-D", dataDir, "-l", log,
-      "-o", "-h 127.0.0.1 -p 55439", "-w", "-t", "30", "start"], pgEnv(password), 40_000),
+      "-o", "-h 127.0.0.1 -p 55439", "-w", "-t", "30", "start"], pgEnv(password), 40_000,
+      { showProgress: true }),
     "Start existing owned native PG16");
   }
 }
