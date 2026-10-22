@@ -1,5 +1,18 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T07:44:59.890Z — Windows read-only recovery guard false-negative corrected (PR #383 DRAFT, NOT MERGED).**
+
+- GitHub main verified `860df276f7044586834871808e7e3843a10daaac`; branch `chore/portable-local-test-workflow-20261022` pre-checkpoint work HEAD `225411c04469553a8c483d3c58588927d55ae87d`; PR #383 open draft, base main. This documentation commit advances HEAD; verify before use.
+- Owner Windows evidence on previous head `fd8a6359d22b57eee1d934ddce68096e259043eb`: `git pull --ff-only` PASS, default READ-ONLY `tooling/recover-incomplete-local-pg16.ps1` blocked on "The pg_ctl version is not PG16". All earlier guards were evaluated first, including identity/path/PID/loopback. **No archive, shutdown, DB mutation, or setup run**.
+- Verified coding mistake: actual PostgreSQL 16 executable version banner normally `pg_ctl (PostgreSQL) 16.15`; previous predicate required `PostgreSQL 16.` contiguously and thus produced a false negative. Updated predicate exactly `'^\s*pg_ctl \(PostgreSQL\) 16\.[0-9]+\s*$'` (retains strict 16-only/version/pg_ctl check). Added tests for 16.15/16.0 PASS examples and version 15/17/non-pg_ctl/prefix/suffix FAIL cases. Safety preflight, default read-only, opt-in-only archive, local-only targets all preserved.
+- Changes on work branch: `tooling/recover-incomplete-local-pg16.ps1`, `tests/local-workflow.test.mjs`, `CHANGELOG.md`, `docs/TESTING_WORKFLOW.md`, this handoff. Scope DO NOT: no unrelated PostgreSQL processes/services, no reset of unknown DB, no Training changes, no prod/Neon DB, no merge/deploy/migrations/flags.
+- Evidence **for current work SHA**: pure regex source-evaluation 7/7 PASS in V8; GitHub branch commits verified. **NOT RUN** on corrected SHA: PowerShell native recovery dry-run, opt-in archive, `setup:local`, `test:local-workflow`, `test:quick`, typecheck, PG integration, Playwright, production build, CI. No actual database action performed; earlier local PostgreSQL 16.15 process PID 53356 ready on 127.0.0.1:55439, ownership should be rechecked before any change. Prod DB/migration/flags/deploy state UNKNOWN, no actions attempted.
+- **One next step:** owner `git pull --ff-only` then execute the default READ-ONLY `powershell -NoProfile -ExecutionPolicy Bypass -File .\tooling\recover-incomplete-local-pg16.ps1` and report output. Only on `READ-ONLY audit complete` may the guarded owner-opt-in archive and subsequent local-only setup be considered.
+
+---
+
+**Prior checkpoints (preserved):**
+
 **UTC 2026-10-22T07:39:03.977Z — verified physical PG16 16.15 but interrupted first-run bootstrap; guarded opt-in local archive recovery added. PR #383 DRAFT; NOT MERGED/DEPLOYED.**
 
 - GitHub main verified `860df276f7044586834871808e7e3843a10daaac`; work branch `chore/portable-local-test-workflow-20261022`, PR #383 base main and pre-checkpoint verified work HEAD `9cb1725cdebc931bf9d7b2e17975fa7c5a17c99b`. This checkpoint advances head; verify fresh SHA before acting.
