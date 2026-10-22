@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-22 — U3 PR #381 canonical candidate verification PASS (Draft, not merged)
+
+- Git-reviewed U3 executable SHA `a1e0be99bd5dbfdc893277222fee919dcff8efc6`, candidate ID `b1a5e3e5497bb4b77ad726c1936e98468ff86577f666093e290c02ccb072b343`: owner-local `npm run verify:release:risk -- --base origin/main` printed **`release_status=PASS`**, source **257/257 PASS**, domain **20/20 PASS**, typecheck PASS, aggregate Node **1653/1653 PASS**, build **PASS reused** (41/41 static), six-cluster owned PostgreSQL **163/163 PASS reused**, browser-risk eight planned desktop/mobile cases **PASS reused**, `scale=N/A`, `blocked_evidence=none`.
+- Immediately before canonical verifier, ledger preflight independently reported `postgres_reuse=true`, `build_reuse=true`, `browser_reuse=true`, `postgres_passed=163`, `browser_passed=8`, same candidate and SHA; it exited PASS. Browser-risk's isolated PG16 v20/v21 fixture, dedicated U3 PG18/v21 Playwright 2/2, source UI 3/3, and all complete release tests remain scoped to their exact previously reported source SHAs.
+- This is owner-local candidate release gate evidence, **not** merge authorization, a verified production deployment or CI/native Safari/screen-reader/manual screenshot validation. PR #381 OPEN/DRAFT/unmerged. No changes to production DB, flags or deployments. Later documentation-only commits do not rewrite or claim a new candidate SHA.
+
+
 ## 2026-10-22 — U3 hardened browser acceptance 2/2 PASS (Draft, not deployed)
 
 - Owner fetched exact executable `9837776aedb3ab10d090a8ef538ccba88da1c479`. U3 browser script syntax **PASS**; standard browser structure regression **15/15 PASS**. Scoped PowerShell read-only PG18 physical identity, v21 schema `1|12|4|21`, purpose flags and no Vercel **PASS**.
