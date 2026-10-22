@@ -48,11 +48,11 @@ Run git fetch origin before using origin/main; never fabricate an empty diff or 
 
 ## Safety boundaries
 
-- The facade strips inherited DATABASE_URL and provider/purpose flags and only injects the explicitly validated dedicated local URL into test commands where required. Existing .env.local is **not** overwritten. The URL must have the exact PostgreSQL scheme, host 127.0.0.1, port 55439, user flytally_local, database flytally_logbook_test, nonempty password and no query string. Remote Neon, production, staging, localhost aliases, alternate databases and Docker hostnames are rejected.
+- The facade masks inherited DATABASE_URL and Next.js .env.local database values with an explicit empty default, then strips unrelated provider/purpose flags and only injects the explicitly validated dedicated local URL into test commands where required. Existing .env.local is **not** overwritten. The URL must have the exact PostgreSQL scheme, host 127.0.0.1, port 55439, user flytally_local, database flytally_logbook_test, nonempty password and no query string. Remote Neon, production, staging, localhost aliases, alternate databases and Docker hostnames are rejected.
 - There are **no automated remote DB operations, production migrations, backups/restores/deletes, feature-flag changes, merge or deployment**. Existing browser fixture and PostgreSQL risk runner preflight remain authoritative.
 - If you already have a differently named local PostgreSQL DB, the facade will not silently adopt it. Keep it and use the legacy manual commands, or explicitly provision this dedicated fixture once. Never put real pilot/flight information in the disposable fixture.
-- Browser requires its own local fixture and may reset it. Missing psql, a stale build, unexpected localhost port 3000 or Playwright failure must be investigated as separate blockers; source-contract tests are not browser acceptance.
-- Docker/container readiness is not inferred from doctor alone. Inconsistent container/config is a blocker; no automatic container deletion or credential recovery is attempted.
+- Browser requires its own local fixture and may reset it. The portable wrapper forces a fresh local Playwright web server (it must not reuse a process already listening on port 3000). Missing psql, a stale build, unexpected localhost port 3000 or Playwright failure must be investigated as separate blockers; source-contract tests are not browser acceptance.
+- Docker/container readiness is not inferred from doctor alone. Remote Docker SSH/TCP contexts are rejected: only local Unix/named-pipe daemon endpoints may provision test containers. Inconsistent container/config is a blocker; no automatic container deletion or credential recovery is attempted.
 - Before merging, record TypeScript, Node, build, PG16, browser, CI and exact-head evidence according to DEVELOPMENT.md; NOT RUN and blocked gates remain explicit.
 
 ## Maintenance
