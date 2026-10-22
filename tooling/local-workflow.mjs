@@ -93,6 +93,10 @@ function safeEnv({ database = false, browser = false } = {}) {
     "FLYTALLY_CURRENCY_V21_BROWSER", "FLYTALLY_V21_RISK_BROWSER",
     "FLYTALLY_BROWSER_EVIDENCE_FILE", "FLYTALLY_PORTABLE_LOCAL_BROWSER", "VERCEL", "VERCEL_ENV",
   ]) delete env[name];
+  // Explicit empty process variables prevent Next.js from loading a remote .env.local DB URL.
+  env.DATABASE_URL = "";
+  env.TRAINING_DATABASE_URL = "";
+  env.TRAINING_ACCEPTANCE_DATABASE_URL = "";
   if (logbook && findPsql()) {
     const psql = findPsql();
     env.FLYTALLY_PSQL = psql;
