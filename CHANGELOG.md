@@ -1,3 +1,32 @@
+## 2026-10-21 — U2 second Chromium FAIL; explicit hydration/aircraft test precondition staged (Draft)
+
+- On owner-local source `9b316e7e`: U2 JS syntax PASS, focused source checks **3/3 PASS**, named isolated PG18 v21 database identity PASS; desktop Chromium **1 FAIL** at missing `.entry-context-note` after native Flight experience was explicitly opened. Full visual metrics/screenshots acceptance NOT COMPLETE.
+- Only test scenario changed: waits for real React GPS→Manual `aria-pressed` toggles, selects exact `OK-SP2E` fixture, verifies controlled aircraft category, then opens disclosures. On failure prints synthetic UI-only diagnostic context. Previous pre-hydration selection overwrite is a hypothesis, not demonstrated defect. Targeted source regression assertions updated. **New head tests NOT RUN**.
+- No app, CSS, DB, migration, certification, or production changes. Draft PR #379 remains unmerged and undeployed.
+
+## 2026-10-21 — U2 first visual test exposed E2E disclosure setup defect (Draft / NOT VERIFIED)
+
+- Owner second PC verified isolated PG18 v21 synthetic browser fixture and Next.js build PASS (41/41). Targeted authenticated desktop Chromium **1 FAIL**: rendered `Aeroplane · Part-FCL · SEP` inside collapsed `Flight experience` native disclosure; `toBeVisible` on hidden note timed out. 5×2 full visual acceptance NOT RUN to completion. Later standalone PowerShell `PASS` echo is invalid after thrown error.
+- Minimal test-only amendment explicitly opens native Flight experience and Optional details using existing helper before measuring small copy; includes optional-detail-heading computed font-size assertion and source-order regression test. **Revised-head syntax, tests and browser NOT RUN.** No production CSS or app data logic changed.
+- Draft PR #379 remains unmerged/undeployed; no production DB work.
+
+## 2026-10-21 — U2 clean source-head evidence confirmed (Draft / not released)
+
+- Owner on second PC: `git status --short` **empty**, `git diff -- next-env.d.ts` **empty**, and exact `git rev-parse HEAD=3f2700167df15498a4f4232029254b31388bbedd`. Confirms that earlier U2 2/2 focused tests, TypeScript and Next.js build PASS were performed on a clean exact source head.
+- Previous local generated `next-env.d.ts` change is no longer present, no corrective deletion performed. Source code unchanged; authenticated visual test NOT RUN, no merge/deploy.
+
+## 2026-10-21 — U2 second-PC local test evidence (DRAFT / VISUAL NOT RUN)
+
+- Windows Node `v24.19.0` after fetched `fix/logbook-u2-legibility-20261021@3f270016`: browser-spec JS syntax PASS; focused source tests **2/2 PASS**; TypeScript **PASS**; Next.js production build **PASS** (41/41). `npm ci` succeeded with transient `@img/colour` tarball retry warnings.
+- Working tree on second PC has modified `next-env.d.ts` carried over from prior research branch; diff and provenance not yet reviewed. This file is **not** included in GitHub PR #379; preserve the change until inspection.
+- U2 live computed-style/browser screenshots and 5×2 viewport/theme matrix **NOT RUN**; do not infer effective 12px acceptance from CSS source tests or build. No verified named disposable local PostgreSQL fixture available on second PC yet. No release, merge or deploy.
+
+## 2026-10-21 — U2 scoped legibility batch 1 (Draft PR #379 / NOT VERIFIED)
+
+- Source-backed U0 measurements: `Required` 10.4px on New Flight/Settings; New Flight contextual copy 11.2px; Review & finish secondary microcopy 9.6–9.92px. Added scoped late `app/ui-system.css` overrides to `.75rem` (~12px @16px root) and line-height 1.45, without global cascade deletion or changed theme colors/form controls.
+- New `e2e/logbook-u2-legibility.spec.mjs` opt-in test runs New Flight/Settings in 5 Chromium viewport presets × light/dark, measures computed font sizes and root overflow, captures 20 JPEGs + JSON. Guard requires exact named local test DB and purpose flags. New `tests/logbook-u2-legibility.test.ts` source contract verifies CSS scope and test matrix.
+- Independent of pending U0 PR #377 and U1 PR #378; app data/model, authentication, recency, certification and Training unchanged. **Node syntax/targeted/typecheck/build/Playwright NOT RUN**, no release, merge or deploy. [U2 contract](docs/product/LOGBOOK_U2_LEGIBILITY_2026-10-21.md).
+
 # FlyTally changelog
 
 ## 3.8.1 — 2026-10-22 (release candidate; production verification pending)
