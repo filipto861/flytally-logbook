@@ -148,3 +148,18 @@ test("native PG16 is optional and never assumes that psql alone is the server", 
   assert.match(source, /"16", "bin"/);
   assert.match(source, /scram-sha-256/);
 });
+
+test("Docker fallback persists PG16 data and restarts the owned container", () => {
+  const source = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
+  assert.match(source, /"--restart", "unless-stopped"/);
+  assert.match(source, /flytally-logbook-local-pg16-data/);
+  assert.match(source, /verifyOwnedFixture\(existingUrl\)/);
+  assert.doesNotMatch(source, /docker", \["rm"|docker", \["volume", "rm"/);
+});
+
+test("test runner sanitizes inherited libpq routing and never trusts remote env DB", () => {
+  const source = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
+  assert.match(source, /\/\^PG\[A-Z0-9_\]\+\$\/i/);
+  assert.match(source, /env\.DATABASE_URL = ""/);
+  assert.match(source, /verifyOwnedFixture\(url\)/);
+});
