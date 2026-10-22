@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T07:23:53.813Z — PR #383 first-run native PG16 stall mitigation (DRAFT, not merged/deployed).**
+
+- Independently verified GitHub main: `860df276f7044586834871808e7e3843a10daaac`. Work branch `chore/portable-local-test-workflow-20261022` before this checkpoint: `0648cf031f567f6939f42fe3e96eb886be5c3f46`; PR #383 Draft, base main. This documentation commit advances head; refetch it when resuming.
+- Owner-reported Windows result at former work head `d83ea6dd0aaac59d1cba4e4ca9bb68bb8fa73a5b`: `git pull --ff-only` succeeded. `npm run setup:local` printed existing npm dependencies and Chromium then showed no further output for ~2 minutes. **UNKNOWN** whether native PG16 tool probing, initdb, pg_ctl, or Docker caused wait, whether Ctrl+C was applied, and whether an unfinished local data directory exists. Treat status as **BLOCKED/NOT RUN**, not a test PASS.
+- Scope: diagnosis and small fix to dev-only PG16 installer visibility and stuck-process behavior; preserve owner data, explicit identity and existing safety gates. DO NOT: no uncontrolled deletes, no adoption of unknown DB, no production/remote DB, no Training repo changes, no merge/deploy/migration/feature flags.
+- Changed files since stall: `tooling/local-native-pg16.mjs`, `tooling/local-workflow.mjs`, `tests/local-workflow.test.mjs`, `docs/TESTING_WORKFLOW.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, this handoff. Native probes bound to 7 s each; initdb to 90 s and pg_ctl startup to 40 s; native startup messages and child stdout/stderr visible; Docker endpoint/daemon probes bounded 8 s each. Interrupted data directory without ownership marker is marked INCOMPLETE and blocks retries without deletion.
+- **Evidence for current change:** GitHub source and SHA inspected; source-only code parsing and 10 syntactic/wiring assertions PASS. These are NOT native Windows Node, database or browser runtime tests. **Exact updated head:** `npm run test:local-workflow` NOT RUN; `npm run test:quick` NOT RUN; typecheck NOT RUN; build NOT RUN; PG16 acceptance NOT RUN; Playwright NOT RUN; CI NOT RUN. Previous head's 7/7 guard PASS and 256/257 failing quick test are historical evidence only.
+- Production DB/migration/flags/deploy **NOT ACCESSED/NOT RUN** (actual runtime state UNKNOWN). No product changes and no operation on owner's PC were performed remotely.
+- **Single next step:** receive owner's read-only PowerShell results for `Get-Process initdb,pg_ctl,postgres`, existence of `.flytally/persistent-local-pg16` and `.env.test.local`, plus filenames/timestamps in the cluster directory, without posting secret file contents; assess whether partial initialization needs a reviewed recovery path before another setup attempt.
+
+---
+
+**Historical handoff (superseded):**
+
 **UTC 2026-10-22T07:10:41.267Z — DEV-ENV reboot-persistent Windows PG16 candidate on PR #383 (DRAFT, NOT MERGED/DEPLOYED).**
 
 - Verified GitHub main full SHA `860df276f7044586834871808e7e3843a10daaac`. Verified work branch `chore/portable-local-test-workflow-20261022` HEAD before this checkpoint `ae559459aa8766e0d0547d7955edf0165dfc778a`; PR #383 targets main. This handoff commit advances HEAD.
