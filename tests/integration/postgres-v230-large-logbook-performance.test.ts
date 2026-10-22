@@ -76,9 +76,45 @@ function explain(statement:string){
   const top=parsed[0]??{};
   return{planningMs:Number(top["Planning Time"]??0),executionMs:Number(top["Execution Time"]??0),plan:top.Plan};
 }
+// Source-only EXPLAIN metadata. No raw SQL, rows, paths, parameters, user data,
+// PostgreSQL settings, or complete plan are printed or written to the evidence file.
+function diagnosticPlanSummary(plan:unknown){
+  const nodes:Array<Record<string,unknown>>=[];
+  const visit=(candidate:unknown, depth:number)=>{
+    if(!candidate||typeof candidate!=="object"||depth>40||nodes.length>200)return;
+    const p=candidate as Record<string,unknown>;
+    const n=(field:string)=>Number(p[field]??0);
+    nodes.push({
+      node:String(p["Node Type"]??""),
+      relation:String(p["Relation Name"]??""),
+      index:String(p["Index Name"]??""),
+      cte:String(p["CTE Name"]??""),
+      rows:n("Actual Rows"),loops:n("Actual Loops"),
+      totalMs:n("Actual Total Time"),
+      tempRead:n("Temp Read Blocks"),tempWritten:n("Temp Written Blocks"),
+      sharedRead:n("Shared Read Blocks"),sharedHit:n("Shared Hit Blocks"),
+      sortMethod:String(p["Sort Method"]??""),
+      sortSpaceKb:n("Sort Space Used"),
+    });
+    if(Array.isArray(p.Plans))for(const child of p.Plans)visit(child,depth+1);
+  };
+  visit(plan,0);
+  return {
+    root:nodes[0]??null,
+    longestNodes:nodes.slice(1).sort((a,b)=>Number(b.totalMs)*Number(b.loops)-Number(a.totalMs)*Number(a.loops)).slice(0,12),
+    nodesVisited:nodes.length,
+  };
+}
 function recordMetric(name:string,result:{planningMs:number;executionMs:number;plan:unknown},limitMs:number){
   evidence[name]={planningMs:result.planningMs,executionMs:result.executionMs,limitMs};
   console.log(`V230 SCALE ${name}: execution=${result.executionMs.toFixed(3)}ms planning=${result.planningMs.toFixed(3)}ms limit=${limitMs}ms`);
+  // Diagnostics are purely observational and do not relax acceptance budgets.
+  if(name==="flightListFirstPage100k"&&result.executionMs>=4_000){
+    console.log("V230 FLIGHTLIST100K PLAN "+JSON.stringify({
+      executionMs:result.executionMs,planningMs:result.planningMs,
+      ...diagnosticPlanSummary(result.plan),
+    }));
+  }
   assert.ok(result.executionMs<limitMs,`${name} exceeded ${limitMs}ms on the controlled v2.3 dataset: ${result.executionMs}ms`);
 }
 
