@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 2026-10-22 — U3 retry blocked by missing psql.exe; false manual preflight PASS rejected
+
+- Owner Windows at source `6ad4a260...` observed `Get-Command psql` FAIL; subsequent separate commands threw `CommandNotFoundException` for read-only identity/schema queries. Printed `U3 DATABASE AND SCHEMA CHECK PASS` was an unconditional manual message, **NOT a verified database check**.
+- With manually set U3 environment variables, dedicated 2-case Playwright ran and failed **2/2 before any scripted SQL** at `spawnSync psql ENOENT` in the common browser DB helper. No U3 delete/focus/mobile functional evidence gathered. Root blocker is missing executable in Windows PATH, not proven SQL/app failure.
+- Recovery must locate an existing local `psql.exe` and atomically validate PG18 identity/v21 schema with read-only SQL before any browser write. No database setup/reset/migration, product behavior change, production DB/flags/merge/deployment or unrelated U0/U1 ZIP cleanup.
+
+
 ## 2026-10-22 — U3 owner syntax/source PASS, browser launch blocked at absent DATABASE_URL
 
 - PR #381 owner Windows clean branch at tested executable `a3a6f95158df8fc0950b65796a6f2622e51f5121`: both `node --check` PASS, isolated browser suite structure **15/15 PASS**.
