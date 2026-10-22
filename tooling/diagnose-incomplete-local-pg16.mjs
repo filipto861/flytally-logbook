@@ -91,9 +91,9 @@ try {
       "]; no adoption or writes");
   }
   console.log("[DIAG] Core database/user/server address/port/version: PASS");
-  const pidBytes = outcome("server postmaster PID file (binary)", query(
+  const serverPidHex = outcome("server postmaster PID file (binary)", query(
     "SELECT encode(pg_catalog.pg_read_binary_file('postmaster.pid'), 'hex')"));
-  if (pidBytes === null) problem("server PID file binary read failed; inspect SQLSTATE only, do not retry setup");
+  if (serverPidHex === null) problem("server PID file binary read failed; inspect SQLSTATE only, do not retry setup");
   const full = outcome("full physical identity query", query(
     "SELECT current_database() || '|' || current_user || '|' || encode(pg_catalog.pg_read_binary_file('postmaster.pid'), 'hex') || '|' || host(inet_server_addr()) || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')"));
   if (full === null) problem("full identity query failed; see SQLSTATE");
