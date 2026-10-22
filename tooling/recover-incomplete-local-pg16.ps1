@@ -35,8 +35,11 @@ try {
   Require (Test-Path -LiteralPath $data -PathType Container) "Native PG16 data directory missing"
   Require (Test-Path -LiteralPath $versionPath -PathType Leaf) "Missing PG_VERSION"
   Require ((Get-Content -LiteralPath $versionPath -TotalCount 1).Trim() -ceq "16") "Not a PG16 data directory"
+  Assert-NotReparse (Split-Path -Parent $target)
   Assert-NotReparse $target
   Assert-NotReparse $data
+  Assert-NotReparse $pidPath
+  Assert-NotReparse $versionPath
   Require (Test-Path -LiteralPath $pidPath -PathType Leaf) "No running-postmaster identity file"
   $lines = @(Get-Content -LiteralPath $pidPath -TotalCount 4)
   Require ($lines.Count -eq 4) "Postmaster identity is incomplete"
@@ -57,6 +60,8 @@ try {
   Require (Test-Path -LiteralPath $pgCtl -PathType Leaf) "The PostgreSQL16 pg_ctl.exe is missing"
   $v = & $pgCtl --version
   Require ($LASTEXITCODE -eq 0 -and $v -match "PostgreSQL 16\.") "The pg_ctl version is not PG16"
+  & $pgCtl -D $data status | Out-Null
+  Require ($LASTEXITCODE -eq 0) "pg_ctl does not recognize this data directory as running"
 
   Write-Host "Verified isolated FlyTally native PG16 bootstrap:"
   Write-Host "  PID: $postmasterPid"
