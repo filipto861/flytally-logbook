@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC checkpoint:** 2026-10-22T06:46:39Z. **Status: DEV-ENV PR #383 hardened, owner-PC acceptance NOT RUN; no merge/deploy.**
+
+- Repository filipto861/flytally-logbook. GitHub-verified **main**: `860df276f7044586834871808e7e3843a10daaac`. Work branch `chore/portable-local-test-workflow-20261022`, PR **#383** open Draft targeting main; verified **pre-checkpoint HEAD** `f5f522012a4f5a40ff2098b9d67f1dd3d319fb13`. This checkpoint advances HEAD; refetch PR/base and HEAD next session.
+- Scope approved by Filip: Logbook prioritized; one-command incremental setup across two Windows PCs, reuse installed npm/Chromium, isolated owned PG16, guarded quick/risk release + DB/browser acceptance; documentation and automated safety tests. **DO NOT:** no Training repository or shared DB, remote Neon/prod changes, migrations, flags, merge or deployment without separate approval.
+- **Files on scoped branch:** `tooling/local-workflow.mjs`, `tests/local-workflow.test.mjs`, `package.json`, `playwright.config.mjs`, `docs/TESTING_WORKFLOW.md`, `AGENTS.md`, `DEVELOPMENT.md`, `ROADMAP.md`, `CHANGELOG.md`, this Project Memory document and `ACTIVE_WORK.md`.
+- **New technical safety:** a localhost URL alone is not trusted for destructive acceptance; check local-only Docker endpoint, exact named image/container, user/database/password, sole 127.0.0.1 port binding, running state and pg_isready. Setup starts existing verified fixture or creates new; waits for readiness; never silently adopts a different DB. Explicit blank DB env masks potential `.env.local` prod fallback; browser acceptance prohibits stale server reuse. Full release calls canonical risk planner and only requires Docker when PG/scale/browser selected. `npm run setup:local` now executes local-workflow guard tests.
+- **Evidence for current work:** GitHub fetched source and branch state; isolated V8 **mock simulation 8/8 scenarios**, including local/remote DB and container rejection and risk/no-DB decision. This simulation is NOT Node24/on-machine integration evidence. **NOT RUN** on exact PR source: native Node `npm run test:local-workflow`, TypeScript, full suite, build, Docker PG16, actual PostgreSQL acceptance, Playwright/browser and CI. Database/migration/feature-flag/deploy runtime status **UNKNOWN/NOT RUN**; no production action executed here.
+- **Blocker:** cannot access either of Filip's real Windows PCs from this environment; cannot truthfully verify Docker/psql or local browser acceptance. Training PR #291 is independent and not modified in this continuation.
+- **One next step:** on one Windows PC, checkout Draft PR #383 on an appropriate branch and run `npm run setup:local`; capture its exact output (including guard test) to verify true Node24/Docker execution. Then repeat on the second PC and run candidate-risk gates before any merge request.
+
+---
+
+**Prior dated checkpoint (historical, preserved):**
+
 **UTC checkpoint:** 2026-10-22T06:27:00Z. **Status: DEV-ENV local test workflow draft PR #383; NOT MERGED / NOT DEPLOYED.**
 
 - **Verified GitHub main:** 860df276f7044586834871808e7e3843a10daaac. **Verified implementation/work branch HEAD before this checkpoint:** bdbc9f60067caa0b862d30b13b87903dffb4932d on chore/portable-local-test-workflow-20261022; PR #383, base main. This checkpoint commit itself advances the work branch; refetch live head and PR before continuing.
