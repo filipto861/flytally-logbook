@@ -1,5 +1,18 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T07:29:40.511Z — BLOCKED, owner Windows native PG16 bootstrap partially completed (PR #383, DRAFT).**
+
+- Independently verified GitHub main `860df276f7044586834871808e7e3843a10daaac`, work branch `chore/portable-local-test-workflow-20261022` PRE-CHECKPOINT HEAD `00c740e78fc087b4eb1b52e67ee99f544fd2c002`, PR #383 Draft targeting main. This handoff commit advances the head; refetch before continuing.
+- Owner report after `setup:local` stalled: read-only `Get-Process` displayed two `pg_ctl` and multiple `postgres` processes, some timestamped 09:12 on 2026-10-22; process ownership to FlyTally not verified. `Test-Path .flytally/persistent-local-pg16` TRUE, `Test-Path .env.test.local` FALSE. Directory contents `data` and `postgres.log` stamped 09:12; no owner.json listed. This means incomplete initial setup; does NOT establish a usable database.
+- Frozen safety/DO NOT: no killing generic `pg_ctl`/`postgres`, no deletion or reinitialization of partial cluster, no adoption of unverified local/production DB, no remote Neon, no Training edits, no merge/deploy/migration/feature flag changes. Preserve all existing service installations and local files. Owner requested reusable PostgreSQL on both Windows PCs.
+- Existing code mitigation at the branch head: bounded stdout-visible native PG16 stages and bounded Docker probes, partial unmarked PG16 path blocked. No new code changes in this checkpoint; PR comment records owner evidence.
+- Evidence: owner setup did not complete; PostgreSQL physical identity, credentials, connected DB, port binding, and startup ownership remain **UNKNOWN**; native PG acceptance, Playwright, full regression, build, CI **NOT RUN** for this SHA. Prior owner source 256/257 FAIL and typecheck PASS belong to older SHA and cannot be treated as current. No production DB or deployment action performed; their runtime state not verified.
+- **One next step:** owner returns READ-ONLY evidence: file `data/PG_VERSION` if it exists, first four `data/postmaster.pid` lines if exists, listeners on local port 55439, and tail of `postgres.log` (redact secrets if present). Only after independently mapping the exact cluster and state plan safe, minimally disruptive recovery.
+
+---
+
+**Prior historical checkpoints:**
+
 **UTC 2026-10-22T07:23:53.813Z — PR #383 first-run native PG16 stall mitigation (DRAFT, not merged/deployed).**
 
 - Independently verified GitHub main: `860df276f7044586834871808e7e3843a10daaac`. Work branch `chore/portable-local-test-workflow-20261022` before this checkpoint: `0648cf031f567f6939f42fe3e96eb886be5c3f46`; PR #383 Draft, base main. This documentation commit advances head; refetch it when resuming.
