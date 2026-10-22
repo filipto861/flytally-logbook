@@ -153,6 +153,9 @@ test("Docker fallback persists PG16 data and restarts the owned container", () =
   const source = readFileSync(new URL("../tooling/local-workflow.mjs", import.meta.url), "utf8");
   assert.match(source, /"--restart", "unless-stopped"/);
   assert.match(source, /flytally-logbook-local-pg16-data/);
+  assert.match(source, /"volume", "inspect", volumeName/);
+  assert.match(source, /Reserved Docker volume already exists without the matching owned container/);
+  assert.match(source, /Docker volume inspection was inconclusive/);
   assert.match(source, /verifyOwnedFixture\(existingUrl\)/);
   assert.doesNotMatch(source, /docker", \["rm"|docker", \["volume", "rm"/);
 });
