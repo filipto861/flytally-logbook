@@ -17,7 +17,7 @@ $port = 55439
 $expectedIp = "127.0.0.1"
 
 function Require([bool]$ok, [string]$reason) {
-  if (-not $ok) { throw "BLOCKED: $reason. No archive or database change performed." }
+  if (-not $ok) { throw "BLOCKED: $reason. No further action will be taken; inspect current process/cluster state." }
 }
 function Assert-NotReparse([string]$file) {
   $item = Get-Item -LiteralPath $file -Force
