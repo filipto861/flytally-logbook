@@ -8,8 +8,11 @@ Copyright (c) 2026 Emil Kowalski; LICENSE in the provided archive is the MIT Lic
 
 The archive contains 15 standalone skills, including: emil-design-eng, apple-design, mobile-native, break-ui, animate, animation-performance, review-animations, improve-animations, prototype, write-swift, animate-expo and ask-sonner.
 
+## Apple Design V2 deep adaptation (proposal)
+The user specifically requested frequent Apple Design use throughout Logbook UI. This proposal adds a dedicated apple-design skill and a full 17-domain project playbook based on the archive's 290-line apple-design/SKILL.md. It preserves source categories, constraints and illustrative algorithms (velocity handoff, momentum projection, rubber-banding) in source-backed adapted language, and differentiates them from verified runtime behavior and approved FlyTally defaults. This is NOT a verbatim vendor skill install and does not import Swift/iOS frameworks or new JS libraries. The source contains a canned first-invocation response; it is intentionally NOT an operative instruction in FlyTally.
+
 ## How this repo uses them
-No source skills are copied verbatim or automatically installed. Our project-local skills ADAPT selected principles:
+No source skills are copied verbatim or automatically installed; the V2 proposed apple-design playbook adapts all 17 original content categories. Our project-local skills ADAPT selected principles:
 - Design details, interaction feedback, restraint, typography and motion: design-engineering and ui-ux-design.
 - Safe areas, multi-input mobile, viewport and real-device validation: mobile-ipad.
 - Plausible worst-case fixture testing, animation assessment and explicit findings: ui-quality-audit.

@@ -1,4 +1,4 @@
-# FlyTally Logbook — Agent Skills V1
+# FlyTally Logbook — Agent Skills V1 (Apple Design V2 proposal pending)
 
 This is the task-specific skill registry for filipto861/flytally-logbook ONLY. Never apply to flytally-training.
 
@@ -9,19 +9,24 @@ This is the task-specific skill registry for filipto861/flytally-logbook ONLY. N
 4. A skill is a procedure, not authority to change product scope, production resources, or approved designs. No implicit merge/deploy, DB/flag changes or automatic data prefill.
 5. When no suitable skill exists, follow AGENTS.md and canonical docs; propose a new skill only when a genuinely repeatable workflow emerges.
 
+## Apple Design default for user-visible Logbook changes (pending V2 approval)
+Every UI/UX task — including a small button, spacing, form, typography, focus, feedback or mobile correction — must ALSO read the full apple-design/SKILL.md AND its required references/APPLE_DESIGN_PLAYBOOK.md. Apple Design defines evaluation and interaction craft, not permission to add animation, dependencies or change the FlyTally brand. This is a proposed V2 addition until merged.
+
 ## Activation registry
 
 | Request / changed boundary | Primary skills | Add when relevant |
 | --- | --- | --- |
 | Add/Edit/Quick Add, flight sharing, audit, roles, GPS import | flight-integrity | aviation-regulatory, database-security, testing-quality |
 | Pilot licences, recency, evidence, regulatory claims | aviation-regulatory | flight-integrity, testing-quality |
-| Page redesign, consistency, forms, buttons, loading | ui-ux-design | design-engineering, mobile-ipad, ui-quality-audit |
-| Gestures, transitions, typography, subtle motion | design-engineering | ui-ux-design, mobile-ipad |
-| PWA, touch, iPad, responsive/Safari | mobile-ipad | ui-ux-design, ui-quality-audit |
-| UI audit, accessibility, hostile fixture data | ui-quality-audit | mobile-ipad, testing-quality |
+| Page redesign, consistency, forms, buttons, loading | ui-ux-design + apple-design | design-engineering, mobile-ipad, ui-quality-audit |
+| Gestures, transitions, typography, subtle motion | apple-design + design-engineering | ui-ux-design, mobile-ipad |
+| PWA, touch, iPad, responsive/Safari | mobile-ipad + apple-design | ui-ux-design, ui-quality-audit |
+| UI audit, accessibility, hostile fixture data | ui-quality-audit + apple-design | mobile-ipad, testing-quality |
 | Auth, permissions, database, schema, data recovery | database-security | flight-integrity, testing-quality |
 | Tests, candidate selection, Playwright, failures | testing-quality | affected domain skill |
 | Branch/PR, docs, releases, handoff, Vercel | release-workflow | testing-quality |
+
+New Apple Design skill (proposed V2): apple-design — read SKILL.md + its REQUIRED playbook together.
 
 Paths for each skill: .agents/skills/<skill-name>/SKILL.md.
 

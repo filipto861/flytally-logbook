@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-22T19:14:39.210Z — Apple Design V2 (proposal only)
+
+- [Draft PR #390](https://github.com/filipto861/flytally-logbook/pull/390), branch `docs/logbook-apple-design-v2-20261022` from main `f1052cac8d518342bfdf10c6f03b51199d78ad69`, initial work `17c157ea8f0d31d2d994ec43c7c909c06d2c18b5`. Adds first-class mandatory Apple Design routing for all Logbook UI, 17-section detailed playbook and compact project-instruction addendum. SOURCE-ONLY checks PASS; runtime tests NOT RUN, no deployment. V2 not canonical until explicit owner-approved merge.
+- Separate [Draft PR #389](https://github.com/filipto861/flytally-logbook/pull/389) has overlapping ROADMAP/Project Memory documentation; avoid combining or assuming its merge.
+- **ONE NEXT STEP:** review PR #390 and decide on merging separately from #389.
+
+
 ## 2026-10-22T18:37:26.054Z — Agent Skills V1 documentation proposal
 
 - New scoped workstream: [Draft PR #388](https://github.com/filipto861/flytally-logbook/pull/388), branch docs/logbook-agent-skills-v1-20261022 from main 34b865bb0ced1222945cecb107589826890ee31a; initial proposed work commit 7887c31cbd285954a29941cda3c057982fda44c4. Nine task-routed skills, AGENTS.md routing and ChatGPT Project Instructions addendum; no runtime/DB/deploy changes. **Not approved for merge.** Verify current head/base before acting.

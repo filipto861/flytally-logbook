@@ -1,5 +1,18 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-22T19:14:39.210Z — Apple Design V2 proposal, Draft PR #390 (docs only)
+
+- **Verified repo:** filipto861/flytally-logbook; main `f1052cac8d518342bfdf10c6f03b51199d78ad69`; work branch `docs/logbook-apple-design-v2-20261022` before checkpoint `17c157ea8f0d31d2d994ec43c7c909c06d2c18b5`; PR #390 OPEN/DRAFT, base main. The checkpoint commit advances work SHA; refresh after push. Existing PR #389 is an independent docs-only merge checkpoint — leave unchanged.
+- **Scope:** Dedicated .agents/skills/apple-design/SKILL.md plus references/APPLE_DESIGN_PLAYBOOK.md, registry, design-engineering and ui-ux-design, AGENTS.md, ROADMAP.md, docs/skills/THIRD_PARTY_SOURCES.md and CHATGPT_PROJECT_INSTRUCTIONS_ADDENDUM.md. Full 17 sections adapted from user-provided MIT source. No app, config, package, schema, auth, aircraft, flight records, or Training changes.
+- **Owner instruction:** Apple Design should be used frequently for Logbook UI, including micro-fixes. Apple guidance defines quality and interactive review; motion/brand changes/new dependencies remain optional and require separate scope. Owner has NOT approved this V2 merge or any prod action.
+- **GitHub source checks (before checkpoint, exact 17c157ea8f0d31d2d994ec43c7c909c06d2c18b5): PASS** first-class frontmatter, full required playbook, 17/17 chapters, AGENTS/registry routing, source MIT attribution and compact Project Instructions addition. **NOT RUN:** local risk planner, Node/typecheck/build, PG, Playwright/CI/native Safari, production smoke; production DB/flags/deploy status UNKNOWN (not inspected) and unchanged by work. No claimed runtime PASS.
+- **Risks:** PR #389 also edits ROADMAP and Project Memory but is unmerged; avoid accidental scope mixing. Original Apple source includes example numeric physics and canned initial response; our adaptation treats them as illustrative and does not import the vendor interaction prompt. ChatGPT Project settings require a separate manual edit after merge.
+- **DO NOT:** no main direct push, unrelated PR merges, production deploy/DB/migration/flags, Training edit, new dependency, automatic data prefill/auto-apply, UI redesign or private pilot data.
+- **ONE NEXT STEP:** read-only review of Draft PR #390, then owner decision whether to approve its merge; update ChatGPT Project Instructions separately if merged.
+
+---
+
+
 ## 2026-10-22T18:39:44.269Z — Agent Skills V1 final docs checkpoint before handoff
 
 - **Verified GitHub identity before checkpoint commit:** main 34b865bb0ced1222945cecb107589826890ee31a; branch docs/logbook-agent-skills-v1-20261022 @ e4a8aef733e93819f0dda95b3c8159c1b60701f4; Draft PR #388 against main. Branch/PR remain unmerged; this checkpoint advances branch HEAD and requires a subsequent read-only SHA recheck.

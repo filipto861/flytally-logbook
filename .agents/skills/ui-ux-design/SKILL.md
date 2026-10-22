@@ -16,6 +16,9 @@ Any modification to a page, component, form, design token, layout, navigation or
 6. Never auto-prefill user-critical aviation data or auto-apply a choice to simplify a form without explicit product approval.
 7. Validate relevant desktop, 320/390 mobile and 768/1024 iPad layouts, light/dark and any night mode actually present; distinguish emulator from native Safari/hardware.
 
+## Apple Design baseline
+Load apple-design/SKILL.md and its full references/APPLE_DESIGN_PLAYBOOK.md for ALL UI changes (even micro-fixes). Review response, purpose, agency, visual hierarchy, reduced motion and typography. Advanced motion/gesture techniques remain CONDITIONAL, not a default feature requirement.
+
 ## Coordination
 Load design-engineering for motion/typography details, mobile-ipad for platform behavior, ui-quality-audit for adversarial cases. Domain correctness stays governed by flight-integrity and aviation-regulatory.
 

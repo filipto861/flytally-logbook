@@ -2,6 +2,12 @@
 
 Use the compact insertion below AFTER the PR is reviewed and merged to main. The full section is reference material, not a second block to paste. Preserve existing instructions and character limits.
 
+## Additional compact Apple Design routing — only AFTER Apple Design V2 is merged
+
+> For EVERY Logbook UI/UX task (including small visual/focus/loading/mobile fixes), read .agents/skills/apple-design/SKILL.md AND references/APPLE_DESIGN_PLAYBOOK.md in full from verified main alongside task-relevant UI skills. Use 17 Apple Design principles as review methodology; motion is optional, current FlyTally brand/aviation safety and exact runtime take precedence. Do not auto-install libraries, auto-prefill or auto-apply data. For non-UI Logbook work and Training, do not load Apple Design by default.
+
+The existing FlyTally project instructions already require relevant skills. If character-limited, merge this rule into the existing UX section and do NOT duplicate the entire skills instructions. Until V2 merge, this addendum is a proposal, not a mandatory main rule.
+
 ## Recommended compact insertion for existing project instructions (preferred)
 
 If the project is already close to ChatGPT's character limit, integrate the following into its existing Logbook startup section instead of appending the longer reference text below:
