@@ -1,5 +1,19 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T10:55:21.177Z — Owner Windows `test:local-workflow` 23/23 PASS; proceed to guarded PostgreSQL acceptance (PR #383 DRAFT, UNMERGED).**
+
+- **GitHub verified:** repository `filipto861/flytally-logbook`, canonical `main` SHA `860df276f7044586834871808e7e3843a10daaac`, work `chore/portable-local-test-workflow-20261022` pre-checkpoint HEAD `1c0386351c5101e86cbac8bf1583d678f5edb36a`, PR #383 OPEN/DRAFT base `main`. This documentation commit will advance HEAD; reverify after write.
+- **Owner Windows proof on executable code SHA `3a1dff314caf25451921aba6704f36679e425b79`:** `git pull --ff-only` fast-forward PASS from `4f09e739`. `npm run test:local-workflow`: **23 total, 23 PASS, 0 FAIL, 0 SKIP, duration 1562.3359ms**; new nested Node generic-PG vs dedicated full-v20 fixture regression, native PG16 ownership, Windows PowerShell parser all PASS. Resolves previous old SHA 22/23 test failure. This is a source/safety test, **not** real PG integration acceptance or release PASS.
+- **Tested code vs docs:** No executable source has changed since `3a1dff31`; since that observed PASS the branch changed only `ROADMAP.md`, `CHANGELOG.md`, `docs/TESTING_WORKFLOW.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md` and this handoff. Docs checkpoint is not independently re-tested. Test-specific evidence is bound to source SHA as above.
+- **Outstanding:** Previous full native PG gate on old `8f416baf583969be84ec48d76700892d4bdd5f73` **FAIL** (42 integration files, 163 cases, 122 PASS, 9 FAIL, 32 SKIP); eight full-v20 special-fixture misselection failures corrected in current candidate but no real PostgreSQL rerun yet. Ninth **50k flight-list performance failure**: 2648.214ms vs unchanged 2500ms limit; not silently waived. Independent dedicated full-v20 PG fixture **NOT RUN**. Full Node/aggregate regression, typecheck/build on current executable SHA, Playwright browser, release, reboot-persistent startup and CI **NOT RUN**. Production DB/migration/feature flag/deployment actual runtime status **UNKNOWN**, no changes attempted.
+- **Scope and DO NOT:** Logbook-only portable developer testing; existing verified native disposable local PG16 `127.0.0.1:55439/flytally_logbook_test` and safety guards. No production/remote DB or user flight/GPS data, no fixture reset/reinitialization/archive, no manual separate v20 flag override, no 50k threshold relaxation, no unrelated Training, no merge/deploy/production DB migration or production flag change without explicit owner approval.
+- **Exactly one next step:** Owner runs `npm run test:db:local` from checked-out PR #383 current work branch against the already verified owned native disposable localhost PG16. This may write local fixture test records. Stop on FAIL/BLOCKED and share complete non-secret output. Reconcile the performance result before moving to browser/full release acceptance.
+
+---
+
+**Previous historical checkpoints:**
+
+
 **UTC 2026-10-22T10:50:00.369Z — Windows nested-node safety test FAIL; child test-context inheritance fix staged (PR #383 DRAFT).**
 
 - **Repo status (GitHub):** `filipto861/flytally-logbook`, `main` full SHA `860df276f7044586834871808e7e3843a10daaac`, work `chore/portable-local-test-workflow-20261022`, pre-checkpoint work HEAD `72cf136541e8baafa62635af101189f860e36f9c`, PR #383 OPEN/DRAFT targeting main. This docs write advances HEAD; reverify after commit.
