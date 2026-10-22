@@ -116,6 +116,20 @@ function pgEnv(password) {
 // The data-directory field is transmitted as ASCII hex of UTF-8 bytes.
 // Otherwise psql running on Czech Windows can transcode "č"/"í" into CP1250,
 // which spawnSync({ encoding: "utf8" }) would replace with U+FFFD.
+// Diagnose core identity fields without displaying credentials or actual server values.
+// A mismatch is never permission to adopt an unknown PostgreSQL database.
+export function nativeCoreIdentityMismatches(output) {
+  const fields = String(output ?? "").trim().split("|");
+  if (fields.length !== 5) return ["field-count"];
+  const failed = [];
+  if (fields[0] !== cfg.database) failed.push("database");
+  if (fields[1] !== cfg.user) failed.push("database-user");
+  if (fields[2] !== cfg.hostname) failed.push("server-address");
+  if (fields[3] !== cfg.port) failed.push("server-port");
+  if (!/^16\d{4}$/.test(fields[4])) failed.push("server-version");
+  return failed;
+}
+
 export function nativeIdentityMismatches(output, expectedDir = resolve(dataDir)) {
   const fields = String(output ?? "").trim().split("|");
   if (fields.length !== 6) return ["column-count"];
