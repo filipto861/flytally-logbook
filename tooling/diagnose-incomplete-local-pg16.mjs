@@ -4,7 +4,7 @@ import { existsSync, readFileSync, realpathSync, lstatSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
-import { nativePg16Tools, nativeIdentityMismatches } from "./local-native-pg16.mjs";
+import { nativePg16Tools, nativeIdentityMismatches, nativeCoreIdentityMismatches } from "./local-native-pg16.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const home = join(root, ".flytally", "persistent-local-pg16");
@@ -85,10 +85,10 @@ try {
   const core = outcome("identity fields without directory", query(
     "SELECT current_database() || '|' || current_user || '|' || inet_server_addr()::text || '|' || inet_server_port()::text || '|' || current_setting('server_version_num')"));
   if (core === null) problem("core identity query failed");
-  const parts = core.split("|");
-  if (parts.length !== 5 || parts[0] !== database || parts[1] !== user ||
-      parts[2] !== host || parts[3] !== port || !/^16\d{4}$/.test(parts[4])) {
-    problem("core database identity mismatch; no adoption or writes");
+  const mismatchedCoreFields = nativeCoreIdentityMismatches(core);
+  if (mismatchedCoreFields.length) {
+    problem("core database identity mismatch [" + mismatchedCoreFields.join(", ") +
+      "]; no adoption or writes");
   }
   console.log("[DIAG] Core database/user/server address/port/version: PASS");
   const dirBytes = outcome("directory conversion", query(
@@ -100,7 +100,7 @@ try {
   const mismatches = nativeIdentityMismatches(full);
   if (mismatches.length) problem("physical identity mismatches: [" + mismatches.join(", ") + "]");
   console.log("[DIAG] Physical identity: PASS. Retained bootstrap credential is available.");
-  console.log("[DIAG] READ-ONLY COMPLETE. No database, password file or marker has been modified.");
+  console.log("[DIAG] READ-ONLY COMPLETE. No database or fixture files were modified.");
 } catch (err) {
   console.error("[DIAG BLOCKED] " + (err instanceof Error ? err.message : "unknown error"));
   process.exitCode = 2;
