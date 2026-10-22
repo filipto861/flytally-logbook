@@ -51,11 +51,19 @@ try {
   const pidFile = join(data, "postmaster.pid");
   if (!existsSync(pidFile)) problem("postmaster PID file missing");
   verifyNoRedirect(pidFile);
-  const pid = readFileSync(pidFile, "utf8").split(/\r?\n/);
-  if (!/^[1-9]\d*$/.test(pid[0]) || !isAbsolute(pid[1]) ||
-      resolve(pid[1]).toLowerCase() !== resolve(data).toLowerCase() || pid[3] !== port) {
-    problem("postmaster PID path/port does not match the dedicated fixture");
+  // On Windows postmaster.pid may be written in the current ANSI code page
+  // instead of UTF-8. Check exact path identity using both strict decodings.
+  const pidBytes = readFileSync(pidFile);
+  let pidOk = false;
+  for (const encoding of ["utf-8", "windows-1250"]) {
+    try {
+      const pid = new TextDecoder(encoding, { fatal: true }).decode(pidBytes).split(/\r?\n/);
+      if (/^[1-9]\d*$/.test(pid[0]) && isAbsolute(pid[1]) &&
+          resolve(pid[1]).toLowerCase() === resolve(data).toLowerCase() &&
+          pid[3] === port) { pidOk = true; break; }
+    } catch { /* wrong encoding; try the other one */ }
   }
+  if (!pidOk) problem("postmaster PID path/port does not match the dedicated fixture");
   const bin = nativePg16Tools();
   if (!bin) problem("verified PG16 client and server executables missing");
   const status = run(bin.pg_ctl, ["-D", data, "status"], process.env);
