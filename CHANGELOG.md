@@ -1,4 +1,6 @@
 ## 2026-10-22 — Developer tooling candidate (NOT MERGED / NOT RELEASED)
+- Owner Windows recovery confirmed ARCHIVED (not deleted) exact incomplete fixture and fresh native PG16 initdb/start/createdb PASS, followed by fail-closed `Native PG16 physical identity mismatch`; owner marker/config were not written. Unicode Windows output encoding likely caused the false mismatch (hypothesis, not yet confirmed on owner PC). Native identity query now transfers PGDATA as ASCII hex UTF-8 and returns only failed field names, client encoding pinned UTF8; first-run credential is retained inside gitignored local fixture on failure until marker and config are saved. Post-fix Windows setup/DB acceptance NOT RUN; no production/remote DB action.
+
 - Owner Windows dry-run at work HEAD 4291937b was blocked by a **PowerShell ParserError** (`Unexpected token ')'` and `'}'`) before any script ran; this was caused by an accidentally duplicated trailing recovery block committed during previous version-regex edits. Removed duplicate tail and added regression checks for unique structure plus a real Windows PowerShell parser verification in local safety tests. New Windows parser/preflight, archival recovery, native PG setup still **NOT RUN**; owner cluster unchanged.
 
 
