@@ -1,5 +1,18 @@
 # FlyTally Logbook — rolling session handoff
 
+**UTC 2026-10-22T07:56:57.157Z — owner Windows native PowerShell syntax + READ-ONLY recovery audit PASS, pending explicit archive and fresh local setup. PR #383 OPEN DRAFT.**
+
+- GitHub verified main full SHA `860df276f7044586834871808e7e3843a10daaac` and branch `chore/portable-local-test-workflow-20261022` head before this checkpoint `fbfa69ca4b167bad343e5db95acb456cdd8057c6`; PR #383 draft, base main. This documentation commit advances the branch; check current SHA before further changes.
+- Owner Windows evidence on checked-out work SHA `fbfa69ca4b167bad343e5db95acb456cdd8057c6`: `git pull --ff-only` PASS; `[System.Management.Automation.Language.Parser]::ParseFile` returned **zero parsing errors**; running default `powershell -NoProfile -ExecutionPolicy Bypass -File .\tooling\recover-incomplete-local-pg16.ps1` **PASS READ-ONLY**. Script printed PID **53356**, `127.0.0.1:55439`, exact test-only Logbook PG16 data directory under `.flytally/persistent-local-pg16/data`, absent `.env.test.local` and `owner.json`, final `READ-ONLY audit complete. No processes stopped and no files changed.`
+- This establishes safe preflight on owner Windows, NOT completion of setup, test DB creation, PostgreSQL acceptance, or any executable archive. Physical PG16.15 startup on same data directory established in prior owner logs. Local DB contents / credential inaccessible to subsequent setup because bootstrap was interrupted. Do not suggest deleting unknown data or killing generic PostgreSQL processes.
+- Scope and DO NOT: only Logbook developer test environment; no change to Training, main, production/remote database, migration, flags or deployments; no merge without owner approval. The archive is an **explicit opt-in** guarded `pg_ctl` fast stop and **move** of one reverified local incomplete fixture, not deletion, and must fail closed on changed PID/port/path/state.
+- Tests by SHA `fbfa69ca4b167bad343e5db95acb456cdd8057c6`: Windows PowerShell parser **PASS**; native read-only recovery acceptance **PASS**; opt-in archive **NOT RUN**, `npm run setup:local` recovery **NOT RUN**, local safety contract **NOT RUN after correction**, `npm run test:quick` **NOT RUN** after correction, PG integration **NOT RUN**, browser **NOT RUN**, build/CI **NOT RUN**. Existing previous old-SHA 256/257 source failure must not be presented as current test status. Production DB, migration/flag/deploy current runtime UNKNOWN; no production action.
+- One next step: owner executes opt-in `powershell -NoProfile -ExecutionPolicy Bypass -File .\tooling\recover-incomplete-local-pg16.ps1 -ArchiveIncompleteOwnedCluster` only with script independently rechecking exact PID/port/path; if it prints `ARCHIVED (not deleted)`, run `npm run setup:local` to create proper persistent local credentials and report output. Stop immediately on any guard failure.
+
+---
+
+**Previous checkpoints (historical):**
+
 **UTC 2026-10-22T07:53:56.271Z — repair malformed READ-ONLY recovery PowerShell script after owner ParserError (PR #383 Draft, not merged).**
 
 - Verified GitHub main `860df276f7044586834871808e7e3843a10daaac`; work HEAD before checkpoint `e572389160de79040f2c708a8e45beb48eaf9f6b`, branch `chore/portable-local-test-workflow-20261022`, PR #383 base main and open Draft. This handoff commit advances work HEAD.
