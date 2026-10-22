@@ -1,5 +1,7 @@
 # FlyTally Logbook — ROADMAP
 
+**2026-10-22 — DEV-ENV PG16 SQLSTATE 22021 / BINARY POSTMASTER IDENTITY CANDIDATE:** Owner Windows 22/22 local safety tests PASS on 23be4b1f; localhost/database/user/version/IP/port checks PASS, but SQL convert_to(data_directory,'UTF8') FAIL with SQLSTATE 22021 (invalid character repertoire). Guarded finalize correctly BLOCKED before writes. New candidate reads postmaster.pid via PG16 pg_read_binary_file as bytea → ASCII hex and byte-compares it to exact locally verified PID file, avoiding text conversion of Czech Windows PGDATA; strong identity contract retained with reject-redirect and exact host/port. Post-fix Windows tests and read-only diagnostic NOT RUN; no setup reinit, archive, merge or deploy.
+
 **2026-10-22 — DEV-ENV WINDOWS PG16 SERVER ADDRESS FIX + OWNED CLUSTER FINALIZATION CANDIDATE:** Owner Windows 20/20 local-safety PASS; diagnostic authenticated and executed core SELECT, with only server-address mismatch. Official PostgreSQL docs confirm inet::text includes /32 while host(inet) returns bare IP; use host(inet_server_addr()) but strictly retain 127.0.0.1 expected. Added explicit guarded local existing-cluster finalization from retained credential; no reinit/archive required. Post-fix owner tests/DB acceptance NOT RUN. No production DB, merge, deploy or migrations.
 
 **2026-10-22 — DEV-ENV Portable Local Testing V1 — WORK BRANCH / NOT MERGED:**
