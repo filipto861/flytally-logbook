@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-23T06:25:49.271Z — Owner mobile navigation video reviewed; source-only design checkpoint
+
+- Verified repo `filipto861/flytally-logbook`, canonical `main=c68e6a2758423ab862cf9b03f5623515d07433e4` (reverified today). Work branch `docs/logbook-navigation-design-audit-20261023`, base main; preceding HEAD after private video evidence doc `9e4019ed884133b43cbda55a00457822647ebbe3`. This checkpoint advances work HEAD; verify after push. **NO PR**, no merge approval. Source PRs #388 and #390 confirmed merged; unrelated Draft PRs #377–#380 and #389 unchanged.
+- Changed documents only: `docs/product/LOGBOOK_NAVIGATION_UI_AUDIT_2026-10-23.md`, `ROADMAP.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, `docs/PROJECT_MEMORY/SESSION_HANDOFF.md`. Analyzed 56.73-second private phone/dark-mode screen video without saving screenshots or private account/flight/GPS data. Recording evidence labels NAV-V01..V08/UI-V04..V07 plus SOURCE-INFERRED NAV-S09; preserved observed vs inferred vs unverified and visual redesign option A/B.
+- Scope is exclusively global menu, navigation levels, UI visual hierarchy/consistency. DO NOT investigate unrelated issues, alter flights, record validity, Training, DB, infrastructure, brand, CSS unrelated cleanup, rework unrelated PRs, or introduce libraries/auto-prefill. Existing menu functions are preserved unless a specific bounded design is approved.
+- Evidence: GitHub source/skill/main/PR and private video **REVIEWED**; Node targeted tests/typecheck/build/Playwright/desktop/iPad/light theme/keyboard/real Safari/manual screen-reader **NOT RUN**. Production Vercel prior inspected `dpl_4XGBawGy187VyJpG5nyRFe2p2fKW` READY at earlier `34b865bb0ced1222945cecb107589826890ee31a` (not newest docs main); no runtime inspection/deploy. DB/migrations/flags **UNKNOWN / UNTOUCHED**.
+- **ONE NEXT STEP:** owner approves a bounded first-stage navigation design (prefer current-IA incremental refinement) before any runtime edits.
+
 ## 2026-10-23T06:08:20.871Z — Navigation/global design audit checkpoint (docs only)
 
 - Repo: `filipto861/flytally-logbook`. Independently verified canonical `main=c68e6a2758423ab862cf9b03f5623515d07433e4`; work branch `docs/logbook-navigation-design-audit-20261023` from main, initial docs audit commit `6db33983bd1d40f57c0bc06a53d4302ea9faee12`. This checkpoint advances work HEAD; independently re-fetch after write. PR for this branch: **NONE** (no PR created). Other Draft PRs #377–#380/#389 remain independent. Main contains merged skills PRs #388/#390.
