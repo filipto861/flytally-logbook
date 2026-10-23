@@ -52,7 +52,14 @@ test("N2-C custom dates require Apply, retain navigation scope and reject revers
   await expect(page.locator(".flight-results-heading > p")).toHaveText("2026-09-18 – 2026-09-18");
   await expect(page.locator("section.metric-grid")).toBeVisible();
 
-  await page.getByRole("navigation",{name:"Statistics category"}).getByRole("link",{name:"Aeroplane",exact:true}).click();
+  const aeroplane=page.getByRole("navigation",{name:"Statistics category"}).getByRole("link",{name:"Aeroplane",exact:true});
+  await expect(aeroplane).toHaveAttribute("href",/[?&]category=AEROPLANE(?:&|$)/);
+  await aeroplane.click();
+  await expect(page).toHaveURL(url=>url.pathname==="/statistics"
+    &&url.searchParams.get("category")==="AEROPLANE"
+    &&url.searchParams.get("period")==="custom"
+    &&url.searchParams.get("from")==="2026-09-18"
+    &&url.searchParams.get("to")==="2026-09-18");
   let next=new URL(page.url()).searchParams;
   expect(next.get("category")).toBe("AEROPLANE");
   expect(next.get("period")).toBe("custom");
@@ -60,12 +67,23 @@ test("N2-C custom dates require Apply, retain navigation scope and reject revers
   expect(next.get("to")).toBe("2026-09-18");
 
   await page.getByRole("navigation",{name:"Statistics section"}).getByRole("link",{name:"Experience",exact:true}).click();
+  await expect(page).toHaveURL(url=>url.pathname==="/statistics"
+    &&url.searchParams.get("section")==="experience"
+    &&url.searchParams.get("category")==="AEROPLANE"
+    &&url.searchParams.get("period")==="custom"
+    &&url.searchParams.get("from")==="2026-09-18"
+    &&url.searchParams.get("to")==="2026-09-18");
   next=new URL(page.url()).searchParams;
   expect(next.get("section")).toBe("experience");
   expect(next.get("period")).toBe("custom");
   expect(next.get("from")).toBe("2026-09-18");
 
   await page.getByRole("navigation",{name:"Statistics period"}).getByRole("link",{name:"This year"}).click();
+  await expect(page).toHaveURL(url=>url.pathname==="/statistics"
+    &&url.searchParams.get("period")==="year"
+    &&url.searchParams.get("section")==="experience"
+    &&url.searchParams.get("category")==="AEROPLANE"
+    &&!url.searchParams.has("from")&&!url.searchParams.has("to"));
   next=new URL(page.url()).searchParams;
   expect(next.get("period")).toBe("year");
   expect(next.has("from")).toBe(false);
