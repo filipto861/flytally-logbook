@@ -65,8 +65,17 @@ try {
     throw "Wrong Git branch; switch to $expectedBranch first. No database created."
   }
   Assert-Exit "Git branch inspection"
-  if (@(& git status --porcelain --untracked-files=no).Count -gt 0) {
-    throw "Tracked worktree is not clean. Commit or switch to a clean checkout before preview."
+  # Next.js itself rewrites next-env.d.ts during local development.
+  # Allow ONLY its ordinary unstaged modification; never restore, stage or
+  # ignore changes to any other tracked file.
+  $trackedChanges = @(& git status --porcelain=v1 --untracked-files=no)
+  Assert-Exit "Tracked worktree inspection"
+  $blockingChanges = @($trackedChanges | Where-Object { $_ -cne " M next-env.d.ts" })
+  if ($blockingChanges.Count -gt 0) {
+    throw "Tracked worktree has changes other than a generated next-env.d.ts modification. Inspect git status before preview."
+  }
+  if ($trackedChanges.Count -gt 0) {
+    Write-Host "Allowing Next.js-generated next-env.d.ts change; file remains untouched."
   }
   if (-not ((& node --version) -match '^v24\.')) {
     throw "Node 24.x required. Nothing started."
@@ -97,7 +106,7 @@ try {
   $pgPort = Select-FreePgPort
   if ($pgPort -in @(5432,55432,55433)) { throw "Disallowed PostgreSQL port." }
 
-  Write-Host "N1-A preview candidate: $((& git rev-parse HEAD).Trim())"
+  Write-Host "N1 visual preview candidate: $((& git rev-parse HEAD).Trim())"
   Write-Host "Disposable cluster directory: $temporaryRoot"
   $initDb = Join-Path $pgBin "initdb.exe"
   $createdb = Join-Path $pgBin "createdb.exe"
