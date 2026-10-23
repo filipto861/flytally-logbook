@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-23 — Draft N3-M2 release verification: legacy regression scope repairs (NOT RELEASED)
+
+- Owner exact-SHA risk gate reached full Node 1684/1686: the two remaining failures were test-boundary mismatches introduced by later approved M1/M2 entry UX. No server- or client-runtime regression demonstrated by those assertions.
+- Scoped `tests/logbook-n2b-workspace-layout.test.ts` to its actual N2-B CSS section (before N2-C) without removing original forbidden selector/motion/palette controls; `tests/v125-guided-flight-entry.test.ts` retains no-duplicate-save guarantees while positively verifying the new direct-to-field New-only review is non-submit.
+- Revision `ef06949a03df6028da9bae30996dd124473abccd` is **tests-only**, with previous release FAIL preserved. Full Node/PG16/22 browser/build on new HEAD **NOT RUN**, no merge/deploy/production DB action. See [M2 risk findings](docs/product/LOGBOOK_N3_M2_FULL_RISK_SOURCE_AND_AGGREGATE_2026-10-23.md).
+
 ## 2026-10-23 — Production release: N1 navigation, N2 workspace, N2-C Statistics Custom dates
 
 - Owner explicitly approved merging #391, #392, #393 and #394 and releasing without fixing the documented year-0000 edge case. All four PRs **MERGED** in order; deployed Git SHA `3def2c3618d1b2a185d39b15df69c1613180751b` versus owner-tested `95c751d441168e95d03023a68af5edddca1e7248` differs only in merge commits (**zero changed files** in GitHub compare). No UI/flight/domain modification after tests.
