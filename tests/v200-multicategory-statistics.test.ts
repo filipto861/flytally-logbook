@@ -14,8 +14,10 @@ test("v2.0-D Statistics exposes persistent regulatory category scope",()=>{
   assert.match(page,/\[\"HELICOPTER\",\"Helicopter\"\]/);
   assert.match(page,/\[\"BALLOON\",\"Balloon\"\]/);
   assert.match(page,/statisticsHref\(key,section,category\)/);
-  assert.match(page,/statisticsHref\(period,key,category\)/);
-  assert.match(page,/getPilotInsightsData\(session[.]userId,period,category(?:,section)?\)/);
+  assert.match(page,/statisticsHref\(period,key,category,customRange\)/);
+  assert.match(page,/statisticsHref\(period,section,key,customRange\)/);
+  assert.match(page,/statisticsHref\(key,section,category\)/);
+  assert.match(page,/getPilotInsightsData\(session\.userId,section==="career"\?"all":period,category,section,customRange\)/);
   assert.match(page,/scopedFlightHref/);
 });
 
