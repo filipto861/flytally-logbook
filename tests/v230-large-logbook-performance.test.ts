@@ -59,8 +59,9 @@ test("v2.3 Print resolves latest aircraft and verification metadata once instead
 
 test("v2.3 Statistics only computes aggregates required by the active section",()=>{
   const source=read("lib/data/pilot-insights.ts"),page=read("app/(protected)/statistics/page.tsx");
-  assert.match(page,/getPilotInsightsData\(session\.userId,period,category,section\)/);
-  assert.match(source,/getPilotInsightsData\(userId:number,requested:string,requestedCategory\?:string,requestedSection\?:string\)/);
+  assert.match(page,/getPilotInsightsData\(session\.userId,section==="career"\?"all":period,category,section,customRange\)/);
+  assert.match(source,/getPilotInsightsData\(userId:number,requested:string,requestedCategory\?:string,requestedSection\?:string,customRange\?:PilotInsightCustomRange\)/);
+  assert.match(source,/const bounds=pilotInsightBounds\(requested,new Date\(\),customRange\)/);
   assert.match(source,/normalizedAnalyticsSection/);
   assert.ok(source.includes('?s(value).toLowerCase():"all") as'),"missing backward-compatible all-section fallback");
   for(const name of ["overview","experience","aircraft","places","career"])assert.ok(source.includes(`'all','${name}'`));
