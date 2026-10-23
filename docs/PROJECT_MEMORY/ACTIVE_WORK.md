@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T16:17:05.479Z — N3-M1 review status implemented as Draft; owner-local browser evidence pending
+
+- Canonical `main@3af54d4f4d0651b430452dd3f5b8513e134f5c6a`; approved Variant A + D0 docs at N3 parent Draft #397 (`22aeb50845e4db89eb6eb1f1addb19246cf37fd0`). Work `feat/logbook-n3-m1-entry-review-20261023`, Draft PR #398 based on parent, source pre-checkpoint SHA `5bf19a68ff19bf2839e122a7d8809f6e851cd656`. Read GitHub branch again for exact post-checkpoint SHA. M1 is small shared Manual/GPS status+focus UI only (7 changed source/docs/test files); source/diff STATIC PASS, TypeScript/Node/Browser/PG/build **NOT RUN**. Owner waived DeepSeek. No merge, DB, flags or production deployment; Training untouched.
+- **ONE NEXT STEP:** run new exact-SHA guarded owner-local PG16 browser/Node/typecheck/build acceptance, correct any observed failure, then owner visually approves M1 before larger UI work.
+
 ## 2026-10-23T15:54:32.436Z — N3-D0 screenshots PASS and visual report ready; implementation NOT STARTED
 
 - Repo `filipto861/flytally-logbook`; canonical main full SHA `3af54d4f4d0651b430452dd3f5b8513e134f5c6a` independently reverified for PR #397 base, current work branch `docs/logbook-n3-flight-entry-ux-discovery-20261023`, open Draft PR #397, pre-checkpoint work HEAD `fcb75349c8a20f3a65db8b5d98b49f524332a317`. Re-fetch post-checkpoint head before reporting. v3.8.1 live source `3def2c3618d1b2a185d39b15df69c1613180751b` unchanged. No merge/deploy or database/feature-flag changes.
