@@ -251,7 +251,14 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
     if(!registration)addGpsIssue("aircraft","Select aircraft",'select[name="registration"]',"details.gps-flight-context");
     else if(profileError||!selectedProfile)addGpsIssue("aircraft-profile","Resolve aircraft profile",'[data-aircraft-context-card]',"details.gps-flight-context");
     if(selectedProfile&&!commonRoleCrewReady){
-      addGpsIssue("crew",commonInstructorRequired&&!commonInstructor.trim()?"Instructor / PIC":"Pilot role or crew",'select[name="role"]',"details.gps-flight-context");
+      if(role==="SAFETY PILOT"){
+        addGpsIssue("crew","Actual PIC",commonActualPicMode==="connected"
+          ?'select[name="connectedPicUserId"]':'input[name="commander"]',"details.gps-flight-context");
+      }else if(commonInstructorRequired&&!commonInstructor.trim()){
+        addGpsIssue("crew","Instructor / PIC",'input[name="instructor"]',"details.gps-flight-context");
+      }else{
+        addGpsIssue("crew","Pilot role or crew",'select[name="role"]',"details.gps-flight-context");
+      }
     }
     if(requiresOperationEngine&&!operationType)addGpsIssue("operation","Operation (SP / MP)",'select[name="operationType"]',"details.gps-flight-context");
     if(requiresOperationEngine&&!engineType)addGpsIssue("engine","Engine (SE / ME)",'select[name="engineType"]',"details.gps-flight-context");
