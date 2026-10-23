@@ -82,3 +82,22 @@ npm run scope:changed -- "app/(protected)/statistics/page.tsx" "lib/pilot-insigh
 The `scope:changed` step is **read-only planner output**, not testing. Do not claim status unless exact-head command output is captured. The following stages (owned PostgreSQL + authenticated Playwright + candidate release gate) must use verified isolated localhost fixtures and the canonical risk runner, not the user's production `DATABASE_URL`.
 
 **ONE NEXT STEP:** Owner executes the safe local Node/TypeScript/plan commands and shares PASS/FAIL with exact HEAD; investigate failures, then run the required separate owned PostgreSQL/Playwright gates.
+
+## 2026-10-23 — N2-C browser-risk registry follow-up
+
+Owner Windows test output on original N2-C SHA `2962e6a6efc8b6aebc71a3b7484df0fdf1b1cfc5` confirmed **17/17 targeted Node PASS**. Initial `npm run typecheck` **FAIL** at test-only `TS7006`. Owner changed only the `monthly.map` callback annotation in `tests/integration/postgres-pilot-insights.test.ts`, then `npm run typecheck` **PASS on that locally modified checkout**; the change remains UNPERSISTED in GitHub, do not overwrite it or stage unrelated ZIP files.
+
+The cumulative `verify:plan -- --base origin/main` originally returned `browser:e2e/logbook-n2c-statistics-range.spec.mjs:changed-e2e-spec-has-no-authoritative-target`. The N2-C work branch now registers exactly three authoritative targets across its two existing scenarios: layout across all five viewports and two themes (tagged `@self-managed-presentation`, desktop project only), plus desktop/mobile custom Apply/navigation/error. Updated `tooling/development-modules.json` selection version 3 and relevant Statistics/pilot-insights path targeting, `tooling/browser-suite-baseline.json` appended two logical tests, and updated `tests/browser-risk-selection.test.ts` / `tests/browser-suite-structure.test.ts` to preserve the earlier frozen test inventory while asserting new coverage. The baseline's previously verified full-gate execution counts remain a historical snapshot, **not a prediction or a present PASS**.
+
+GitHub read-back structural invariants checked, but **new exact-branch runnable tests, `npm run verify:plan`, Postgres, Playwright, typecheck/build and native Safari remain NOT RUN**. No DB operations, migrations, flags, production deployment or merge. To resume on owner's real directory `C:\\Users\\Filip Točík\\Documents\\GitHub\\Logbook` (existing local TS edit must be retained):
+
+```powershell
+git pull --ff-only
+npm run test:target -- tests/browser-risk-selection.test.ts tests/browser-suite-structure.test.ts
+npm run typecheck
+npm run verify:plan -- --base origin/main
+```
+
+If the planner still sees owner's two untracked audit ZIP archives, remove them from its candidate without deleting content (relocate outside repository or locally ignore explicitly), then rerun planning. Do not start PostgreSQL or browser fixture before independent local identity / safety check.
+
+**ONE NEXT STEP:** owner pulls, runs the two new registry tests and read-only planner, and reports output including HEAD; only then schedule owned isolated PostgreSQL/browser release evidence.
