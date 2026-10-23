@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23 - Owner frozen theme behavior for N1 V2
+
+Owner requires the global sidebar and mobile drawer to match LIGHT/DARK appearance, including system appearance. No permanent navy sidebar against a light workspace; sunny-day cockpit readability is the reason. Use current theme tokens, opaque backgrounds, high legibility for small nav text/icons, visible active/focus cues and touch targets. This does not authorize a brand/color redesign. Updated design: docs/product/LOGBOOK_N1_V2_VISUAL_REDESIGN_PROPOSAL_2026-10-23.md. Draft PR #391 remains a not-yet-accepted N1-A candidate; no N1 V2 runtime changes or testing. No merge, deploy, DB, flags or unrelated scope.
+ONE NEXT STEP: visually approve the revised theme-adaptive N1 V2 shell concept before V2 code.
+
 ## 2026-10-23 — N1 V2 visual direction requested; proposal checkpoint
 
 - Canonical repo filipto861/flytally-logbook; main verified c68e6a2758423ab862cf9b03f5623515d07433e4. Existing work feat/logbook-n1a-modern-navigation-20261023, Draft PR #391. No merge or deploy.
