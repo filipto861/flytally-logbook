@@ -109,7 +109,7 @@ test("custom interval SQL includes both calendar endpoints and filters every sel
   assert.equal(Number(row.selected_minutes),150);
   assert.equal(Number(row.selected_pic_minutes),60);
   const monthly=typeof row.monthly==="string"?JSON.parse(row.monthly):row.monthly as Array<Record<string,unknown>>;
-  assert.deepEqual(monthly.map(item=>String(item.month_key)),["2026-08","2026-09"]);
+  assert.deepEqual(monthly.map((item: Record<string,unknown>)=>String(item.month_key)),["2026-08","2026-09"]);
   const roles=typeof row.roles==="string"?JSON.parse(row.roles):row.roles as Array<Record<string,unknown>>;
   assert.equal(roles.length,2);
   const empty=JSON.parse(run(`WITH result AS (${render(queryBlock(),null,{start:"2027-01-01",end:"2027-01-01"})}) SELECT row_to_json(result)::text FROM result`)) as Record<string,unknown>;
