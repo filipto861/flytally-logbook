@@ -23,7 +23,7 @@ test("N1-A reuses existing accent and theme contrast tokens instead of rebrandin
   assert.match(css,/\.primaryAction\{[^}]*background:var\(--accent-strong\)!important/);
   assert.match(css,/\.primaryAction\{[^}]*color:var\(--accent-contrast\)!important/);
   assert.match(css,/\.primaryAction:focus-visible\{outline:2px solid var\(--focus-color\)/);
-  assert.match(css,/\.recordLink\{height:44px!important/);
+  assert.match(css,/\.recordLink\{height:48px!important/);
   assert.match(css,/\.groupTitle\{[^}]*color:var\(--text-soft\)/);
 });
 
@@ -50,4 +50,29 @@ test("N1-A preserves mobile close, Escape, keyboard trap and iPad edge handle",(
   assert.match(sidebar,/aria-expanded=\{mobile\}/);
   assert.match(sidebar,/className="mobile-nav-backdrop"/);
   assert.match(ui,/@media screen and \(min-width:821px\) and \(pointer:coarse\)/);
+});
+
+test("N1 V2 makes the menu structurally legible without changing navigation destinations",()=>{
+  const sidebar=read("components/sidebar.tsx");
+  const css=read("components/sidebar.module.css");
+  const ui=read("app/ui-system.css");
+  assert.match(sidebar,/className=\{styles\.brandCopy\}/);
+  assert.match(sidebar,/className=\{styles\.primaryNavLabel\}>Workspace/);
+  assert.match(css,/\.primaryNavLabel\{[^}]*color:var\(--text-soft\)/);
+  assert.match(css,/\.recordLink\{height:48px!important/);
+  assert.match(ui,/\/\* N1 V2-1 — substantial theme-adaptive navigation redesign/);
+  assert.match(ui,/\.app-grid \.sidebar nav a\{[\s\S]*?min-height:48px/);
+  assert.match(ui,/\.app-grid \.sidebar nav a\.active\{[\s\S]*?box-shadow:inset 3px 0 0 var\(--accent-strong\)/);
+});
+
+test("N1 V2 sidebar and drawer adapt to resolved light and dark themes",()=>{
+  const ui=read("app/ui-system.css");
+  const v2=ui.slice(ui.indexOf("/* N1 V2-1 — substantial theme-adaptive navigation redesign."));
+  assert.match(v2,/html\[data-theme="light"\] \.app-grid \.sidebar\{/);
+  assert.match(v2,/html\[data-theme="dark"\] \.app-grid \.sidebar\{/);
+  assert.match(v2,/html\[data-theme="dark"\] \.app-grid \.sidebar nav/);
+  assert.match(v2,/@media screen and \(max-width:820px\)/);
+  assert.match(v2,/--mobile-shell-height:64px/);
+  assert.match(v2,/@media \(prefers-reduced-motion:reduce\)/);
+  assert.doesNotMatch(v2,/\.flight-form|\.statistics-|\.credentials-tabs|\.dashboard-widget/);
 });
