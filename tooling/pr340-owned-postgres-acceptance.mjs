@@ -106,7 +106,7 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
   assertSelectedAcceptancePreflight({candidate,env});
   const registry=JSON.parse(readFileSync(path.join(root,"tooling/postgres-partition-registry.json"),"utf8"));
   const registrySha256=sha(readFileSync(path.join(root,"tooling/postgres-partition-registry.json")));
-  assert.equal(registry.expectedTests,163);
+  assert.equal(registry.expectedTests,164);
   assert.equal(registry.partitions.length,6);
   const bins=pg16Bin();
   const parentPath=env.Path??env.PATH??"";
@@ -187,13 +187,13 @@ export function runOwnedPr340PostgresAcceptance({candidate,env=process.env}={}){
         }
       }
     }
-    assert.equal(completed,163,"Incomplete PG16 partition acceptance");
+    assert.equal(completed,164,"Incomplete PG16 partition acceptance");
     assert.equal(new Set(observations.map(x=>x.databaseIdentity)).size,6,"Database reused");
     assertSelectedAcceptancePreflight({candidate,env});
     const observation={command:generic
       ?"trusted generic six-owned-PG16 partition TAP executor"
       :"trusted PR340 six-owned-PG16 partition TAP executor",
-      coverage:"full",planned:163,passed:163,failed:0,skipped:0,notApplicable:0,retries:0,
+      coverage:"full",planned:164,passed:164,failed:0,skipped:0,notApplicable:0,retries:0,
       sourceGate:"postgres",registrySha256,profile:"controlled-local-pg16-shared-core-work_mem-64MB",
       partitions:observations,evidenceDirectory:evidenceRoot};
     writeFileSync(path.join(evidenceRoot,"verified-summary.json"),JSON.stringify({
