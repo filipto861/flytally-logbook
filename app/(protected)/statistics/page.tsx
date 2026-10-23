@@ -55,7 +55,7 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
   const parsed=period==="custom"?parsePilotInsightCustomRange(params.from,params.to):null;
   const customRange=parsed?.ok?parsed.range:undefined;
   const header=<header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Category-aware trends and breakdowns from your logbook. Sailplane and balloon totals use AIR flight time; powered categories use BLOCK time. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>;
-  const explorer=<StatisticsExplorer period={period} section={section} category={category} customRange={customRange} from={params.from} to={params.to}/>;
+  const explorer=<StatisticsExplorer period={period} section={section} category={category} customRange={customRange} from={period==="custom"?params.from:undefined} to={period==="custom"?params.to:undefined}/>;
   // Fail closed: never show All time totals when a malformed custom period was requested.
   if(section!=="career"&&period==="custom"&&!customRange)return <div className="ui-page-stack" data-n2-layout="statistics">
     {header}
