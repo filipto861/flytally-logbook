@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C Statistics custom date interval (stacked Draft)
+
+- Following owner approval of the N2-B simple/responsive design, extended Statistics Period with native From/To calendar inputs and explicit Apply alongside the four existing presets. The existing category/section links preserve a valid custom interval in URLs; Career stays all-time.
+- Strict YYYY-MM-DD calendar-day and order validation rejects invalid/missing/reversed intervals without silently reverting to All time or running aggregates. Valid inclusive boundaries flow through existing parameterized SQL for all Statistics summaries and breakdowns; no schema or flight domain changes. Rolling 12-month comparison retains its distinct named window.
+- Adds type/date parser and unit, static UI, and guarded optional PostgreSQL integration tests; aligns obsolete legacy navigation assertions to N2-B group semantics. No new dependency, background request, native picker package or motion.
+- GitHub source-only 26/26 inspections PASS before docs checkpoint; Node/TS/build/DB/Playwright/browser not executed; Draft branch stacked on N2-B PR #393, no merge, deploy or production DB/flag changes.
+
 ## Unreleased — 2026-10-23, Logbook N2-B dashboard/stats workspace structure (Draft preview)
 
 - Dashboard: arranged existing customizable widgets and optional recency status in a main column with a right-side contextual action rail on wide desktop; reflows to stacked responsive layout at narrower widths. Saved widget order/sizes, action link targets, and metrics unchanged.
