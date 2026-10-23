@@ -1034,8 +1034,8 @@ html[data-theme="dark"] .app-grid .sidebar{
   min-width:0;
   max-width:min(100%,76ch);
 }
-.app-grid .shell-workspace > .ui-page-stack > .page-header .eyebrow,
-.app-grid .shell-workspace > .page-header .eyebrow{
+.app-grid .shell-workspace > .ui-page-stack > .page-header > div:first-child > .eyebrow,
+.app-grid .shell-workspace > .page-header > div:first-child > .eyebrow{
   margin:0 0 7px;
   color:var(--accent-strong);
   font-size:.71rem;
@@ -1043,8 +1043,8 @@ html[data-theme="dark"] .app-grid .sidebar{
   letter-spacing:.095em;
   line-height:1.35;
 }
-.app-grid .shell-workspace > .ui-page-stack > .page-header h1,
-.app-grid .shell-workspace > .page-header h1{
+.app-grid .shell-workspace > .ui-page-stack > .page-header > div:first-child > h1,
+.app-grid .shell-workspace > .page-header > div:first-child > h1{
   margin:0;
   color:var(--text);
   font-size:clamp(1.94rem,2.45vw,2.48rem);
@@ -1054,8 +1054,8 @@ html[data-theme="dark"] .app-grid .sidebar{
   text-wrap:balance;
   overflow-wrap:anywhere;
 }
-.app-grid .shell-workspace > .ui-page-stack > .page-header .muted,
-.app-grid .shell-workspace > .page-header .muted{
+.app-grid .shell-workspace > .ui-page-stack > .page-header > div:first-child > .muted,
+.app-grid .shell-workspace > .page-header > div:first-child > .muted{
   max-width:76ch;
   margin:9px 0 0;
   font-size:.865rem;
@@ -1107,13 +1107,13 @@ html[data-theme="dark"] .app-grid .sidebar{
     align-items:stretch;
     padding:17px 16px 18px;
   }
-  .app-grid .shell-workspace > .ui-page-stack > .page-header h1,
-  .app-grid .shell-workspace > .page-header h1{
+  .app-grid .shell-workspace > .ui-page-stack > .page-header > div:first-child > h1,
+  .app-grid .shell-workspace > .page-header > div:first-child > h1{
     font-size:clamp(1.55rem,6vw,1.9rem);
     text-wrap:wrap;
   }
-  .app-grid .shell-workspace > .ui-page-stack > .page-header .muted,
-  .app-grid .shell-workspace > .page-header .muted{
+  .app-grid .shell-workspace > .ui-page-stack > .page-header > div:first-child > .muted,
+  .app-grid .shell-workspace > .page-header > div:first-child > .muted{
     font-size:.83rem;
     line-height:1.5;
   }
