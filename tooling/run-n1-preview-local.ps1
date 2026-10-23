@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$allowedBranches = @("feat/logbook-n1a-modern-navigation-20261023","feat/logbook-n2a-surface-consistency-20261023")
+$allowedBranches = @("feat/logbook-n1a-modern-navigation-20261023","feat/logbook-n2a-surface-consistency-20261023","feat/logbook-n2b-dashboard-statistics-layout-20261023")
 $envNames = @(
   "PATH", "DATABASE_URL", "FLYTALLY_LOCAL_POSTGRES",
   "FLYTALLY_AUTH_BROWSER", "FLYTALLY_CURRENCY_V21_BROWSER",

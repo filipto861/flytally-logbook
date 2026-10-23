@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, Logbook N2-B dashboard/stats workspace structure (Draft preview)
+
+- Dashboard: arranged existing customizable widgets and optional recency status in a main column with a right-side contextual action rail on wide desktop; reflows to stacked responsive layout at narrower widths. Saved widget order/sizes, action link targets, and metrics unchanged.
+- Statistics: combined existing category, period (except Career), and analysis navigation in one responsive filter station, with labeled groups, active URL links, keyboard focus and horizontally reachable tabs. Existing query parameters, calculations, charts, and section content untouched.
+- Styling uses scoped `app/ui-system.css` selectors, existing theme tokens and motion NONE; exact N2-B branch added to existing disposable PostgreSQL preview launcher allowlist. New structural tests `tests/logbook-n2b-workspace-layout.test.ts` staged but not executed.
+- Source-only inspections 25/25 PASS; runtime browser/Node/typecheck/build/Playwright/mobile/Safari NOT RUN. No production DB/flags/deploy or merge; Draft PR stacked on earlier N2 candidate.
+
 ## Unreleased — 2026-10-23, N2-A2 substantive visual hierarchy correction (Draft PR #392)
 
 - Owner's local N2-A screenshots showed only minor visible change, so previous N2-A styling is **not visually accepted**.
