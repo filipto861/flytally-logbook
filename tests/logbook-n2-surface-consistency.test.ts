@@ -49,3 +49,40 @@ test("N2-A does not rewrite existing flight, statistics or dashboard calculation
   const css=read("app/ui-system.css");
   assert.ok(css.indexOf("/* N2-A — shared informational surface / action hierarchy.")>css.indexOf("/* N1 V2-2 — protected-app masthead only;"));
 });
+
+
+test("N2-A2 changes dashboard presentation without changing saved widget layout",()=>{
+  const dashboard=read("app/(protected)/dashboard/page.tsx");
+  const source=read("app/ui-system.css");
+  const start=source.indexOf("/* N2-A2 — visible hierarchy pass after owner review of N2-A.");
+  assert.ok(start>0);
+  const n2=source.slice(start);
+  assert.match(dashboard,/visibleLayout\.map\(item=>/);
+  assert.match(dashboard,/data-dashboard-widget=\{item\.id\}/);
+  assert.match(dashboard,/data-dashboard-size=\{item\.size\}/);
+  assert.match(dashboard,/className="panel dashboard-quick-actions-panel"/);
+  assert.match(n2,/\.dashboard-widget > \.hero-metric/);
+  assert.match(n2,/\.dashboard-widget > \.category-card/);
+  assert.match(n2,/\.dashboard-widget > a\.dashboard-quick-card/);
+  assert.match(n2,/\.dashboard-quick-actions-panel > \.mini-metrics/);
+  assert.match(n2,/grid-template-columns:repeat\(auto-fit,minmax\(min\(100%,206px\),1fr\)\)/);
+  assert.doesNotMatch(n2,/\.dashboard-size-(small|medium|wide|hero)\s*\{/);
+});
+
+test("N2-A2 scopes statistics and flight summaries to the correct pages",()=>{
+  const stats=read("app/(protected)/statistics/page.tsx");
+  const flights=read("app/(protected)/flights/page.tsx");
+  const css=read("app/ui-system.css").split("/* N2-A2 — visible hierarchy pass after owner review of N2-A.")[1];
+  assert.ok(css);
+  assert.match(stats,/className="ui-page-stack" data-n2-layout="statistics"/);
+  assert.match(flights,/className="ui-page-stack" data-n2-layout="flights"/);
+  assert.match(css,/data-n2-layout="statistics"\] > \.metric-grid/);
+  assert.match(css,/data-n2-layout="flights"\] > \.flight-summary/);
+  assert.match(css,/grid-template-columns:repeat\(12,minmax\(0,1fr\)\)/);
+  assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+  assert.match(css,/@media\(max-width:820px\)/);
+  assert.match(css,/@media\(max-width:430px\)/);
+  assert.match(css,/@media print/);
+  assert.doesNotMatch(css,/\.flight-list-row|\.flight-form|\.map-panel|\.credential-summary|\.period-control|\.flight-search-form/);
+  assert.doesNotMatch(css,/animation:|transition:all|backdrop-filter:/);
+});
