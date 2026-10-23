@@ -53,3 +53,32 @@ During GitHub source inspection, the refactor's regular Statistics render path w
 - Static review **22/22 GitHub source assertions PASS** at code checkpoint. Executable Node tests, typecheck, actual browser CSS, 320/390, 768/1024, Chrome/real Safari remain **NOT RUN**; visual owner acceptance of the new placement pending.
 
 **ONE NEXT STEP:** owner pulls updated N2-C and confirms the inline fifth Period control + anchored calendar in light/dark, then runs candidate-bound tests.
+
+
+## 2026-10-23 — exact-head verification preparation
+
+### Risk classification (candidate-specific, not a PASS)
+
+N2-C changes a **date-range domain helper + server-side aggregate date bounds + a protected interactive UI**. Verification must therefore include **domain unit**, **application source contract**, **owned isolated PostgreSQL acceptance**, **authenticated browser UI/responsivity** and TypeScript/build evidence as selected by the actual `DEVELOPMENT.md` candidate risk planner. A successful user screenshot proves visual direction only. Source assertions are not browser or SQL evidence.
+
+### Source review findings and corrections
+
+- Caught stale N2-C source-test expectations after the user-requested inline Custom control: test looked for an obsolete `className` shape and an obsolete CSS section marker. Repaired only those assertions to match the verified exact markup/style while retaining original checks.
+- The optional PostgreSQL integration test could be launched directly, bypassing the main development runner's localhost preflight. Added a fail-closed PostgreSQL URL protocol and localhost-host check in `tests/integration/postgres-pilot-insights.test.ts` **before CREATE SCHEMA**; a remote `DATABASE_URL` is rejected. Unique test schema cleanup remains unchanged.
+- Added `e2e/logbook-n2c-statistics-range.spec.mjs` using the existing authenticated pilot/browser helper; it checks Custom stays inline through 1440/1024/768/390/320 and both themes, plus explicit Apply, selected custom interval URL, category/analysis persistence, preset reset, and invalid deep-link fail-closed behavior. Requires the repository's **owned isolated test DB and purpose-gated browser harness**; do not run directly against remote databases.
+- Source-only check **18/18 PASS** at implementation stage across page markup, CSS, test updates, existing date bounds/SQL and local-only safeguards. **NOT a Node/Playwright/PostgreSQL PASS**.
+
+### Local verification commands — safe first stage, no database operations
+
+With PowerShell at the Logbook repository on `feat/logbook-n2c-statistics-custom-period-20261023` and Node 24 installed:
+
+```powershell
+git rev-parse HEAD
+npm run typecheck
+npm run test:target -- tests/v168-pilot-insights.test.ts tests/logbook-n2c-custom-range.test.ts tests/logbook-n2b-workspace-layout.test.ts tests/v210-dashboard-statistics-consolidation.test.ts
+npm run scope:changed -- "app/(protected)/statistics/page.tsx" "lib/pilot-insights.ts" "lib/data/pilot-insights.ts" "app/ui-system.css" "e2e/logbook-n2c-statistics-range.spec.mjs" "tests/integration/postgres-pilot-insights.test.ts"
+```
+
+The `scope:changed` step is **read-only planner output**, not testing. Do not claim status unless exact-head command output is captured. The following stages (owned PostgreSQL + authenticated Playwright + candidate release gate) must use verified isolated localhost fixtures and the canonical risk runner, not the user's production `DATABASE_URL`.
+
+**ONE NEXT STEP:** Owner executes the safe local Node/TypeScript/plan commands and shares PASS/FAIL with exact HEAD; investigate failures, then run the required separate owned PostgreSQL/Playwright gates.
