@@ -1,4 +1,5 @@
 "use client";
+import { EntryReviewSummary, type EntryReviewItem } from "@/components/entry-review-summary";
 
 import { useActionState,useEffect,useMemo,useRef,useState } from "react";
 import dynamic from "next/dynamic";
@@ -225,7 +226,62 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
 
   const reviewImported=()=>{const target=document.querySelector<HTMLElement>('.flight-review-card[data-ready="false"]')??document.querySelector<HTMLElement>(".flight-review-card");target?.scrollIntoView({behavior:"smooth",block:"start"});target?.focus({preventScroll:true})};
   useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);
+  const focusEntryIssue=(selector:string,detailsSelector?:string,partIndex?:number)=>{
+    if(detailsSelector){
+      const details=document.querySelector<HTMLDetailsElement>(detailsSelector);
+      if(details&&!details.open)details.open=true;
+    }
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const target=partIndex===undefined
+        ?document.querySelector<HTMLElement>(selector)
+        :document.querySelectorAll<HTMLElement>(".kml-wizard .flight-review-card")[partIndex];
+      target?.scrollIntoView({block:"center",behavior:"auto"});
+      target?.focus({preventScroll:true});
+    }));
+  };
+  const gpsReviewItems:EntryReviewItem[]=[];
+  const addGpsIssue=(id:string,label:string,selector:string,detailsSelector?:string,partIndex?:number)=>{
+    gpsReviewItems.push({id,label,onSelect:()=>focusEntryIssue(selector,detailsSelector,partIndex)});
+  };
+  if(!analysis){
+    addGpsIssue("source","Upload a KML, GPX or CSV track",'input[name="kml"]');
+  }else if(analysis.points.length<2||parts.length===0){
+    addGpsIssue("source","Choose a GPS source with usable flight data",'input[name="kml"]');
+  }else{
+    if(!registration)addGpsIssue("aircraft","Select aircraft",'select[name="registration"]',"details.gps-flight-context");
+    else if(profileError||!selectedProfile)addGpsIssue("aircraft-profile","Resolve aircraft profile",'[data-aircraft-context-card]',"details.gps-flight-context");
+    if(selectedProfile&&!commonRoleCrewReady){
+      addGpsIssue("crew",commonInstructorRequired&&!commonInstructor.trim()?"Instructor / PIC":"Pilot role or crew",'select[name="role"]',"details.gps-flight-context");
+    }
+    if(requiresOperationEngine&&!operationType)addGpsIssue("operation","Operation (SP / MP)",'select[name="operationType"]',"details.gps-flight-context");
+    if(requiresOperationEngine&&!engineType)addGpsIssue("engine","Engine (SE / ME)",'select[name="engineType"]',"details.gps-flight-context");
+    if(selectedBalloon&&!balloonOperation)addGpsIssue("balloon-operation","Balloon operation",'select[name="balloonOperation"]',"details.gps-flight-context");
+    if(billing==="INVALID")addGpsIssue("billing","Aircraft billing setting",'select[name="billingBasis"]',"details.gps-cost-details");
+    if(gpsQualityNeedsAcknowledgement&&!gpsWarningAcknowledged)addGpsIssue("gps-warning","Review GPS quality warning",'input[name="gpsWarningReviewed"]');
+    if(sourceRequirements){
+      parts.forEach((part,index)=>{
+        const review=reviews[index];
+        if(!hasAirborneMovement(part)){
+          addGpsIssue(`part-${index}-movement`,`Flight ${index+1}: check GPS movement`,".flight-review-card",undefined,index);
+        }else if(!review?.date){
+          addGpsIssue(`part-${index}-date`,`Flight ${index+1}: date`,".flight-review-card",undefined,index);
+        }else if(!gpsSourceReviewReady(review,sourceRequirements)){
+          addGpsIssue(`part-${index}-evidence`,`Flight ${index+1}: landing / movement evidence`,".flight-review-card",undefined,index);
+        }
+        if(roleCrewOverrides[index]?.mode==="OVERRIDE"&&
+          !roleCrewBufferReady(roleCrewOverrides[index],selectedProfile!.evidence,picConnections)){
+          addGpsIssue(`part-${index}-crew`,`Flight ${index+1}: crew override`,".flight-review-card",undefined,index);
+        }
+      });
+    }
+  }
   return <form action={formAction} className="flight-form kml-wizard" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
+    <EntryReviewSummary
+      mode="gps"
+      title={!analysis?"Upload a GPS track":gpsReviewItems.length?`${gpsReviewItems.length} ${gpsReviewItems.length===1?"item needs":"items need"} review`:"No outstanding form checks"}
+      description={!analysis?"No flight will be saved until you review its evidence.":gpsReviewItems.length?"Select an item to jump to the details that need review.":"Review the detected flights before saving. The server validates the final import."}
+      items={gpsReviewItems}
+    />
     <div className="section-heading"><div><p className="eyebrow">GPS SOURCE</p><h2>Upload track</h2><p className="muted">Upload one KML, GPX or CSV track. FlyTally will suggest the flight structure and evidence for review.</p></div></div>
     <div className="upload-zone">
       <label><span>KML, GPX or CSV <span className="field-hint" aria-hidden="true">Required</span></span><input name="kml" type="file" accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/xml,text/xml,text/csv" required onChange={async event=>{const epoch=++fileEpoch.current,file=event.target.files?.[0];setAnalysis(null);setReviews([]);setRoleCrewOverrides([]);setOverrideResetNotice("");setGpsWarningAcknowledged(false);if(!file)return;let source:string;try{source=await file.text()}catch{return}if(epoch!==fileEpoch.current)return;const next=inspect(source,file.name);setAnalysis(next);const suggestedRegistration=next.registration&&aircraft.some(item=>item.registration===next.registration)?next.registration:"";setRegistration(suggestedRegistration);setRegulatoryCategory("");setBalloonOperation("");setOperationType("");setEngineType("");resetParts(next.suggested,next)}}/></label>
