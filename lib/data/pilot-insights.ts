@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { measureServerTask } from "@/lib/performance";
-import { pilotInsightBounds,rollingYearBounds } from "@/lib/pilot-insights";
+import { pilotInsightBounds,rollingYearBounds,type PilotInsightCustomRange } from "@/lib/pilot-insights";
 import { REGULATORY_AIRCRAFT_CATEGORIES,type RegulatoryAircraftCategory } from "@/lib/aircraft-category";
 import { summarizeRegistrationCosts,type FlightCostSummary } from "@/lib/flight-cost-summary";
 
@@ -40,8 +40,8 @@ const normalizedCategory=(value:unknown):RegulatoryAircraftCategory|null=>{const
 const analyticsSections=["all","overview","experience","aircraft","places","career"] as const;
 const normalizedAnalyticsSection=(value:unknown)=>(analyticsSections.includes(s(value).toLowerCase() as (typeof analyticsSections)[number])?s(value).toLowerCase():"all") as (typeof analyticsSections)[number];
 
-export async function getPilotInsightsData(userId:number,requested:string,requestedCategory?:string,requestedSection?:string):Promise<PilotInsightsData>{
-  const bounds=pilotInsightBounds(requested),rolling=rollingYearBounds(),scopeCategory=normalizedCategory(requestedCategory),section=normalizedAnalyticsSection(requestedSection);
+export async function getPilotInsightsData(userId:number,requested:string,requestedCategory?:string,requestedSection?:string,customRange?:PilotInsightCustomRange):Promise<PilotInsightsData>{
+  const bounds=pilotInsightBounds(requested,new Date(),customRange),rolling=rollingYearBounds(),scopeCategory=normalizedCategory(requestedCategory),section=normalizedAnalyticsSection(requestedSection);
   const rows=await measureServerTask("pilot-insights-data",()=>sql`
       WITH base0 AS MATERIALIZED(
         SELECT f.id,
