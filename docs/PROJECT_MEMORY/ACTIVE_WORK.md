@@ -4,7 +4,8 @@
 
 - Owner objective: main menu/navigation and common visual consistency ONLY; no opportunistic unrelated fixes. Docs-only work branch `docs/logbook-navigation-design-audit-20261023` based on verified `main=c68e6a2758423ab862cf9b03f5623515d07433e4`; source audit document `docs/product/LOGBOOK_NAVIGATION_UI_AUDIT_2026-10-23.md`. No implementation/merge/deploy approval implied.
 - Loaded merged Agent Skills V1 + Apple Design V2 (PR #388/#390 merged into main); existing independent Draft PRs #377–#380 and #389 remain out of scope.
-- **ONE NEXT STEP:** analyze forthcoming user video, then freeze a scope-limited UX redesign proposal for approval.
+- Owner private mobile/dark video reviewed; anonymized visual/navigation evidence and scoped options in audit. No source runtime tests and no exact design approval yet.
+- **ONE NEXT STEP:** owner selects incremental current IA (recommended) or minimal regrouping; approve scoped first UI milestone.
 
 ## 2026-10-22T19:14:39.210Z — Apple Design V2 (proposal only)
 
