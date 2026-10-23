@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T06:34:50.827Z — N1 modern navigation visual design proposed, not implemented
+
+- [N1 detailed design](../product/LOGBOOK_N1_MODERN_NAVIGATION_DESIGN_2026-10-23.md), stored on docs-only `docs/logbook-navigation-design-audit-20261023`, base canonical `main=c68e6a2758423ab862cf9b03f5623515d07433e4`. Preserve all menu links/labels/IA, brand tokens and current accessibility; focus on Add flight, active/secondary hierarchy, header/drawer styling. Design **NOT YET APPROVED**, no code/PR/deploy.
+- **ONE NEXT STEP:** owner approves/refines N1 proposal before isolated UI implementation and target test plan.
+
 ## 2026-10-23T06:08:20.871Z — Navigation and global UI/UX redesign discovery (scoped)
 
 - Owner objective: main menu/navigation and common visual consistency ONLY; no opportunistic unrelated fixes. Docs-only work branch `docs/logbook-navigation-design-audit-20261023` based on verified `main=c68e6a2758423ab862cf9b03f5623515d07433e4`; source audit document `docs/product/LOGBOOK_NAVIGATION_UI_AUDIT_2026-10-23.md`. No implementation/merge/deploy approval implied.
