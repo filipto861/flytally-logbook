@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-23 — N1 modern navigation design proposal
+
+- Repo: `filipto861/flytally-logbook`; main verified `c68e6a2758423ab862cf9b03f5623515d07433e4`. Work branch `docs/logbook-navigation-design-audit-20261023`, audit-only work. No PR.
+- Document: `docs/product/LOGBOOK_N1_MODERN_NAVIGATION_DESIGN_2026-10-23.md`. Owner requested a modern Apple-inspired menu and shell design, using merged skills, with strict scope control. Proposal only; no app implementation approval.
+- Allowed: global sidebar, Add flight hierarchy, active states, mobile header and drawer, visual consistency. Preserve link hierarchy, existing brand, focus, touch and keyboard behavior. Do not change unrelated UI, aviation data, auth, database, Training, dependencies or production.
+- Source and private user video reviewed; quality tests, build, browser and native device checks NOT RUN. Database/migrations/flags/deploy not touched. Production state not reassessed.
+- ONE NEXT STEP: obtain owner approval/revision of N1 design, then implement the smallest isolated visual slice with scoped tests.
+
 ## 2026-10-23T06:25:49.271Z — Owner mobile navigation video reviewed; source-only design checkpoint
 
 - Verified repo `filipto861/flytally-logbook`, canonical `main=c68e6a2758423ab862cf9b03f5623515d07433e4` (reverified today). Work branch `docs/logbook-navigation-design-audit-20261023`, base main; preceding HEAD after private video evidence doc `9e4019ed884133b43cbda55a00457822647ebbe3`. This checkpoint advances work HEAD; verify after push. **NO PR**, no merge approval. Source PRs #388 and #390 confirmed merged; unrelated Draft PRs #377–#380 and #389 unchanged.
