@@ -48,3 +48,24 @@ Visually connect N1's modern sidebar and protected page masthead to everyday inf
 7. Source-only inspection is **not** a browser/test PASS. Mark Node/typecheck/build/Playwright/current screenshots as NOT RUN until genuine exact-SHA results are available.
 
 **ONE NEXT STEP:** present N2-A preview on its stacked branch using the guarded disposable-local-Postgres script and gather Dashboard + Statistics Light/Dark screenshots. Then decide on N2-B scope or refine N2-A; neither N1 nor N2 is authorized to merge/deploy.
+
+
+## N2-A2 — stronger visual hierarchy after owner screenshot feedback
+
+**Owner feedback 2026-10-23:** Actual 1920x1080 desktop/light screenshots of local N2-A on Dashboard, Flights, Map, Statistics showed only minor cosmetic differences. Owner explicitly said the changes were not substantial. Earlier N1 nav/shell direction remains positively reviewed. This is a negative acceptance signal for N2-A, not approval to merge N2-A.
+
+**Root cause verified against code:** N2-A changed border/surface/radius and typography while leaving the Dashboard dashboard-layout-grid user-customizable geometry, Statistics six equal-weight metric tiles, Flights compact five-field strip, and unused Quick Actions horizontal space practically unchanged. This kept the visual silhouette close to the prior app.
+
+**N2-A2 code changes staged (NOT visually accepted yet):**
+- `app/(protected)/dashboard/page.tsx`: adds purely-presentational `dashboard-quick-actions-panel` CSS class. The existing widget `visibleLayout.map`, saved sizes/order and Add flight / action links are unchanged.
+- `app/(protected)/statistics/page.tsx`: attaches `data-n2-layout="statistics"` to the existing page root; all stats/filters/presentation numbers unchanged.
+- `app/(protected)/flights/page.tsx`: attaches `data-n2-layout="flights"` to existing page root; query, status, certification, list markup and totals unchanged.
+- `app/ui-system.css`: final-cascade scoped N2-A2 styling. Dashboard main flight-time hero gets a purposeful accent side rule and stronger number hierarchy using existing theme variables; compact ULL/EASA supporting cards and Last Flight link distinguish supporting context; Quick Actions cards fill the available width (only their actual inner links remain clickable). Statistics primary Logged Time card becomes visually first in a 12-column 6/3/3 + 4/4/4 wide-viewport layout; responsive 2/1 columns when narrow, with all six metric facts intact. Flights compact 5-field totals become separate scan-friendly cards above the existing dense records table; flow at 5/3/2/1 columns across breakpoints.
+- `tests/logbook-n2-surface-consistency.test.ts`: asserts presentation scope, preserve saved dashboard layout, controls and data facts, breakpoints/print/absence of unrelated selectors. No dependency or custom motion.
+- Map remains unchanged in N2-A2: the fullscreen map and layer controls must stay visually dominant; unrelated map toolbar redesign is out of scope. Operational state badges and tables preserve precise evidence semantics.
+
+**Accessibility/behavior:** no new events, handlers, links, click-target scope, icons, timings or animations; motion NONE. Light/Dark uses FlyTally semantic palette (white/quiet mint in light and dark navy surfaces with legible green cue in dark). Text hierarchy can reflow and no critical metric is hidden. Native Safari hardware not tested; browser zoom/responsive validation remains open. Do not claim outdoor sunlight readability from CSS.
+
+**Verification status:** 21/21 in-memory GitHub source assertions PASS at code SHA before handoff, NOT Node tests. Node tests, typecheck, build, Chrome actual computed CSS + screen at desktop/320/390/768/1024, keyboard and native Safari **NOT RUN** for N2-A2. Owner screenshots only show N2-A. No DB, migration, flags, deploy or merge actions. New presentation must be previewed.
+
+**ONE NEXT STEP:** owner pulls this updated N2 branch and compares Dashboard/Statistics/Flights against their N2-A screenshots in local guarded preview. Gather visible visual feedback, then use DEVELOPMENT.md candidate-bound verification and reassess staged PR dependency.
