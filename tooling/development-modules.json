@@ -940,7 +940,7 @@
     "explicitNotApplicableSkipReasons": [
       "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
     ],
-    "selectionVersion": 2,
+    "selectionVersion": 3,
     "moduleTargets": {
       "flight-records": [
         "flight-manual-save-desktop",
@@ -1126,6 +1126,19 @@
           "map-lifecycle-import-desktop",
           "map-lifecycle-import-mobile"
         ]
+      },
+      {
+        "prefixes": [
+          "app/(protected)/statistics/",
+          "lib/pilot-insights",
+          "lib/data/pilot-insights"
+        ],
+        "files": [],
+        "targets": [
+          "statistics-custom-period-layout-desktop",
+          "statistics-custom-period-flow-desktop",
+          "statistics-custom-period-flow-mobile"
+        ]
       }
     ],
     "harnessTargets": [
@@ -1181,7 +1194,10 @@
       "shell-offline-desktop",
       "shell-offline-mobile",
       "verifier-evidence-desktop",
-      "verifier-evidence-mobile"
+      "verifier-evidence-mobile",
+      "statistics-custom-period-layout-desktop",
+      "statistics-custom-period-flow-desktop",
+      "statistics-custom-period-flow-mobile"
     ],
     "targets": {
       "shell-core-desktop": {
@@ -1497,6 +1513,21 @@
       "airport-elevation-ownership-mobile": {
         "spec": "e2e/airport-elevation.spec.mjs",
         "title": "Airport elevation server action refuses a cross-user forged edit",
+        "project": "mobile-chromium"
+      },
+      "statistics-custom-period-layout-desktop": {
+        "spec": "e2e/logbook-n2c-statistics-range.spec.mjs",
+        "title": "N2-C period presets and Custom stay on one row across cockpit viewports and themes",
+        "project": "desktop-chromium"
+      },
+      "statistics-custom-period-flow-desktop": {
+        "spec": "e2e/logbook-n2c-statistics-range.spec.mjs",
+        "title": "N2-C custom dates require Apply, retain navigation scope and reject reversed deep links",
+        "project": "desktop-chromium"
+      },
+      "statistics-custom-period-flow-mobile": {
+        "spec": "e2e/logbook-n2c-statistics-range.spec.mjs",
+        "title": "N2-C custom dates require Apply, retain navigation scope and reject reversed deep links",
         "project": "mobile-chromium"
       }
     }
