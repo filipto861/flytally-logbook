@@ -1,11 +1,13 @@
-.primaryAction{margin:4px 6px 8px!important;border:1px solid color-mix(in srgb,var(--accent) 58%,var(--line))!important;background:color-mix(in srgb,var(--accent) 16%,var(--panel2))!important;color:var(--text)!important;font-weight:850!important}
-.primaryAction:hover{background:color-mix(in srgb,var(--accent) 24%,var(--panel2))!important}
-.group{display:grid;gap:3px;margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
-.groupTitle{height:30px;padding:0 13px;display:flex;align-items:center;gap:13px;color:color-mix(in srgb,var(--text) 62%,var(--muted));font-size:.67rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.primaryAction{margin:4px 6px 8px!important;border:1px solid var(--accent-strong)!important;border-radius:var(--ui-radius-control,11px)!important;background:var(--accent-strong)!important;color:var(--accent-contrast)!important;font-weight:800!important;letter-spacing:-.01em;box-shadow:0 4px 14px color-mix(in srgb,var(--accent-strong) 13%,transparent)}
+.primaryAction :global(.nav-icon){stroke-width:2.1}
+.primaryAction:focus-visible{outline:2px solid var(--focus-color)!important;outline-offset:3px}
+.primaryAction:hover{background:var(--accent-strong)!important;filter:brightness(1.06)}
+.group{display:grid;gap:4px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)}
+.groupTitle{height:32px;padding:0 13px;display:flex;align-items:center;gap:13px;color:var(--text-soft);font-size:.68rem;font-weight:760;letter-spacing:.065em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
 .groupTitle i{flex:0 0 20px;width:20px;text-align:center;font-style:normal;color:var(--muted);font-size:.72rem}
-.recordLink{height:40px!important;color:var(--muted)!important;font-size:.79rem!important;font-weight:680!important}
+.recordLink{height:44px!important;color:var(--text-soft)!important;font-size:.83rem!important;font-weight:650!important}
 .recordLink:hover{color:var(--text)!important}
-.recordLink:global(.active){color:var(--text)!important}
+.recordLink:global(.active){color:var(--text)!important;font-weight:750!important}
 .adminLink{margin-top:9px!important;padding-top:7px!important;height:51px!important;border-top:1px solid var(--line)!important;border-radius:0!important}
 :global(.sidebar.collapsed) .primaryAction{margin:4px 0 8px!important}
 :global(.sidebar.collapsed) .adminLink{margin-top:0!important;padding-top:0!important;height:44px!important;border-top:0!important}
