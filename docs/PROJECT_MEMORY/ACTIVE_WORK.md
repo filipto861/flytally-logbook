@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23 - N1 V2-2 Windows local preview worktree guard correction
+
+- User git pull --ff-only succeeded to fccfda4fee1c6e71d6894e8b715b34d32d6c1ef8 then local preview stopped at tracked-worktree guard: next-env.d.ts modified by prior Next.js dev. Two untracked ZIP files remain intact. Failed invocation stopped before any database/fixture action.
+- Repo filipto861/flytally-logbook, base main c68e6a2758423ab862cf9b03f5623515d07433e4; branch feat/logbook-n1a-modern-navigation-20261023, Draft PR #391, no merge.
+- Edited only tooling/run-n1-preview-local.ps1: allow exact Git porcelain unstaged ' M next-env.d.ts' while rejecting all other tracked changes (including staged changes), preserve branch and isolated DB physical identity checks. Do not restore, stage or delete next-env.d.ts or the user's ZIPs.
+- Source review 12/12 PASS (NOT Windows execution). New script runtime, DB fixture, browser, TypeScript/build/Playwright/native Safari remain NOT RUN. No production DB/migration/flags/deploy changes.
+- ONE NEXT STEP: owner runs git pull --ff-only and the guarded local preview PowerShell command, then reviews N1 V2-2 Light/Dark screenshots.
+
 ## 2026-10-23 — N1 V2-2 shared protected shell/header candidate checkpoint
 
 - Canonical repo filipto861/flytally-logbook, main c68e6a2758423ab862cf9b03f5623515d07433e4, work feat/logbook-n1a-modern-navigation-20261023 on Draft PR #391 base main. Before checkpoint, work SHA 4693020d002961f42516d607e8076e37468d8aa0; re-fetch full final SHA after writing this handoff.
