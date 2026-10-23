@@ -38,9 +38,9 @@ test("N2-B Statistics consolidates existing category period and analysis URL nav
   assert.match(page,/aria-label="Statistics category"/);
   assert.match(page,/aria-label="Statistics period"/);
   assert.match(page,/aria-label="Statistics section"/);
-  assert.match(page,/statisticsHref\(period,section,key\)/);
+  assert.match(page,/statisticsHref\(period,section,key,customRange\)/);
   assert.match(page,/statisticsHref\(key,section,category\)/);
-  assert.match(page,/statisticsHref\(period,key,category\)/);
+  assert.match(page,/statisticsHref\(period,key,category,customRange\)/);
   assert.match(page,/section!=="career"/);
   assert.match(page,/aria-current=\{category===key\?"page":undefined\}/);
   assert.match(page,/aria-current=\{period===key\?"page":undefined\}/);
