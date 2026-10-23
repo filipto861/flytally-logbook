@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C verification coverage & integration safety (Draft #394)
+
+- Corrected N2-C static test expectations following inline Calendar styling; added focused Playwright tests for one-line period controls at desktop/iPad/mobile viewports, Light/Dark and user-selected inclusive range workflow including invalid URLs and preset navigation.
+- Strengthened optional direct PostgreSQL integration test with local-only URL preflight before CREATE SCHEMA. Existing canonical acceptance runner is also localhost guarded. No production data/schema/flags or application UI/runtime logic changed in this verification-prep slice.
+- Targeted in-memory source audit 18/18 PASS. Executable Node/typecheck/build/owned PG/Playwright not run; exact candidate test and owner launch are next. No merge/deploy authorization.
+
 ## Unreleased — 2026-10-23, N2-C custom date selector inline layout correction
 
 - Corrected Statistics Period selector layout based on owner's screenshot: four presets and Custom now share one responsive segmented toolbar, with an anchored native date picker panel appearing only when expanded. Applying a custom period leaves the chip selected, but the popup closed.
