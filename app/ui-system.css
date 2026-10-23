@@ -1004,3 +1004,132 @@ html[data-theme="dark"] .app-grid .sidebar{
     transition:none;
   }
 }
+
+/* N1 V2-2 — protected-app masthead only; no route internals, tabs or cards.
+   Explicit scope prevents the styling of login, public views or modal headers. */
+.app-grid .shell-workspace{
+  min-width:0;
+  width:100%;
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header,
+.app-grid .shell-workspace > .page-header{
+  position:relative;
+  min-width:0;
+  gap:clamp(16px,2.3vw,32px);
+  padding:23px 26px 24px;
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:0 5px 20px color-mix(in srgb,var(--text) 3%,transparent);
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header{
+  margin-block:0;
+}
+.app-grid .shell-workspace > .page-header{
+  margin-bottom:var(--ui-section-gap);
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header > div:first-child,
+.app-grid .shell-workspace > .page-header > div:first-child{
+  min-width:0;
+  max-width:min(100%,76ch);
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header .eyebrow,
+.app-grid .shell-workspace > .page-header .eyebrow{
+  margin:0 0 7px;
+  color:var(--accent-strong);
+  font-size:.71rem;
+  font-weight:800;
+  letter-spacing:.095em;
+  line-height:1.35;
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header h1,
+.app-grid .shell-workspace > .page-header h1{
+  margin:0;
+  color:var(--text);
+  font-size:clamp(1.94rem,2.45vw,2.48rem);
+  font-weight:790;
+  letter-spacing:-.042em;
+  line-height:1.12;
+  text-wrap:balance;
+  overflow-wrap:anywhere;
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header .muted,
+.app-grid .shell-workspace > .page-header .muted{
+  max-width:76ch;
+  margin:9px 0 0;
+  font-size:.865rem;
+  line-height:1.55;
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header > :is(a,.primary-link,.primary-button,.secondary-link,.secondary-button),
+.app-grid .shell-workspace > .page-header > :is(a,.primary-link,.primary-button,.secondary-link,.secondary-button){
+  flex:0 0 auto;
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:9px 16px;
+  border-radius:var(--ui-radius-control);
+  font-size:.835rem;
+  font-weight:750;
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header > :is(.secondary-link,.secondary-button),
+.app-grid .shell-workspace > .page-header > :is(.secondary-link,.secondary-button){
+  border:1px solid var(--line);
+  background:var(--surface-raised);
+  color:var(--text);
+}
+.app-grid .shell-workspace > .ui-page-stack > .page-header > :is(a,button):focus-visible,
+.app-grid .shell-workspace > .page-header > :is(a,button):focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:3px;
+}
+@media(max-width:1180px){
+  .app-grid .shell-workspace > .flight-detail-header{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    align-items:start;
+    gap:16px;
+  }
+}
+@media(max-width:820px){
+  .app-grid .shell-workspace > .ui-page-stack > .page-header,
+  .app-grid .shell-workspace > .page-header{
+    padding:20px 20px 21px;
+    gap:14px;
+  }
+}
+@media(max-width:600px){
+  .app-grid .shell-workspace > .ui-page-stack > .page-header,
+  .app-grid .shell-workspace > .page-header{
+    flex-direction:column;
+    align-items:stretch;
+    padding:17px 16px 18px;
+  }
+  .app-grid .shell-workspace > .ui-page-stack > .page-header h1,
+  .app-grid .shell-workspace > .page-header h1{
+    font-size:clamp(1.55rem,6vw,1.9rem);
+    text-wrap:wrap;
+  }
+  .app-grid .shell-workspace > .ui-page-stack > .page-header .muted,
+  .app-grid .shell-workspace > .page-header .muted{
+    font-size:.83rem;
+    line-height:1.5;
+  }
+  .app-grid .shell-workspace > .ui-page-stack > .page-header > :is(a,.primary-link,.primary-button,.secondary-link,.secondary-button),
+  .app-grid .shell-workspace > .page-header > :is(a,.primary-link,.primary-button,.secondary-link,.secondary-button){
+    flex:0 1 auto;
+    width:100%;
+  }
+}
+@media print{
+  .app-grid .shell-workspace > .ui-page-stack > .page-header,
+  .app-grid .shell-workspace > .page-header{
+    padding:0;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    background:transparent;
+  }
+}
