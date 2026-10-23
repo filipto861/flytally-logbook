@@ -62,3 +62,23 @@ A confidently **new visual silhouette** inspired by modern aviation tools and Ap
 **CURRENT EVIDENCE:** owner desktop LIGHT screenshots of N1-A observed; GitHub source, CSS cascade and required skills read. N1 V2-1 candidate CSS/markup committed to Draft PR #391. Static in-memory checks 22/22 PASS (source only, NOT a test runner). Node targeted tests, TypeScript, build, authenticated Playwright, computed browser CSS, real preview/native Safari **NOT RUN**; database/flags/production deployment untouched. No owner visual acceptance of V2 yet.
 
 **ONE NEXT STEP:** Owner pulls Draft PR #391 candidate and previews N1 V2-1 locally with existing guarded disposable DB launcher in light/dark (expanded/collapsed, mobile drawer). Gather visual feedback BEFORE N1 V2-2 or release tests. No merge/deploy.
+
+
+## 6. N1 V2-2 implementation candidate — 2026-10-23
+
+**Owner direction:** Following positive desktop/light+dark N1 V2-1 screenshots, owner asked to continue into common workspace/page-header modernization. **Scope remains the Logbook shell; owner has not approved actual V2-2 appearance, merge or deploy.**
+
+**Changed runtime code (candidate only):**
+- `components/app-shell.tsx`: add `shell-workspace` CSS scope to the existing protected `{children}` wrapper; Sidebar, theme manager, PWA, notification onboarding and legal footer unchanged.
+- `app/ui-system.css`: final-cascade CSS limited to `.app-grid .shell-workspace > .ui-page-stack > .page-header` and `.app-grid .shell-workspace > .page-header`. Give existing first-level page mastheads an opaque semantic surface, standard 17px radius, restrained border/elevation, consistent eyebrow/H1/lead copy, and non-shrinking existing header action. No route component or business logic edits.
+- `tests/logbook-n1-v2-shell.test.ts`: source guard for the shell scope, theme tokens, reduced scope, the preserved contextual links and the flight detail narrow layout.
+
+**Design method:** current merged Apple Design V2 full 17-domain playbook + UI/UX Design, Design Engineering, Mobile/iPad, UI Quality Audit and Testing Quality. Motion policy **NONE** (static layout styling). Retain all existing semantic colors and approved light/dark adaptation, no new components, overlays or dependencies.
+
+**Navigation/action constraints:** Existing header action links such as Add flight, Back to dashboard and flight detail navigation are left untouched; no extra global actions added. No changes to filters, tabs, cards, flight records, statistics, auth, DB, backup, maps, Training, notifications or accessibility event logic.
+
+**Responsive preview matrix:** Desktop expanded/collapsed in Light and Dark; mobile at 320 and 390px with top bar and menu; iPad 768/1024px touch emulation; long title/description, in-header controls and header with no button; keyboard focus/zoom and print. Confirm no horizontal scroll, duplicate action or clipping. **Browser and native Safari NOT RUN yet**, no PASS from source checks.
+
+**Evidence:** 22/22 in-memory GitHub source assertions PASS at staging point (source-only). Node targeted tests, typecheck, build, browser/computed CSS and native Safari NOT RUN. User's earlier positive screenshots cover N1 V2-1 only, not this implementation.
+
+**ONE NEXT STEP:** owner refreshes local clean checkout to exact current branch HEAD and previews N1 V2-2 using the pre-existing guarded local disposable PostgreSQL launcher; sends Light and Dark screenshots of Dashboard and one long-title/with-action screen. Only after visual acceptance proceed with candidate-bound risk planner/targeted tests. No merge/deploy.
