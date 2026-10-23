@@ -24,9 +24,20 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
   const paceLabel=pace.direction==="new"?"New activity vs prior 12m":pace.direction==="none"?"No rolling-year activity":pace.direction==="flat"?"Stable vs prior 12m":`${pace.percent&&pace.percent>0?"+":""}${pace.percent}% vs prior 12m`;
   return <div className="ui-page-stack" data-n2-layout="statistics">
     <header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Category-aware trends and breakdowns from your logbook. Sailplane and balloon totals use AIR flight time; powered categories use BLOCK time. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>
-    <nav className="period-control" aria-label="Statistics category">{categories.map(([key,label])=><Link key={key||"ALL"} className={category===key?"active":""} href={statisticsHref(period,section,key)}>{label}</Link>)}</nav>
-    {section!=="career"?<div className="period-control" aria-label="Statistics period">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} href={statisticsHref(key,section,category)}>{label}</Link>)}</div>:null}
-    <div className="period-control" aria-label="Statistics section">{sections.map(([key,label])=><Link key={key} className={section===key?"active":""} href={statisticsHref(period,key,category)}>{label}</Link>)}</div>
+    <section className="statistics-explorer" aria-label="Explore statistics">
+      <div className="statistics-filter-group statistics-filter-category">
+        <p className="statistics-filter-label">Category</p>
+        <nav className="period-control" aria-label="Statistics category">{categories.map(([key,label])=><Link key={key||"ALL"} className={category===key?"active":""} aria-current={category===key?"page":undefined} href={statisticsHref(period,section,key)}>{label}</Link>)}</nav>
+      </div>
+      {section!=="career"?<div className="statistics-filter-group statistics-filter-period">
+        <p className="statistics-filter-label">Period</p>
+        <nav className="period-control" aria-label="Statistics period">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} aria-current={period===key?"page":undefined} href={statisticsHref(key,section,category)}>{label}</Link>)}</nav>
+      </div>:null}
+      <div className="statistics-filter-group statistics-filter-section">
+        <p className="statistics-filter-label">Analysis</p>
+        <nav className="period-control" aria-label="Statistics section">{sections.map(([key,label])=><Link key={key} className={section===key?"active":""} aria-current={section===key?"page":undefined} href={statisticsHref(period,key,category)}>{label}</Link>)}</nav>
+      </div>
+    </section>
 
     {section==="overview"?<>
       <div className="flight-results-heading"><div><p className="eyebrow">CURRENT SCOPE</p><h2>{scopeLabel}</h2></div><p>{data.rangeLabel}</p></div>
