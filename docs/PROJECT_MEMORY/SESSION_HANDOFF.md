@@ -1,5 +1,14 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-23 — N1 V2-1 approved theme-adaptive navigation candidate
+
+- Repo filipto861/flytally-logbook, main full SHA c68e6a2758423ab862cf9b03f5623515d07433e4; branch feat/logbook-n1a-modern-navigation-20261023, base main, Draft PR #391. V2-1 implementation before this documentation checkpoint: 01f53bae2a519063a70348141e2f08c410476900; refresh current full HEAD after push.
+- Owner approved a more substantial N1 V2 UI after rejecting visually-small N1-A. Frozen LIGHT sidebar in light theme / DARK sidebar in dark theme for sun-readable cockpit use, including system appearance. Exact implementation is a preview candidate, not production acceptance.
+- Runtime changed ONLY components/sidebar.tsx (brand copy and Workspace section label), components/sidebar.module.css (nav heading, readable rows, responsive/collapsed), app/ui-system.css (sidebar-only adaptive light/dark palette, wide/collapsed nav, larger targets/mobile header and accessible focus). Source regression updated in tests/logbook-n1-navigation-style.test.ts. Proposal documented in docs/product/LOGBOOK_N1_V2_VISUAL_REDESIGN_PROPOSAL_2026-10-23.md; ROADMAP checkpoint updated. No route, auth, notification semantics, data, aviation or Training changes.
+- Source-only in-memory inspection: 22/22 checks PASS for URL sets, active/focus, storage, theme selectors, responsive touch and scope. Node tests, typecheck, build, Playwright, exact browser computed cascade, native Safari and actual owner V2 screenshots NOT RUN. No DB, migrations, flags or deploy action. Production status unchanged by this work, runtime verification UNKNOWN.
+- DO NOT: merge/deploy, production DB/flags, alter flight workflows or page content, add libraries, implement N1 V2-2 shared page shell until owner visually reviews V2-1, or delete unrelated ZIPs in the user's local checkout.
+- ONE NEXT STEP: owner pulls updated Draft PR #391, restarts local guarded disposable-PostgreSQL preview, inspects mobile/desktop light/dark and sends visual feedback. Then decide next visual batch before tests.
+
 ## 2026-10-23 - Owner frozen theme behavior for N1 V2
 
 Owner requires the global sidebar and mobile drawer to match LIGHT/DARK appearance, including system appearance. No permanent navy sidebar against a light workspace; sunny-day cockpit readability is the reason. Use current theme tokens, opaque backgrounds, high legibility for small nav text/icons, visible active/focus cues and touch targets. This does not authorize a brand/color redesign. Updated design: docs/product/LOGBOOK_N1_V2_VISUAL_REDESIGN_PROPOSAL_2026-10-23.md. Draft PR #391 remains a not-yet-accepted N1-A candidate; no N1 V2 runtime changes or testing. No merge, deploy, DB, flags or unrelated scope.
