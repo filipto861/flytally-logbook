@@ -38,3 +38,18 @@ No Training changes, no modifications to Logbook flights, flight forms, recency/
 ## Final source review correction (2026-10-23)
 
 During GitHub source inspection, the refactor's regular Statistics render path was discovered to contain **two page headers** (one reusable `header` variable plus the prior inline JSX). This was fixed before any owner preview; the N2-C source guard now asserts exactly one header definition reused in both valid and invalid-render paths. Final focused source inspection: **19/19 checks PASS**, and original 26/26 broader source invariants were satisfied before docs. These are in-memory static inspections only, **not** executable TypeScript, Node, PostgreSQL or browser test evidence. This correction does not alter the approved N2-B layout.
+
+
+## 2026-10-23 owner screenshot refinement — Custom must stay IN the Period row
+
+**Observed:** On the owner’s actual desktop/light N2-C Statistics screenshot, the initial `Custom dates` disclosure appeared in a separate row below the four Period presets and increased the whole filter station height. The owner rejected this placement as visually awkward, while keeping the approved N2-B visual direction.
+
+**Implemented small, presentation-only fix (same Draft PR #394):**
+- The four preset links and `Custom` disclosure now sit as peer children of ONE `statistics-period-toolbar` segmented control; Custom remains keyboard/touch accessible with an accessible name `Custom dates`.
+- The toolbar is one flex row at every viewport. Presets retain horizontal scrolling in narrow space; the Custom entry stays visible at the right. On desktop >=1500px, modestly rebalance filter-column widths to give Period enough room. No premature wrapping into a second row.
+- The native calendar `From`/`To` fields plus Apply render inside a bounded, anchored **absolute-positioned panel** below the Custom trigger only when expanded, instead of adding another layout row. This panel is a simple native `details` disclosure, not a modal/focus trap; the same summary click closes it. No automatic apply or new package.
+- After applying a valid custom period, Custom displays selected styling but its disclosure **starts closed**; the chosen dates remain visible in the existing scope/range label and in the editable date inputs when reopened. Invalid interval still fails closed as before.
+- Existing custom date parser, URL persistence, inclusive SQL bounds, category/analysis links, preset behavior and Career section untouched. No new motion; theme tokens and reduced-motion expectations unchanged.
+- Static review **22/22 GitHub source assertions PASS** at code checkpoint. Executable Node tests, typecheck, actual browser CSS, 320/390, 768/1024, Chrome/real Safari remain **NOT RUN**; visual owner acceptance of the new placement pending.
+
+**ONE NEXT STEP:** owner pulls updated N2-C and confirms the inline fifth Period control + anchored calendar in light/dark, then runs candidate-bound tests.
