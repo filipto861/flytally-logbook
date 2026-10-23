@@ -70,3 +70,15 @@ test("N2-C preserves narrow/touch/light-dark styling with no new calendar librar
   assert.match(ui,/outline:2px solid var\(--focus-color\)/);
   assert.doesNotMatch(ui,/animation:|transition:all|backdrop-filter/);
 });
+
+// Source-level guard: direct invocation with an invalid/remote URL must not run after() SQL.
+test("N2-C PostgreSQL fixture cleanup remains fail closed after rejected URL preflight",()=>{
+  const integration=read("tests/integration/postgres-pilot-insights.test.ts");
+  assert.match(integration,/let localTargetValidated=false/);
+  const validated=integration.indexOf("localTargetValidated=true;");
+  const hostnameGuard=integration.indexOf(".has(url.hostname)");
+  const setup=integration.indexOf("const setup=`");
+  assert.ok(hostnameGuard>=0&&validated>hostnameGuard&&setup>validated,
+    "Only the locally validated URL may authorize fixture setup and subsequent cleanup");
+  assert.match(integration,/after\(\(\)=>\{if\(enabled&&localTargetValidated\)raw\(`DROP SCHEMA IF EXISTS/);
+});
