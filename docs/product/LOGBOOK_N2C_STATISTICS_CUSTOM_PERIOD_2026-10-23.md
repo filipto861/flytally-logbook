@@ -101,3 +101,7 @@ npm run verify:plan -- --base origin/main
 If the planner still sees owner's two untracked audit ZIP archives, remove them from its candidate without deleting content (relocate outside repository or locally ignore explicitly), then rerun planning. Do not start PostgreSQL or browser fixture before independent local identity / safety check.
 
 **ONE NEXT STEP:** owner pulls, runs the two new registry tests and read-only planner, and reports output including HEAD; only then schedule owned isolated PostgreSQL/browser release evidence.
+
+## 2026-10-23 — direct PostgreSQL integration teardown hardening
+
+Source review found that direct invocation of `tests/integration/postgres-pilot-insights.test.ts` with an invalid/remote URL can make `before()` fail but still invoke `after()`; that hook previously issued SQL `DROP SCHEMA IF EXISTS` without its own validated-target authorization. Introduced a state gate set only after the loopback URL preflight and used it in teardown. This stops the post-rejection remote cleanup attempt while preserving cleanup after partial fixture setup on a locally validated URL. `tests/logbook-n2c-custom-range.test.ts` pins the guard order as a source invariant. Loopback alone is not proof of physical disposable ownership (e.g., port forwarding); actual PostgreSQL/browser gates MUST use separately created, physically verified owned local clusters. **No SQL was executed in this review**. New exact-head executable tests, PG, scale, browser and production build NOT RUN; previous green output was for the prior worktree.
