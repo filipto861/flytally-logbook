@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-23 — owner-requested local visual preview before automated tests
+
+- User explicitly requested to view N1-A in browser **before** running release/targeted tests. This is a sequencing change only, not scope expansion. Working branch `feat/logbook-n1a-modern-navigation-20261023`, Draft PR #391, base main `c68e6a2758423ab862cf9b03f5623515d07433e4`.
+- Scoped tool added: `tooling/run-n1-preview-local.ps1`. Windows PowerShell local developer command; Node24, PG16/18 bins and npm deps required. Creates own GUID-qualified TEMP local PG cluster (localhost dynamic nonstandard port) and `flytally_currency_test`; verifies physical data-directory, DB identity and empty public schema **before** invoking existing destructive browser fixture/bootstrap; seeds synthetic pilot credentials and v20/v21 canonical SQL; runs `npm run dev` on localhost only. No remote DB path, no test runner, no Vercel.
+- **Evidence:** script authored and GitHub source reviewed only. Actual PowerShell runtime, DB fixture bootstrap, dev server and rendered pages **NOT RUN**; typecheck/build/Playwright/native Safari **NOT RUN**. Production DB/migrations/flags/deploy **UNCHANGED BY THIS WORK**; current live state UNKNOWN beyond earlier read-only deployment check. Since the script includes destructive fixture SQL under a physically verified *new* local cluster, never run it with existing PG instances, never manually invoke the fixture bootstrap, never bypass identity checks.
+- DO NOT: change aviation behavior, other PRs, Training, brand, DB schema in production, merge/deploy, or start N1-B/N2 before owner has inspected N1-A locally.
+- **ONE NEXT STEP:** user runs `powershell -NoProfile -ExecutionPolicy Bypass -File .\tooling\run-n1-preview-local.ps1` from a clean checkout of this exact N1 feature branch and provides non-sensitive screenshot/feedback. If the preview aborts, inspect error before another action.
+
 ## 2026-10-23 — N1-A Draft PR #391 checkpoint (implementation candidate only)
 
 - Repo `filipto861/flytally-logbook`. Verified base `main=c68e6a2758423ab862cf9b03f5623515d07433e4`. Work branch `feat/logbook-n1a-modern-navigation-20261023`, Draft [PR #391](https://github.com/filipto861/flytally-logbook/pull/391), base `main`. Pre-checkpoint work SHA `f03cf383d7537c9402a837d56440c10323d0732c`; this checkpoint advances HEAD. Re-fetch full SHA before ending.
