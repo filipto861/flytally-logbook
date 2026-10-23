@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C PostgreSQL cleanup safety (Draft #394)
+
+- Closed direct-test cleanup fail-closed gap: a malformed or remote `DATABASE_URL` rejected by the integration test preflight no longer permits its `after()` hook to issue a `DROP SCHEMA` SQL statement. Cleanup is permitted only after the loopback URL check; partial fixture setup on a validated local database can still be cleaned up. Added source regression assertion in `tests/logbook-n2c-custom-range.test.ts`.
+- Owner-verified previous `8731fab37ff2ca1bb4478b763266b3d5a923bb4a` candidate: clean/pushed worktree, read-only `verify:plan` unblocked, source browser tests 31/31 PASS, TypeScript PASS on precommit equivalent working tree. New cleanup fix Node tests, new exact-head plan/typecheck, production build, owned PostgreSQL, scale, browser and native Safari still NOT RUN. No runtime/UI/config/SQL schema/flags/deploy or merge changes.
+
 ## Unreleased — 2026-10-23, N2-C authoritative browser registration (Draft #394)
 
 - Registered both existing N2-C Playwright scenarios as three browser-risk targets: self-managed desktop responsive matrix, explicit custom-range desktop/mobile workflow; linked narrow Statistics and pilot-insights paths and full harness inventory without changing the browser planner itself.
