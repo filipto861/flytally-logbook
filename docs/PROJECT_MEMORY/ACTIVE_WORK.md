@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23 — N2-C calendar implementation final code correction checkpoint
+
+- Main full SHA `c68e6a2758423ab862cf9b03f5623515d07433e4`; N2-C branch `feat/logbook-n2c-statistics-custom-period-20261023` stacked Draft PR #394 (base N2-B Draft PR #393). Pre-checkpoint code/docs SHA `20756ebdbc285b0266c39ac36e38abc8b6815dfe`, resolve final work SHA after documentation commits. Parent Draft PR #392 / #391 remain unmerged.
+- Final review fixed duplicate Statistics page masthead created during initial extraction of reusable `header`. `app/(protected)/statistics/page.tsx` now renders a single header definition reused for valid and fail-closed invalid custom period, and `tests/logbook-n2c-custom-range.test.ts` guards the single-header contract. N2-C calendar native From/To, Apply, stable URL, strict ISO day validation and inclusive SQL remain as approved. `docs/product/LOGBOOK_N2C_STATISTICS_CUSTOM_PERIOD_2026-10-23.md` updated accordingly.
+- Focused GitHub source-only checks 19/19 PASS after this correction (broad source invariants 26/26 before docs). These are NOT executable tests. **Node targeted tests, TypeScript, build, guarded local PostgreSQL integration, authenticated browser, light/dark, 320/390 mobile, iPad 768/1024, native Safari all NOT RUN** for exact N2-C SHA. Read-only production deployment READY at `34b865bb0ced1222945cecb107589826890ee31a`, not these branches. No DB/flags/merge/deploy.
+- Approved design direction: owner praised N2-B screenshots as clean, responsive, intuitive; calendar is an additive feature only, not a brand/UI redesign. No Training, flight records, certification, recency, personal data or local ZIP changes.
+- ONE NEXT STEP: owner checks N2-C custom calendar period in guarded local preview (valid, invalid, preset, category/section, light/dark) before selected local verification/release planning.
+
 ## 2026-10-23 — N2-C Statistics custom calendar range, owner design acceptance checkpoint
 
 - Repo: `filipto861/flytally-logbook`; main full SHA `c68e6a2758423ab862cf9b03f5623515d07433e4`. Draft stack: N1 PR #391 -> main, N2-A2 PR #392 -> N1, N2-B PR #393 -> N2-A2, N2-C PR #394 -> `feat/logbook-n2b-dashboard-statistics-layout-20261023`. N2-C work branch `feat/logbook-n2c-statistics-custom-period-20261023`, pre-checkpoint full work SHA `902f6983c8886ebc579110d05806be7a94dd63c3`; refresh exact final SHA after docs write.
