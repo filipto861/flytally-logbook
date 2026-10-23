@@ -6,7 +6,31 @@ export type PaceComparison={direction:"up"|"down"|"flat"|"new"|"none";percent:nu
 
 const iso=(date:Date)=>date.toISOString().slice(0,10);
 
-export function pilotInsightBounds(requested:string,today=new Date()):InsightBounds{
+export type PilotInsightCustomRange={from:string;to:string};
+export type PilotInsightCustomRangeResult=
+  | {ok:true;range:PilotInsightCustomRange}
+  | {ok:false;error:string};
+
+// Explicit UTC calendar-day validation: the JS Date constructor alone normalizes invalid
+// days such as February 30. Never silently convert invalid custom ranges to All time.
+const validCalendarDay=(value:unknown):value is string=>{
+  if(typeof value!=="string"||!/^\\d{4}-\\d{2}-\\d{2}$/.test(value))return false;
+  const date=new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime())&&date.toISOString().slice(0,10)===value;
+};
+
+export function parsePilotInsightCustomRange(from:unknown,to:unknown):PilotInsightCustomRangeResult{
+  if(!validCalendarDay(from)||!validCalendarDay(to))return{ok:false,error:"Choose valid start and end dates."};
+  if(from>to)return{ok:false,error:"Start date must not be after end date."};
+  return{ok:true,range:{from,to}};
+}
+
+export function pilotInsightBounds(requested:string,today=new Date(),custom?:PilotInsightCustomRange):InsightBounds{
+  if(requested==="custom"){
+    const parsed=parsePilotInsightCustomRange(custom?.from,custom?.to);
+    if(!parsed.ok)throw new RangeError(parsed.error);
+    return{start:parsed.range.from,end:parsed.range.to,label:`${parsed.range.from} – ${parsed.range.to}`};
+  }
   const period:PilotInsightPeriod=PILOT_INSIGHT_PERIODS.includes(requested as PilotInsightPeriod)?requested as PilotInsightPeriod:"all";
   const year=today.getUTCFullYear();
   if(period==="year")return{start:`${year}-01-01`,end:iso(today),label:String(year)};
