@@ -1,4 +1,4 @@
-# FlyTally Logbook N1 — visual preview with a private, throwaway local PostgreSQL cluster.
+# FlyTally Logbook N1 - visual preview with a private, throwaway local PostgreSQL cluster.
 # No Playwright, test suite, release gate, deploy or production database action.
 # Requires: Windows PowerShell, Node 24, Git, PostgreSQL 16/18 binaries and npm dependencies.
 # This script creates and owns its PostgreSQL cluster under a NEW unique TEMP directory.
@@ -154,7 +154,7 @@ try {
   Remove-Item Env:FLYTALLY_CURRENCY_V21_BROWSER -ErrorAction SilentlyContinue
 
   Write-Host ""
-  Write-Host "N1-A VISUAL PREVIEW — localhost only" -ForegroundColor Green
+  Write-Host "N1-A VISUAL PREVIEW - localhost only" -ForegroundColor Green
   Write-Host ("URL: http://127.0.0.1:{0}/login" -f $WebPort)
   Write-Host "Login: browser-auth@example.test"
   Write-Host "Password (ephemeral, do not share): $env:FLYTALLY_BROWSER_PASSWORD"
