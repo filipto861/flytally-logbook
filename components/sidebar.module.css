@@ -6,8 +6,8 @@
 .primaryAction:focus-visible{outline:2px solid var(--focus-color)!important;outline-offset:3px}
 .primaryAction:hover{background:var(--accent-strong)!important;filter:brightness(1.06)}
 .group{display:grid;gap:4px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)}
-.groupTitle{height:32px;padding:0 13px;display:flex;align-items:center;gap:13px;color:var(--text-soft);font-size:.68rem;font-weight:760;letter-spacing:.065em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
-.groupTitle i{flex:0 0 20px;width:20px;text-align:center;font-style:normal;color:var(--muted);font-size:.72rem}
+.groupTitle{height:34px;padding:0 14px;display:flex;align-items:center;gap:13px;color:var(--text-soft);font-size:.73rem;font-weight:760;letter-spacing:.065em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.groupTitle i{display:none}
 .recordLink{height:48px!important;min-height:48px!important;color:var(--text-soft)!important;font-size:.875rem!important;font-weight:650!important}
 .recordLink:hover{color:var(--text)!important}
 .recordLink:global(.active){color:var(--text)!important;font-weight:750!important}
@@ -30,7 +30,7 @@
   :global(.sidebar.collapsed) .notificationBell{margin:0 auto}
 }
 @media(max-width:820px){
-  .groupTitle{color:var(--muted);font-size:.66rem}
+  .groupTitle{color:var(--text-soft);font-size:.71rem}
   .recordLink{height:44px!important;font-size:.84rem!important}
   .adminLink{margin-top:9px!important;height:52px!important;padding-top:8px!important}
   .headerActions{margin-left:auto;display:flex;align-items:center;gap:8px}
