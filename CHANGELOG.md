@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C custom date selector inline layout correction
+
+- Corrected Statistics Period selector layout based on owner's screenshot: four presets and Custom now share one responsive segmented toolbar, with an anchored native date picker panel appearing only when expanded. Applying a custom period leaves the chip selected, but the popup closed.
+- Retained exact custom date validations, inclusive query bounds, explicit Apply, Category/Analysis navigation and Career semantics. No analytics logic, data migration, new dependency, design token or motion change.
+- Static source review 22/22 PASS; Node/typecheck/build/Playwright/browser/mobile/native Safari not run yet. Draft PR #394 stacked on N2-B, no merge, deployment or DB changes.
+
 ## Unreleased — 2026-10-23, N2-C Statistics custom date interval (stacked Draft)
 
 - Following owner approval of the N2-B simple/responsive design, extended Statistics Period with native From/To calendar inputs and explicit Apply alongside the four existing presets. The existing category/section links preserve a valid custom interval in URLs; Career stays all-time.
