@@ -866,6 +866,13 @@ html[data-theme="dark"] .app-grid .sidebar{
   color:var(--text);
 }
 @media screen and (min-width:821px){
+  .app-grid .sidebar nav{
+    min-height:0;
+    flex:1 1 auto;
+    overflow-x:hidden;
+    overflow-y:auto;
+    scrollbar-width:thin;
+  }
   .app-grid .sidebar{
     width:260px;
     padding:24px 17px 18px;
