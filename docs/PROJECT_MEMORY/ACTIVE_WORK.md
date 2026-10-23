@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T12:00:17.691Z — N2-C core verification complete; guarded browser risk acceptance outstanding
+
+- Draft #394 work branch `feat/logbook-n2c-statistics-custom-period-20261023`, tested exact HEAD `13be03e95259c03540c44acb2ea352ce2952fb43`, base #393; parent #392 and #391 remain Draft/unmerged. Owner local tree clean after tests; targeted 34/34 PASS, TypeScript PASS, complete Node 1,679/1,679 PASS, optimized Next.js build PASS. No new runtime change. Core `verify:app` complete, **not** candidate release gate. Source code/behavior unchanged from full PASS SHA.
+- Physical PG16 164/164 evidence exists only for older source SHA `dc890c1d9e7e42e927279248f14ab57481fa7650`; current acceptance/scale/browser/release and native Safari NOT RUN. Browser N2-C 3-target authoritative coverage statically verified; bootstrap resets public schema, so dedicated uniquely owned disposable localhost cluster is essential. Production state UNKNOWN, no deployment/merge/DB/flag actions.
+- **ONE NEXT STEP:** fetch latest #394 Draft HEAD, use `npm run verify:plan -- --base origin/main` read-only to confirm browser and other candidate gate requirements before safe isolated browser execution.
+
 ## 2026-10-23T11:05:38.143Z — Active N2-C verification blocker fix, new candidate pending owner execution
 
 - Draft PR [#394](https://github.com/filipto861/flytally-logbook/pull/394) N2-C stacked on #393, latest source pre-checkpoint `fe39a694b519ab0f22faeae21f6e4f30fe849024`; owner-local prior HEAD `8970e020423cb52c8ea5fec7404994f719d38e16` source gate FAIL 4/259 because stale browser protocol and PostgreSQL hash/count. Corrected strict browser v2, PG three pilot-insights scenarios and six-partition total 164 in code+tests on Draft branch; NOT YET locally run for new SHA. App/UI design unchanged, no merge/deploy/DB operations.
