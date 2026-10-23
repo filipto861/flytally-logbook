@@ -5,7 +5,14 @@ import test from "node:test";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
-const n2b=()=>read("app/ui-system.css").split("/* N2-B — purposeful workspace composition instead of more nested card chrome.")[1];
+const n2b=()=>{
+  const css=read("app/ui-system.css");
+  const start="/* N2-B — purposeful workspace composition instead of more nested card chrome.";
+  const end="/* N2-C — native calendar range within the approved Statistics filter station.";
+  const begin=css.indexOf(start),finish=css.indexOf(end,begin+start.length);
+  assert.ok(begin>=0&&finish>begin,"N2-B and its next section boundary must both exist");
+  return css.slice(begin+start.length,finish);
+};
 
 test("N2-B Dashboard groups existing widgets beside shortcuts without replacing saved layout",()=>{
   const page=read("app/(protected)/dashboard/page.tsx");
