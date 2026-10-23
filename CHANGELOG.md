@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C authoritative browser registration (Draft #394)
+
+- Registered both existing N2-C Playwright scenarios as three browser-risk targets: self-managed desktop responsive matrix, explicit custom-range desktop/mobile workflow; linked narrow Statistics and pilot-insights paths and full harness inventory without changing the browser planner itself.
+- Extended browser logical test baseline and structural/risk contract regressions without replacing original tests or converting previously observed full-suite counts into unexecuted PASS claims. Application UI, analytics calculations and DB schema unchanged.
+- Owner-local 17/17 prior targeted tests PASS at previous head; local TypeScript fix for PostgreSQL integration test PASS on an uncommitted worktree, not present in this remote branch. Newly registered browser/tests/PG/build and candidate release gate NOT RUN. No merge or deployment authorization.
+
 ## Unreleased — 2026-10-23, N2-C verification coverage & integration safety (Draft #394)
 
 - Corrected N2-C static test expectations following inline Calendar styling; added focused Playwright tests for one-line period controls at desktop/iPad/mobile viewports, Light/Dark and user-selected inclusive range workflow including invalid URLs and preset navigation.
