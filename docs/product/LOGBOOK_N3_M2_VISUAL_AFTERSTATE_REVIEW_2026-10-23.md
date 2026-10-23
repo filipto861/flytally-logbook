@@ -35,6 +35,10 @@
 
 Dark capture heights agree with Light for all matched cases. Numerical heights are full-document estimates in synthetic Chromium, not measured scroll time or proof of obstructed content.
 
+### Follow-up approved: header scroll/focus verification only
+
+The owner reported the mobile FlyTally shell bar in the *middle* of a stitched dark full-page comparison and approved an independent runtime/viewport-only scroll and focus investigation before any CSS edits. This is not evidence that the header actually jumps at runtime, and not final approval of M2 visual density. Detailed [probe plan](docs/product/LOGBOOK_N3_M2_STICKY_SHELL_INTERACTION_PROBE_2026-10-23.md); execution **NOT RUN** at this checkpoint. Existing M2 screenshots remain evidence of the static hierarchy only.
+
 ## Verification boundaries and next action
 
 Previously owner-executed exact M2 source candidate `5c349a422222b91aa6d25c241282c947fd55ca5a`: TypeScript PASS, Node targeted **11/11 PASS**, risk planner 22 browser targets/zero blockers, Next build PASS, isolated owned PG16 schema-first v20/v21 PASS, targeted desktop+mobile Manual browser **2/2 PASS**, cluster cleanup PASS. Later screenshot capture on `106eeddb3b691a769696908cb85a4c6e135c917d` with identical runtime source: TypeScript PASS, Node **11/11 PASS**, build PASS, protected PG16 PASS, diagnostic Playwright **1/1 PASS**, diagnostic manifest 40/40 recovery integrity PASS but original post-run PowerShell wrapper **FAIL** due to 90/40 check. Do not label wrapper PASS or full release PASS.
