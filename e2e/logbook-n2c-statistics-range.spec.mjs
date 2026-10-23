@@ -49,7 +49,7 @@ test("N2-C custom dates require Apply, retain navigation scope and reject revers
   expect(selected.get("to")).toBe("2026-09-18");
   await expect(disclosure).toHaveAttribute("data-selected","true");
   await expect(disclosure).not.toHaveAttribute("open","");
-  await expect(page.getByText("2026-09-18 – 2026-09-18")).toBeVisible();
+  await expect(page.locator(".flight-results-heading > p")).toHaveText("2026-09-18 – 2026-09-18");
   await expect(page.locator("section.metric-grid")).toBeVisible();
 
   await page.getByRole("navigation",{name:"Statistics category"}).getByRole("link",{name:"Aeroplane",exact:true}).click();
