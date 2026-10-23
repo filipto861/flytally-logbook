@@ -1750,8 +1750,9 @@ html[data-theme="dark"] .app-grid .sidebar{
   }
 }
 
-/* N2-C — inline native calendar range within the approved Statistics filter station.
-   No new picker dependencies, overlays, automatic apply or altered theme palette. */
+/* N2-C — native calendar range within the approved Statistics filter station.
+   Presets and Custom share a row; calendar opens in a small anchored panel.
+   No new picker dependencies, automatic apply or altered theme palette. */
 /* Keep preset tabs and the Custom trigger on ONE row at every width.
    Calendar fields render as an anchored overlay, outside the scrollable tabs. */
 .app-grid .shell-workspace .statistics-explorer .statistics-period-toolbar{
@@ -1795,6 +1796,20 @@ html[data-theme="dark"] .app-grid .sidebar{
 .app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary::marker{
   color:var(--text-soft);
 }
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary::after{
+  content:"";
+  width:6px;
+  height:6px;
+  flex:0 0 auto;
+  margin:0 1px 3px;
+  border-right:1.5px solid currentColor;
+  border-bottom:1.5px solid currentColor;
+  transform:rotate(45deg);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range[open] > summary::after{
+  transform:rotate(225deg);
+  margin:3px 1px 0;
+}
 .app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary:focus-visible{
   outline:2px solid var(--focus-color);
   outline-offset:2px;
@@ -1806,15 +1821,6 @@ html[data-theme="dark"] .app-grid .sidebar{
   background:var(--surface);
   border-radius:10px;
   box-shadow:var(--shadow-soft);
-}
-.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-value{
-  display:block;
-  min-width:0;
-  color:var(--text-soft);
-  font-size:.71rem;
-  font-variant-numeric:tabular-nums;
-  font-weight:600;
-  overflow-wrap:anywhere;
 }
 .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form{
   position:absolute;
