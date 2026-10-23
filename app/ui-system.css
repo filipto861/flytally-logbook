@@ -1133,3 +1133,106 @@ html[data-theme="dark"] .app-grid .sidebar{
     background:transparent;
   }
 }
+
+/* N2-A — shared informational surface / action hierarchy.
+   First candidate: dashboard and first-level workspace cards only.
+   Excludes records, flight forms, regulatory badges, maps and dialog surfaces. */
+.app-grid .shell-workspace > .ui-page-stack > :is(.panel,.table-panel),
+.app-grid .shell-workspace > .ui-page-stack > .metric-grid > .metric,
+.app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > :is(.metric,.panel){
+  min-width:0;
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:0 3px 14px color-mix(in srgb,var(--text) 4%,transparent);
+}
+.app-grid .shell-workspace > .ui-page-stack > .metric-grid > .metric,
+.app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > .metric{
+  padding:var(--ui-card-padding);
+  gap:var(--ui-space-2);
+}
+.app-grid .shell-workspace > .ui-page-stack > .metric-grid > .metric > :is(span,small),
+.app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > .metric > :is(span,small){
+  font-size:.78rem;
+  line-height:1.4;
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace > .ui-page-stack > .metric-grid > .metric > strong,
+.app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > .metric > strong{
+  font-size:clamp(1.45rem,2vw,1.9rem);
+  line-height:1.17;
+  letter-spacing:-.04em;
+  font-weight:760;
+  font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere;
+}
+.app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > a.panel{
+  border-color:var(--line);
+  text-decoration:none;
+}
+@media (hover:hover) and (pointer:fine){
+  .app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > a.panel:hover{
+    border-color:var(--line-strong);
+    background:var(--surface-hover);
+  }
+}
+.app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > a.panel:focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:3px;
+}
+.app-grid .shell-workspace > .ui-page-stack > .panel > .section-heading{
+  display:flex;
+  align-items:flex-start;
+  gap:var(--ui-card-gap);
+  margin-bottom:var(--ui-card-gap);
+}
+.app-grid .shell-workspace > .ui-page-stack > .panel > .section-heading h2{
+  margin:0;
+  font-size:clamp(1.1rem,1.45vw,1.3rem);
+  letter-spacing:-.022em;
+  line-height:1.26;
+  font-weight:750;
+  color:var(--text);
+}
+.app-grid .shell-workspace > .ui-page-stack > .panel > .section-heading .muted{
+  margin:6px 0 0;
+  font-size:.84rem;
+  line-height:1.5;
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace > .ui-page-stack > .panel > .section-heading > :is(.secondary-button,.secondary-link),
+.app-grid .shell-workspace > .ui-page-stack > .panel > .section-heading > a.secondary-button{
+  flex:0 0 auto;
+  min-height:44px;
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-control);
+  padding:9px 14px;
+  background:var(--surface-raised);
+  color:var(--text);
+  font-size:.835rem;
+  font-weight:750;
+}
+@media (max-width:820px){
+  .app-grid .shell-workspace > .ui-page-stack > .metric-grid > .metric,
+  .app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > .metric{
+    padding:var(--ui-card-padding-mobile);
+  }
+}
+@media (max-width:600px){
+  .app-grid .shell-workspace > .ui-page-stack > .panel > .section-heading{
+    flex-direction:column;
+    align-items:stretch;
+    gap:var(--ui-space-3);
+  }
+  .app-grid .shell-workspace > .ui-page-stack > .panel > .section-heading > :is(.secondary-button,.secondary-link){
+    width:100%;
+  }
+}
+@media print{
+  .app-grid .shell-workspace > .ui-page-stack > :is(.panel,.table-panel),
+  .app-grid .shell-workspace > .ui-page-stack > .metric-grid > .metric,
+  .app-grid .shell-workspace .dashboard-layout-grid > .dashboard-widget > :is(.metric,.panel){
+    box-shadow:none;
+  }
+}
