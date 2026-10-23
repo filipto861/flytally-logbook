@@ -23,6 +23,8 @@ test("N1 V2-2 is limited to first protected workspace page headers",()=>{
   const section=css.slice(start);
   assert.match(section,/\.app-grid \.shell-workspace > \.ui-page-stack > \.page-header/);
   assert.match(section,/\.app-grid \.shell-workspace > \.page-header/);
+  assert.match(section,/\.page-header > div:first-child > h1/);
+  assert.match(section,/\.page-header > div:first-child > \.muted/);
   assert.match(section,/background:var\(--surface\)/);
   assert.match(section,/color:var\(--text-soft\)/);
   assert.match(section,/border-radius:var\(--ui-radius-card\)/);
