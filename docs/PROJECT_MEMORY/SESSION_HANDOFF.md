@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-23 - N1 V2-1 local visual feedback (owner)
+
+- Verified canonical main c68e6a2758423ab862cf9b03f5623515d07433e4 and candidate branch f445197bb5e58e00bcbab226c7070c3f398217af; Draft PR #391, base main, not merged.
+- Owner shared two real desktop screenshots of localhost N1 V2-1: Statistics in Light and Dashboard in Dark. Reported the menu now looks more unified and better and explicitly likes this direction. This is positive directional feedback, NOT final acceptance or a full desktop/mobile/iPad accessibility PASS.
+- Methodology used: complete main Apple Design V2 skill and 17-domain playbook, plus ui-ux-design, design-engineering, mobile-ipad, ui-quality-audit; no new dependencies or brand palette. Preserve theme-adaptive sidebar in light/dark, routes and flight/data logic. No source/runtime code changed at this checkpoint.
+- Outstanding: mobile drawer, collapsed sidebar, iPad touch and native Safari, keyboard/focus, reduced-motion, computed CSS/contrast, Node tests/build/Playwright and candidate-bound acceptance NOT RUN. Database/production deployment untouched; no merge authorization. Keep other PRs and user ZIPs out of scope.
+- ONE NEXT STEP: complete targeted N1 V2-1 visual review at mobile/iPad/collapsed desktop in both themes, then agree whether to start separate N1 V2-2 shared-shell design without changing page workflows.
+
 ## 2026-10-23 — N1 V2-1 approved theme-adaptive navigation candidate
 
 - Repo filipto861/flytally-logbook, main full SHA c68e6a2758423ab862cf9b03f5623515d07433e4; branch feat/logbook-n1a-modern-navigation-20261023, base main, Draft PR #391. V2-1 implementation before this documentation checkpoint: 01f53bae2a519063a70348141e2f08c410476900; refresh current full HEAD after push.
