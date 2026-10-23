@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-23 — N3-M2 exact-source local release validation PASS (Draft, not released)
+
+- Owner Windows `verify:release:risk -- --base origin/main` on `0e8b3f8787d6d55d1db6846d5a43f79e2a11f8f2`, candidate `d1e9dba3b762544687cb2a8562fe514a870f62f7b2acdbc5c4f85e9420d4f125`, **PASS**: source 261/261, domain 19/19, typecheck, full Node 1686/1686, production build, six owned isolated PG16 partitions 164/164, approved risk browser 22/22 desktop/mobile Chromium with 0 retries/skips. Safe browser PostgreSQL cleanup confirmed.
+- Historical FAILs remain recorded; the bounded inventory/test-contract repairs were exercised in this successful rerun. This is verification evidence, **not a shipped release or new runtime change**; [details](docs/product/LOGBOOK_N3_M2_LOCAL_RELEASE_PASS_2026-10-23.md). Actual iPad/Safari and production smoke NOT RUN, owner merge/deploy authorization outstanding.
+
 ## 2026-10-23 — Draft N3-M2 release verification: legacy regression scope repairs (NOT RELEASED)
 
 - Owner exact-SHA risk gate reached full Node 1684/1686: the two remaining failures were test-boundary mismatches introduced by later approved M1/M2 entry UX. No server- or client-runtime regression demonstrated by those assertions.
