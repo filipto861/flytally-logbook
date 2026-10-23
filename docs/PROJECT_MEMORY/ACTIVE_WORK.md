@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T11:05:38.143Z — Active N2-C verification blocker fix, new candidate pending owner execution
+
+- Draft PR [#394](https://github.com/filipto861/flytally-logbook/pull/394) N2-C stacked on #393, latest source pre-checkpoint `fe39a694b519ab0f22faeae21f6e4f30fe849024`; owner-local prior HEAD `8970e020423cb52c8ea5fec7404994f719d38e16` source gate FAIL 4/259 because stale browser protocol and PostgreSQL hash/count. Corrected strict browser v2, PG three pilot-insights scenarios and six-partition total 164 in code+tests on Draft branch; NOT YET locally run for new SHA. App/UI design unchanged, no merge/deploy/DB operations.
+- **ONE NEXT STEP:** owner pulls and runs exact-branch selected Node source tests plus fast `verify:iterate`; then reassess isolated owned PG/browser release work.
+
 ## 2026-10-23T10:22:55Z — N1–N2-C candidate-bound verification preparation
 
 - Repo: `filipto861/flytally-logbook`, main full SHA `c68e6a2758423ab862cf9b03f5623515d07433e4` checked on GitHub. Work branch `feat/logbook-n2c-statistics-custom-period-20261023`, pre-checkpoint HEAD `74673e3b603f4a5bc0d2beddf3ab6bc660871109` (refresh exact final SHA after handoff update). Draft chain PR #391 N1 -> main; #392 N2-A2 -> N1; #393 N2-B -> N2-A2; #394 N2-C -> N2-B. All open/Draft/unmerged, no merge authorization.
