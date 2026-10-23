@@ -77,7 +77,7 @@ try {
   if (-not (Test-Path (Join-Path $repoRoot "node_modules"))) {
     throw "Dependencies not installed. Run npm.cmd ci once before this preview."
   }
-  if ($env:VERCEL -or $env:VERCEL_ENV -or $env:CI) {
+  if ((Test-Path Env:VERCEL) -or (Test-Path Env:VERCEL_ENV) -or (Test-Path Env:CI)) {
     throw "Hosting/CI environment marker present. This script is local-only."
   }
   if ($WebPort -lt 1024 -or $WebPort -gt 65535) {
@@ -128,7 +128,9 @@ try {
   if ($identity -cne $expectedIdentity) { throw "Database identity mismatch; REFUSING fixture writes." }
   $actualDataDir = (& $psql -d $env:DATABASE_URL -X -w -v ON_ERROR_STOP=1 -Atqc "SHOW data_directory").Trim()
   Assert-Exit "Local physical PostgreSQL cluster probe"
-  if ($actualDataDir.TrimEnd("\","/") -ine $dataDir.TrimEnd("\","/")) {
+  $actualDir = ([IO.Path]::GetFullPath($actualDataDir) -replace '\\','/').TrimEnd('/')
+  $ownedDir = ([IO.Path]::GetFullPath($dataDir) -replace '\\','/').TrimEnd('/')
+  if ($actualDir -ine $ownedDir) {
     throw "Physical PostgreSQL data-directory mismatch; REFUSING fixture writes."
   }
   $tableCount = (& $psql -d $env:DATABASE_URL -X -w -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM pg_tables WHERE schemaname='public'").Trim()
