@@ -34,3 +34,7 @@ Tests staged: `tests/v168-pilot-insights.test.ts` (valid, leap year, impossible/
 No Training changes, no modifications to Logbook flights, flight forms, recency/certification/evidence, existing user settings, database schema, migrations, production flags, existing deployment, alternate PRs, or user's local ZIP files. No auto-filled dates: both fields start empty until the user selects a custom interval. No new datepicker packages or overlays, and no period filtering for Career.
 
 **ONE NEXT STEP:** owner pulls N2-C stacked Draft branch, launches existing guarded disposable-local-PostgreSQL preview and checks custom picker/presets/custom navigation/invalid interval and Light/Dark at Statistics. Then run candidate-bound tests and discuss independent merge approvals.
+
+## Final source review correction (2026-10-23)
+
+During GitHub source inspection, the refactor's regular Statistics render path was discovered to contain **two page headers** (one reusable `header` variable plus the prior inline JSX). This was fixed before any owner preview; the N2-C source guard now asserts exactly one header definition reused in both valid and invalid-render paths. Final focused source inspection: **19/19 checks PASS**, and original 26/26 broader source invariants were satisfied before docs. These are in-memory static inspections only, **not** executable TypeScript, Node, PostgreSQL or browser test evidence. This correction does not alter the approved N2-B layout.
