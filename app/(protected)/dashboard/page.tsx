@@ -61,7 +61,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
 
     {recencySnapshot?<Link href="/credentials" className={`dashboard-recency-status dashboard-recency-${recencySnapshot.status}`}><span>Recency</span><strong>{recencySnapshot.label}</strong>{recencySnapshot.nextDate?<small>Next date {formatDateOnly(recencySnapshot.nextDate)}</small>:<small>Open details</small>}</Link>:null}
 
-    <section className="panel">
+    <section className="panel dashboard-quick-actions-panel">
       <div className="section-heading"><div><p className="eyebrow">QUICK ACTIONS</p><h2>Where next?</h2><p className="muted">Everyday actions stay here. Historical analysis stays in Statistics.</p></div></div>
       <div className="mini-metrics">
         <div><span>Logbook</span><b><Link className="row-link" href="/flights/new">Add flight →</Link></b><small>Record a new flight</small></div>
