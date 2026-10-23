@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23 — N1-A modern navigation candidate (owner-approved design, not merged)
+
+- Workstream: `feat/logbook-n1a-modern-navigation-20261023` from verified `main=c68e6a2758423ab862cf9b03f5623515d07433e4`; N1-A **visual only** following the approved [design](../product/LOGBOOK_N1_MODERN_NAVIGATION_DESIGN_2026-10-23.md).
+- Touched UI: `components/sidebar.module.css` and sidebar-only block appended to `app/ui-system.css`; new source regression `tests/logbook-n1-navigation-style.test.ts`. Keep all nav URLs/labels/group membership and keyboard/touch behavior intact. N1-B mobile animations and N2/N3 pages not started.
+- Evidence: GitHub in-memory 14/14 source assertions PASS; hex design tokens contrast 6.45:1 dark/5.69:1 light **calculated, not browser rendered**. Node24 targeted tests, TypeScript, build, Playwright/browser screenshots, iPad/native Safari = **NOT RUN**. DB/migrations/flags/deploy = **UNTOUCHED / runtime state UNKNOWN**. No merge permission.
+- **ONE NEXT STEP:** run exact-head targeted tests and authenticated visual/browser review across mobile, desktop and themes; seek owner approval of actual appearance before merging.
+
 ## 2026-10-22T19:14:39.210Z — Apple Design V2 (proposal only)
 
 - [Draft PR #390](https://github.com/filipto861/flytally-logbook/pull/390), branch `docs/logbook-apple-design-v2-20261022` from main `f1052cac8d518342bfdf10c6f03b51199d78ad69`, initial work `17c157ea8f0d31d2d994ec43c7c909c06d2c18b5`. Adds first-class mandatory Apple Design routing for all Logbook UI, 17-section detailed playbook and compact project-instruction addendum. SOURCE-ONLY checks PASS; runtime tests NOT RUN, no deployment. V2 not canonical until explicit owner-approved merge.
