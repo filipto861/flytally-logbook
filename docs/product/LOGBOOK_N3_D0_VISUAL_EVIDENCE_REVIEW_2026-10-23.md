@@ -22,15 +22,15 @@
 | Manual blank | 1,725 px | 2,450 px | 2,690 px |
 | Manual PIC | 1,592 px | 2,295 px | 2,545 px |
 | Manual DUAL missing instructor | 1,647 px | 2,337 px | 2,573 px |
-| Manual Safety Pilot missing PIC | 1,734 px | 2,554 px | ~2,800 px |
-| Manual all four disclosures open | 3,193 px | **4,796 px** | **~5,100 px** |
+| Manual Safety Pilot missing PIC | 1,734 px | 2,554 px | 2,802 px |
+| Manual all four disclosures open | 3,193 px | **4,796 px** | **5,155 px** |
 | GPS empty | 900 px | 923 px | 948 px |
-| GPS invalid source | 1,306 px | 1,631 px | ~1,760 px |
+| GPS invalid source | 1,306 px | 1,631 px | 1,726 px |
 | GPS one flight, not reviewed | 2,288 px | **3,366 px** | **3,528 px** |
 | GPS one flight, aircraft selected | 2,622 px | **4,099 px** | **4,338 px** |
 | GPS two flights, not reviewed | **4,043 px** | **6,144 px (7.3 screens)** | **6,390 px (8.0 screens)** |
 
-*Page height measures all rendered document contents, not scroll travel or interaction time. No horizontal overflow was reported by the capture across the full 100 matrix. Some totals rounded to avoid mixing unverified precision; use manifest for exact values.*
+*Page height measures all rendered document contents, not scroll travel or interaction time. No horizontal overflow was reported by the capture across the full 100 matrix. Values are transcribed from the uploaded manifest.*
 
 ## 2. Observed findings vs unverified hypotheses
 
