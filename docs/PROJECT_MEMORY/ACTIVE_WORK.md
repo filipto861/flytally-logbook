@@ -1,5 +1,14 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23 — N1 V2 visual direction requested; proposal checkpoint
+
+- Canonical repo filipto861/flytally-logbook; main verified c68e6a2758423ab862cf9b03f5623515d07433e4. Existing work feat/logbook-n1a-modern-navigation-20261023, Draft PR #391. No merge or deploy.
+- Owner successfully opened localhost preview and provided four desktop/light screenshots. Explicitly rejected V1's visual magnitude; wants a much more modern overall look. This approval of a stronger outcome does NOT approve a specific new visual composition.
+- Scope-limited revised spec: docs/product/LOGBOOK_N1_V2_VISUAL_REDESIGN_PROPOSAL_2026-10-23.md. Proposal only: deep-navy sidebar against light workspace, more structured brand/header/chrome, navigation type/spacing/active states, coherent shell. Preserve brand palette, all routes/roles/keyboard/mobile behaviors. Shared page cards/tabs deferred to N2/N3 as separate product decisions.
+- Runtime code unchanged in this checkpoint; existing N1-A CSS candidate remains on branch and is not visually accepted. Screenshots are not committed. V2 testing/typecheck/build/Playwright/native Safari NOT RUN. Actual user preview is user-reported only. Production DB/migrations/flags/deploy not touched.
+- DO NOT expand into unrelated fixes, Training, business logic, authentication, DB, experimental effects or new libraries. Preserve owner-local unrelated ZIP files.
+- ONE NEXT STEP: owner approves/revises new N1 V2 shell design (navy rail with light content, reorganized visual header) before any V2 implementation.
+
 ## 2026-10-23 — owner-requested local visual preview before automated tests
 
 - User explicitly requested to view N1-A in browser **before** running release/targeted tests. This is a sequencing change only, not scope expansion. Working branch `feat/logbook-n1a-modern-navigation-20261023`, Draft PR #391, base main `c68e6a2758423ab862cf9b03f5623515d07433e4`.
