@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, Logbook N1 V2-2 protected shell mastheads (Draft PR #391, preview pending)
+
+- Protected app shell uses an explicit `shell-workspace` wrapper for targeted page-header styling; primary routes now share one proposed typographic, action-alignment and opaque-surface treatment while preserving route content and accessibility semantics.
+- Only `components/app-shell.tsx` and `app/ui-system.css` runtime affected by N1 V2-2. Source contract guard `tests/logbook-n1-v2-shell.test.ts` added; no page-local tabs, statistics/flight data, routes, business logic or external dependencies changed.
+- Browser visual review of this stage, Node tests, typecheck, build and Playwright **NOT RUN**. Source-only checks 24/24 PASS are not runtime acceptance. No merge or deploy; production DB/migrations/feature flags unchanged.
+
 ## 3.8.1 — 2026-10-22 (release candidate; production verification pending)
 
 - Patch release to distinguish the Logbook build delivered after the 17 October production snapshot: `package.json`, `package-lock.json` and the app-visible footer version become **3.8.1**; canonical version regression test updated.

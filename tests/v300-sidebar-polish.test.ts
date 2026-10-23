@@ -25,7 +25,8 @@ test("v3.0 U1.2 removes tree-style record navigation",()=>{
 
 test("v3.0 U1.2 uses theme-aware section labels and mobile record sizing",()=>{
   const css=read("components/sidebar.module.css");
-  assert.match(css,/groupTitle\{[^}]*color:color-mix\(in srgb,var\(--text\)/s);
+  // N1-A now uses the existing semantic secondary-text token, not a custom mix.
+  assert.match(css,/groupTitle\{[^}]*color:var\(--text-soft\)/s);
   assert.doesNotMatch(css,/#d7e5f4/i);
   assert.match(css,/@media\(max-width:820px\)[\s\S]*\.recordLink\{height:44px/s);
 });

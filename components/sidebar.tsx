@@ -52,10 +52,12 @@ export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role
       : pathname===href||pathname.startsWith(`${href}/`);
 
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
-    <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><span className={styles.headerActions}><NotificationBell initialCount={notificationCount} onNavigate={()=>setMobile(false)}/><button ref={toggleRef} className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></span><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"}>{collapsed?"›":"‹"}</button></div>
+    <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div className={styles.brandCopy}><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><span className={styles.headerActions}><NotificationBell initialCount={notificationCount} onNavigate={()=>setMobile(false)}/><button ref={toggleRef} className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></span><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"}>{collapsed?"›":"‹"}</button></div>
     <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>{setMobile(false);requestAnimationFrame(()=>toggleRef.current?.focus())}}/>
     <nav ref={menuRef} id="primary-navigation" aria-label="Main navigation">
       <Link className={styles.primaryAction} href="/flights/new" title="Add flight" onClick={()=>setMobile(false)}><i><NavIcon name="add"/></i><span>Add flight</span></Link>
+
+      <div className={styles.primaryNavLabel}>Workspace</div>
 
       {mainLinks.map(link=>{
         const active=activeFor(link.href),flights=link.href==="/flights";
