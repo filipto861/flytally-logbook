@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-A2 substantive visual hierarchy correction (Draft PR #392)
+
+- Owner's local N2-A screenshots showed only minor visible change, so previous N2-A styling is **not visually accepted**.
+- First protected Dashboard hero, supporting ULL/EASA and Last Flight cards gain a clear information hierarchy, Quick Actions fill available width while only links remain interactive; user-saved widget order/sizes stay unchanged.
+- Statistics: one dominant Logged Time metric plus supporting PIC/Landings and second-row metrics on wide screens; responsive fallback retains all values. Flights: existing summary values render as five distinct responsive information cards above the original dense flight list, with list/status/filters untouched.
+- Visual-only selector boundaries in three page components and `app/ui-system.css`, source test expectations expanded. All colors use existing theme tokens; no new libraries, domain semantics, DB, migration, flags, merge or deployment.
+- In-memory source assertions 21/21 PASS; Node/typecheck/build/Playwright/browser/native Safari for revised candidate NOT RUN; owner re-preview pending.
+
 ## Unreleased — 2026-10-23, N2-A theme-aware information surfaces (stacked candidate)
 
 - Isolated N2 candidate based on N1 Draft PR #391: first-level protected Dashboard information cards and Stats metric cards, main panels and panel headings have consistent semantic surface, radius, spacing, typography, and modest shadow; Dashboard action cards get clearer focus and hover.
