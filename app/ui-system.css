@@ -1773,6 +1773,16 @@ html[data-theme="dark"] .app-grid .sidebar{
 .app-grid .shell-workspace .statistics-explorer .statistics-period-toolbar > .period-control > a{
   padding-inline:8px;
 }
+@media(min-width:1500px){
+  /* Accommodate all existing preset labels plus Custom at wide desktop sizes
+     without pushing the remaining filter groups into a second row. */
+  .app-grid .shell-workspace > .ui-page-stack[data-n2-layout="statistics"] > .statistics-explorer{
+    grid-template-columns:minmax(0,1.1fr) minmax(0,1.05fr) minmax(0,1fr);
+  }
+  .app-grid .shell-workspace .statistics-explorer .period-control > a{
+    padding-inline:7px;
+  }
+}
 .app-grid .shell-workspace .statistics-explorer .statistics-custom-range{
   flex:0 0 auto;
   min-width:0;
