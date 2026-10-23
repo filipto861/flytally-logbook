@@ -3,7 +3,7 @@ import { expectNoHorizontalOverflow,loginBrowserPilot } from "./browser-actions.
 
 const authenticated=process.env.FLYTALLY_AUTH_BROWSER==="1";
 
-test("N2-C period presets and Custom stay on one row across cockpit viewports and themes",async({page})=>{
+test("N2-C period presets and Custom stay on one row across cockpit viewports and themes",{tag:"@self-managed-presentation"},async({page})=>{
   test.skip(!authenticated,"Requires an isolated authenticated browser fixture.");
   await loginBrowserPilot(page,"/statistics");
 
