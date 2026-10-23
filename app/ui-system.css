@@ -1955,3 +1955,42 @@ html[data-theme="dark"] .app-grid .shell-workspace .statistics-explorer .statist
   .entry-review-status-actions{display:grid;grid-template-columns:minmax(0,1fr)}
   .flight-form .entry-review-status-link{width:100%}
 }
+
+
+/* N3-M2 — clearer Manual New Flight reading order; Edit and GPS remain unchanged.
+   Layout-only separation with existing tokens; no sticky chrome, motion or extra inputs. */
+.flight-form[data-entry-flow="new"] .entry-section-primary{
+  gap:var(--ui-space-3);
+}
+.flight-form[data-entry-flow="new"] .n3-m2-section-intro,
+.flight-form[data-entry-flow="new"] .n3-m2-route-lead p{
+  min-width:0;
+  margin:0;
+  color:var(--muted);
+  font-size:.76rem;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+.flight-form[data-entry-flow="new"] .n3-m2-section-intro{
+  margin-top:calc(-1 * var(--ui-space-2));
+}
+.flight-form[data-entry-flow="new"] .n3-m2-route-lead{
+  display:grid;
+  gap:var(--ui-space-1);
+  min-width:0;
+  margin-top:var(--ui-space-2);
+  padding-top:var(--ui-space-4);
+  border-top:1px solid var(--line);
+}
+.flight-form[data-entry-flow="new"] .n3-m2-route-lead h3{
+  margin:0;
+  color:var(--text);
+  font-size:.9rem;
+  font-weight:750;
+  line-height:1.35;
+}
+@media(max-width:520px){
+  .flight-form[data-entry-flow="new"] .n3-m2-route-lead{
+    padding-top:var(--ui-space-3);
+  }
+}

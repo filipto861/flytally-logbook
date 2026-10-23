@@ -10,6 +10,11 @@ test("N3-M1 Manual shows existing missing details at the top and focuses them",a
   const review=form.locator(".entry-review-status");
   await expect(review).toBeVisible();
   await expect(review).toContainText("Aircraft");
+  await expect(form.locator(".entry-section-primary > .section-kicker")).toHaveText("Flight basics");
+  await expect(form.locator(".n3-m2-section-intro")).toContainText("Crew details appear here");
+  await expect(form.locator(".n3-m2-route-lead")).toContainText("Route & UTC times");
+  await expect(form.locator('input[name="departure"]')).toHaveValue("");
+  await expect(form.locator('input[name="offBlock"]')).toHaveValue("");
   await review.getByRole("button",{name:"Aircraft",exact:true}).click();
   await expect(form.locator('select[name="registration"]')).toBeFocused();
   await form.locator('select[name="registration"]').selectOption("OK-E2E");
@@ -21,8 +26,12 @@ test("N3-M1 Manual shows existing missing details at the top and focuses them",a
   await expect(form.getByRole("button",{name:"Save & certify flight"})).toBeVisible();
   for(const width of [320,390,768,1024,1440]){
     await page.setViewportSize({width,height:844});
-    await expect(review).toBeVisible();
-    await expectNoHorizontalOverflow(page);
+    for(const theme of ["light","dark"]){
+      await page.evaluate(value=>{document.documentElement.dataset.theme=value},theme);
+      await expect(review).toBeVisible();
+      await expect(form.locator(".n3-m2-route-lead")).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
   }
 });
 
