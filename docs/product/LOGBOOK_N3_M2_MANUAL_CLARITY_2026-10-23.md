@@ -1,5 +1,7 @@
 # N3-M2 — Manual New Flight clarity (Variant A)
 
+**2026-10-23 continuation decision:** Owner agreed to continue after visual review of M2 and the corrected shell-header diagnosis. Proceed to full exact-candidate risk verification; this is **not** permission to merge, deploy or implement M3. Previous targeted manual/source/browser checks PASS for earlier SHAs, while release-level 22-risk-browser, full Node and 6-part PG integrations **NOT RUN**. No runtime source edits in this checkpoint.
+
 **Status:** implemented as an intentionally small **Draft PR #399** on work branch `feat/logbook-n3-m2-manual-clarity-20261023`; **owner approved M2 implementation scope** after N3-M1 visual audit, **not** merge/deploy. **Full browser/Node/build/PostgreSQL execution NOT RUN** for this new implementation SHA.
 **Parent:** stacked Draft #398 `feat/logbook-n3-m1-entry-review-20261023@45a1cbdcbd68cda0fe6c2ea58d1d9a92a58f7900` (under Draft #397 docs); canonical `main@3af54d4f4d0651b430452dd3f5b8513e134f5c6a` unchanged at kickoff.
 **Implementation source commit:** `3c4cecfddce5ef12535bbdcf6ea60d11d7d4c52e`, document follow-up commit must not inherit execution evidence.

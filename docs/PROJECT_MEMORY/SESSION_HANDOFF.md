@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-23T18:54:08.467Z — owner M2 visual direction accepted for continuation; release risk test pending
+
+- GitHub canonical `main@3af54d4f4d0651b430452dd3f5b8513e134f5c6a`; M2 `feat/logbook-n3-m2-manual-clarity-20261023@7f90221daec1cde8249fc4016f85d9a5d76cc70e`, Draft PR #399 stacked on #398/#397; separate docs-only checkpoint to be verified. Vercel production READY older SHA `3def2c3618d1b2a185d39b15df69c1613180751b`. No merges, deployment, DB migrations/flags or Training actions.
+- Owner said `ok pokracuj` after M2 side-by-side visuals and shell fullPage artifact review. Scope = proceed with existing M2 layout and exact-candidate risk gate; not authorizing merge/deploy or M3 code. Existing M2 data input/persistence/recency, GPS and Edit contracts unchanged.
+- Targeted source evidence TypeScript PASS, Node 11/11 PASS, build PASS, Manual Chromium desktop/mobile 2/2 PASS, synthetic Manual 40 images and shell probe viewport 26 images independently verified (historical Playwright probe FAIL on invalid strict style predicate, not replayed as PASS). Risk full release NOT RUN: 22 selected browser targets, complete Node, 6 owned PG16 partitions 164 tests, exact-candidate release ledger, native Safari/real iPad. Planner should be recomputed for latest SHA; no invented PASS.
+- DO NOT use remote/production/staging DB, skip missing evidence, claim status green from plan-only, change browser registry, update CSS for screenshot artifacts, auto-fill flight/airport or start M3. No merge/deploy/feature-flag changes without explicit approval.
+- **ONE NEXT STEP:** owner executes protected exact-SHA local `npm run verify:release:risk -- --base origin/main` with owned isolated PG16 browser plus six-part executor; review genuine ledger, failures and remaining native-device uncertainty before any release approval request.
+
 ## 2026-10-23T18:41:30.912Z — recovered original shell viewport ZIP verified; false-positive investigation closed, M2 acceptance pending
 
 - Verified GitHub `main@3af54d4f4d0651b430452dd3f5b8513e134f5c6a` and `feat/logbook-n3-m2-manual-clarity-20261023@cb79488fc30bc42cc0e18ce3716e3cd4bfd4e6a2`, Draft PR #399 stacked on #398/#397; deployment previous READY `3def2c3618d1b2a185d39b15df69c1613180751b` (not M2). Docs-only checkpoint follows this recorded work source; independently verify new HEAD. User-authorized scope: diagnose a mobile header supposedly at page midpoint in fullPage synthetic screenshots. Not authorized: application/CSS change, merge/deploy, production DB/schema/flags or M3.
