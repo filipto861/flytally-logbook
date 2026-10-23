@@ -15,6 +15,12 @@ function render(block:string,scopeCategory:string|null=null,bounds:{start:string
 before(()=>{
   if(!enabled)return;
   assert.ok(databaseUrl,"DATABASE_URL is required for pilot insights PostgreSQL test");
+  // This file may also be launched directly, bypassing the guarded PG test runner.
+  // Refuse remote connections before CREATE SCHEMA or any fixture writes.
+  const url=new URL(databaseUrl);
+  assert.ok(["postgres:","postgresql:"].includes(url.protocol),"Expected a PostgreSQL URL");
+  assert.ok(new Set(["127.0.0.1","localhost","::1","[::1]"]).has(url.hostname),
+    "Pilot insights fixture is destructive and must target localhost only");
   const setup=`
     CREATE SCHEMA ${quoted};SET search_path TO ${quoted};
     CREATE TABLE flights(
