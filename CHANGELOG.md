@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-23 — N3-M1/M2 manual production deployment READY (app 3.8.1)
+
+- Owner approved exact `462b8d7b11c6ba59eb4a2b01b1eb4d53cb33abe2` manual production deployment to `fly-tally.com`; Vercel production `dpl_fhvhcKB1AY21hHQHWz1WPpZ4ADYS` READY and aliased. Entry Review Manual/GPS and clearer Manual New Flight groups shipped; prior complete local release risk gate PASS on identical app/test code, Next.js deployment build PASS.
+- Read-only Neon production v21 pre/postflight 21 migrations/12 columns/4 validated constraints, core protection triggers present; no schema/flag changes. No Training edits or auto Git deploy policy change.
+- **Not yet verified:** real public HTTP, authenticated Manual/GPS user smoke and native Safari/iPad. Agent's direct DNS/HTTP unavailable; no application failure inferred. Detailed [N3 production report](docs/product/LOGBOOK_N3_PRODUCTION_DEPLOYMENT_2026-10-23.md).
+
 ## 2026-10-23 — N3 UX discovery, M1 and M2 merged to main (not deployed)
 
 - Explicit owner-approved ordered merge: PR #397 `fbce31c01bad4f5cc9b509857387c8539143e48d`, #398 `35c920d5cc10644d120ac0a8e6b2c494cd38186e`, #399 `462b8d7b11c6ba59eb4a2b01b1eb4d53cb33abe2`. Exact main tree matches final #399 head; vs owner-tested `0e8b3f8787d6d55d1db6846d5a43f79e2a11f8f2`, only docs changed. No runtime design, safety/certification, GPS parsing, dependencies or schema added by merge topology.
