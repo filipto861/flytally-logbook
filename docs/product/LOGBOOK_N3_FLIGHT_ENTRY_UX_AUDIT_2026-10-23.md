@@ -7,6 +7,8 @@
 **Evidence boundary:** static GitHub source audit only. NO authenticated runtime DOM/computed cascade, screenshot baseline, Playwright execution or real iPad Safari for N3. Source findings are distinguished from hypotheses. Do not claim real-user task times or visual failures before testing.
 
 
+**D0 capture/review 2026-10-23:** Owner-local isolated synthetic PG16/Chromium screenshot runner completed **100/100** matrix and cleaned owned DB. Uploaded ZIP was directly inspected: all 100 manifest records, sampled Manual/GPS full-page screenshots at Light/Dark, desktop/mobile, missing PIC/instructor, invalid GPS source and two detected flights. **Evidence-grounded N3-V01..09 findings and D1 Option A/B proposals** are now in [N3-D0 Visual Evidence Review](LOGBOOK_N3_D0_VISUAL_EVIDENCE_REVIEW_2026-10-23.md). Confirmed high-severity confusing draft-versus-certify message, ambiguous GPS missing-state, long multi-flight page (6144 px at 390, 6390 px at 320), and synthetic dark-DOM mixed contrast; actual account-preference dark theme requires separate reproduction. No reported horizontal overflow in 100 captures. **D0 matrix capture PASS; D0 extended focus/native Safari/voiceover PARTIAL/NOT RUN; D1 owner layout decision pending.** No application changes.
+
 **Owner decision 2026-10-23:** N3 priority before 3.9.0, N3-D0 visual baseline and all nine audit finding directions expressly approved. Approval does NOT accept unobserved CSS bugs as facts, freeze wireframes, authorize code changes to the flight model, or approve merge/deployment. No production changes.
 
 ## Reconstructed present workflow
