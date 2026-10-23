@@ -1,6 +1,6 @@
 # N1 V2 — FlyTally Logbook: visually substantial shell and navigation redesign
 
-**Status:** PROPOSAL / theme-adaptive navigation OWNER-DECIDED; no V2 runtime changes made.  
+**Status:** N1 V2 theme-adaptive direction OWNER APPROVED (2026-10-23); N1 V2-1 isolated navigation candidate implemented on Draft PR #391. Browser, test, merge, deploy remain NOT RUN / NOT AUTHORIZED.  
 **Date:** 2026-10-23  
 **Owner feedback:** After successful local N1-A preview, owner submitted four desktop/light screenshots and said: "Změna je příliš malá, chci výrazně modernější design" (change too small; wants much more modern look). The preview is owner-observed only, not our browser-test PASS. No user screenshots, accounts or flight details may be committed.
 
@@ -41,9 +41,9 @@ A confidently **new visual silhouette** inspired by modern aviation tools and Ap
 
 ## 4. Strict rollout / approval gates
 
-**N1-V2-0 DESIGN FREEZE (THIS DOCUMENT):** Owner has rejected a permanent dark rail in light mode. Owner reviews the revised theme-adaptive shell topbar framing and preservation of all existing navigation. No runtime change until approved. Existing Draft PR #391 remains unmerged, with V1 implementation still present; do not claim the new design is implemented.
+**N1-V2-0 DESIGN FREEZE (OWNER APPROVED):** Owner rejected the permanent dark rail in light mode, asked for theme-adaptive appearance, and accepted the revised direction. This approval authorizes a candidate, NOT merge/deploy. Existing Draft PR #391 remains unmerged, with V1 implementation still present; do not claim the new design is implemented.
 
-**N1-V2-1:** Isolated structural markup/styling of sidebar brand/utility arrangement, nav rows/CTA/active/group, collapsed desktop; files anticipated `components/sidebar.tsx`, `components/sidebar.module.css`, `app/ui-system.css`, existing shell styles only where necessary. Preserve route/role/signout/notification and ARIA/focus contracts. No new dependencies.
+**N1-V2-1 IMPLEMENTED CANDIDATE (NOT VISUALLY VERIFIED):** Scope-limited sidebar brand hierarchy and primary section label (`components/sidebar.tsx`); navigation spacing, increased row height, group hierarchy and collapsed/mobile treatment (`components/sidebar.module.css`); final effective navigation CSS overrides using resolved LIGHT/DARK semantic tokens (`app/ui-system.css`); source regression expectations (`tests/logbook-n1-navigation-style.test.ts`). Preserved all links, roles, notification count semantics, Escape/focus and collapse storage. No new dependencies.
 
 **N1-V2-2:** Shared shell/page-header surface and spacing only, plus phone/iPad drawer alignment; files anticipated `components/app-shell.tsx` and localized CSS. Do not touch routes' business page components just to improve cards. Avoid global CSS overrides of unrelated page controls.
 
@@ -59,6 +59,6 @@ A confidently **new visual silhouette** inspired by modern aviation tools and Ap
 
 **DO NOT:** change aircraft/flights/recency logic, public sharing, search/filter behavior, stats formulas, GPS, auth/permissions, DB/migrations/flags, production deploy, Training, unrelated Draft PRs, CSS cleanup unrelated to shell, new design component library, global glass or gratuitous springs. Do not run destructive fixtures outside physically verified disposable localhost database. Preserve owner's two unrelated untracked ZIPs from earlier local status output.
 
-**CURRENT EVIDENCE:** screenshots **observed**, GitHub source/skills read; owner local N1-A preview succeeded according to owner. V2 implementation/typecheck/build/Playwright/browser/native Safari **NOT RUN**, DB/migration/deploy untouched in our work, no visual V2 acceptance.
+**CURRENT EVIDENCE:** owner desktop LIGHT screenshots of N1-A observed; GitHub source, CSS cascade and required skills read. N1 V2-1 candidate CSS/markup committed to Draft PR #391. Static in-memory checks 22/22 PASS (source only, NOT a test runner). Node targeted tests, TypeScript, build, authenticated Playwright, computed browser CSS, real preview/native Safari **NOT RUN**; database/flags/production deployment untouched. No owner visual acceptance of V2 yet.
 
-**ONE NEXT STEP:** Owner approves or revises the stronger N1 V2 design direction (specifically a theme-adaptive sidebar and refined shell header), **then** implement N1-V2-1 on the existing scoped candidate branch / separate PR strategy agreed at checkpoint, with no merge or deploy.
+**ONE NEXT STEP:** Owner pulls Draft PR #391 candidate and previews N1 V2-1 locally with existing guarded disposable DB launcher in light/dark (expanded/collapsed, mobile drawer). Gather visual feedback BEFORE N1 V2-2 or release tests. No merge/deploy.
