@@ -55,13 +55,16 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   const visibleLayout=layout.filter(item=>item.enabled);
   return <div className="ui-page-stack">
     <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
-    <section className="dashboard-layout-grid" aria-label="Dashboard overview">
+    <div className="dashboard-home-layout">
+      <div className="dashboard-main-column">
+        <section className="dashboard-layout-grid" aria-label="Dashboard overview">
       {visibleLayout.map(item=><div key={item.id} data-dashboard-widget={item.id} data-dashboard-size={item.size} className={`dashboard-widget dashboard-size-${item.size}`}>{renderWidget(item.id)}</div>)}
-    </section>
+        </section>
 
     {recencySnapshot?<Link href="/credentials" className={`dashboard-recency-status dashboard-recency-${recencySnapshot.status}`}><span>Recency</span><strong>{recencySnapshot.label}</strong>{recencySnapshot.nextDate?<small>Next date {formatDateOnly(recencySnapshot.nextDate)}</small>:<small>Open details</small>}</Link>:null}
 
-    <section className="panel dashboard-quick-actions-panel">
+      </div>
+      <section className="panel dashboard-quick-actions-panel">
       <div className="section-heading"><div><p className="eyebrow">QUICK ACTIONS</p><h2>Where next?</h2><p className="muted">Everyday actions stay here. Historical analysis stays in Statistics.</p></div></div>
       <div className="mini-metrics">
         <div><span>Logbook</span><b><Link className="row-link" href="/flights/new">Add flight →</Link></b><small>Record a new flight</small></div>
@@ -70,7 +73,8 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
         <div><span>Analysis</span><b><Link className="row-link" href="/statistics?period=all&section=overview">Statistics →</Link></b><small>Periods, trends, experience, aircraft and routes</small></div>
         <div><span>Records</span><b><Link className="row-link" href="/data">Print & data →</Link></b><small>Print, export and backup tools</small></div>
       </div>
-    </section>
+      </section>
+    </div>
 
     <DashboardEditor layout={layout}/>
   </div>;
