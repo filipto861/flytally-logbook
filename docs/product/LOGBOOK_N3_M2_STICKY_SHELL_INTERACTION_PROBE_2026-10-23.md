@@ -20,7 +20,7 @@ Use a fresh, strictly owned and physically validated empty local PostgreSQL 16 c
 
 ### Results
 
-**PENDING / NOT RUN.** A screenshot alone cannot prove fixed/sticky behavior at runtime. If the live test passes, classify owner's stitched image as capture artifact and keep CSS unchanged. If it fails, investigate exact DOM/CSS cascade and reproduce with a minimal responsive fixture before proposing a scoped fix. Native Safari/real iPad and soft-keyboard behavior remain **NOT RUN** until separate device evidence.
+**TEST RAN, ASSERTION FAILED (not runtime PASS).** 2026-10-23 owner-local Chromium probe produced 42 false-positive `NOT_STICKY` findings because effective mobile `position:fixed` from legacy v1131 mobile CSS was not accepted. All recorded viewport geometry shows shell at y=0 despite scroll; focused Instructor visible and menu state correct. Detailed [readout](docs/product/LOGBOOK_N3_M2_SHELL_PROBE_DIAGNOSTIC_RESULT_2026-10-23.md). Diagnostic ZIP is retained locally but not yet independently inspected. Prior state was: **PENDING / NOT RUN.** A screenshot alone cannot prove fixed/sticky behavior at runtime. If the live test passes, classify owner's stitched image as capture artifact and keep CSS unchanged. If it fails, investigate exact DOM/CSS cascade and reproduce with a minimal responsive fixture before proposing a scoped fix. Native Safari/real iPad and soft-keyboard behavior remain **NOT RUN** until separate device evidence.
 
 No design-library/brand/nav behavior changes or test registry modifications permitted in this diagnostic batch; no merging/release/production DB/flags changes.
 
