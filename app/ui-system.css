@@ -1749,3 +1749,99 @@ html[data-theme="dark"] .app-grid .sidebar{
     box-shadow:none;
   }
 }
+
+/* N2-C — inline native calendar range within the approved Statistics filter station.
+   No new picker dependencies, overlays, automatic apply or altered theme palette. */
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range{
+  min-width:0;
+  margin:0;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--surface-raised);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:44px;
+  padding:10px 12px;
+  color:var(--text);
+  font-size:.805rem;
+  font-weight:750;
+  cursor:pointer;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary::marker{
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary:focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:2px;
+  border-radius:9px;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range[open] > summary{
+  color:var(--accent-strong);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-value{
+  display:block;
+  min-width:0;
+  color:var(--text-soft);
+  font-size:.71rem;
+  font-variant-numeric:tabular-nums;
+  font-weight:600;
+  overflow-wrap:anywhere;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  min-width:0;
+  padding:12px;
+  border-top:1px solid var(--line);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+  color:var(--text-soft);
+  font-size:.75rem;
+  font-weight:750;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  padding:8px 9px;
+  border:1px solid var(--line-strong);
+  border-radius:var(--ui-radius-control);
+  background:var(--surface);
+  color:var(--text);
+  font:inherit;
+  font-size:.83rem;
+  color-scheme:light dark;
+}
+html[data-theme="light"] .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]{
+  color-scheme:light;
+}
+html[data-theme="dark"] .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]{
+  color-scheme:dark;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]:focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:2px;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form .primary-button{
+  grid-column:1/-1;
+  min-height:44px;
+  width:100%;
+}
+@media (max-width:430px){
+  .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@media print{
+  .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form{display:none}
+}
