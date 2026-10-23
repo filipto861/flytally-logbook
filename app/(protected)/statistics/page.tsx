@@ -26,8 +26,9 @@ function StatisticsExplorer({period,section,category,customRange,from,to}:{perio
     </div>
     {section!=="career"?<div className="statistics-filter-group statistics-filter-period">
       <p className="statistics-filter-label">Period</p>
-      <nav className="period-control" aria-label="Statistics period">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} aria-current={period===key?"page":undefined} href={statisticsHref(key,section,category)}>{label}</Link>)}</nav>
-      <details className="statistics-custom-range" open={period==="custom"}>
+      <div className="statistics-period-toolbar">
+        <nav className="period-control" aria-label="Statistics period">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} aria-current={period===key?"page":undefined} href={statisticsHref(key,section,category)}>{label}</Link>)}</nav>
+        <details className="statistics-custom-range" open={period==="custom"}>
         <summary aria-current={period==="custom"?"true":undefined}>Custom dates{period==="custom"&&customRange?<span className="statistics-custom-range-value">{customRange.from} – {customRange.to}</span>:null}</summary>
         <form method="get" action="/statistics" className="statistics-custom-range-form">
           <input type="hidden" name="period" value="custom"/>
@@ -41,7 +42,8 @@ function StatisticsExplorer({period,section,category,customRange,from,to}:{perio
           </label>
           <button type="submit" className="primary-button">Apply</button>
         </form>
-      </details>
+        </details>
+      </div>
     </div>:null}
     <div className="statistics-filter-group statistics-filter-section">
       <p className="statistics-filter-label">Analysis</p>
