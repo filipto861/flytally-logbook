@@ -33,6 +33,9 @@ No GPS parser, date/time math, split algorithm, certification, RoleCrew persiste
 
 ## Tests / evidence
 
+- **Owner Windows at old `ff7ec9a71e591fbcb961349943ecf68df77f89af` (2026-10-23):** clean checked-out branch, protected physical isolated PG16 init/probe/stop/delete PASS; `npm run typecheck` PASS; `npm run test:target -- tests/n3-m1-entry-readiness.test.ts` 3/3 PASS. `npm run verify:plan -- --base origin/main` returned exit 3 because new E2E spec lacked an authoritative browser target. PostgreSQL integration, build, and Playwright were **NOT RUN** because runner stopped before them. This is a test ownership blocker, not evidence of a UI regression.
+- **Registration repair on work branch (new SHA required):** added exact two N3-M1 logical tests to browser inventory and four desktop/mobile authoritative target declarations, harness inclusion, narrow entry component owner paths, and browser registry/structure regression assertions. Existing protocol `selectionVersion=2`, historical `expectedFullGate` and other legacy targets remain unchanged. Exact-new-SHA Node/browser/PG/build execution is **NOT RUN** until owner-local guarded rerun.
+
 - GitHub source readback of focused changes: **STATIC ONLY**. Actual `npm run typecheck`, source unit tests, full Node, risk planner, browser fixture/Playwright (desktop 1440/iPad/mobile 320/390 Light/Dark), PostgreSQL, native Safari **NOT RUN** for this implementation SHA in assistant environment.
 - Owner can run `npm run verify:plan -- --base origin/main` for candidate-bound matrix, targeted Node `npm run test:target -- tests/n3-m1-entry-readiness.test.ts` and the guarded owner-local fresh-PG16 browser script; store true PASS/FAIL per exact work SHA. Any failed gate is a blocker, no test waivers.
 - D0 screenshot baseline 100/100 PASS was prior docs SHA `2fd9ba65f3f7145ba25cfbcb8fa86da7158b6fb9` and **cannot establish after-state M1 UI PASS**.

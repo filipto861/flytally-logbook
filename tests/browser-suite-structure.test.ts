@@ -69,13 +69,17 @@ test("Phase 0C preserves the original 48 browser contracts, five 3.7.0 map scena
     "N2-C period presets and Custom stay on one row across cockpit viewports and themes",
     "N2-C custom dates require Apply, retain navigation scope and reject reversed deep links"
   ];
+  const addedN3M1Tests=[
+    "N3-M1 Manual shows existing missing details at the top and focuses them",
+    "N3-M1 GPS review starts with source error then links to real aircraft control"
+  ];
   // H4's two frozen-v20 tests must survive, but can only run on the detached
   // old-runtime worktree. The ordinary browser suite must never pick them up.
   assert.ok(baseline.excludedSpecs.includes("v380-h4-frozen-v20.spec.mjs"));
   assert.match(read("playwright.config.mjs"),/testIgnore:\["\*\*\/v380-h4-frozen-v20\.spec\.mjs"\]/);
   assert.match(read("e2e/v380-h4-frozen-v20.spec.mjs"),/H4: frozen v20 authenticates and reads/);
   const actual=logicalBrowserTests();
-  const expectedCount=originalCount+addedMapTests.length+addedTrashTests.length+addedCurrencyTests.length+addedElevationTests.length+addedN2CTests.length;
+  const expectedCount=originalCount+addedMapTests.length+addedTrashTests.length+addedCurrencyTests.length+addedElevationTests.length+addedN2CTests.length+addedN3M1Tests.length;
   assert.equal(actual.length,expectedCount);
   assert.equal(new Set(actual).size,actual.length,"browser test names must remain unique and grep-able");
   assert.deepEqual([...actual].sort(),[...baseline.acceptanceLogicalTests].sort());
@@ -90,8 +94,11 @@ test("Phase 0C preserves the original 48 browser contracts, five 3.7.0 map scena
     "Currency 3.8 preserves both reviewed Trash and signed-v13 recovery tests");
   assert.deepEqual(baseline.acceptanceLogicalTests.slice(airportStart,airportStart+addedElevationTests.length),addedElevationTests,
     "Airport Elevation adds reviewed nullable persistence and account-ownership browser cases");
-  assert.deepEqual(baseline.acceptanceLogicalTests.slice(airportStart+addedElevationTests.length),addedN2CTests,
+  const n2cStart=airportStart+addedElevationTests.length;
+  assert.deepEqual(baseline.acceptanceLogicalTests.slice(n2cStart,n2cStart+addedN2CTests.length),addedN2CTests,
     "N2-C must retain both custom-period scenarios without replacing prior browser contracts");
+  assert.deepEqual(baseline.acceptanceLogicalTests.slice(n2cStart+addedN2CTests.length),addedN3M1Tests,
+    "N3-M1 must add both contextual review flows without replacing previous scenarios");
 });
 
 test("Phase 0C keeps the serialized two-project Playwright contract",()=>{

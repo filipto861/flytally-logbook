@@ -302,7 +302,9 @@
         "lib/aviation-units",
         "lib/display-format"
       ],
-      "files": [],
+      "files": [
+        "components/entry-review-summary.tsx"
+      ],
       "risks": [
         "domain-data-integrity",
         "persistence-schema",
@@ -1139,6 +1141,20 @@
           "statistics-custom-period-flow-desktop",
           "statistics-custom-period-flow-mobile"
         ]
+      },
+      {
+        "prefixes": [],
+        "files": [
+          "components/entry-review-summary.tsx",
+          "components/flight-form.tsx",
+          "components/kml-import-form.tsx"
+        ],
+        "targets": [
+          "n3-m1-manual-review-desktop",
+          "n3-m1-manual-review-mobile",
+          "n3-m1-gps-review-desktop",
+          "n3-m1-gps-review-mobile"
+        ]
       }
     ],
     "harnessTargets": [
@@ -1197,7 +1213,11 @@
       "verifier-evidence-mobile",
       "statistics-custom-period-layout-desktop",
       "statistics-custom-period-flow-desktop",
-      "statistics-custom-period-flow-mobile"
+      "statistics-custom-period-flow-mobile",
+      "n3-m1-manual-review-desktop",
+      "n3-m1-manual-review-mobile",
+      "n3-m1-gps-review-desktop",
+      "n3-m1-gps-review-mobile"
     ],
     "targets": {
       "shell-core-desktop": {
@@ -1528,6 +1548,26 @@
       "statistics-custom-period-flow-mobile": {
         "spec": "e2e/logbook-n2c-statistics-range.spec.mjs",
         "title": "N2-C custom dates require Apply, retain navigation scope and reject reversed deep links",
+        "project": "mobile-chromium"
+      },
+      "n3-m1-manual-review-desktop": {
+        "spec": "e2e/n3-m1-entry-review.spec.mjs",
+        "title": "N3-M1 Manual shows existing missing details at the top and focuses them",
+        "project": "desktop-chromium"
+      },
+      "n3-m1-manual-review-mobile": {
+        "spec": "e2e/n3-m1-entry-review.spec.mjs",
+        "title": "N3-M1 Manual shows existing missing details at the top and focuses them",
+        "project": "mobile-chromium"
+      },
+      "n3-m1-gps-review-desktop": {
+        "spec": "e2e/n3-m1-entry-review.spec.mjs",
+        "title": "N3-M1 GPS review starts with source error then links to real aircraft control",
+        "project": "desktop-chromium"
+      },
+      "n3-m1-gps-review-mobile": {
+        "spec": "e2e/n3-m1-entry-review.spec.mjs",
+        "title": "N3-M1 GPS review starts with source error then links to real aircraft control",
         "project": "mobile-chromium"
       }
     }
