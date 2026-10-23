@@ -11,7 +11,14 @@ test("N2-C custom date picker applies only after explicit submission",()=>{
   assert.equal((page.match(/<header className="page-header">/g)??[]).length,1,"Statistics must render one shared masthead");
   assert.equal((page.match(/\{header\}/g)??[]).length,2,"Both invalid and valid paths use that masthead");
   assert.match(page,/className="statistics-custom-range"/);
-  assert.match(page,/<details className="statistics-custom-range" open=\{period==="custom"\}>/);
+  assert.match(page,/className="statistics-period-toolbar"/);
+  assert.match(page,/<nav className="period-control" aria-label="Statistics period">/);
+  assert.match(page,/<details className="statistics-custom-range" data-selected=\{period==="custom"\?"true":undefined\}>/);
+  assert.match(page,/<summary aria-label="Custom dates" aria-current=\{period==="custom"\?"true":undefined\}>Custom<\/summary>/);
+  assert.doesNotMatch(page,/<details className="statistics-custom-range" open=/);
+  const position=page.indexOf('className="statistics-period-toolbar"');
+  assert.ok(position<page.indexOf('aria-label="Statistics period"')&&page.indexOf('aria-label="Statistics period"')<page.indexOf('className="statistics-custom-range"'),
+    "Custom must appear next to the presets in one toolbar");
   assert.match(page,/<form method="get" action="\/statistics" className="statistics-custom-range-form">/);
   assert.match(page,/name="from" type="date"/);
   assert.match(page,/name="to" type="date"/);
@@ -49,6 +56,12 @@ test("N2-C rejects invalid deep links before querying statistics",()=>{
 test("N2-C preserves narrow/touch/light-dark styling with no new calendar library",()=>{
   const ui=read("app/ui-system.css").split("/* N2-C — inline native calendar range")[1];
   assert.ok(ui);
+  assert.match(ui,/statistics-period-toolbar\{/);
+  assert.match(ui,/\.statistics-period-toolbar > \.period-control\{/);
+  assert.match(ui,/\.statistics-custom-range-form\{[\s\S]*?position:absolute/);
+  assert.match(ui,/top:calc\(100% \+ 8px\)/);
+  assert.match(ui,/right:0/);
+  assert.match(ui,/@media\(min-width:1500px\)/);
   assert.match(ui,/statistics-custom-range-form input\[type="date"\]/);
   assert.match(ui,/@media \(max-width:430px\)/);
   assert.match(ui,/min-height:44px/);
