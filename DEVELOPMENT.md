@@ -1,5 +1,9 @@
 # FlyTally development workflow
 
+## Current N2-C draft acceptance inventory (23 October 2026)
+
+The N2-C calendar SQL integration added a third pilot-insights test, so the exact current Draft PR #394 PostgreSQL inventory requires **42 integration files, 164 real tests and 6 protected partitions**, with 124 tests in `shared-core`. Each test file remains SHA-256 hash-pinned after strict UTF-8/canonical-LF normalization; modified fixture hashes and declared counts MUST be reconciled together and reviewed, never bypassed by relaxing the validator. Historical earlier acceptance counts (163/163) remain true only for their recorded older SHAs and are NOT evidence for the N2-C candidate. The browser selection protocol remains **version 2**; adding targets does not require changing the schema protocol version. Read-only `node tooling/validate-postgres-partition-registry.mjs` checks the inventory without connecting to a database. PostgreSQL/browser execution needs owned verified disposable localhost PG16 clusters per the trusted executor and all exact-candidate risk gates. These changes are test-tooling only, not runtime/production migration authorization.
+
 FlyTally uses a candidate-first development workflow. The objective is to keep normal iteration fast while retaining full integrity and performance gates where they are relevant.
 
 ## Production deployment separation (16 Oct 2026 — pre-merge configuration candidate)
