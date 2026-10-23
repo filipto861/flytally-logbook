@@ -1,10 +1,13 @@
 # N3 — Flight Entry UX Reconstruction & Proposed Simplification
 
-**Date:** 2026-10-23 · **Status:** SOURCE-BASED AUDIT / ROADMAP REPRIORITIZATION PROPOSAL ONLY — OWNER DECISION REQUIRED
+**Date:** 2026-10-23 · **Status:** OWNER APPROVED N3 PRIORITY + D0 SCREENSHOT BASELINE; SOURCE AUDIT COMPLETE; D1 / RUNTIME REDESIGN NOT APPROVED
 **Canonical baseline:** `filipto861/flytally-logbook` `main@3af54d4f4d0651b430452dd3f5b8513e134f5c6a`
 **Context:** v3.8.1 production N1/N2 visual system has already shipped; owner reports that New Flight Manual and GPS workflows still feel cluttered and confusing. This proposal precedes any runtime work or production/merge approval.
 **Methodology:** full main `.agents/skills/apple-design/SKILL.md` + complete 17-area Apple playbook, ui-ux-design, design-engineering, mobile-ipad, ui-quality-audit, flight-integrity, testing-quality, release-workflow; actual main code and imported stylesheet order.
 **Evidence boundary:** static GitHub source audit only. NO authenticated runtime DOM/computed cascade, screenshot baseline, Playwright execution or real iPad Safari for N3. Source findings are distinguished from hypotheses. Do not claim real-user task times or visual failures before testing.
+
+
+**Owner decision 2026-10-23:** N3 priority before 3.9.0, N3-D0 visual baseline and all nine audit finding directions expressly approved. Approval does NOT accept unobserved CSS bugs as facts, freeze wireframes, authorize code changes to the flight model, or approve merge/deployment. No production changes.
 
 ## Reconstructed present workflow
 
@@ -61,4 +64,4 @@ No changes to Create/Edit/GPS server actions, certification/finalized audit rule
 
 **Source audit:** GitHub read-only at `main@3af54d4f4d0651b430452dd3f5b8513e134f5c6a`. **Typecheck, Node, browser, PG, native Safari, live CSS screenshots for this N3 proposal: NOT RUN** (docs-only discovery). No code/db/flag/deploy change. Open documentation-only Draft PR to retain findings; it does **not** authorize ROADMAP mutation or implementation.
 
-**ONE NEXT STEP:** product owner approves/rejects moving N3 Flight Entry UX before 3.9.0 and chooses D0 baseline as the next work item; then reconcile ROADMAP on a separate scoped branch/PR before runtime redesign.
+**ONE NEXT STEP:** capture and inspect real authenticated N3-D0 synthetic browser baseline screenshots + computed CSS for both Manual/GPS and adverse cases, then present two alternative D1 layouts for owner choice; no app implementation before D1 freeze.
