@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T14:43:37.713Z — N1/N2 merged and released; production smoke unverified
+
+- Merged GitHub #391 → #392 → #393 → #394 to `main` `3def2c3618d1b2a185d39b15df69c1613180751b` with explicit owner approval. Source tree is identical to tested `95c751d441168e95d03023a68af5edddca1e7248` (zero GitHub compare file diff); risk release `PASS` there: 259 source / 28 domain / 1679 Node / PG16 164 / browser 20 plus typecheck/build/scale. Manual Vercel production `dpl_EkZZoHyWoYZsfp4AzubGBcziXUVz` for `3def2c3618d1b2a185d39b15df69c1613180751b` **READY** at `fly-tally.com`; version 3.8.1. No DB migration, prod flag or Training change. Year-0000 edge deferred explicitly.
+- Production HTTP authenticated/public smoke **NOT VERIFIED** from assistant due inaccessible DNS. Do not confuse Vercel `READY` or zero observed provider errors with route smoke PASS. Local Chrome touch emulation not native Safari. Docs-only release checkpoint branch `docs/logbook-n1-n2-release-checkpoint-20261023` based on exact deployed source SHA, no runtime change.
+- **ONE NEXT STEP:** owner verifies public/authenticated production smoke, then update final closure evidence without new runtime changes.
+
 ## 2026-10-23T12:00:17.691Z — N2-C core verification complete; guarded browser risk acceptance outstanding
 
 - Draft #394 work branch `feat/logbook-n2c-statistics-custom-period-20261023`, tested exact HEAD `13be03e95259c03540c44acb2ea352ce2952fb43`, base #393; parent #392 and #391 remain Draft/unmerged. Owner local tree clean after tests; targeted 34/34 PASS, TypeScript PASS, complete Node 1,679/1,679 PASS, optimized Next.js build PASS. No new runtime change. Core `verify:app` complete, **not** candidate release gate. Source code/behavior unchanged from full PASS SHA.
