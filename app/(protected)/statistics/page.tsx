@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getPilotInsightsData } from "@/lib/data/pilot-insights";
 import { getProfessionalExperienceForUser } from "@/lib/professional-experience-service";
 import { ProfessionalPilotWorkspace } from "@/components/professional-pilot-workspace";
-import { formatInsightDuration,paceComparison,sharePercent } from "@/lib/pilot-insights";
+import { formatInsightDuration,paceComparison,sharePercent,parsePilotInsightCustomRange,type PilotInsightCustomRange } from "@/lib/pilot-insights";
 import { PilotInsightsChart } from "@/components/pilot-insights-chart";
 import { directionalRouteHref,routePairHref } from "@/lib/route-filter";
 import { formatDateOnly } from "@/lib/display-format";
@@ -14,30 +14,61 @@ const sections=[["overview","Overview"],["experience","Experience"],["aircraft",
 const categories=[["","All"],["AEROPLANE","Aeroplane"],["ULL","ULL"],["SAILPLANE","Sailplane"],["HELICOPTER","Helicopter"],["BALLOON","Balloon"]] as const;
 const categoryLabels:Record<string,string>={AEROPLANE:"Aeroplane",ULL:"ULL",SAILPLANE:"Sailplane",HELICOPTER:"Helicopter",BALLOON:"Balloon",OTHER:"Other"};
 const sectionKeys=new Set<string>(sections.map(([key])=>key)),categoryKeys=new Set<string>(categories.map(([key])=>key));
-const statisticsHref=(period:string,section:string,category:string)=>{const query=new URLSearchParams({period,section});if(category)query.set("category",category);return `/statistics?${query.toString()}`};
+const statisticsHref=(period:string,section:string,category:string,range?:PilotInsightCustomRange)=>{const query=new URLSearchParams({period,section});if(category)query.set("category",category);if(period==="custom"&&range){query.set("from",range.from);query.set("to",range.to)}return `/statistics?${query.toString()}`};
 const scopedFlightHref=(href:string,category:string)=>category?`${href}${href.includes("?")?"&":"?"}category=${encodeURIComponent(category)}`:href;
 const roleLabel=(value:string)=>value==="INSTRUKTOR"?"INSTRUCTOR":value||"Unspecified";
 
-export default async function StatisticsPage({searchParams}:{searchParams:Promise<{period?:string;section?:string;category?:string}>}){
-  const session=await requireUser(),params=await searchParams,requestedPeriod=params.period??"all",period=periods.some(([key])=>key===requestedPeriod)?requestedPeriod:"all",section=sectionKeys.has(params.section??"")?params.section??"overview":"overview",requestedCategory=String(params.category??"").toUpperCase(),category=categoryKeys.has(requestedCategory)?requestedCategory:"";
-  const[data,professional]=await Promise.all([getPilotInsightsData(session.userId,period,category,section),section==="career"?getProfessionalExperienceForUser(session.userId,category):Promise.resolve(null)]),s=data.summary,loggedMinutes=s.minutes,pace=paceComparison(data.current12m.minutes,data.previous12m.minutes),picShare=sharePercent(s.picMinutes,loggedMinutes),nightShare=sharePercent(s.nightMinutes,loggedMinutes),ifrShare=sharePercent(s.ifrMinutes,loggedMinutes),scopeLabel=category?categoryLabels[category]||category:"All categories";
+function StatisticsExplorer({period,section,category,customRange,from,to}:{period:string;section:string;category:string;customRange?:PilotInsightCustomRange;from?:string;to?:string}){
+  return <section className="statistics-explorer" aria-label="Explore statistics">
+    <div className="statistics-filter-group statistics-filter-category">
+      <p className="statistics-filter-label">Category</p>
+      <nav className="period-control" aria-label="Statistics category">{categories.map(([key,label])=><Link key={key||"ALL"} className={category===key?"active":""} aria-current={category===key?"page":undefined} href={statisticsHref(period,section,key,customRange)}>{label}</Link>)}</nav>
+    </div>
+    {section!=="career"?<div className="statistics-filter-group statistics-filter-period">
+      <p className="statistics-filter-label">Period</p>
+      <nav className="period-control" aria-label="Statistics period">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} aria-current={period===key?"page":undefined} href={statisticsHref(key,section,category)}>{label}</Link>)}</nav>
+      <details className="statistics-custom-range" open={period==="custom"}>
+        <summary aria-current={period==="custom"?"true":undefined}>Custom dates{period==="custom"&&customRange?<span className="statistics-custom-range-value">{customRange.from} – {customRange.to}</span>:null}</summary>
+        <form method="get" action="/statistics" className="statistics-custom-range-form">
+          <input type="hidden" name="period" value="custom"/>
+          <input type="hidden" name="section" value={section}/>
+          {category?<input type="hidden" name="category" value={category}/>:null}
+          <label htmlFor="statistics-date-from">From
+            <input id="statistics-date-from" name="from" type="date" defaultValue={from??""} required/>
+          </label>
+          <label htmlFor="statistics-date-to">To
+            <input id="statistics-date-to" name="to" type="date" defaultValue={to??""} required/>
+          </label>
+          <button type="submit" className="primary-button">Apply</button>
+        </form>
+      </details>
+    </div>:null}
+    <div className="statistics-filter-group statistics-filter-section">
+      <p className="statistics-filter-label">Analysis</p>
+      <nav className="period-control" aria-label="Statistics section">{sections.map(([key,label])=><Link key={key} className={section===key?"active":""} aria-current={section===key?"page":undefined} href={statisticsHref(period,key,category,customRange)}>{label}</Link>)}</nav>
+    </div>
+  </section>;
+}
+
+export default async function StatisticsPage({searchParams}:{searchParams:Promise<{period?:string;section?:string;category?:string;from?:string;to?:string}>}){
+  const session=await requireUser(),params=await searchParams,requestedPeriod=params.period??"all",period=requestedPeriod==="custom"?"custom":periods.some(([key])=>key===requestedPeriod)?requestedPeriod:"all",section=sectionKeys.has(params.section??"")?params.section??"overview":"overview",requestedCategory=String(params.category??"").toUpperCase(),category=categoryKeys.has(requestedCategory)?requestedCategory:"";
+  const parsed=period==="custom"?parsePilotInsightCustomRange(params.from,params.to):null;
+  const customRange=parsed?.ok?parsed.range:undefined;
+  const header=<header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Category-aware trends and breakdowns from your logbook. Sailplane and balloon totals use AIR flight time; powered categories use BLOCK time. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>;
+  const explorer=<StatisticsExplorer period={period} section={section} category={category} customRange={customRange} from={params.from} to={params.to}/>;
+  // Fail closed: never show All time totals when a malformed custom period was requested.
+  if(section!=="career"&&period==="custom"&&!customRange)return <div className="ui-page-stack" data-n2-layout="statistics">
+    {header}
+    {explorer}
+    <div className="form-error" role="alert">{parsed&&!parsed.ok?parsed.error:"Choose a valid date range."} Select dates and press Apply, or choose a preset period.</div>
+  </div>;
+  const [data,professional]=await Promise.all([getPilotInsightsData(session.userId,section==="career"?"all":period,category,section,customRange),section==="career"?getProfessionalExperienceForUser(session.userId,category):Promise.resolve(null)]);
+  const s=data.summary,loggedMinutes=s.minutes,pace=paceComparison(data.current12m.minutes,data.previous12m.minutes),picShare=sharePercent(s.picMinutes,loggedMinutes),nightShare=sharePercent(s.nightMinutes,loggedMinutes),ifrShare=sharePercent(s.ifrMinutes,loggedMinutes),scopeLabel=category?categoryLabels[category]||category:"All categories";
   const paceLabel=pace.direction==="new"?"New activity vs prior 12m":pace.direction==="none"?"No rolling-year activity":pace.direction==="flat"?"Stable vs prior 12m":`${pace.percent&&pace.percent>0?"+":""}${pace.percent}% vs prior 12m`;
   return <div className="ui-page-stack" data-n2-layout="statistics">
+    {header}
     <header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Category-aware trends and breakdowns from your logbook. Sailplane and balloon totals use AIR flight time; powered categories use BLOCK time. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>
-    <section className="statistics-explorer" aria-label="Explore statistics">
-      <div className="statistics-filter-group statistics-filter-category">
-        <p className="statistics-filter-label">Category</p>
-        <nav className="period-control" aria-label="Statistics category">{categories.map(([key,label])=><Link key={key||"ALL"} className={category===key?"active":""} aria-current={category===key?"page":undefined} href={statisticsHref(period,section,key)}>{label}</Link>)}</nav>
-      </div>
-      {section!=="career"?<div className="statistics-filter-group statistics-filter-period">
-        <p className="statistics-filter-label">Period</p>
-        <nav className="period-control" aria-label="Statistics period">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} aria-current={period===key?"page":undefined} href={statisticsHref(key,section,category)}>{label}</Link>)}</nav>
-      </div>:null}
-      <div className="statistics-filter-group statistics-filter-section">
-        <p className="statistics-filter-label">Analysis</p>
-        <nav className="period-control" aria-label="Statistics section">{sections.map(([key,label])=><Link key={key} className={section===key?"active":""} aria-current={section===key?"page":undefined} href={statisticsHref(period,key,category)}>{label}</Link>)}</nav>
-      </div>
-    </section>
+    {explorer}
 
     {section==="overview"?<>
       <div className="flight-results-heading"><div><p className="eyebrow">CURRENT SCOPE</p><h2>{scopeLabel}</h2></div><p>{data.rangeLabel}</p></div>
