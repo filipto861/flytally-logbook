@@ -38,7 +38,7 @@ export default async function FlightsPage({searchParams}:{searchParams:Promise<P
   const activeFilters=(Object.entries(params) as Array<[FilterKey,string|undefined]>).filter(([key,value])=>Boolean(value)&&!(["page","size"] as FilterKey[]).includes(key)&&!(key==="sort"&&value==="newest"));
   const advancedActive=activeFilters.filter(([key])=>key!=="q"&&key!=="category").length;
   const costSummary=presentFlightCostSummary(result.costSummarySource.buckets,result.summary.flights,result.costSummarySource.notTracked,result.costSummarySource.unknown,result.costSummarySource.invalid);
-  return <div className="ui-page-stack">
+  return <div className="ui-page-stack" data-n2-layout="flights">
     <header className="page-header"><div><p className="eyebrow">LOGBOOK</p><h1>Flights</h1><p className="muted">Find a flight, see whether it is editable or certified, and check shared-flight status without opening every record.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
 
     <FlightWorkspaceNav active="flights"/>
