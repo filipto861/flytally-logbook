@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-23 — Draft GPS Import one-click file selection (NOT MERGED / NOT SHIPPED)
+
+- Changed N3-M1 GPS Entry Review's existing top action from scroll-only to a direct OS file-picker trigger. One visually hidden required `name="kml"` field remains for unchanged upload/parser/FormData. Users can reopen a previously chosen file via the same upper `Change GPS track` action; previous source metadata retained without duplicated lower file picker.
+- Extended N3 source test and existing registered authenticated Playwright scenario for actual filechooser, invalid and valid input, replacement and unchanged other review links; no changes to Manual, server, database, auth, flight evidence or GPS parsing. [Details](docs/product/LOGBOOK_GPS_SINGLE_UPLOAD_CTA_FIX_2026-10-23.md). Tests **NOT RUN** on this branch; static source contract inspected. No merge/deploy/production DB actions.
+
 ## 2026-10-23 — N3-M2 exact-source local release validation PASS (Draft, not released)
 
 - Owner Windows `verify:release:risk -- --base origin/main` on `0e8b3f8787d6d55d1db6846d5a43f79e2a11f8f2`, candidate `d1e9dba3b762544687cb2a8562fe514a870f62f7b2acdbc5c4f85e9420d4f125`, **PASS**: source 261/261, domain 19/19, typecheck, full Node 1686/1686, production build, six owned isolated PG16 partitions 164/164, approved risk browser 22/22 desktop/mobile Chromium with 0 retries/skips. Safe browser PostgreSQL cleanup confirmed.
