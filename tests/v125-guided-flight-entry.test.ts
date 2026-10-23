@@ -15,7 +15,12 @@ test("v1.25 preserves both entry modes when the user switches source",()=>{
 test("manual entry keeps one completion surface with explicit draft and certification actions",()=>{
   const source=read("components/flight-form.tsx");
   assert.doesNotMatch(source,/Manual flight entry progress/);
-  assert.doesNotMatch(source,/Review before save|entry-review-summary|Ready to save|Save and add another/);
+  assert.doesNotMatch(source,/Review before save|Ready to save|Save and add another/);
+  // N3-M1 adds a read-only, New-only direct-to-field review; it must not become a second save workflow.
+  assert.match(source,/!editing\?<EntryReviewSummary/);
+  const review=read("components/entry-review-summary.tsx");
+  assert.match(review,/type="button" onClick=\{item\.onSelect\}/);
+  assert.doesNotMatch(review,/type="submit"/);
   assert.match(source,/Save draft/);assert.match(source,/Save &amp; certify flight/);
   assert.match(source,/Save changes/);
   assert.match(source,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
