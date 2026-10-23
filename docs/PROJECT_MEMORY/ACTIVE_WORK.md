@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T14:49:06.949Z — N1/N2 production smoke owner-reported PASS
+
+- Owner confirmed “vsechno funguje skvele” when asked to validate `fly-tally.com`, authenticated Dashboard and Statistics Custom Period. Label as **OWNER-REPORTED production smoke PASS**, not independent automated HTTP evidence. Vercel release `dpl_EkZZoHyWoYZsfp4AzubGBcziXUVz` READY at source SHA `3def2c3618d1b2a185d39b15df69c1613180751b`; canonical main after prior docs-only closeout `3af54d4f4d0651b430452dd3f5b8513e134f5c6a`. All original four PRs #391–394 merged; no open work in this chain requiring runtime changes. No new code, DB/flag/deploy actions; Training untouched. Full local candidate release gate previously PASS, native Safari NOT RUN. Year-0000 custom parser issue intentionally deferred.
+- **ONE NEXT STEP:** close this documentation-only checkpoint after review, then confirm the next owner-selected ROADMAP task.
+
 ## 2026-10-23T14:43:37.713Z — N1/N2 merged and released; production smoke unverified
 
 - Merged GitHub #391 → #392 → #393 → #394 to `main` `3def2c3618d1b2a185d39b15df69c1613180751b` with explicit owner approval. Source tree is identical to tested `95c751d441168e95d03023a68af5edddca1e7248` (zero GitHub compare file diff); risk release `PASS` there: 259 source / 28 domain / 1679 Node / PG16 164 / browser 20 plus typecheck/build/scale. Manual Vercel production `dpl_EkZZoHyWoYZsfp4AzubGBcziXUVz` for `3def2c3618d1b2a185d39b15df69c1613180751b` **READY** at `fly-tally.com`; version 3.8.1. No DB migration, prod flag or Training change. Year-0000 edge deferred explicitly.
