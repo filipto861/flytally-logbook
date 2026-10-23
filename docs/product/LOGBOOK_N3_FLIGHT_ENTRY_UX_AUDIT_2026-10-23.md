@@ -43,7 +43,7 @@
 
 **Layout:** desktop generous primary reading column plus optional compact readiness rail only if it improves scanning; iPad and phone stack into one column, with no sticky control covering fields or iOS keyboard. Keep light/dark and actual present FlyTally palette; no new fonts, packages, glass effects, animation framework or new interaction library. Existing `pending-action-button` and shared spacing/radius tokens take precedence over novel components.
 
-## Proposed ROADMAP reprioritization — owner decision required
+## Approved ROADMAP reprioritization — implementation and D1 wireframe remain pending
 
 Introduce **N3 — Flight Entry Manual + GPS Interaction Simplification** ahead of 3.9.0 heterogeneous aircraft onboarding; DO NOT relabel 3.9 or remove it. Existing 3.8.0 Currency and 3.8.1 release history stay intact. N3 is a UI/UX milestone with independent acceptance; structural work cannot change regulatory evidence or persistence.
 
@@ -59,6 +59,20 @@ Candidate small steps after explicit owner sign-off:
 ## Explicit DO NOT
 
 No changes to Create/Edit/GPS server actions, certification/finalized audit rules, shared roles, input parsing or schema without a separately scoped correctness decision. No new auto-prefill (especially last aircraft/airport), no auto-apply GPS suggestions, no guessing missing GPS data, no false regulatory CURRENT, no reviving abandoned GPS V2 research. No new dependencies, theme/brand changes, auto-transition wizard, prod flags/DB writes or work in flytally-training. The existing release at `3def2c3618d1b2a185d39b15df69c1613180751b` stays production until separately approved.
+
+## N3-D0 baseline execution contract (approved; browser capture pending)
+
+**Primary purpose:** distinguish why real pilots cannot see what is required, where to fix it, how many decisions are shown at once and why GPS multi-flight editing feels chaotic. Visual evidence must show **present** UI, not a polished mockup. Audit results may suggest a redesign, but no design is accepted before owner review.
+
+**Owner-local secure capture harness (external, not committed into application source):** create exactly one new disposable PostgreSQL 16 cluster (fresh `initdb`, ephemeral loopback port excluding 5432/55432, unique TEMP data directory, owner/user/db/port/physical `SHOW data_directory` verification and zero existing tables), use the existing repository `tooling/run-auth-browser.mjs` *only after* safety checks (browser fixture drops `public`), generate a temporary audited `e2e/n3-d0-local-audit.spec.mjs` from the downloaded audited script, build local Next, run fixed Chromium project/one worker/zero retries, remove the generated E2E file and stop/delete only its own PG cluster. Fail CLOSED if Git branch/HEAD differs, checkout dirty, any path exists already, Node/PG conditions fail or env is suspicious. The helper must preserve private user files, existing databases and production completely.
+
+**Baseline states**, tested **without clicking Save draft/Save & certify** and with synthetic fixture data only: Manual blank; aircraft selected + PIC; DUAL with missing instructor; Safety Pilot with missing actual PIC; advanced sections opened; GPS blank upload; invalid CSV; one credible KML flight without manual review; that flight with selected aircraft; two synthetic KML flight parts with missing review. These are representative, not proof of every aircraft category. Sailplane/Balloon and time-zone-ambiguous/poor-quality GPS remain separate **NOT RUN** unless explicitly added to the controlled fixture later. Source-derived required/optional differences must not be erased.
+
+**Screenshot/cascade matrix:** 1440×900 desktop, 1024×800 desktop/iPad landscape approximation, 768×1024 iPad portrait approximation, 390×844 phone, 320×800 phone; each light/dark → **100 expected full-page JPEG screenshots** in synthetic no-user-data output, plus JSON containing page height, count of visible inputs and missing-required buttons, scroll overflow, open disclosures, save labels, warning text, flight-card count and **computed final** CSS for key surfaces. This is Chrome viewport emulation only; native iOS Safari, real GPU FPS, VoiceOver remain **NOT RUN**. Do not screenshot actual user flights or production credentials.
+
+**Success for D0:** at least one interpretable screenshot/metadata per expected synthetic state × size × theme, clear evidence of mode switching and missing-field outcomes, no unexpected source changes, captured failures tagged as failures rather than hidden, self-owned PostgreSQL stopped/deleted, and a severity-ranked issue table distinguishing **OBSERVED screenshot/DOM** from **SOURCE INFERENCE**. `npm run build` is only a build gate; browser observations are separate. A diagnostic visual issue (e.g., overflow) should be recorded instead of softened by removing a check. `D0` is complete only after the screenshots are produced and reviewed. Until then **D0 visual acceptance NOT RUN**.
+
+**Follow-up screen audit** after owner provides generated synthetic captures: where missing-state is first visible; scroll distance to primary action; whether required guidance survives changing role; focus targets; content density and whitespace; GPS upload quality/error prominence; single vs two flight cards; fixed headers or action bars overlapping iOS keyboard; common card radius/spacing and actual final CSS precedence; and accessible concise mode selection. User must approve the actual D1 design before any production UI implementation.
 
 ## Execution evidence and handoff
 
