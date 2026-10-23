@@ -940,7 +940,7 @@
     "explicitNotApplicableSkipReasons": [
       "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
     ],
-    "selectionVersion": 3,
+    "selectionVersion": 2,
     "moduleTargets": {
       "flight-records": [
         "flight-manual-save-desktop",
