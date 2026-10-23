@@ -67,7 +67,6 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
   const paceLabel=pace.direction==="new"?"New activity vs prior 12m":pace.direction==="none"?"No rolling-year activity":pace.direction==="flat"?"Stable vs prior 12m":`${pace.percent&&pace.percent>0?"+":""}${pace.percent}% vs prior 12m`;
   return <div className="ui-page-stack" data-n2-layout="statistics">
     {header}
-    <header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Category-aware trends and breakdowns from your logbook. Sailplane and balloon totals use AIR flight time; powered categories use BLOCK time. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>
     {explorer}
 
     {section==="overview"?<>
