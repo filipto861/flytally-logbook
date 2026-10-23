@@ -1,5 +1,14 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23 — N1-A Draft PR #391 checkpoint (implementation candidate only)
+
+- Repo `filipto861/flytally-logbook`. Verified base `main=c68e6a2758423ab862cf9b03f5623515d07433e4`. Work branch `feat/logbook-n1a-modern-navigation-20261023`, Draft [PR #391](https://github.com/filipto861/flytally-logbook/pull/391), base `main`. Pre-checkpoint work SHA `f03cf383d7537c9402a837d56440c10323d0732c`; this checkpoint advances HEAD. Re-fetch full SHA before ending.
+- Owner approved N1 Modern Aviation Utility design and permitted scoped visual candidate, **not** merge/deploy. Files: `components/sidebar.module.css`, `app/ui-system.css`, `tests/logbook-n1-navigation-style.test.ts`, `tests/v300-sidebar-polish.test.ts` (update precisely changed semantic group-title color expectation), `docs/product/LOGBOOK_N1_MODERN_NAVIGATION_DESIGN_2026-10-23.md`, `ROADMAP.md`, Project Memory docs.
+- Scope/DO NOT: change only sidebar action hierarchy, active/secondary link visuals and spacing; keep all URLs/labels/IA, brand tokens, mobile/desktop/iPad focus and drawer behavior. No page content, N1-B motion, N2/N3, unrelated PRs, Training, flights/auth/DB/infrastructure, dependencies, auto-prefill, migrations, flags, merge or deploy.
+- Evidence: 14/14 in-memory source assertions PASS on pre-test-adjustment code, token color ratios calculated **6.45:1 dark / 5.69:1 light** (not rendered); source inspection of adjusted existing test. **NOT RUN**: Node24 targeted tests, typecheck, build, candidate risk planner, authenticated Playwright, computed CSS, responsive screenshots, real Safari/VoiceOver/CI. Production DB/migrations/flags current state **UNKNOWN**, no mutations; Vercel deploy **NOT TOUCHED**.
+- Risks: style cascade and actual visual usability not proven by source inspection. PR remains Draft awaiting local targeted tests and screenshots; do not transfer historical test PASS to new SHA.
+- **ONE NEXT STEP:** run exact-head owner-local Node24 targeted tests + candidate risk plan and authenticated browser visual inspection, then request owner's N1-A visual acceptance before any merge.
+
 ## 2026-10-23 — N1-A modern navigation candidate (owner-approved design, not merged)
 
 - Workstream: `feat/logbook-n1a-modern-navigation-20261023` from verified `main=c68e6a2758423ab862cf9b03f5623515d07433e4`; N1-A **visual only** following the approved [design](../product/LOGBOOK_N1_MODERN_NAVIGATION_DESIGN_2026-10-23.md).
