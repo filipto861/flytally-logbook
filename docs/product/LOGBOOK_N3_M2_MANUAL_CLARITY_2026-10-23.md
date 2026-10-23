@@ -21,6 +21,14 @@ Original New Manual Flight kept Date/Aircraft/Role (and conditional crew), Route
 - Existing M1 direct-to-field actions, disabled/pending save, error/status, proper unsaved state and explicit actions remain intact. Missing !== zero; no suggested aircraft/airports from last flight, no inferred GPS or regulatory credit.
 - **Do not:** alter GPS (M3 separate); add wizard, auto-fill, animation, third-party packages or new CSS tokens; edit Train repository; change DB schema/migrations/production flags; merge, deploy or expose synthetic flight data.
 
+## Owner-local targeted verification (2026-10-23)
+
+Owner-local Windows verification on **exact source HEAD `5c349a422222b91aa6d25c241282c947fd55ca5a`**: clean repository and HEAD/remote branch match PASS; TypeScript `npm run typecheck` PASS; targeted `npm run test:target -- tests/n3-m2-manual-layout.test.ts tests/n3-m1-entry-readiness.test.ts tests/v330-add-flight-simplicity.test.ts` **11/11 PASS**; `npm run verify:plan -- --base origin/main` PASS candidate `e5650e7d7fa2dd5e3fe38ab3bc8e4c1f50e5c5be496ac84ecdac60c4e4a150b6`, 22 authoritative browser targets selected, `browser_blockers=none`, `blocked_evidence=none`; Next.js 16.3.2 `npm run build` PASS; physically verified **new empty, loopback-only, owned PostgreSQL16** server `flytally_currency_test|flytally|127.0.0.1|59002|160015` with exact data directory PASS; browser bootstrap/rehearsal schema-first v20/v21 21 registry/12 columns/4 CHECKs PASS; Manual existing authoritative `N3-M1 Manual shows existing missing details at the top and focuses them` scenario **desktop Chromium 1/1 PASS + mobile Chromium 1/1 PASS**, each one worker and no retries, covering 320/390/768/1024/1440 widths in forced Light/Dark, layout/focus/empty route/time and horizontal overflow; PostgreSQL stopped and its unique temporary directory deleted PASS. **No runtime blockers found by targeted tests.**
+
+**NOT RUN** on this candidate: remaining 20/22 selected browser executions, complete Node/source/domain suite, full PostgreSQL integration, full risk release evidence, real iPad/native Safari, supported account preference Light/Dark, actual screenshot after-state, keyboard overlay/text zoom, owner visual sign-off, production smoke. The screenshot-free responsive browser pass alone cannot establish visual acceptance. No merge/deploy/production DB/flags authorization.
+
+This execution supports **only** the targeted M2 scope on `5c349a422222b91aa6d25c241282c947fd55ca5a` and does not supersede the older static-only implementation checkpoint. Final current work HEAD after documentation may differ; recheck SHA and execute any new gates against the intended source candidate without claiming documentation-only followups were retested.
+
 ## Files and tests
 
 - `components/flight-form.tsx`: New-only reading order headings and clearer non-certification copy.
