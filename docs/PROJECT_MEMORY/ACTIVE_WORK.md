@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23 — N1 V2-2 shared protected shell/header candidate checkpoint
+
+- Canonical repo filipto861/flytally-logbook, main c68e6a2758423ab862cf9b03f5623515d07433e4, work feat/logbook-n1a-modern-navigation-20261023 on Draft PR #391 base main. Before checkpoint, work SHA 4693020d002961f42516d607e8076e37468d8aa0; re-fetch full final SHA after writing this handoff.
+- Owner liked N1 V2-1 light/dark sidebar screenshots; said mobile cannot be checked personally but allows continuation. New N1 V2-2 scope is ONLY shared protected-app masthead/presentation; still needs visual acceptance. Design follows complete Apple Design V2 + 17 playbook areas, ui-ux-design, design-engineering, mobile-ipad, ui-quality-audit and testing-quality. Motion NONE.
+- Runtime changed: components/app-shell.tsx adds one `shell-workspace` class to existing protected children wrapper; app/ui-system.css adds final-cascade CSS for immediate page headers in protected workspace, using theme semantic surfaces, 17px radius, consistent H1/eyebrow/descriptions and contextual links, mobile and flight detail/print safe rules. Test source added tests/logbook-n1-v2-shell.test.ts. ROADMAP.md, CHANGELOG.md and N1 V2 design specification updated. No route/business logic/data/API/auth changes. Existing V2-1 sidebar remains intact; N2 cards and N3 tabs remain outside scope. DO NOT alter other PRs, Training or owner-local ZIP files.
+- GitHub in-memory source-only assertions 24/24 PASS prior to docs checkpoint (not executable tests). Node targeted tests, typecheck, build, Playwright, live computed CSS, native Safari/iPad and current candidate responsive screenshots NOT RUN. No production DB, schema migration, feature flags or deploy changes; production Vercel last read-only READY dpl_4XGBawGy187VyJpG5nyRFe2p2fKW at 34b865bb0ced1222945cecb107589826890ee31a, not this branch. No merge approval.
+- **ONE NEXT STEP:** owner pulls and runs existing guarded local disposable PostgreSQL preview, evaluates N1 V2-2 header on Dashboard / Flights / Statistics and light/dark + 320/390 emulation, shares visual feedback; only then run selected candidate tests and seek separate explicit merge permission.
+
 ## 2026-10-23 — N1 V2-1 approved theme-adaptive navigation candidate
 
 - Repo filipto861/flytally-logbook, main full SHA c68e6a2758423ab862cf9b03f5623515d07433e4; branch feat/logbook-n1a-modern-navigation-20261023, base main, Draft PR #391. V2-1 implementation before this documentation checkpoint: 01f53bae2a519063a70348141e2f08c410476900; refresh current full HEAD after push.
