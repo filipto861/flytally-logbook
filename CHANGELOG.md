@@ -1,5 +1,13 @@
 # FlyTally changelog
 
+## 2026-10-23 — Production release: N1 navigation, N2 workspace, N2-C Statistics Custom dates
+
+- Owner explicitly approved merging #391, #392, #393 and #394 and releasing without fixing the documented year-0000 edge case. All four PRs **MERGED** in order; deployed Git SHA `3def2c3618d1b2a185d39b15df69c1613180751b` versus owner-tested `95c751d441168e95d03023a68af5edddca1e7248` differs only in merge commits (**zero changed files** in GitHub compare). No UI/flight/domain modification after tests.
+- Changes shipped: theme-adaptive sidebar and shell mastheads; revised Dashboard, Flights and Statistics hierarchy; N2-B grouped Statistics filter station; N2-C native From/To explicit Apply and server-side inclusive SQL text-date bounds, custom filter preservation and invalid-range fail closed. No dependencies, authentication, schema migration, production DB write, flags, or Training changes by this release.
+- Exact owner-local candidate gate `release_status=PASS`: 259 source, 28 domain, 1,679 Node, owned PG16 164, selected Chromium 20 (desktop 11/mobile 9), build/TypeScript/scale PASS; candidate `95c751d441168e95d03023a68af5edddca1e7248`. Browser UI was exercised with independent disposable PostgreSQL; it is not native Safari or production smoke.
+- Manual Vercel production deployment `dpl_EkZZoHyWoYZsfp4AzubGBcziXUVz` for merged `3def2c3618d1b2a185d39b15df69c1613180751b` returned **READY**, with alias `fly-tally.com`. Vercel production runtime-errors scan showed no reported errors at inspection, but direct public/authenticated HTTP production smoke **NOT VERIFIED** due to inaccessible DNS/network in assistant container. App version remains 3.8.1; no version bump requested.
+- Known minor contract edge: JavaScript accepts custom date year `0000`; owner explicitly chose to defer correction. No observed production error attributed to it.
+
 ## Unreleased — 2026-10-23, N2-C full Node regression source-contract repair (Draft #394)
 
 - Owner-local `npm run verify:app -- --base origin/main` on `dc890c1d9e7e42e927279248f14ab57481fa7650` **FAIL**: 1,670/1,679 Node tests PASS, **9 FAIL**. TypeScript PASS; build NOT RUN due fail-closed pipeline. Prior owned physical PG16 acceptance 164/164 PASS on this SHA; no browser or release PASS.
