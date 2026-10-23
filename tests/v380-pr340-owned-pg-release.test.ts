@@ -25,7 +25,7 @@ test("PR340 release verifier does not accept imported TAP files as canonical led
   assert.match(executor,/mkdtempSync\(path\.join\(tmpdir\(\),"flytally-pr340-release-"\)\)/);
   assert.match(executor,/assertPr340AcceptancePreflight\(\{candidate,env\}\)/);
   assert.match(executor,/parseStrictPartitionTap\(stdout,\{expectedTests:segment\.expectedTests\}\)/);
-  assert.match(executor,/assert\.equal\(completed,163/);
+  assert.match(executor,/assert\.equal\(completed,164/);
   assert.match(executor,/ownedClusterStopped:true/);
   assert.doesNotMatch(executor,/writeVerificationLedgerEntry\(/);
 });
@@ -172,9 +172,14 @@ test("Generic owned PG16 preflight refuses CI, unsafe remote refs and dirty work
     candidate:{...candidate,worktree:{files:["untracked.txt"]}},
     env:{FLYTALLY_OWNED_PG16_RELEASE:"1",FLYTALLY_OWNED_PG16_EXPECTED_REF:allowed},
   }),/clean worktree/);
+  // GitHub/CI may prune the historical origin branch: both a missing remote ref and
+  // a present ref with the deliberately incorrect SHA must fail before any SQL.
+  const executor=source("pr340-owned-postgres-acceptance.mjs");
+  assert.match(executor,/assert\.equal\(actual,candidate\.headSha,"Source HEAD drift"\)/);
+  assert.match(executor,/assert\.equal\(origin,actual,"Candidate is not latest fetched origin branch HEAD"\)/);
   assert.throws(()=>assertOwnedPostgresAcceptancePreflight({
     candidate,env:{FLYTALLY_OWNED_PG16_RELEASE:"1",FLYTALLY_OWNED_PG16_EXPECTED_REF:allowed},
-  }),/Source HEAD drift/);
+  }),/Source HEAD drift|PR340 owned PG16 command failed \(git; exit=128;[^)]*\): fatal: Needed a single revision/);
 });
 
 test("Generic PG16 release route remains explicit; default and PR340 modes are preserved",async()=>{

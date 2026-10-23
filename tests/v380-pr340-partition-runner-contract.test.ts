@@ -12,7 +12,7 @@ test("M3 test runner requires real v20 public bootstrap and does not claim relea
   assert.match(script,/bootstrap-pr340-real-v20-local\.mjs/);
   assert.doesNotMatch(node,/selected\.id==="real-v20-catalog"/);
   assert.match(node,/release_status=NOT RUN/);
-  assert.equal(registry.partitions.reduce((n:number,p:{expectedTests:number})=>n+p.expectedTests,0),163);
+  assert.equal(registry.partitions.reduce((n:number,p:{expectedTests:number})=>n+p.expectedTests,0),164);
   const bootstrap=source("tooling/bootstrap-pr340-real-v20-local.mjs");
   assert.match(bootstrap,/flytally_schema_migrations/);
   assert.match(bootstrap,/for\(let v=1;v<=20;v\+\+\)/);

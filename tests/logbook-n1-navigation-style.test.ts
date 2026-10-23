@@ -31,7 +31,9 @@ test("N1-A scopes modern active/hover styles to the global sidebar only",()=>{
   const css=read("app/ui-system.css");
   const start=css.indexOf("/* N1-A — menu-only visual hierarchy.");
   assert.ok(start>=0,"N1-A scoped stylesheet rules missing");
-  const n1=css.slice(start);
+  const end=css.indexOf("/* N1 V2-1 — substantial theme-adaptive navigation redesign.",start);
+  assert.ok(end>start,"N1-A must stop before the subsequent sidebar redesign");
+  const n1=css.slice(start,end);
   assert.match(n1,/\.app-grid \.sidebar nav a\.active \{/);
   assert.match(n1,/box-shadow:inset 3px 0 0 var\(--accent\)/);
   assert.match(n1,/\.app-grid \.sidebar nav a:focus-visible \{/);
@@ -67,7 +69,10 @@ test("N1 V2 makes the menu structurally legible without changing navigation dest
 
 test("N1 V2 sidebar and drawer adapt to resolved light and dark themes",()=>{
   const ui=read("app/ui-system.css");
-  const v2=ui.slice(ui.indexOf("/* N1 V2-1 — substantial theme-adaptive navigation redesign."));
+  const start=ui.indexOf("/* N1 V2-1 — substantial theme-adaptive navigation redesign.");
+  const end=ui.indexOf("/* N1 V2-2 — protected-app masthead only;",start);
+  assert.ok(start>=0&&end>start,"N1 V2-1 must remain bounded to global sidebar rules");
+  const v2=ui.slice(start,end);
   assert.match(v2,/html\[data-theme="light"\] \.app-grid \.sidebar\{/);
   assert.match(v2,/html\[data-theme="dark"\] \.app-grid \.sidebar\{/);
   assert.match(v2,/html\[data-theme="dark"\] \.app-grid \.sidebar nav/);

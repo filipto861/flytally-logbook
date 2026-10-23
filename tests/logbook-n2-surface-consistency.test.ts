@@ -10,7 +10,9 @@ test("N2-A is scoped to protected informational cards and dashboard widgets",()=
   const css=read("app/ui-system.css");
   const start=css.indexOf("/* N2-A — shared informational surface / action hierarchy.");
   assert.ok(start>0,"N2-A stylesheet contract missing");
-  const n2=css.slice(start);
+  const end=css.indexOf("/* N2-A2 — visible hierarchy pass after owner review of N2-A.",start);
+  assert.ok(end>start,"N2-A must stop before the N2-A2 follow-up");
+  const n2=css.slice(start,end);
   assert.match(n2,/\.app-grid \.shell-workspace > \.ui-page-stack > :is\(\.panel,\.table-panel\)/);
   assert.match(n2,/\.app-grid \.shell-workspace > \.ui-page-stack > \.metric-grid > \.metric/);
   assert.match(n2,/\.app-grid \.shell-workspace \.dashboard-layout-grid > \.dashboard-widget > :is\(\.metric,\.panel\)/);
@@ -22,8 +24,11 @@ test("N2-A is scoped to protected informational cards and dashboard widgets",()=
 });
 
 test("N2-A retains readable type, focus and theme-aware section actions",()=>{
-  const css=read("app/ui-system.css").split("/* N2-A — shared informational surface / action hierarchy.")[1];
-  assert.ok(css);
+  const stylesheet=read("app/ui-system.css");
+  const start=stylesheet.indexOf("/* N2-A — shared informational surface / action hierarchy.");
+  const end=stylesheet.indexOf("/* N2-A2 — visible hierarchy pass after owner review of N2-A.",start);
+  assert.ok(start>=0&&end>start,"N2-A rule boundary missing");
+  const css=stylesheet.slice(start,end);
   assert.match(css,/font-variant-numeric:tabular-nums/);
   assert.match(css,/\.panel > \.section-heading h2/);
   assert.match(css,/\.panel > \.section-heading \.muted/);
@@ -56,7 +61,9 @@ test("N2-A2 changes dashboard presentation without changing saved widget layout"
   const source=read("app/ui-system.css");
   const start=source.indexOf("/* N2-A2 — visible hierarchy pass after owner review of N2-A.");
   assert.ok(start>0);
-  const n2=source.slice(start);
+  const end=source.indexOf("/* N2-B — purposeful workspace composition instead of more nested card chrome.",start);
+  assert.ok(end>start,"N2-A2 must stop before N2-B");
+  const n2=source.slice(start,end);
   assert.match(dashboard,/visibleLayout\.map\(item=>/);
   assert.match(dashboard,/data-dashboard-widget=\{item\.id\}/);
   assert.match(dashboard,/data-dashboard-size=\{item\.size\}/);
@@ -72,8 +79,11 @@ test("N2-A2 changes dashboard presentation without changing saved widget layout"
 test("N2-A2 scopes statistics and flight summaries to the correct pages",()=>{
   const stats=read("app/(protected)/statistics/page.tsx");
   const flights=read("app/(protected)/flights/page.tsx");
-  const css=read("app/ui-system.css").split("/* N2-A2 — visible hierarchy pass after owner review of N2-A.")[1];
-  assert.ok(css);
+  const stylesheet=read("app/ui-system.css");
+  const start=stylesheet.indexOf("/* N2-A2 — visible hierarchy pass after owner review of N2-A.");
+  const end=stylesheet.indexOf("/* N2-B — purposeful workspace composition instead of more nested card chrome.",start);
+  assert.ok(start>=0&&end>start,"N2-A2 scoped presentation boundary missing");
+  const css=stylesheet.slice(start,end);
   assert.match(stats,/className="ui-page-stack" data-n2-layout="statistics"/);
   assert.match(flights,/className="ui-page-stack" data-n2-layout="flights"/);
   assert.match(css,/data-n2-layout="statistics"\] > \.metric-grid/);

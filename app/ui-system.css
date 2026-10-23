@@ -1749,3 +1749,167 @@ html[data-theme="dark"] .app-grid .sidebar{
     box-shadow:none;
   }
 }
+
+/* N2-C — native calendar range within the approved Statistics filter station.
+   Presets and Custom share a row; calendar opens in a small anchored panel.
+   No new picker dependencies, automatic apply or altered theme palette. */
+/* Keep preset tabs and the Custom trigger on ONE row at every width.
+   Calendar fields render as an anchored overlay, outside the scrollable tabs. */
+.app-grid .shell-workspace .statistics-explorer .statistics-period-toolbar{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:stretch;
+  gap:3px;
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  padding:3px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--surface-raised);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-period-toolbar > .period-control{
+  flex:1 1 auto;
+  width:auto;
+  min-width:0;
+  max-width:none;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-period-toolbar > .period-control > a{
+  padding-inline:8px;
+}
+@media(min-width:1500px){
+  /* Accommodate all existing preset labels plus Custom at wide desktop sizes
+     without pushing the remaining filter groups into a second row. */
+  .app-grid .shell-workspace > .ui-page-stack[data-n2-layout="statistics"] > .statistics-explorer{
+    grid-template-columns:minmax(0,1.1fr) minmax(0,1.05fr) minmax(0,1fr);
+  }
+  .app-grid .shell-workspace .statistics-explorer .period-control > a{
+    padding-inline:7px;
+  }
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range{
+  flex:0 0 auto;
+  min-width:0;
+  margin:0;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:40px;
+  padding:8px 9px;
+  border:1px solid transparent;
+  border-radius:8px;
+  color:var(--text-soft);
+  font-size:.795rem;
+  font-weight:650;
+  cursor:pointer;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary::marker{
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary::after{
+  content:"";
+  width:6px;
+  height:6px;
+  flex:0 0 auto;
+  margin:0 1px 3px;
+  border-right:1.5px solid currentColor;
+  border-bottom:1.5px solid currentColor;
+  transform:rotate(45deg);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range[open] > summary::after{
+  transform:rotate(225deg);
+  margin:3px 1px 0;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary:focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:2px;
+  border-radius:9px;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range[open] > summary,
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range[data-selected="true"] > summary{
+  color:var(--text);
+  background:var(--surface);
+  border-radius:8px;
+  border-color:var(--line);
+  box-shadow:var(--shadow-soft);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  z-index:20;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  box-sizing:border-box;
+  width:min(344px,100%);
+  min-width:0;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--surface);
+  box-shadow:0 14px 36px color-mix(in srgb,var(--text) 14%,transparent);
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+  color:var(--text-soft);
+  font-size:.75rem;
+  font-weight:750;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  padding:8px 9px;
+  border:1px solid var(--line-strong);
+  border-radius:var(--ui-radius-control);
+  background:var(--surface);
+  color:var(--text);
+  font:inherit;
+  font-size:.83rem;
+  color-scheme:light dark;
+}
+html[data-theme="light"] .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]{
+  color-scheme:light;
+}
+html[data-theme="dark"] .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]{
+  color-scheme:dark;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form input[type="date"]:focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:2px;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form .primary-button{
+  grid-column:1/-1;
+  min-height:44px;
+  width:100%;
+}
+@media (max-width:430px){
+  .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@media print{
+  .app-grid .shell-workspace .statistics-explorer .statistics-custom-range-form{display:none}
+}
+
+@media(pointer:coarse){
+  .app-grid .shell-workspace .statistics-explorer .statistics-custom-range > summary{
+    min-height:44px;
+  }
+}

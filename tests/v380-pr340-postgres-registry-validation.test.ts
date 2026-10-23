@@ -28,11 +28,11 @@ function rejected(modify:(value:ReturnType<typeof fixture>)=>void){
   }finally{rmSync(f.tmp,{recursive:true,force:true});}
 }
 
-test("M1 positive: all 42 actual integration files and 163 declared cases are hash-pinned once",()=>{
+test("M1 positive: all 42 actual integration files and 164 declared cases are hash-pinned once",()=>{
   const r=validatePostgresPartitionRegistry();
   assert.equal(r.status,"PASS");
   assert.equal(r.files,42);
-  assert.equal(r.tests,163);
+  assert.equal(r.tests,164);
   assert.equal(r.partitions,6);
   assert.match(r.registrySha256,/^[a-f0-9]{64}$/);
   assert.match(r.note,/PostgreSQL NOT RUN/);
@@ -108,7 +108,7 @@ test("M1 cli is read-only source validation; no database flags or connection are
     env:{...process.env,DATABASE_URL:"",FLYTALLY_POSTGRES_INTEGRATION:""}});
   assert.equal(result.status,0,result.stderr);
   assert.match(result.stdout,/postgres_registry_status=PASS/);
-  assert.match(result.stdout,/files=42 tests=163 partitions=6/);
+  assert.match(result.stdout,/files=42 tests=164 partitions=6/);
   assert.match(result.stdout,/postgres_execution=NOT RUN/);
 });
 test("M1 registry files and validator are included in release configuration hash inputs",()=>{

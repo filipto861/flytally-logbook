@@ -7,6 +7,7 @@ import { pathToFileURL } from "node:url";
 import test from "node:test";
 
 const root=path.resolve(import.meta.dirname,"..");
+const readN2CSpec=()=>fs.readFileSync(path.join(root,"e2e/logbook-n2c-statistics-range.spec.mjs"),"utf8");
 const planner=path.join(root,"tooling","verify-plan.mjs");
 
 function plan(args:string[]){
@@ -85,6 +86,34 @@ test("changed authoritative E2E spec selects only registered targets owned by th
   assert.ok(targets.length>0);
   assert.ok(targets.every((target:{spec:string})=>target.spec==="e2e/public-shell.spec.mjs"));
   assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
+});
+
+test("N2-C changed spec selects one self-managed presentation and both interactive flows",()=>{
+  const {result,payload}=plan(["e2e/logbook-n2c-statistics-range.spec.mjs"]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.blockedEvidence,[]);
+  assert.deepEqual(payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id),[
+    "statistics-custom-period-flow-desktop",
+    "statistics-custom-period-flow-mobile",
+    "statistics-custom-period-layout-desktop"
+  ]);
+  assert.ok(readN2CSpec().includes('test("N2-C period presets and Custom stay on one row across cockpit viewports and themes",{tag:"@self-managed-presentation"}'));
+});
+
+test("Statistics route and insights data helpers select N2-C browser acceptance",()=>{
+  const {result,payload}=plan([
+    "app/(protected)/statistics/page.tsx",
+    "lib/pilot-insights.ts",
+    "lib/data/pilot-insights.ts"
+  ]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
+  const ids=payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id);
+  for(const id of [
+    "statistics-custom-period-layout-desktop",
+    "statistics-custom-period-flow-desktop",
+    "statistics-custom-period-flow-mobile"
+  ])assert.ok(ids.includes(id),id+" must cover Statistics and insights changes");
 });
 
 test("changed diagnostic-only E2E spec fails closed instead of shrinking authoritative coverage",()=>{

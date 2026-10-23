@@ -43,7 +43,7 @@ export function validatePostgresPartitionRegistry({
   if(registry.schemaVersion!==1||registry.stage!=="M1-INVENTORY-ONLY-NO-EXECUTION"||
      registry.sourceDirectory!=="tests/integration"||
      registry.hashAlgorithm!=="sha256-utf8-canonical-lf"||
-     registry.expectedFiles!==42||registry.expectedTests!==163||
+     registry.expectedFiles!==42||registry.expectedTests!==164||
      !Array.isArray(registry.partitions)||registry.partitions.length!==declaredPartitions.size){
     throw new Error("PARTITION_REGISTRY_DRIFT: unsupported registry metadata or inventory total");
   }

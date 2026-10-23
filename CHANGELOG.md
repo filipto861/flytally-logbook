@@ -1,5 +1,47 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C full Node regression source-contract repair (Draft #394)
+
+- Owner-local `npm run verify:app -- --base origin/main` on `dc890c1d9e7e42e927279248f14ab57481fa7650` **FAIL**: 1,670/1,679 Node tests PASS, **9 FAIL**. TypeScript PASS; build NOT RUN due fail-closed pipeline. Prior owned physical PG16 acceptance 164/164 PASS on this SHA; no browser or release PASS.
+- Repaired six **test-only** source-contract files: constrained N1-A/N1 V2/N2-A/N2-A2 CSS ownership assertions to their exact consecutive comment-delimited blocks (preserve negative forbidden-selector and positive responsive/focus/theme checks), reconciled v2.0/v2.3 Statistics expectations with existing Career/all and explicit Custom range signature, updated stale PR340 inventory count 163→164, and preserved actual Git-ref/HEAD preflight fail-closed checks while accounting for pruned historical remote refs. No app/CSS/SQL/runtime code, schema or browser bootstrap changed.
+- Static GitHub source and CSS boundary/positive checks succeeded; exact new branch executable Node suite, TypeScript, build, PostgreSQL revalidation and Playwright **NOT RUN**. No production DB/feature flags, deployment or merge.
+
+## Unreleased — 2026-10-23, N2-C candidate registry reconciliation (Draft #394)
+
+- Owner-local `verify:iterate` at `8970e020423cb52c8ea5fec7404994f719d38e16` exposed source-contract FAIL (255/259), despite N2-C targeted 11/11, domain 28/28 and TypeScript PASS. Corrected browser selection version from 3 back to the unchanged registered schema protocol 2.
+- New pilot-insights integration test adds a real third SQL case. Updated only its reviewed canonical-LF SHA-256 and test count from 2 to 3 in the strict PostgreSQL inventory; shared-core 123→124, total 163→164 over the same 42 files and six physically owned partitions. Updated inventory validator, owned executor expected TAP/planned counts and regression tests; no source safeguards, tests or fixtures removed.
+- New branch tests and candidate release gate NOT RUN; no production database, migrations, flags, deployment or merge. Previous 163/163 historical PostgreSQL observations must not be applied to the new 164-case candidate.
+
+## Unreleased — 2026-10-23, N2-C PostgreSQL cleanup safety (Draft #394)
+
+- Closed direct-test cleanup fail-closed gap: a malformed or remote `DATABASE_URL` rejected by the integration test preflight no longer permits its `after()` hook to issue a `DROP SCHEMA` SQL statement. Cleanup is permitted only after the loopback URL check; partial fixture setup on a validated local database can still be cleaned up. Added source regression assertion in `tests/logbook-n2c-custom-range.test.ts`.
+- Owner-verified previous `8731fab37ff2ca1bb4478b763266b3d5a923bb4a` candidate: clean/pushed worktree, read-only `verify:plan` unblocked, source browser tests 31/31 PASS, TypeScript PASS on precommit equivalent working tree. New cleanup fix Node tests, new exact-head plan/typecheck, production build, owned PostgreSQL, scale, browser and native Safari still NOT RUN. No runtime/UI/config/SQL schema/flags/deploy or merge changes.
+
+## Unreleased — 2026-10-23, N2-C authoritative browser registration (Draft #394)
+
+- Registered both existing N2-C Playwright scenarios as three browser-risk targets: self-managed desktop responsive matrix, explicit custom-range desktop/mobile workflow; linked narrow Statistics and pilot-insights paths and full harness inventory without changing the browser planner itself.
+- Extended browser logical test baseline and structural/risk contract regressions without replacing original tests or converting previously observed full-suite counts into unexecuted PASS claims. Application UI, analytics calculations and DB schema unchanged.
+- Owner-local 17/17 prior targeted tests PASS at previous head; local TypeScript fix for PostgreSQL integration test PASS on an uncommitted worktree, not present in this remote branch. Newly registered browser/tests/PG/build and candidate release gate NOT RUN. No merge or deployment authorization.
+
+## Unreleased — 2026-10-23, N2-C verification coverage & integration safety (Draft #394)
+
+- Corrected N2-C static test expectations following inline Calendar styling; added focused Playwright tests for one-line period controls at desktop/iPad/mobile viewports, Light/Dark and user-selected inclusive range workflow including invalid URLs and preset navigation.
+- Strengthened optional direct PostgreSQL integration test with local-only URL preflight before CREATE SCHEMA. Existing canonical acceptance runner is also localhost guarded. No production data/schema/flags or application UI/runtime logic changed in this verification-prep slice.
+- Targeted in-memory source audit 18/18 PASS. Executable Node/typecheck/build/owned PG/Playwright not run; exact candidate test and owner launch are next. No merge/deploy authorization.
+
+## Unreleased — 2026-10-23, N2-C custom date selector inline layout correction
+
+- Corrected Statistics Period selector layout based on owner's screenshot: four presets and Custom now share one responsive segmented toolbar, with an anchored native date picker panel appearing only when expanded. Applying a custom period leaves the chip selected, but the popup closed.
+- Retained exact custom date validations, inclusive query bounds, explicit Apply, Category/Analysis navigation and Career semantics. No analytics logic, data migration, new dependency, design token or motion change.
+- Static source review 22/22 PASS; Node/typecheck/build/Playwright/browser/mobile/native Safari not run yet. Draft PR #394 stacked on N2-B, no merge, deployment or DB changes.
+
+## Unreleased — 2026-10-23, N2-C Statistics custom date interval (stacked Draft)
+
+- Following owner approval of the N2-B simple/responsive design, extended Statistics Period with native From/To calendar inputs and explicit Apply alongside the four existing presets. The existing category/section links preserve a valid custom interval in URLs; Career stays all-time.
+- Strict YYYY-MM-DD calendar-day and order validation rejects invalid/missing/reversed intervals without silently reverting to All time or running aggregates. Valid inclusive boundaries flow through existing parameterized SQL for all Statistics summaries and breakdowns; no schema or flight domain changes. Rolling 12-month comparison retains its distinct named window.
+- Adds type/date parser and unit, static UI, and guarded optional PostgreSQL integration tests; aligns obsolete legacy navigation assertions to N2-B group semantics. No new dependency, background request, native picker package or motion.
+- GitHub source-only 26/26 inspections PASS before docs checkpoint; Node/TS/build/DB/Playwright/browser not executed; Draft branch stacked on N2-B PR #393, no merge, deploy or production DB/flag changes.
+
 ## Unreleased — 2026-10-23, Logbook N2-B dashboard/stats workspace structure (Draft preview)
 
 - Dashboard: arranged existing customizable widgets and optional recency status in a main column with a right-side contextual action rail on wide desktop; reflows to stacked responsive layout at narrower widths. Saved widget order/sizes, action link targets, and metrics unchanged.

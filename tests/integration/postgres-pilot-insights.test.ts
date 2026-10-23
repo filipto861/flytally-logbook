@@ -10,11 +10,22 @@ function raw(statement:string){return spawnSync("psql",["-d",databaseUrl,"-X","-
 function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim().replace(/\r\n/g,"\n")}
 function literal(value:unknown){if(value===null||value===undefined)return"NULL";if(typeof value==="number")return String(value);return`'${String(value).replaceAll("'","''")}'`}
 function queryBlock(){const source=fs.readFileSync(path.join(root,"lib/data/pilot-insights.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);const block=blocks.find(value=>value.includes("WITH base0 AS MATERIALIZED"));assert.ok(block,"pilot insights SQL block not found");return block.replaceAll("\\\\","\\")}
-function render(block:string,scopeCategory:string|null=null){const values:Record<string,unknown>={userId:1,"bounds.start":null,"bounds.end":null,scopeCategory,section:"all","rolling.currentStart":"2025-09-05","rolling.currentEnd":"2026-09-04","rolling.previousStart":"2024-09-05","rolling.previousEnd":"2025-09-04"};const rendered=block.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{const key=String(expression).trim();assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No SQL fixture for ${key}`);return literal(values[key])});assert.doesNotMatch(rendered,/\$\{/);return rendered}
+function render(block:string,scopeCategory:string|null=null,bounds:{start:string|null;end:string|null}={start:null,end:null}){const values:Record<string,unknown>={userId:1,"bounds.start":bounds.start,"bounds.end":bounds.end,scopeCategory,section:"all","rolling.currentStart":"2025-09-05","rolling.currentEnd":"2026-09-04","rolling.previousStart":"2024-09-05","rolling.previousEnd":"2025-09-04"};const rendered=block.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{const key=String(expression).trim();assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No SQL fixture for ${key}`);return literal(values[key])});assert.doesNotMatch(rendered,/\$\{/);return rendered}
+
+let localTargetValidated=false;
 
 before(()=>{
   if(!enabled)return;
   assert.ok(databaseUrl,"DATABASE_URL is required for pilot insights PostgreSQL test");
+  // This file may also be launched directly, bypassing the guarded PG test runner.
+  // Refuse remote connections before CREATE SCHEMA or any fixture writes.
+  const url=new URL(databaseUrl);
+  assert.ok(["postgres:","postgresql:"].includes(url.protocol),"Expected a PostgreSQL URL");
+  assert.ok(new Set(["127.0.0.1","localhost","::1","[::1]"]).has(url.hostname),
+    "Pilot insights fixture is destructive and must target localhost only");
+  // Only a locally validated URL may authorize cleanup after a partial setup.
+  // A rejected remote URL must never trigger the after() SQL path.
+  localTargetValidated=true;
   const setup=`
     CREATE SCHEMA ${quoted};SET search_path TO ${quoted};
     CREATE TABLE flights(
@@ -37,7 +48,7 @@ before(()=>{
   `;
   const result=raw(setup);if(result.status!==0)throw new Error(result.stderr||result.stdout);
 });
-after(()=>{if(enabled)raw(`DROP SCHEMA IF EXISTS ${quoted} CASCADE`)});
+after(()=>{if(enabled&&localTargetValidated)raw(`DROP SCHEMA IF EXISTS ${quoted} CASCADE`)});
 
 test("v2.0-D pilot insights use category-aware logged time across mixed logbooks",{skip:!enabled},()=>{
   const statement=render(queryBlock()),json=run(`WITH result AS (${statement}) SELECT row_to_json(result)::text FROM result`),row=JSON.parse(json) as Record<string,unknown>;
@@ -93,4 +104,20 @@ test("v2.0-D category scope applies to career, rolling and selected aggregates",
   assert.equal(Number(row.selected_unique_aircraft),2);
   assert.equal(Number(row.selected_unique_airports),1);
   assert.equal(Number(row.selected_unique_routes),1);
+});
+
+
+test("custom interval SQL includes both calendar endpoints and filters every selected result",{skip:!enabled},()=>{
+  const statement=render(queryBlock(),null,{start:"2026-08-01",end:"2026-09-01"});
+  const row=JSON.parse(run(`WITH result AS (${statement}) SELECT row_to_json(result)::text FROM result`)) as Record<string,unknown>;
+  assert.equal(Number(row.selected_flights),2,"August 1 and September 1 included, September 2 excluded");
+  assert.equal(Number(row.selected_minutes),150);
+  assert.equal(Number(row.selected_pic_minutes),60);
+  const monthly=typeof row.monthly==="string"?JSON.parse(row.monthly):row.monthly as Array<Record<string,unknown>>;
+  assert.deepEqual(monthly.map((item: Record<string,unknown>)=>String(item.month_key)),["2026-08","2026-09"]);
+  const roles=typeof row.roles==="string"?JSON.parse(row.roles):row.roles as Array<Record<string,unknown>>;
+  assert.equal(roles.length,2);
+  const empty=JSON.parse(run(`WITH result AS (${render(queryBlock(),null,{start:"2027-01-01",end:"2027-01-01"})}) SELECT row_to_json(result)::text FROM result`)) as Record<string,unknown>;
+  assert.equal(Number(empty.selected_flights),0);
+  assert.equal(Number(empty.selected_minutes),0);
 });

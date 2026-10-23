@@ -134,8 +134,8 @@ test("M2 real Node TAP TODO and SKIP cases remain disallowed, even if process ex
 
 test("M2 six-partition aggregate validates exact candidate and never grants release PASS",()=>{
   const summary=aggregatePartitionTapEvidence({registry,...identity,observations:collect()});
-  assert.equal(summary.planned,163);
-  assert.equal(summary.passed,163);
+  assert.equal(summary.planned,164);
+  assert.equal(summary.passed,164);
   assert.equal(summary.partitions.length,6);
   assert.equal(summary.status,"VALIDATED-ONLY");
   assert.equal(summary.releaseEvidence,"NOT RUN");

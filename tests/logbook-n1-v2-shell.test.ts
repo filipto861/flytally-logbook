@@ -20,7 +20,9 @@ test("N1 V2-2 is limited to first protected workspace page headers",()=>{
   const css=read("app/ui-system.css");
   const start=css.indexOf("/* N1 V2-2 — protected-app masthead only;");
   assert.ok(start>=0,"N1 V2-2 CSS contract absent");
-  const section=css.slice(start);
+  const end=css.indexOf("/* N2-A — shared informational surface / action hierarchy.",start);
+  assert.ok(end>start,"N1 V2-2 must stop before N2 informational card rules");
+  const section=css.slice(start,end);
   assert.match(section,/\.app-grid \.shell-workspace > \.ui-page-stack > \.page-header/);
   assert.match(section,/\.app-grid \.shell-workspace > \.page-header/);
   assert.match(section,/\.page-header > div:first-child > h1/);

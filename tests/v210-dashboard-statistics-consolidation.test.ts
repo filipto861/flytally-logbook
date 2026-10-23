@@ -34,7 +34,7 @@ test("v2.1 keeps the v1.70 saved-layout migration contract intact",()=>{
 test("v2.1 gives Career its own Statistics workspace and removes misleading period controls there",()=>{
   const page=read("app/(protected)/statistics/page.tsx");
   assert.match(page,/\["career","Career"\]/);
-  assert.match(page,/section!=="career"\?<div className="period-control" aria-label="Statistics period"/);
+  assert.match(page,/section!=="career"\?<div className="statistics-filter-group statistics-filter-period"/);
   assert.match(page,/section==="career"\?<section className="panel">/);
   assert.equal((page.match(/<h2>Career snapshot<\/h2>/g)??[]).length,1);
   assert.match(page,/Period filters do not apply to Career/);
