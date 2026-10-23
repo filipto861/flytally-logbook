@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-A theme-aware information surfaces (stacked candidate)
+
+- Isolated N2 candidate based on N1 Draft PR #391: first-level protected Dashboard information cards and Stats metric cards, main panels and panel headings have consistent semantic surface, radius, spacing, typography, and modest shadow; Dashboard action cards get clearer focus and hover.
+- Adds a source-only N2 UI contract test and expands the guarded localhost disposable-PG preview branch allowlist to N1 and N2. No flight/domain logic, route markup, PDF/data exports, schema/DB, theme palette or dependencies changed.
+- Source-only assertions 22/22 PASS; Node/test/typecheck/build/Playwright/native Safari/browser NOT RUN. No N2 production acceptance, merge or deploy. N1 stacked dependency unmerged.
+
 ## Unreleased — 2026-10-23, Logbook N1 V2-2 protected shell mastheads (Draft PR #391, preview pending)
 
 - Protected app shell uses an explicit `shell-workspace` wrapper for targeted page-header styling; primary routes now share one proposed typographic, action-alignment and opaque-surface treatment while preserving route content and accessibility semantics.
