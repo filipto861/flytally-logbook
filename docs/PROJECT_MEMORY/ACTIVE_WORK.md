@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T06:08:20.871Z — Navigation and global UI/UX redesign discovery (scoped)
+
+- Owner objective: main menu/navigation and common visual consistency ONLY; no opportunistic unrelated fixes. Docs-only work branch `docs/logbook-navigation-design-audit-20261023` based on verified `main=c68e6a2758423ab862cf9b03f5623515d07433e4`; source audit document `docs/product/LOGBOOK_NAVIGATION_UI_AUDIT_2026-10-23.md`. No implementation/merge/deploy approval implied.
+- Loaded merged Agent Skills V1 + Apple Design V2 (PR #388/#390 merged into main); existing independent Draft PRs #377–#380 and #389 remain out of scope.
+- **ONE NEXT STEP:** analyze forthcoming user video, then freeze a scope-limited UX redesign proposal for approval.
+
 ## 2026-10-22T19:14:39.210Z — Apple Design V2 (proposal only)
 
 - [Draft PR #390](https://github.com/filipto861/flytally-logbook/pull/390), branch `docs/logbook-apple-design-v2-20261022` from main `f1052cac8d518342bfdf10c6f03b51199d78ad69`, initial work `17c157ea8f0d31d2d994ec43c7c909c06d2c18b5`. Adds first-class mandatory Apple Design routing for all Logbook UI, 17-section detailed playbook and compact project-instruction addendum. SOURCE-ONLY checks PASS; runtime tests NOT RUN, no deployment. V2 not canonical until explicit owner-approved merge.
