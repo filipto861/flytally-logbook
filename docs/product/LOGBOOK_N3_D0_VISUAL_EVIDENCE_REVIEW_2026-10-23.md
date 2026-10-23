@@ -87,6 +87,10 @@ Not a wizard; no forced forward sequence. Users may reopen any task before savin
 
 **Recommendation:** start D1 with **A** plus compact per-flight GPS review, because the primary demonstrated pain is scanability/copy, and the existing domain forms already support much of this. Choose B only if owner testing shows a single expanded canvas is still cognitively overwhelming.
 
+## D1 owner direction (2026-10-23)
+
+Owner explicitly selected **Variant A — Contextual One-Page** (not Option B) and **declined the proposed independent DeepSeek review**. Proceed with scoped **M1** without external AI review: a persistent-in-content (non-sticky) status/review summary near the start of Manual and GPS, using already-derived readiness/review state and focus links. Keep existing form field order and server write rules until M2/M3; do not invent authorization for production merge/deployment, DB changes, auto-prefills, or GPS evidence auto-apply. Motion **NONE**. The owner still needs to review actual M1 visuals before larger M2/M3 redesign. This is an approval of design direction, not a claim of runtime acceptance.
+
 ## 4. Acceptance criteria for proposed N3-M1…M4 (not implementation authorization)
 
 1. Manual *blank*, PIC, DUAL missing instructor, Safety Pilot missing actual PIC, standard and category-specific (Sailplane/Balloon) contexts show truthful, **specific** required-state summaries and focus targets; never invent defaults.
