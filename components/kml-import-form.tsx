@@ -268,8 +268,9 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
         }else if(!gpsSourceReviewReady(review,sourceRequirements)){
           addGpsIssue(`part-${index}-evidence`,`Flight ${index+1}: landing / movement evidence`,".flight-review-card",undefined,index);
         }
-        if(roleCrewOverrides[index]?.mode==="OVERRIDE"&&
-          !roleCrewBufferReady(roleCrewOverrides[index],selectedProfile!.evidence,picConnections)){
+        const override=roleCrewOverrides[index];
+        if(override?.mode==="OVERRIDE"&&selectedProfile&&
+          !roleCrewBufferReady(override,selectedProfile.evidence,picConnections)){
           addGpsIssue(`part-${index}-crew`,`Flight ${index+1}: crew override`,".flight-review-card",undefined,index);
         }
       });
