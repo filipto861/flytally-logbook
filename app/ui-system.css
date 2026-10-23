@@ -1511,3 +1511,241 @@ html[data-theme="dark"] .app-grid .sidebar{
     box-shadow:none;
   }
 }
+
+
+/* N2-B — purposeful workspace composition instead of more nested card chrome.
+   DOM grouping only; user-saved dashboard widget order and sizes remain authoritative. */
+.app-grid .shell-workspace > .ui-page-stack > .dashboard-home-layout{
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(300px,330px);
+  align-items:start;
+  gap:20px;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-main-column{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  align-content:start;
+  gap:var(--ui-card-gap);
+  min-width:0;
+}
+.app-grid .shell-workspace .dashboard-home-layout .dashboard-layout-grid{
+  min-width:0;
+  width:100%;
+  margin:0;
+  gap:var(--ui-card-gap);
+}
+.app-grid .shell-workspace .dashboard-home-layout .dashboard-recency-status{
+  min-width:0;
+  width:100%;
+  margin:0;
+}
+/* Actions become a readable utility rail, not a stack of cards inside a card.
+   Only the original links are clickable. No row-level click target is fabricated. */
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel{
+  min-width:0;
+  padding:22px;
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:0 3px 14px color-mix(in srgb,var(--text) 4%,transparent);
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .section-heading{
+  display:block;
+  margin:0 0 12px;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .section-heading h2{
+  margin:2px 0 6px;
+  color:var(--text);
+  font-size:1.22rem;
+  font-weight:760;
+  line-height:1.2;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .section-heading .muted{
+  margin:0;
+  color:var(--text-soft);
+  font-size:.8rem;
+  line-height:1.5;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
+  margin:0;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics > div{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  align-content:center;
+  gap:5px;
+  min-width:0;
+  min-height:88px;
+  padding:13px 2px;
+  border:0;
+  border-bottom:1px solid var(--line-soft);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics > div:last-child{
+  border-bottom:0;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics > div > span{
+  color:var(--text-soft);
+  font-size:.72rem;
+  line-height:1.35;
+  font-weight:700;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics > div > b{
+  font-size:.99rem;
+  line-height:1.3;
+  font-weight:750;
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics > div > small{
+  font-size:.75rem;
+  line-height:1.4;
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics .row-link:focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:3px;
+}
+/* One coherent filter station. Each existing URL-driven control remains separate
+   and keeps its selected state, but the three groups share one spatial region. */
+.app-grid .shell-workspace > .ui-page-stack[data-n2-layout="statistics"] > .statistics-explorer{
+  display:grid;
+  grid-template-columns:minmax(0,1.18fr) minmax(0,.91fr) minmax(0,1.08fr);
+  align-items:start;
+  gap:12px 16px;
+  padding:16px 18px;
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--surface);
+  min-width:0;
+  box-shadow:0 3px 14px color-mix(in srgb,var(--text) 3%,transparent);
+}
+.app-grid .shell-workspace .statistics-explorer > .statistics-filter-group{
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  align-content:start;
+  gap:7px;
+}
+.app-grid .shell-workspace .statistics-explorer .statistics-filter-label{
+  margin:0;
+  font-size:.7rem;
+  line-height:1.35;
+  font-weight:760;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace .statistics-explorer .period-control{
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:3px;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  margin:0;
+  padding:3px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:thin;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--surface-raised);
+}
+.app-grid .shell-workspace .statistics-explorer .period-control > a{
+  display:inline-flex;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:8px 11px;
+  margin:0;
+  border:1px solid transparent;
+  border-radius:8px;
+  white-space:nowrap;
+  text-decoration:none;
+  font-size:.795rem;
+  font-weight:650;
+  color:var(--text-soft);
+}
+.app-grid .shell-workspace .statistics-explorer .period-control > a.active,
+.app-grid .shell-workspace .statistics-explorer .period-control > a[aria-current="page"]{
+  border-color:var(--line);
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:var(--shadow-soft);
+  font-weight:770;
+}
+.app-grid .shell-workspace .statistics-explorer .period-control > a:focus-visible{
+  outline:2px solid var(--focus-color);
+  outline-offset:-2px;
+}
+.app-grid .shell-workspace .statistics-explorer > .statistics-filter-section:nth-child(2):last-child{
+  grid-column:span 2;
+}
+@media (hover:hover) and (pointer:fine){
+  .app-grid .shell-workspace .statistics-explorer .period-control > a:not(.active):hover{
+    background:var(--surface-hover);
+    color:var(--text);
+  }
+}
+@media(max-width:1499px){
+  .app-grid .shell-workspace > .ui-page-stack > .dashboard-home-layout{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics{
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr));
+    gap:10px;
+  }
+  .app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel > .mini-metrics > div{
+    min-height:112px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+    background:var(--surface-raised);
+  }
+  .app-grid .shell-workspace > .ui-page-stack[data-n2-layout="statistics"] > .statistics-explorer{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .app-grid .shell-workspace .statistics-explorer > .statistics-filter-category{
+    grid-column:span 2;
+  }
+  .app-grid .shell-workspace .statistics-explorer > .statistics-filter-section:nth-child(2):last-child{
+    grid-column:span 2;
+  }
+}
+@media(max-width:700px){
+  .app-grid .shell-workspace > .ui-page-stack[data-n2-layout="statistics"] > .statistics-explorer{
+    grid-template-columns:minmax(0,1fr);
+    gap:14px;
+    padding:15px;
+  }
+  .app-grid .shell-workspace .statistics-explorer > .statistics-filter-category,
+  .app-grid .shell-workspace .statistics-explorer > .statistics-filter-section:nth-child(2):last-child{
+    grid-column:span 1;
+  }
+  .app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel{
+    padding:18px 16px;
+  }
+}
+@media(pointer:coarse){
+  .app-grid .shell-workspace .statistics-explorer .period-control > a{
+    min-height:44px;
+  }
+}
+@media print{
+  .app-grid .shell-workspace > .ui-page-stack > .dashboard-home-layout{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .app-grid .shell-workspace > .ui-page-stack[data-n2-layout="statistics"] > .statistics-explorer,
+  .app-grid .shell-workspace .dashboard-home-layout > .dashboard-quick-actions-panel{
+    box-shadow:none;
+  }
+}
