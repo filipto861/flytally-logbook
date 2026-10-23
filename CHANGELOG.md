@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-23 — Owner production smoke confirmation for N1/N2 release
+
+- After deploying source `3def2c3618d1b2a185d39b15df69c1613180751b` as Vercel production deployment `dpl_EkZZoHyWoYZsfp4AzubGBcziXUVz` (READY) to `fly-tally.com`, owner reported **“vsechno funguje skvele”** in response to requested live login, Dashboard and Custom Period Statistics verification. Production smoke **PASS (owner-reported)**, no issues reported. This is not an independent tool-executed HTTP/authenticated status-code audit; that remains **NOT RUN**.
+- No source changes, new migrations, production flag changes, or further deployments. Same 3.8.1 source release; year-0000 edge intentionally deferred.
+
 ## 2026-10-23 — Production release: N1 navigation, N2 workspace, N2-C Statistics Custom dates
 
 - Owner explicitly approved merging #391, #392, #393 and #394 and releasing without fixing the documented year-0000 edge case. All four PRs **MERGED** in order; deployed Git SHA `3def2c3618d1b2a185d39b15df69c1613180751b` versus owner-tested `95c751d441168e95d03023a68af5edddca1e7248` differs only in merge commits (**zero changed files** in GitHub compare). No UI/flight/domain modification after tests.
