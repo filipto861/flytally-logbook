@@ -4,7 +4,7 @@
   "sourceDirectory": "tests/integration",
   "hashAlgorithm": "sha256-utf8-canonical-lf",
   "expectedFiles": 42,
-  "expectedTests": 163,
+  "expectedTests": 164,
   "partitions": [
     {
       "id": "shared-core",
@@ -12,7 +12,7 @@
         "FLYTALLY_POSTGRES_INTEGRATION"
       ],
       "schemaOwnership": "verified-disposable-pg16/private-schemas-or-nondestructive",
-      "expectedTests": 123,
+      "expectedTests": 124,
       "files": [
         {
           "file": "postgres-aircraft-profile-validation.test.ts",
@@ -121,8 +121,8 @@
         },
         {
           "file": "postgres-pilot-insights.test.ts",
-          "sha256": "4c825b71da31eb08856c989222e4db837560a2507c5b741c7e625db52bb59ee4",
-          "expectedTests": 2
+          "sha256": "9684ada200c137454832fd0d140da651705ed4d2f568d8f66bf719627c0459f4",
+          "expectedTests": 3
         },
         {
           "file": "postgres-push.test.ts",
