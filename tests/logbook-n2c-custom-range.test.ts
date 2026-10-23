@@ -10,7 +10,7 @@ test("N2-C custom date picker applies only after explicit submission",()=>{
   const page=read("app/(protected)/statistics/page.tsx");
   assert.equal((page.match(/<header className="page-header">/g)??[]).length,1,"Statistics must render one shared masthead");
   assert.equal((page.match(/\{header\}/g)??[]).length,2,"Both invalid and valid paths use that masthead");
-  assert.match(page,/className="statistics-custom-range"/);
+  assert.match(page,/<details className="statistics-custom-range" data-selected=/);
   assert.match(page,/className="statistics-period-toolbar"/);
   assert.match(page,/<nav className="period-control" aria-label="Statistics period">/);
   assert.match(page,/<details className="statistics-custom-range" data-selected=\{period==="custom"\?"true":undefined\}>/);
@@ -54,7 +54,7 @@ test("N2-C rejects invalid deep links before querying statistics",()=>{
 });
 
 test("N2-C preserves narrow/touch/light-dark styling with no new calendar library",()=>{
-  const ui=read("app/ui-system.css").split("/* N2-C — inline native calendar range")[1];
+  const ui=read("app/ui-system.css").split("/* N2-C — native calendar range within the approved Statistics filter station.")[1];
   assert.ok(ui);
   assert.match(ui,/statistics-period-toolbar\{/);
   assert.match(ui,/\.statistics-period-toolbar > \.period-control\{/);
