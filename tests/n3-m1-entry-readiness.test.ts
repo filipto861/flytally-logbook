@@ -47,3 +47,25 @@ test("N3-M1 status stays non-sticky and uses current FlyTally responsive tokens 
   assert.match(m,/@media\(max-width:520px\)/);
   assert.doesNotMatch(m,/(?:animation|transition|position|backdrop-filter)\s*:/);
 });
+
+
+test("N3 GPS upload has one visible top file action; original required file input and parsing remain",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  const shared=read("components/entry-review-summary.tsx");
+  const ui=read("app/ui-system.css");
+  assert.match(gps,/sourceInputRef=useRef<HTMLInputElement>\(null\)/);
+  assert.match(gps,/primaryAction=\{\{label:analysis\?"Change GPS track":"Upload a KML, GPX or CSV track",onSelect:\(\)=>sourceInputRef\.current\?\.click\(\)\}\}/);
+  assert.match(gps,/ref=\{sourceInputRef\} className="gps-track-file-native" name="kml" type="file"/);
+  assert.match(gps,/tabIndex=\{-1\} accept="\.kml,\.gpx,\.csv/);
+  assert.match(gps,/required onChange=\{async event=>\{/);
+  assert.match(gps,/const epoch=\+\+fileEpoch\.current,file=event\.target\.files\?\.\[0\]/);
+  assert.match(gps,/const next=inspect\(source,file\.name\)/);
+  assert.doesNotMatch(gps,/className="upload-zone"|<h2>Upload track<\/h2>/);
+  assert.match(gps,/gps-track-source-status" role="status"/);
+  assert.match(gps,/Choose a GPS source with usable flight data/);
+  assert.match(shared,/primaryAction\?\{label:string;onSelect:\(\)=>void\}/);
+  assert.match(shared,/type="button" onClick=\{primaryAction\.onSelect\}/);
+  assert.match(ui,/\.kml-wizard \.gps-track-file-native\{/);
+  assert.match(ui,/clip-path:inset\(50%\)/);
+  assert.doesNotMatch(ui.slice(ui.lastIndexOf("/* N3 GPS single-source action:")),/(?:animation|transition)\s*:/);
+});

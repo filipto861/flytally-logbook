@@ -144,7 +144,7 @@ function SafetyPilotFields({namePrefix="",mode,commander,connectedPicUserId,picC
 
 export function KmlImportForm({action,airportAction,aircraft,picConnections}:{action:Action;airportAction:AirportAction;aircraft:AircraftOption[];picConnections:ConnectedPicOption[]}){
   const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[roleCrewOverrides,setRoleCrewOverrides]=useState<PartRoleCrewOverride[]>([]),[overrideResetNotice,setOverrideResetNotice]=useState(""),[registration,setRegistration]=useState(""),[regulatoryCategory,setRegulatoryCategory]=useState(""),[role,setRole]=useState<(typeof GPS_IMPORT_ROLES)[number]>("PIC"),[commonInstructor,setCommonInstructor]=useState(""),[commonCommander,setCommonCommander]=useState(""),[commonActualPicMode,setCommonActualPicMode]=useState<SafetyPilotMode>("manual"),[commonConnectedPicUserId,setCommonConnectedPicUserId]=useState(""),[billing,setBilling]=useState<ImportBillingChoice>(""),[billingShare,setBillingShare]=useState(1),[balloonOperation,setBalloonOperation]=useState(""),[operationType,setOperationType]=useState(""),[engineType,setEngineType]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false),[gpsWarningAcknowledged,setGpsWarningAcknowledged]=useState(false);
-  const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null),fileEpoch=useRef(0);
+  const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null),fileEpoch=useRef(0),sourceInputRef=useRef<HTMLInputElement>(null);
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
   const visualTrack=useMemo(()=>analysis?mapTrack(analysis.points,-1,registration,undefined,1800):null,[analysis,registration]);
   const visualEvents=useMemo(()=>analysis?importReviewEvents(analysis,cuts):[],[analysis,cuts]);
@@ -244,9 +244,9 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
     gpsReviewItems.push({id,label,onSelect:()=>focusEntryIssue(selector,detailsSelector,partIndex)});
   };
   if(!analysis){
-    addGpsIssue("source","Upload a KML, GPX or CSV track",'input[name="kml"]');
+    // The single GPS source action opens the native file picker directly.
   }else if(analysis.points.length<2||parts.length===0){
-    addGpsIssue("source","Choose a GPS source with usable flight data",'input[name="kml"]');
+    // An unusable source stays actionable through that same picker, not a duplicate issue button.
   }else{
     if(!registration)addGpsIssue("aircraft","Select aircraft",'select[name="registration"]',"details.gps-flight-context");
     else if(profileError||!selectedProfile)addGpsIssue("aircraft-profile","Resolve aircraft profile",'[data-aircraft-context-card]',"details.gps-flight-context");
@@ -289,15 +289,13 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
   return <form action={formAction} className="flight-form kml-wizard" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
     <EntryReviewSummary
       mode="gps"
-      title={!analysis?"Upload a GPS track":gpsReviewItems.length?`${gpsReviewItems.length} ${gpsReviewItems.length===1?"item needs":"items need"} review`:"No outstanding form checks"}
-      description={!analysis?"No flight will be saved until you review its evidence.":gpsReviewItems.length?"Select an item to jump to the details that need review.":"Review the detected flights before saving. The server validates the final import."}
+      title={!analysis?"Upload a GPS track":analysis.points.length<2||parts.length===0?"Choose a GPS source with usable flight data":gpsReviewItems.length?`${gpsReviewItems.length} ${gpsReviewItems.length===1?"item needs":"items need"} review`:"No outstanding form checks"}
+      description={!analysis?"No flight will be saved until you review its evidence.":analysis.points.length<2||parts.length===0?"The selected track cannot be imported. Choose a usable KML, GPX or CSV file.":gpsReviewItems.length?"Select an item to jump to the details that need review.":"Review the detected flights before saving. The server validates the final import."}
       items={gpsReviewItems}
+      primaryAction={{label:analysis?"Change GPS track":"Upload a KML, GPX or CSV track",onSelect:()=>sourceInputRef.current?.click()}}
     />
-    <div className="section-heading"><div><p className="eyebrow">GPS SOURCE</p><h2>Upload track</h2><p className="muted">Upload one KML, GPX or CSV track. FlyTally will suggest the flight structure and evidence for review.</p></div></div>
-    <div className="upload-zone">
-      <label><span>KML, GPX or CSV <span className="field-hint" aria-hidden="true">Required</span></span><input name="kml" type="file" accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/xml,text/xml,text/csv" required onChange={async event=>{const epoch=++fileEpoch.current,file=event.target.files?.[0];setAnalysis(null);setReviews([]);setRoleCrewOverrides([]);setOverrideResetNotice("");setGpsWarningAcknowledged(false);if(!file)return;let source:string;try{source=await file.text()}catch{return}if(epoch!==fileEpoch.current)return;const next=inspect(source,file.name);setAnalysis(next);const suggestedRegistration=next.registration&&aircraft.some(item=>item.registration===next.registration)?next.registration:"";setRegistration(suggestedRegistration);setRegulatoryCategory("");setBalloonOperation("");setOperationType("");setEngineType("");resetParts(next.suggested,next)}}/></label>
-      {analysis?<p>{analysis.points.length>=2?"✓":"⚠"} {analysis.name} · {analysis.points.length} GPS points · {analysis.format.toUpperCase()} · {sourceLabel(analysis.source)} · {analysis.suggested.length+1} suggested {analysis.suggested.length?"flights":"flight"} · {analysis.timeBasis==="utc"?"UTC timestamps":analysis.timeBasis==="offset"?"offset timestamps → UTC":"timezone not explicit"}</p>:null}
-    </div>
+    <input ref={sourceInputRef} className="gps-track-file-native" name="kml" type="file" aria-label="GPS track file" tabIndex={-1} accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/xml,text/xml,text/csv" required onChange={async event=>{const epoch=++fileEpoch.current,file=event.target.files?.[0];setAnalysis(null);setReviews([]);setRoleCrewOverrides([]);setOverrideResetNotice("");setGpsWarningAcknowledged(false);if(!file)return;let source:string;try{source=await file.text()}catch{return}if(epoch!==fileEpoch.current)return;const next=inspect(source,file.name);setAnalysis(next);const suggestedRegistration=next.registration&&aircraft.some(item=>item.registration===next.registration)?next.registration:"";setRegistration(suggestedRegistration);setRegulatoryCategory("");setBalloonOperation("");setOperationType("");setEngineType("");resetParts(next.suggested,next)}}/>
+    {analysis?<p className="gps-track-source-status" role="status">{analysis.points.length>=2?"✓":"⚠"} {analysis.name} · {analysis.points.length} GPS points · {analysis.format.toUpperCase()} · {sourceLabel(analysis.source)} · {analysis.suggested.length+1} suggested {analysis.suggested.length?"flights":"flight"} · {analysis.timeBasis==="utc"?"UTC timestamps":analysis.timeBasis==="offset"?"offset timestamps → UTC":"timezone not explicit"}</p>:null}
     {analysis&&analysis.quality.status!=="good"?<p className="track-time-warning"><b>GPS track needs review.</b> {analysis.quality.warnings.join(" ")}</p>:null}
     {analysis&&analysis.timeBasis==="ambiguous"?<p className="track-time-warning"><b>Time zone is missing in this track.</b> FlyTally will not guess from the iPad or computer clock. Review and enter UTC times manually before saving.</p>:null}
     {analysis&&gpsQualityNeedsAcknowledgement?<label className="review-confirm gps-warning-confirm"><input name="gpsWarningReviewed" type="checkbox" value="yes" checked={gpsWarningAcknowledged} onChange={event=>setGpsWarningAcknowledged(event.target.checked)}/> I reviewed the GPS quality warning.</label>:null}

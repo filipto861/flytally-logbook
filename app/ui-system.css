@@ -1994,3 +1994,26 @@ html[data-theme="dark"] .app-grid .shell-workspace .statistics-explorer .statist
     padding-top:var(--ui-space-3);
   }
 }
+
+/* N3 GPS single-source action: the Entry Review button owns file selection.
+   Keep the native required file input for unchanged FormData upload and validation.
+   Motion NONE; no alternative visible chooser or hidden automatic selection. */
+.kml-wizard .gps-track-file-native{
+  position:absolute;
+  inline-size:1px;
+  block-size:1px;
+  margin:0;
+  padding:0;
+  border:0;
+  overflow:hidden;
+  clip-path:inset(50%);
+  opacity:0;
+  pointer-events:none;
+}
+.kml-wizard .gps-track-source-status{
+  margin:0;
+  color:var(--muted);
+  font-size:.82rem;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
