@@ -1,4 +1,5 @@
 "use client";
+import { EntryReviewSummary } from "@/components/entry-review-summary";
 
 import { useActionState,useEffect,useMemo,useRef,useState } from "react";
 import Link from "next/link";
@@ -114,6 +115,14 @@ export function FlightForm({defaultCurrency="",action,aircraft,initial={},calend
   const markFormDirty=()=>{markDirty();flightEdit?.setUnsaved(true)};
   const beginFormSubmit=()=>{beginSubmit();flightEdit?.setUnsaved(false);flightEdit?.setSubmitting(true)};
   return <form ref={formRef} id={formId} action={formAction} className="flight-form" data-aircraft-category={entryProfile.selected?entryProfile.category:"unselected"} onChangeCapture={markFormDirty} onReset={event=>event.preventDefault()} onSubmitCapture={beginFormSubmit}>
+    {!editing?<EntryReviewSummary
+      mode="manual"
+      title={missing.length?`${missing.length} ${missing.length===1?"detail needs":"details need"} review`:"No outstanding form checks"}
+      description={missing.length
+        ?"Select an item to correct it. Saving a draft and certifying a flight have different requirements."
+        :"Review the flight before saving. The server will validate the selected save action."}
+      items={missing.map(id=>({id,label:missingLabel[id]||id,onSelect:()=>focusMissing(id)}))}
+    />:null}
     {instructors.length?<datalist id="connected-instructors">{instructors.map((item,index)=><option value={item.name} key={`${item.name}-${index}`}/>)}</datalist>:null}
     {!safetyCrewInline?<input type="hidden" name="connectedPicUserId" value=""/>:null}
     <section className="entry-section entry-section-primary"><p className="section-kicker">Flight essentials</p>
@@ -183,6 +192,6 @@ export function FlightForm({defaultCurrency="",action,aircraft,initial={},calend
       <div><span>UTC times</span><strong>{certificationTimesSummary}</strong><small>Off-block / Takeoff / Landing / On-block</small></div>
       <div><span>Evidence</span><strong>{certificationLandingSummary} · Night {nightTime||"0:00"} · IFR {ifrTime||"0:00"}</strong></div>
     </div><p className="value-origin-note"><span>Certification</span> Certified flights are locked; later changes are recorded as corrections.</p></section>:null}
-    <div className="form-actions field-actions"><div className="entry-save-state">{missing.length?<><strong>Complete before save</strong><div className="entry-save-blockers" aria-label="Missing required fields">{missing.map(item=><button key={item} type="button" className="entry-blocker-link" onClick={()=>focusMissing(item)}>{missingLabel[item]||item}</button>)}</div></>:<small>{editing?"Save changes to keep editing, or Save & certify to seal this flight in one step.":"Save draft keeps the record editable. Save & certify seals the persisted record when compliance checks pass."}</small>}{dirty?<small className="unsaved-indicator">Unsaved changes</small>:null}</div><Submit editing={editing} certifyDisabled={missing.length>0} onAttempt={()=>setSubmitAttempted(true)}/></div>
+    <div className="form-actions field-actions"><div className="entry-save-state">{missing.length?<><strong>{editing?"Complete before save":"Review before finishing"}</strong><div className="entry-save-blockers" aria-label="Missing required fields">{missing.map(item=><button key={item} type="button" className="entry-blocker-link" onClick={()=>focusMissing(item)}>{missingLabel[item]||item}</button>)}</div></>:<small>{editing?"Save changes to keep editing, or Save & certify to seal this flight in one step.":"Save draft keeps the record editable. Save & certify seals the persisted record when compliance checks pass."}</small>}{dirty?<small className="unsaved-indicator">Unsaved changes</small>:null}</div><Submit editing={editing} certifyDisabled={missing.length>0} onAttempt={()=>setSubmitAttempted(true)}/></div>
   </form>;
 }

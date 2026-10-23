@@ -1,0 +1,49 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+
+const read=(path:string)=>readFileSync(join(process.cwd(),path),"utf8");
+
+test("N3-M1 Manual uses its existing domain-informed missing list for accessible direct-to-field review",()=>{
+  const manual=read("components/flight-form.tsx");
+  const shared=read("components/entry-review-summary.tsx");
+  assert.match(manual,/!editing\?<EntryReviewSummary/,"New Flight only: editing remains unchanged");
+  assert.match(manual,/items=\{missing\.map\(id=>\(\{id,label:missingLabel\[id\]\|\|id,onSelect:\(\)=>focusMissing\(id\)\}\)\)\}/);
+  assert.match(manual,/focusMissing=\(item:string\)=>/);
+  assert.match(shared,/type="button" onClick=\{item\.onSelect\}/);
+  assert.doesNotMatch(shared,/type="submit"/);
+  assert.match(manual,/Save draft keeps the record editable/);
+  assert.match(manual,/Save &amp; certify/);
+});
+
+test("N3-M1 GPS uses existing ready/parts/source context, not a new persistence validator",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  assert.match(gps,/const gpsReviewItems:EntryReviewItem\[\]=\[\]/);
+  assert.match(gps,/if\(!analysis\)/);
+  assert.match(gps,/analysis\.points\.length<2\|\|parts\.length===0/);
+  assert.match(gps,/if\(!registration\)addGpsIssue/);
+  assert.match(gps,/if\(requiresOperationEngine&&!operationType\)addGpsIssue/);
+  assert.match(gps,/if\(requiresOperationEngine&&!engineType\)addGpsIssue/);
+  assert.match(gps,/if\(gpsQualityNeedsAcknowledgement&&!gpsWarningAcknowledged\)addGpsIssue/);
+  assert.match(gps,/!gpsSourceReviewReady\(review,sourceRequirements\)/);
+  assert.match(gps,/const override=roleCrewOverrides\[index\]/);
+  assert.match(gps,/roleCrewBufferReady\(override,selectedProfile\.evidence,picConnections\)/);
+  assert.match(gps,/details\.open=true/);
+  assert.match(gps,/target\?\.focus\(\{preventScroll:true\}\)/);
+  assert.match(gps,/name="intent" value="draft"/);
+  assert.match(gps,/name="intent" value="certify"/);
+});
+
+test("N3-M1 status stays non-sticky and uses current FlyTally responsive tokens without motion",()=>{
+  const shared=read("components/entry-review-summary.tsx");
+  const ui=read("app/ui-system.css");
+  const m=ui.slice(ui.lastIndexOf("/* N3-M1:"));
+  assert.match(shared,/aria-label=\{mode==="manual"/);
+  assert.match(shared,/data-entry-review-mode=\{mode\}/);
+  assert.match(m,/\.flight-form \.entry-review-status\{/);
+  assert.match(m,/--ui-radius-card/);
+  assert.match(m,/--ui-touch-min-height/);
+  assert.match(m,/@media\(max-width:520px\)/);
+  assert.doesNotMatch(m,/(?:animation|transition|position|backdrop-filter)\s*:/);
+});

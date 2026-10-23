@@ -116,6 +116,34 @@ test("Statistics route and insights data helpers select N2-C browser acceptance"
   ])assert.ok(ids.includes(id),id+" must cover Statistics and insights changes");
 });
 
+test("N3-M1 changed spec maps both scenarios to authoritative desktop/mobile targets",()=>{
+  const {result,payload}=plan(["e2e/n3-m1-entry-review.spec.mjs"]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.blockedEvidence,[]);
+  assert.deepEqual(payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id),[
+    "n3-m1-gps-review-desktop",
+    "n3-m1-gps-review-mobile",
+    "n3-m1-manual-review-desktop",
+    "n3-m1-manual-review-mobile",
+  ]);
+});
+
+test("N3-M1 visible entry UI selects both focus-review flows without relaxing other browser gates",()=>{
+  const {result,payload}=plan([
+    "components/entry-review-summary.tsx",
+    "components/flight-form.tsx",
+    "components/kml-import-form.tsx",
+  ]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.blockedEvidence,[]);
+  const ids=payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id);
+  for(const id of [
+    "n3-m1-gps-review-desktop","n3-m1-gps-review-mobile",
+    "n3-m1-manual-review-desktop","n3-m1-manual-review-mobile",
+    "flight-manual-save-desktop","flight-gps-save-desktop",
+  ])assert.ok(ids.includes(id),id+" must remain selected");
+});
+
 test("changed diagnostic-only E2E spec fails closed instead of shrinking authoritative coverage",()=>{
   const {result,payload}=plan(["e2e/ui-audit-capture.spec.mjs"]);
   assert.equal(result.status,3,result.stderr||result.stdout);

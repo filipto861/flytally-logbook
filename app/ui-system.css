@@ -1913,3 +1913,45 @@ html[data-theme="dark"] .app-grid .shell-workspace .statistics-explorer .statist
     min-height:44px;
   }
 }
+
+/* N3-M1: one direct-to-correction review language for Manual and GPS.
+   No animation, sticky overlay, or change to form submission rules. */
+.flight-form .entry-review-status{
+  display:grid;
+  gap:var(--ui-space-3);
+  min-width:0;
+  padding:var(--ui-space-4);
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:transparent;
+}
+.entry-review-status-copy{display:grid;gap:var(--ui-space-1);min-width:0}
+.entry-review-status-copy .eyebrow{margin:0}
+.entry-review-status-copy h3{margin:0;font-size:1rem;line-height:1.3;font-weight:750}
+.entry-review-status-copy>p:last-child{margin:0;color:var(--muted);font-size:.82rem;line-height:1.5}
+.entry-review-status-actions{display:flex;gap:var(--ui-space-2);flex-wrap:wrap;min-width:0}
+.flight-form .entry-review-status-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--ui-space-2);
+  min-height:var(--ui-touch-min-height);
+  padding:var(--ui-space-2) var(--ui-space-3);
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-control);
+  background:transparent;
+  color:var(--text);
+  font-size:.82rem;
+  font-weight:650;
+  text-align:left;
+  cursor:pointer;
+}
+.flight-form .entry-review-status-link:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+@media(max-width:520px){
+  .flight-form .entry-review-status{padding:var(--ui-space-3)}
+  .entry-review-status-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  .flight-form .entry-review-status-link{width:100%}
+}

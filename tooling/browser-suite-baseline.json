@@ -61,7 +61,9 @@
     "Airport elevation add edit and clear preserves nullable persisted MSL values",
     "Airport elevation server action refuses a cross-user forged edit",
     "N2-C period presets and Custom stay on one row across cockpit viewports and themes",
-    "N2-C custom dates require Apply, retain navigation scope and reject reversed deep links"
+    "N2-C custom dates require Apply, retain navigation scope and reject reversed deep links",
+    "N3-M1 Manual shows existing missing details at the top and focuses them",
+    "N3-M1 GPS review starts with source error then links to real aircraft control"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs",
