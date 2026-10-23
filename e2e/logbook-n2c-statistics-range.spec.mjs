@@ -90,7 +90,7 @@ test("N2-C custom dates require Apply, retain navigation scope and reject revers
   expect(next.has("to")).toBe(false);
 
   await page.goto("/statistics?period=custom&section=overview&from=2026-09-30&to=2026-09-01");
-  await expect(page.getByRole("alert")).toContainText("Start date must not be after end date");
+  await expect(page.locator('.ui-page-stack > .form-error[role="alert"]')).toContainText("Start date must not be after end date");
   await expect(page.locator("section.metric-grid")).toHaveCount(0);
   await expect(page.locator("details.statistics-custom-range > summary")).toBeVisible();
 });
