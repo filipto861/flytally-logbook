@@ -282,6 +282,9 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
         }
       });
     }
+    if(!ready&&!gpsReviewItems.length){
+      addGpsIssue("completion","Review remaining flight details",".flight-review-card",undefined,0);
+    }
   }
   return <form action={formAction} className="flight-form kml-wizard" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
     <EntryReviewSummary
