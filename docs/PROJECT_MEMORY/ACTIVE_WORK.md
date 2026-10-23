@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-23T15:16:55.572Z — N3 Manual+GPS Flight Entry UX D0 ACTIVE; runtime screenshots pending
+
+- Owner approved reprioritizing N3 before 3.9.0 and agreed to all nine FE-01..09 audit directions (too many choices and unclear missing fields). `main@3af54d4f4d0651b430452dd3f5b8513e134f5c6a`; docs-only `docs/logbook-n3-flight-entry-ux-discovery-20261023`, Draft #397, pre-checkpoint work head `31a935316f46d967db8bded4b07fdbb22a45be82`. Canonical ROADMAP now records N3-D0 (source audit complete, **visual runtime NOT RUN**). Audit report `docs/product/LOGBOOK_N3_FLIGHT_ENTRY_UX_AUDIT_2026-10-23.md` has staged scope, safety, 100-screenshot synthetic viewport/theme/state matrix. No app code changed, no production DB/flag/deploy/Training actions, no approval to implement D1/M1–M4 or merge.
+- **ONE NEXT STEP:** obtain guarded owner-local D0 screenshots + computed cascade and classify observed UI issues before freezing a UI design.
+
 ## 2026-10-23T14:43:37.713Z — N1/N2 merged and released; production smoke unverified
 
 - Merged GitHub #391 → #392 → #393 → #394 to `main` `3def2c3618d1b2a185d39b15df69c1613180751b` with explicit owner approval. Source tree is identical to tested `95c751d441168e95d03023a68af5edddca1e7248` (zero GitHub compare file diff); risk release `PASS` there: 259 source / 28 domain / 1679 Node / PG16 164 / browser 20 plus typecheck/build/scale. Manual Vercel production `dpl_EkZZoHyWoYZsfp4AzubGBcziXUVz` for `3def2c3618d1b2a185d39b15df69c1613180751b` **READY** at `fly-tally.com`; version 3.8.1. No DB migration, prod flag or Training change. Year-0000 edge deferred explicitly.
