@@ -45,5 +45,5 @@ test("N3-M1 status stays non-sticky and uses current FlyTally responsive tokens 
   assert.match(m,/--ui-radius-card/);
   assert.match(m,/--ui-touch-min-height/);
   assert.match(m,/@media\(max-width:520px\)/);
-  assert.doesNotMatch(m,/(?:animation|transition|position:sticky|position:fixed|backdrop-filter)/);
+  assert.doesNotMatch(m,/(?:animation|transition|position|backdrop-filter)\s*:/);
 });
