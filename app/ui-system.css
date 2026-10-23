@@ -726,3 +726,35 @@ button[data-loading="true"]::after{
 .leaflet-container .flytally-map-settings-static{margin:0;font-size:.79rem;color:var(--text-soft)}
 @media(max-width:600px){.leaflet-container .flytally-map-settings-trigger{padding-inline:11px}.leaflet-container .flytally-map-settings-panel{padding:13px;max-height:min(420px,calc(100dvh - 110px))}}
 @media(prefers-reduced-motion:reduce){.leaflet-container .flytally-map-settings-trigger,.leaflet-container .flytally-map-settings-chevron,.leaflet-container .flytally-map-settings-panel button{transition:none}}
+
+/* N1-A — menu-only visual hierarchy. Kept here after legacy layers so the
+   effective sidebar cascade is explicit; do not apply to route-local tabs. */
+.app-grid .sidebar nav a {
+  border-radius:var(--ui-radius-control,11px);
+  font-size:.84rem;
+  line-height:1.2;
+  letter-spacing:-.005em;
+  transition:background-color .14s ease,color .14s ease,border-color .14s ease;
+}
+.app-grid .sidebar nav a.active {
+  background:color-mix(in srgb,var(--accent) 10%,var(--surface-muted));
+  border-color:color-mix(in srgb,var(--accent) 23%,var(--line));
+  box-shadow:inset 3px 0 0 var(--accent);
+  color:var(--text);
+  font-weight:750;
+}
+.app-grid .sidebar nav a:not(.active):hover {
+  background:var(--surface-hover);
+  border-color:var(--line);
+  color:var(--text);
+}
+.app-grid .sidebar nav a:focus-visible {
+  outline:2px solid var(--focus-color);
+  outline-offset:2px;
+}
+@media screen and (min-width:821px) {
+  .app-grid .sidebar nav a {min-height:44px;height:44px}
+}
+@media (prefers-reduced-motion:reduce) {
+  .app-grid .sidebar nav a {transition:none}
+}
