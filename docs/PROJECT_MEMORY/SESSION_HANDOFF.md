@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-23T06:08:20.871Z — Navigation/global design audit checkpoint (docs only)
+
+- Repo: `filipto861/flytally-logbook`. Independently verified canonical `main=c68e6a2758423ab862cf9b03f5623515d07433e4`; work branch `docs/logbook-navigation-design-audit-20261023` from main, initial docs audit commit `6db33983bd1d40f57c0bc06a53d4302ea9faee12`. This checkpoint advances work HEAD; independently re-fetch after write. PR for this branch: **NONE** (no PR created). Other Draft PRs #377–#380/#389 remain independent. Main contains merged skills PRs #388/#390.
+- Scope/files: read-only source audit captured in `docs/product/LOGBOOK_NAVIGATION_UI_AUDIT_2026-10-23.md`; this checkpoint edits only `ROADMAP.md`, `docs/PROJECT_MEMORY/ACTIVE_WORK.md`, `docs/PROJECT_MEMORY/SESSION_HANDOFF.md`. Owner insists on avoiding unrelated bugs and features. No runtime implementation before video/owner design approval.
+- Evidence: GitHub main/PR/deployment metadata, current sidebar, AppShell, CSS imports/selectors, design-language and navigation tests inspected; complete Apple Design V2 playbook and relevant skills read. **PASS = read-only GitHub/source inspection only.** Typecheck, source tests, build, Playwright/screenshots, real Safari, accessibility hardware: **NOT RUN**. Video: **NOT RECEIVED**. Vercel project `filipito/logbook` production READY deployment `dpl_4XGBawGy187VyJpG5nyRFe2p2fKW` points to `34b865bb0ced1222945cecb107589826890ee31a`; no authenticated runtime verification. DB/migrations/flags **UNKNOWN/UNTOUCHED**; deploy not changed.
+- DO NOT: edit Training, unrelated Draft PRs/flows, data/flight integrity, auth, SQL, schema, brand tokens, dependencies, auto-fill, merge, deploy, production DB or flags. No private user/flight/GPS data.
+- **ONE NEXT STEP:** inspect user's forthcoming UI recording against source and record observed interaction problems; present a frozen scope-limited redesign proposal for explicit owner approval.
+
 ## 2026-10-22T19:14:39.210Z — Apple Design V2 proposal, Draft PR #390 (docs only)
 
 - **Verified repo:** filipto861/flytally-logbook; main `f1052cac8d518342bfdf10c6f03b51199d78ad69`; work branch `docs/logbook-apple-design-v2-20261022` before checkpoint `17c157ea8f0d31d2d994ec43c7c909c06d2c18b5`; PR #390 OPEN/DRAFT, base main. The checkpoint commit advances work SHA; refresh after push. Existing PR #389 is an independent docs-only merge checkpoint — leave unchanged.
