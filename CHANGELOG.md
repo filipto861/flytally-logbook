@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-23 — N3 UX discovery, M1 and M2 merged to main (not deployed)
+
+- Explicit owner-approved ordered merge: PR #397 `fbce31c01bad4f5cc9b509857387c8539143e48d`, #398 `35c920d5cc10644d120ac0a8e6b2c494cd38186e`, #399 `462b8d7b11c6ba59eb4a2b01b1eb4d53cb33abe2`. Exact main tree matches final #399 head; vs owner-tested `0e8b3f8787d6d55d1db6846d5a43f79e2a11f8f2`, only docs changed. No runtime design, safety/certification, GPS parsing, dependencies or schema added by merge topology.
+- Local exact-source release gate PASS on `0e8b3f8787d6d55d1db6846d5a43f79e2a11f8f2`, candidate `d1e9dba3b762544687cb2a8562fe514a870f62f7b2acdbc5c4f85e9420d4f125`: Node 1686/1686, source 261/261, direct domain 19/19, owned isolated PG16 164/164, Chromium 22/22, TypeScript/build PASS, 0 retries/skips; **merge SHA itself NOT RUN**. Native Safari and real iPad NOT RUN.
+- **Not shipped:** production Vercel READY at previous `3def2c3618d1b2a185d39b15df69c1613180751b`. Automatic Git deployments remain disabled. No deployment, prod DB migration, flags or smoke performed; owner deployment authorization pending. Current status checkpoint staged on documentation-only Draft branch.
+
 ## 2026-10-23 — N3-M2 exact-source local release validation PASS (Draft, not released)
 
 - Owner Windows `verify:release:risk -- --base origin/main` on `0e8b3f8787d6d55d1db6846d5a43f79e2a11f8f2`, candidate `d1e9dba3b762544687cb2a8562fe514a870f62f7b2acdbc5c4f85e9420d4f125`, **PASS**: source 261/261, domain 19/19, typecheck, full Node 1686/1686, production build, six owned isolated PG16 partitions 164/164, approved risk browser 22/22 desktop/mobile Chromium with 0 retries/skips. Safe browser PostgreSQL cleanup confirmed.
