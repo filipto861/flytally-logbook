@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C full Node regression source-contract repair (Draft #394)
+
+- Owner-local `npm run verify:app -- --base origin/main` on `dc890c1d9e7e42e927279248f14ab57481fa7650` **FAIL**: 1,670/1,679 Node tests PASS, **9 FAIL**. TypeScript PASS; build NOT RUN due fail-closed pipeline. Prior owned physical PG16 acceptance 164/164 PASS on this SHA; no browser or release PASS.
+- Repaired six **test-only** source-contract files: constrained N1-A/N1 V2/N2-A/N2-A2 CSS ownership assertions to their exact consecutive comment-delimited blocks (preserve negative forbidden-selector and positive responsive/focus/theme checks), reconciled v2.0/v2.3 Statistics expectations with existing Career/all and explicit Custom range signature, updated stale PR340 inventory count 163→164, and preserved actual Git-ref/HEAD preflight fail-closed checks while accounting for pruned historical remote refs. No app/CSS/SQL/runtime code, schema or browser bootstrap changed.
+- Static GitHub source and CSS boundary/positive checks succeeded; exact new branch executable Node suite, TypeScript, build, PostgreSQL revalidation and Playwright **NOT RUN**. No production DB/feature flags, deployment or merge.
+
 ## Unreleased — 2026-10-23, N2-C candidate registry reconciliation (Draft #394)
 
 - Owner-local `verify:iterate` at `8970e020423cb52c8ea5fec7404994f719d38e16` exposed source-contract FAIL (255/259), despite N2-C targeted 11/11, domain 28/28 and TypeScript PASS. Corrected browser selection version from 3 back to the unchanged registered schema protocol 2.
