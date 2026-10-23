@@ -8,6 +8,8 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("N2-C custom date picker applies only after explicit submission",()=>{
   const page=read("app/(protected)/statistics/page.tsx");
+  assert.equal((page.match(/<header className="page-header">/g)??[]).length,1,"Statistics must render one shared masthead");
+  assert.equal((page.match(/\{header\}/g)??[]).length,2,"Both invalid and valid paths use that masthead");
   assert.match(page,/className="statistics-custom-range"/);
   assert.match(page,/<details className="statistics-custom-range" open=\{period==="custom"\}>/);
   assert.match(page,/<form method="get" action="\/statistics" className="statistics-custom-range-form">/);
