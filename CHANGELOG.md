@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-23, N2-C candidate registry reconciliation (Draft #394)
+
+- Owner-local `verify:iterate` at `8970e020423cb52c8ea5fec7404994f719d38e16` exposed source-contract FAIL (255/259), despite N2-C targeted 11/11, domain 28/28 and TypeScript PASS. Corrected browser selection version from 3 back to the unchanged registered schema protocol 2.
+- New pilot-insights integration test adds a real third SQL case. Updated only its reviewed canonical-LF SHA-256 and test count from 2 to 3 in the strict PostgreSQL inventory; shared-core 123→124, total 163→164 over the same 42 files and six physically owned partitions. Updated inventory validator, owned executor expected TAP/planned counts and regression tests; no source safeguards, tests or fixtures removed.
+- New branch tests and candidate release gate NOT RUN; no production database, migrations, flags, deployment or merge. Previous 163/163 historical PostgreSQL observations must not be applied to the new 164-case candidate.
+
 ## Unreleased — 2026-10-23, N2-C PostgreSQL cleanup safety (Draft #394)
 
 - Closed direct-test cleanup fail-closed gap: a malformed or remote `DATABASE_URL` rejected by the integration test preflight no longer permits its `after()` hook to issue a `DROP SCHEMA` SQL statement. Cleanup is permitted only after the loopback URL check; partial fixture setup on a validated local database can still be cleaned up. Added source regression assertion in `tests/logbook-n2c-custom-range.test.ts`.
