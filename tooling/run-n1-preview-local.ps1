@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$expectedBranch = "feat/logbook-n1a-modern-navigation-20261023"
+$allowedBranches = @("feat/logbook-n1a-modern-navigation-20261023","feat/logbook-n2a-surface-consistency-20261023")
 $envNames = @(
   "PATH", "DATABASE_URL", "FLYTALLY_LOCAL_POSTGRES",
   "FLYTALLY_AUTH_BROWSER", "FLYTALLY_CURRENCY_V21_BROWSER",
@@ -61,8 +61,8 @@ function Find-PostgresBin {
 
 Push-Location $repoRoot
 try {
-  if ((& git branch --show-current).Trim() -ne $expectedBranch) {
-    throw "Wrong Git branch; switch to $expectedBranch first. No database created."
+  if ($allowedBranches -notcontains (& git branch --show-current).Trim()) {
+    throw "Wrong Git branch; switch to N1 or N2 preview candidate first. No database created."
   }
   Assert-Exit "Git branch inspection"
   # Next.js itself rewrites next-env.d.ts during local development.
