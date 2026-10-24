@@ -29,7 +29,9 @@
     "verify:browser:with-build": "node tooling/verify-browser-with-build.mjs",
     "verify:iterate": "node tooling/verify-iterate.mjs",
     "verify:browser:risk": "node tooling/verify-browser-risk.mjs",
-    "verify:release:risk": "node tooling/verify-release-risk.mjs"
+    "verify:release:risk": "node tooling/verify-release-risk.mjs",
+    "audit:design": "node tooling/design-quality-audit.mjs",
+    "test:design-audit": "node --test tooling/design-quality-audit.test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
