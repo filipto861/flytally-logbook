@@ -14,7 +14,7 @@
 - `lib/data/dashboard.ts` must stay byte-identical to main. Protected v2.3 large-logbook tests ban adding `jsonb_agg` or `month_key` to the lean `getDashboardOverviewData` SQL. An initial in-progress edit added aggregation there, was **reverted before the PR**, and the current file was fetched from main and restored. Do NOT reintroduce the performance regression.
 - V11 preview reads `getDashboardData(session.userId,"all")` **instead of** the legacy overview read (one application data query for the selected view); its monthly source is the canonical historical Statistics aggregation using `activity_minutes`, `logged_minutes`, `dashboard_total` and `evidence`. It may be expensive and is intentionally a protected opt-in prototype gate. **No default rollout or performance PASS before validating/replacing it with a bounded query that preserves exact aviation semantics.**
 - `lib/dashboard-pace.ts` is pure UTC month-series and completed comparison helper; duplicate, negative or malformed rows and non-date flight evidence result in Unavailable, not fabricated zero/currency.
-- Isolated scoped stylesheet imports after `ui-system.css`, preserving all prior effective CSS outside `.d1v11-*`. No new npm dependencies, theme tokens or color libraries.
+- Isolated scoped stylesheet imports **before** canonical final `ui-system.css`, preserving original cascade ownership outside `.d1v11-*`. No new npm dependencies, theme tokens or color libraries.
 
 ## Files changed in current branch
 - `lib/dashboard-pace.ts` (new)
@@ -29,7 +29,8 @@
 ## Test/evidence ledger at current work
 - GitHub file create/update success and read-back: commit-backed source exists.
 - Source-only candidate audit of existing v1341/v170/N2-B/v230 contracts: manual inspection, no automatic real test execution, **ADVISORY**.
-- New `tests/d1-v11-dashboard-pace.test.ts`: added but **NOT RUN**; tests 24 UTC months, 25th source month comparison, empty/invalid/zero, categories and legacy preview.
+- New `tests/d1-v11-dashboard-pace.test.ts`: added but repository test runner **NOT RUN**; tests 24 UTC months, 25th source month comparison, empty/invalid/zero, out-of-window activity, category and legacy preview.
+- Isolated **exact-source helper** exercise: after adding the out-of-window source-row fix, local copy of `lib/dashboard-pace.ts` matched GitHub file length **2421 UTF-16 code units** and FNV-1a hash **0x17a61515**. In Node 22 with `--experimental-strip-types`, 5/5 focused direct-source pure-function tests **PASS** (calendar bounds, category split, invalid/duplicate/negative, zero comparison and empty/out-of-window, year rollover). This is NOT the registered repository test runner or a Next.js test; no claim of TypeScript app acceptance.
 - TypeScript/build/Next authenticated Chromium with test PG16/100k performance/risk plan/native Safari/VoiceOver/200% zoom/CI: **NOT RUN**. Do not imply production functional success from branch or prototype.
 - DB/migrations/flags: NO CODE CHANGE; production DB state UNKNOWN. Production Vercel last read READY deployment `dpl_ABShRChWDdg4oCzuygKMvQHX3oSe` at main SHA, not V11. No merge, deploy, migration, flag change, unrelated repo writes.
 
