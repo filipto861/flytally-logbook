@@ -32,9 +32,9 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
       </section>
       <section className="d1v11-recency" aria-labelledby="d1v11-recency-title">
         <div className="d1v11-recency-top"><span className="d1v11-kicker">LICENCES & RECENCY</span><span className="d1v11-recency-state">{recencySnapshot?"SAVED SNAPSHOT":"NOT ASSESSED"}</span></div>
-        <h2 id="d1v11-recency-title">{recencySnapshot?"Review your recency":"Not assessed"}</h2>
-        <p className="d1v11-recency-detail">{recencySnapshot?recencySnapshot.label:"No saved recency assessment is available."}</p>
-        {recencySnapshot?<p className="d1v11-recency-freshness">Snapshot {recencySnapshot.generatedAt.slice(0,10)} · Verify underlying evidence</p>:null}
+        <h2 id="d1v11-recency-title">{recencySnapshot?"Recency review":"Not assessed"}</h2>
+        <p className="d1v11-recency-detail">{recencySnapshot?`Saved result: ${recencySnapshot.label}`:"No saved recency assessment is available."}</p>
+        {recencySnapshot?<p className="d1v11-recency-freshness">Captured {recencySnapshot.generatedAt.slice(0,10)} · Open to verify current evidence</p>:null}
         <Link className="d1v11-recency-link" href="/credentials">Open licences & recency <span aria-hidden="true">→</span></Link>
         {attentionCount>0||actionCount>0?<div className="d1v11-attention" aria-label="Items requiring attention">
           {attentionCount>0?<Link href="/flights/needs-attention">{numberLabel(attentionCount,"flight needs","flights need")} review <span aria-hidden="true">→</span></Link>:null}
