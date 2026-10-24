@@ -91,10 +91,19 @@ test("D1-V11 opt-in preview preserves the legacy preference editor and protected
   assert.match(editorial,/href="\/flights\/needs-attention"/);
   assert.match(editorial,/href="\/actions"/);
   assert.match(editorial,/d1v11-latest/);
-  assert.match(editorial,/Saved result:/,"snapshot result must be explicitly historical");
-  assert.match(editorial,/Captured /,"recency date is shown alongside its saved result");
-  assert.match(editorial,/Historical snapshot/,"historical snapshot headline must be prominent");
-  assert.match(editorial,/Not a current clearance/,"historical result must not imply live recency validity");
+  assert.match(editorial,/LAST CHECK/,"persisted status must be labelled as a last check");
+  assert.match(editorial,/OK at last check/,"green only describes the previous assessment");
+  assert.match(editorial,/Due soon at last check/,"warning must not claim current expiry");
+  assert.match(editorial,/Needs review/,"ambiguous attention must never be labelled Not current");
+  assert.match(editorial,/Not assessed/,"missing evidence must remain neutral");
+  assert.match(editorial,/Recheck before flight/,"no stale snapshot may imply live clearance");
+  assert.match(editorial,/formatDateOnly\(recencySnapshot\.generatedAt\.slice\(0,10\)\)/,"timestamp of previous assessment must remain visible");
+  assert.match(editorial,/d1v11-recency-marker/,"status is identifiable without relying on color alone");
+  assert.doesNotMatch(editorial,/recencyHeadline=.*Not current/,"attention is not proof of NOT CURRENT");
+  assert.match(css,/\.d1v11-recency--ok\{--d1v11-recency-tone:var\(--success-text\)/);
+  assert.match(css,/\.d1v11-recency--warning\{--d1v11-recency-tone:var\(--warning-text\)/);
+  assert.match(css,/\.d1v11-recency--review\{--d1v11-recency-tone:var\(--danger-text\)/);
+  assert.match(css,/\.d1v11-recency--unknown\{--d1v11-recency-tone:var\(--muted\)/);
   assert.ok(layout.indexOf('import "./dashboard-editorial.css"')<layout.indexOf('import "./ui-system.css"'),
     "ui-system.css must remain the final canonical stylesheet");
   assert.match(pace,/role="slider"/);
