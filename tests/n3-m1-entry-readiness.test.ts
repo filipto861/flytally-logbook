@@ -114,7 +114,7 @@ test("G3 GPS source reading has accessible pending feedback and stale-result-saf
   assert.match(gps,/\[readingSource,setReadingSource\]=useState\(false\)/);
   assert.match(gps,/title=\{readingSource\?"Reading GPS track…":!analysis\?/);
   assert.match(gps,/description=\{readingSource\?"Reading the selected GPS file\. You can choose another track\.":!analysis\?/);
-  assert.match(gps,/setSourceError\(""\);setAnalysis\(null\);setReadingSource\(Boolean\(file\)\)/);
+  assert.match(gps,/setSourceError\(""\);setAnalysis\(null\);setReviews\(\[\]\);setReadingSource\(Boolean\(file\)\)/,"old flight preview resets before G3 reading status; keep D2-C.1");
   assert.match(gps,/readingSource\?<p className="gps-track-source-status" role="status">Reading GPS track… You can choose another file\.<\/p>/);
   assert.match(gps,/if\(epoch!==fileEpoch\.current\)return;let next:Analysis/,"an older read cannot publish analysis");
   assert.match(gps,/catch\{if\(epoch===fileEpoch\.current\)\{setReadingSource\(false\);setSourceError\("Unable to read/);
