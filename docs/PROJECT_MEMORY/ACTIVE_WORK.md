@@ -1,5 +1,26 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — GPS saving is top everyday UI priority (owner correction, Draft #404)
+
+- Baseline main `e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; Vercel production `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` READY. Docs branch `docs/logbook-core-ui-consistency-priority-20261024`, [Draft PR #404](https://github.com/filipto861/flytally-logbook/pull/404), no merge/deploy. Latest owner decision **GPS upload → explicit one-flight review → Save draft or Save & certify → definitive saved detail** is used the most; supersedes earlier general UI and Manual-first emphasis. Manual entry second, rest of UI third. Multiple-GPS-flight editor redesign deferred; GPS error Draft #403 separate/unmerged.
+- Source reconstruction complete on current main; one bottom unready `Complete flight details` scrolls to GPS review card rather than necessarily to missing aircraft/role control — **hypothesis from source**, not reproduced. Existing top direct-to-missing links, pending buttons and server verification preserved. Older N3-D0 ~4,099px single-flight selected screenshot at 390px documents historical density, not verified current runtime.
+- Canonical [G0–G2 GPS save first plan](../product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md) defines exact owner-local synthetic one-flight save/certify/failure/redirect browser acceptance and subsequent targeted UX batch. No code changed; all current browser/Node/PG/native Safari **NOT RUN**, docs-only tests N/A.
+- **ONE NEXT STEP:** owner-local G0 authenticated browser visual/save evidence on exact main and disposable verified localhost DB. No prod SQL/migrations/flags, Training, merge/deploy.
+
+## 2026-10-24 — UI priority refined: routine Manual New Flight FIRST (Draft #404)
+
+- Verified `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; work `docs/logbook-core-ui-consistency-priority-20261024` in [Draft PR #404](https://github.com/filipto861/flytally-logbook/pull/404), docs-only / unmerged. Vercel production remains READY on earlier runtime `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`; no prod DB/migration/flag/deploy changes.
+- Owner priority: common `/flights/new` Manual entry/PIC/DUAL/SAFETY PILOT + edit parity FIRST; other classic UI only later. F0 read-only source/browser audit, F1 small measured UI fix, F2 Edit regression, F3 generic shell/cards/pages, F4 release gate. Preserve flight integrity and server contracts. GPS Draft #403 paused and N3-M3 postponed. Historical Drafts #377–#380 unchanged.
+- Current source inspected; previous screenshots historical only, **fresh F0 browser/keyboard/cascade/native Safari NOT RUN**, runtime/tests/build/PG N/A for docs-only change. [Detailed F0–F4 plan](../product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md).
+- **ONE NEXT STEP:** isolated synthetic F0 Manual flight entry current-main baseline, then choose first actionable F1 change from actual rendered evidence.
+
+## 2026-10-24 — Core everyday UI consistency is owner's next priority (plan only)
+
+- Main `e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; production Vercel READY `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` on previous runtime SHA `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. New docs-only work branch `docs/logbook-core-ui-consistency-priority-20261024`. Full PR and final branch HEAD must be verified.
+- Owner direction: ordinary Logbook UI, not multi-GPS-flight editor. Proposed C0–C4 from baseline/audit to measured typography/layout, navigation/CTA, cards/detail consistency, accessibility acceptance. [Detailed priority proposal](../product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md). Preserve FlyTally identity; no automatic flight values, no GPS and no Training changes.
+- Existing [Draft #403](https://github.com/filipto861/flytally-logbook/pull/403) **paused/unmerged**. Historical U0/U1/U2/mobile #377–#380 not ready to merge on latest main; ~235 main commits ahead of their base, test results nontransferable.
+- Source review DONE; current authenticated UI, computed cascade, Node/TS/Playwright/PG, native Safari **NOT RUN**. Production DB/migrations/flags/deploy unchanged. **ONE NEXT STEP:** approve C0 read-only full everyday-workspace UI snapshot, then choose a targeted C1 fix based on observed evidence.
+
 ## 2026-10-24 — FlyTally Design Quality V2 review branch (separate from product/release streams)
 
 - **Scope:** owner wants all useful Woodcomp V3 design-quality methods available in FlyTally Logbook, adapted to its own Apple Design skills and aviation workflow. New [Draft PR #402](https://github.com/filipto861/flytally-logbook/pull/402), `docs/flytally-design-quality-v2-20261024`, base `main@5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. PR HEAD at initial creation `f5aa91dfa7d5bc224bc66d9148f3f57f6d8a9e37`; refresh after memory checkpoint.
