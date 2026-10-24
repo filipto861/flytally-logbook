@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-24 — D1-V11 independent review reconciliation (Draft PR #410; NOT RELEASED)
+- Owner-supplied read-only DeepSeek review returned **BLOCK** for releasing/default-promoting V11. Code risk in previous heavy `getDashboardData` preview accepted, though no actual latency failure was measured.
+- Staged source-only fix: V11 now combines existing optimized `getDashboardOverviewData` with a separate user-scoped **25-month bounded** `getDashboardPaceData`, returning monthly Total/ULL/EASA only. Source-copy canonical formulas for `dashboard_total`, `auxiliary`, `logged_minutes` and `activity_minutes`; current month remains MTD. Existing lean Dashboard SQL remains unchanged.
+- Strengthened historical recency warning without making regulatory CURRENT claim. Malformed dates lexically located in window cause Unavailable; unplaceable invalid dates cannot be asserted in/out of a period. Added 25-month parity tests and static bounded read/ARIA guards (all **NOT RUN** on current PR SHA).
+- Review reconciliation: `docs/product/LOGBOOK_D1_V11_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-24.md`. Actual PG16 100k EXPLAIN ANALYZE, typecheck, Node24 test suite, Next build, authenticated Chromium, zoom, native Safari, production smoke and CI **NOT RUN**; performance **NOT VERIFIED**. No migration, feature flags, merge, deployment, Training or production DB changes.
+
 **2026-10-24 — D1-V11 Draft #410 review refinement (NOT RELEASED):** Fixed out-of-window Flying Pace false activity, added targeted boundary assertions, restored canonical final `ui-system.css` import order and labeled saved Recency as historic evidence. Verified exact helper code hash and ran local Node22 isolated pure-function 5/5 PASS plus standalone TypeScript 5.8.3 `tsc --noEmit` on that helper PASS. Repository test runner, full TypeScript/Next build/100k/PostgreSQL/Playwright/native Safari **NOT RUN**. Read-only DeepSeek request staged, response pending. No merge/deploy/DB/flags.
 
 ## 2026-10-24 — D1-V11 Editorial Dashboard candidate (Draft #410 / NOT RELEASED)
