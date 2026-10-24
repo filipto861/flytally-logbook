@@ -40,18 +40,17 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
 
   const session=await requireUser();
   const[data,settings,attentionItems,actionCount]=await Promise.all([
-    getDashboardOverviewData(session.userId,"all"),
+    params.view==="v11"?getDashboardData(session.userId,"all"):getDashboardOverviewData(session.userId,"all"),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     getIntelligentLogbookAttention(session.userId),
     getPendingActionCount(session.userId),
   ]);
   const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),hasSavedLayout=Array.isArray(preferences.dashboard_widgets)&&preferences.dashboard_widgets.length>0,layout=hasSavedLayout?dashboardOverviewLayout(savedLayout):defaultDashboardOverviewLayout(),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
   // Preview is opt-in and URL-only. No destructive migration or silent rewrite of saved dashboard_widgets.
-  if(params.view==="v11"){
-    // Reuse the source-backed monthly Statistics aggregation for a reversible preview.
-    // The original lean Dashboard query is intentionally unchanged (v2.3 scale contract).
-    const paceSource=await getDashboardData(session.userId,"all");
-    const pace=buildDashboardPace(paceSource.monthly.map(item=>({month:item.month,total:item.total,ull:item.ull,easa:item.easa})),new Date(),paceSource.invalidDateFlights);
+  if(params.view==="v11"&&"monthly" in data){
+    // Reuse the source-backed monthly Statistics aggregation only in the opt-in view.
+    // Classic Dashboard still uses the unchanged lean v2.3 overview query.
+    const pace=buildDashboardPace(data.monthly.map(item=>({month:item.month,total:item.total,ull:item.ull,easa:item.easa})),new Date(),data.invalidDateFlights);
     return <div className="ui-page-stack"><nav aria-label="Dashboard view"><Link href="/dashboard" className="secondary-link">← Classic dashboard</Link></nav><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace}/></div>;
   }
   const renderWidget=(id:DashboardWidgetId)=>{
