@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-24 — G3 accessible GPS file read-progress feedback (DRAFT / UNRELEASED)
+
+- Owner reports production G2 GPS error/retry works on `fly-tally.com`, Vercel `dpl_9e1Dhr7HdC67jMeSEA2vz5jxLUL5` READY `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6`. This owner smoke is narrower than native Safari or automated live error injection.
+- New G3 branch `fix/logbook-gps-file-read-pending-g3-20261024` signals **Reading GPS track…** from the established GPS Entry Review while native file reading is pending. Existing native upload/change picker remains available and later result of an older pending file cannot overwrite a more recently chosen one. Clear status on success/read/inspect error, retain G2 shared alert, G1 first-missing-field focus and flight/track persistence. Uses existing status styling; motion NONE, no parser/server/DB/flags/deploy/Training modifications.
+- Source 49/49 regex expectations and browser JS parse **static/advisory only**; real Node/TypeScript/build/isolated PG16/authenticated Chromium/native Safari NOT RUN. [Exact G3 scope and tests](docs/product/LOGBOOK_GPS_G3_FILE_READING_FEEDBACK_2026-10-24.md).
+
 ## 2026-10-24 — G2 one shared accessible GPS error alert (DRAFT #406, retest pending)
 
 - Owner's Windows v1 pre-DB gate failed **99 PASS / 1 FAIL**: historical UI consistency test requires exactly one `role="alert"` per GPS form, whereas G2 initially added a second source read error alert. Source fix combines source/read/parse and server save error in one alert near source controls, keeps existing server error focus/visibility and fail-closed picker retry, removes duplicate bottom alert JSX. Existing `tests/v327-ui-ux-consistency-audit.test.ts` unchanged; targeted G2 test extended to enforce one combined alert and original server focus.
