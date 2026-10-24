@@ -8,12 +8,12 @@ Current V11 reads **only** persisted `RecencySnapshot` from `preferences_json`: 
 ## Frozen UI mapping for this UI-only batch
 | Persisted source | Dot / token | Large status text | Interpretation |
 | --- | --- | --- | --- |
-| snapshot `ok` | green `--success-text` | **OK at last check** | Historical result only, not CURRENT |
-| snapshot `warning` | amber `--warning-text` | **Due soon at last check** | Historical configurable monitor warning, not newly computed expiry |
-| snapshot `attention` | red `--danger-text` | **Needs review** | Some reviewed item requires attention; NOT necessarily NOT CURRENT |
+| snapshot `ok` | green `--success-text` | **Last check: OK** | Historical result only, not CURRENT |
+| snapshot `warning` | amber `--warning-text` | **Last check: Due soon** | Historical configurable monitor warning, not newly computed expiry |
+| snapshot `attention` | red `--danger-text` | **Last check: Needs review** | Some reviewed item requires attention; NOT necessarily NOT CURRENT |
 | absent / invalid snapshot | grey `--muted` | **Not assessed** | No trustworthy snapshot; never green |
 
-The heading `LICENCES & RECENCY` remains without an extra redundant header badge. The main label explicitly says **at last check**, and a visible **Saved [date] · Recheck before flight** line prevents presenting the snapshot as live. One prominent high-tap-target `Check recency →` route navigates to `/credentials`. Status communicated in text as well as color. No stacked `SAVED SNAPSHOT` + `Historical snapshot` + `Saved result:` + legal paragraph. Compact h2 and 15px colored indicator; existing card/background/layout and mobile-first order remain. Link stays at least 44px. Motion decision **NONE**.
+The heading `LICENCES & RECENCY` remains without an extra redundant header badge. The large heading starts with **Last check:** (except when no assessment exists). A single **[date] · Verify before flight** line conveys that the result is historical, without the redundant word Saved. When no snapshot exists, the status is **Not assessed** and no misleading date/detail line is shown. One prominent high-tap-target `Check recency →` route navigates to `/credentials`. Status communicated in text as well as color. No stacked `SAVED SNAPSHOT` + `Historical snapshot` + `Saved result:` + legal paragraph. Compact h2 and 15px colored indicator; existing card/background/layout and mobile-first order remain. Link stays at least 44px. Motion decision **NONE**.
 
 **Explicit deferral:** User's exact red **Not current** label is applicable only when future source contracts can show a *specific* unequivocally not-current evaluation; no such discriminator exists in the persisted snapshot. A future separately reviewed source-backed live/current read model may enable true `Current / Expiring soon / Not current / Incomplete evidence` without changing regulator meaning. Do not map `attention` to `not-current` or auto-refresh/silently mutate snapshot in this UI fix.
 
