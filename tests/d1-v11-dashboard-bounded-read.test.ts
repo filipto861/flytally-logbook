@@ -14,9 +14,10 @@ test("D1-V11 does not invoke unbounded Statistics aggregation",()=>{
   assert.doesNotMatch(page,/getDashboardData\(/);
   assert.doesNotMatch(monthly,/\bgetDashboardData\(/, "bounded module must not call heavy Statistics data");
   assert.match(monthly,/WHERE f\.user_id=\$\{userId\}/, "new read must be user-scoped");
-  assert.match(monthly,/f\.date::text>=\$\{startDate\}/);
-  assert.match(monthly,/f\.date::text<\$\{endExclusive\}/);
+  assert.match(monthly,/f\.date>=\$\{startDate\}/);
+  assert.match(monthly,/f\.date<\$\{endExclusive\}/);
   assert.match(monthly,/dashboard-pace-25-month/);
+  assert.doesNotMatch(monthly,/f\.date::text\s*[<>]=?/, "date filter must remain index-eligible");
   assert.doesNotMatch(monthly,/top_airports|top_aircraft|top_routes|yearly/, "no unrelated Analytics aggregates");
 });
 
