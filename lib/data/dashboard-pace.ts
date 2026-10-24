@@ -7,7 +7,7 @@ export type DashboardPaceData={months:PaceMonth[]|null;invalidWindowDates:number
 
 /**
  * Preview-only, user-scoped 25-calendar-month projection. Never call the full
- * getDashboardData() Statistics read here. The source formulas below mirror the
+ * full Statistics history read here. The source formulas below mirror the
  * canonical getDashboardOverviewData/getDashboardData flight role, evidence,
  * logged_minutes and safety-pilot activity_minutes contracts.
  *
