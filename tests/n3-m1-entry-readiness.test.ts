@@ -99,9 +99,11 @@ test("G2 GPS source failures announce a safe error, fail closed, and retain G1 i
   assert.match(gps,/if\(!file\)return;let source:string/);
   assert.match(gps,/try\{source=await file\.text\(\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
   assert.match(gps,/try\{next=inspect\(source,file\.name\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
-  assert.match(gps,/sourceError\?<p className="form-error" role="alert">\{sourceError\}<\/p>/);
+  assert.match(gps,/sourceError\|\|state\.error\?<p ref=\{errorRef\} className="form-error" role="alert" tabIndex=\{-1\}>\{sourceError\|\|state\.error\}<\/p>/);
   assert.match(gps,/Unable to read the selected GPS file/);
   assert.match(gps,/Unable to process the selected GPS file/);
+  assert.equal((gps.match(/role="alert"/g)??[]).length,1,"Only one form-level alert supports both source and server errors");
+  assert.match(gps,/if\(state\.error\)\{markDirty\(\);errorRef\.current\?\.focus\(\)\}/,"Original server error focus behavior remains");
   assert.doesNotMatch(gps,/catch\{return\}/);
   assert.match(gps,/if\(firstIssue\)\{firstIssue\.onSelect\(\);return\}/,"G1 completion focus must survive G2 change");
 });
