@@ -31,5 +31,5 @@ export function buildDashboardPace(rows:readonly PaceMonth[]|null,asOf:Date=new 
       percentChange:previousMinutes>0?Math.round(((currentMinutes-previousMinutes)/previousMinutes)*100):null,
     };
   }
-  return {status:rows.length===0?"empty":"available",months,comparisons,currentMonth:keys[24]};
+  return {status:months.some(month=>provided.has(month.month))?"available":"empty",months,comparisons,currentMonth:keys[24]};
 }
