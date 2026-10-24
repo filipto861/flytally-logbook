@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-24 — D1-V11 Editorial Dashboard production opt-in release (MERGED & DEPLOYED)
+- User approved *both* merge and manual production release of [PR #410](https://github.com/filipto861/flytally-logbook/pull/410) as **reversible opt-in**, not as default. Squash-merged previously tested source `4e178740f16b229ab90e74f3be3b5f3e2c70d1a3` into `main@2f7aaa07ecd7ecf1de200f08094a72b95e1e44f7`. 19 diff files, no DB schema/migration/flag changes.
+- Vercel deployment `dpl_GSWQnZ7vf7KU58cfqVyZ8sfSkhYp` manually created against exact merge SHA; **READY** at 2026-10-24 19:54:19Z, alias `fly-tally.com` confirmed and error-free. No runtime error/fatal logs recorded at inspection time. Public HTTP/authenticated end-to-end smoke not independently available because assistant's network/DNS probe failed; native iPad Safari/VoiceOver remains UNVERIFIED.
+- `/dashboard?view=v11` exposes editorial grouping, Latest Flight, explicit historical recency warning, real conditional attention, and 24-month Total/ULL/EASA Flying Pace with comparison. `/dashboard` remains Classic default with its saved widget layout untouched. Release candidate `e95f53ab6ae8ac70eb57089ec89f0744f6b9f614362179dc86fa791595d512a7` canonical local release `PASS` (1700/1700 Node, source/domain/TS, PG16, Chromium, build); unchanged SQL 100k benchmark at earlier SHA PASS within bounded test distribution. Historical D1-V11 Draft entries below remain accurate for their dates but are superseded as release status.
+- **Next:** owner-authenticated live production smoke on both Dashboard URLs; default V11 replacement requires new explicit approval and new code/tests.
+
 ## 2026-10-24 — D1-V11 independent review reconciliation (Draft PR #410; NOT RELEASED)
 - Owner-supplied read-only DeepSeek review returned **BLOCK** for releasing/default-promoting V11. Code risk in previous heavy `getDashboardData` preview accepted, though no actual latency failure was measured.
 - Staged source-only fix: V11 now combines existing optimized `getDashboardOverviewData` with a separate user-scoped **25-month bounded** `getDashboardPaceData`, returning monthly Total/ULL/EASA only. Source-copy canonical formulas for `dashboard_total`, `auxiliary`, `logged_minutes` and `activity_minutes`; current month remains MTD. Existing lean Dashboard SQL remains unchanged.
