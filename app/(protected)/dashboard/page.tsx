@@ -4,7 +4,7 @@ import { DashboardEditor } from "@/components/dashboard-editor";
 import { DashboardEditorial } from "@/components/dashboard-editorial";
 import { buildDashboardPace } from "@/lib/dashboard-pace";
 import { requireUser } from "@/lib/auth/require-user";
-import { formatDuration,getDashboardOverviewData } from "@/lib/data/dashboard";
+import { formatDuration,getDashboardOverviewData,getDashboardData } from "@/lib/data/dashboard";
 import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
 import { dashboardLayoutFromPreferences,dashboardOverviewLayout,defaultDashboardOverviewLayout,type DashboardWidgetId } from "@/lib/dashboard-widgets";
@@ -47,7 +47,13 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   ]);
   const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),hasSavedLayout=Array.isArray(preferences.dashboard_widgets)&&preferences.dashboard_widgets.length>0,layout=hasSavedLayout?dashboardOverviewLayout(savedLayout):defaultDashboardOverviewLayout(),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
   // Preview is opt-in and URL-only. No destructive migration or silent rewrite of saved dashboard_widgets.
-  if(params.view==="v11")return <div className="ui-page-stack"><nav aria-label="Dashboard view"><Link href="/dashboard" className="secondary-link">← Classic dashboard</Link></nav><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={buildDashboardPace(data.paceMonths,new Date(),data.invalidPaceDates)}/></div>;
+  if(params.view==="v11"){
+    // Reuse the source-backed monthly Statistics aggregation for a reversible preview.
+    // The original lean Dashboard query is intentionally unchanged (v2.3 scale contract).
+    const paceSource=await getDashboardData(session.userId,"all");
+    const pace=buildDashboardPace(paceSource.monthly.map(item=>({month:item.month,total:item.total,ull:item.ull,easa:item.easa})),new Date(),paceSource.invalidDateFlights);
+    return <div className="ui-page-stack"><nav aria-label="Dashboard view"><Link href="/dashboard" className="secondary-link">← Classic dashboard</Link></nav><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace}/></div>;
+  }
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
     if(id==="ull-time")return <CategoryCard title="ULL" data={data.ull}/>;
