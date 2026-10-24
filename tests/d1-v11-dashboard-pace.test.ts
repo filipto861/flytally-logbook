@@ -91,7 +91,7 @@ test("D1-V11 opt-in preview preserves the legacy preference editor and protected
   assert.match(editorial,/href="\/flights\/needs-attention"/);
   assert.match(editorial,/href="\/actions"/);
   assert.match(editorial,/d1v11-latest/);
-  assert.match(editorial,/LAST CHECK/,"persisted status must be labelled as a last check");
+  assert.doesNotMatch(editorial,/SAVED SNAPSHOT|Historical snapshot|Saved result:/,"avoid redundant historical snapshot labels");
   assert.match(editorial,/OK at last check/,"green only describes the previous assessment");
   assert.match(editorial,/Due soon at last check/,"warning must not claim current expiry");
   assert.match(editorial,/Needs review/,"ambiguous attention must never be labelled Not current");
