@@ -54,6 +54,32 @@ test("D1-V11 malformed or unaccounted date evidence fails closed",()=>{
   assert.equal(buildDashboardPace([sample("2026-09",10)],asOf,1).status,"unavailable");
 });
 
+test("D1-V11 25-source-month canonical fixture maps exactly to 24 displayed UTC months",()=>{
+  const monthKeys=Array.from({length:25},(_,i)=>{
+    const date=new Date(Date.UTC(2024,9+i,1));
+    return date.toISOString().slice(0,7);
+  });
+  const canonicalMonthly=monthKeys.map((month,i)=>{
+    const ull=i===1?0:i*5,easa=i===1?0:i*7;
+    return {month,total:ull+easa,ull,easa};
+  });
+  const result=buildDashboardPace([
+    {month:"2024-09",total:9000,ull:4000,easa:5000},
+    ...canonicalMonthly,
+  ],asOf);
+  assert.equal(result.status,"available");
+  assert.deepEqual(result.months,canonicalMonthly.slice(1),
+    "plot must preserve exactly the source aggregation for 24 visible months");
+  for(const category of ["total","ull","easa"] as const){
+    assert.equal(result.comparisons?.[category].previousMinutes,
+      canonicalMonthly.slice(0,12).reduce((sum,row)=>sum+row[category],0));
+    assert.equal(result.comparisons?.[category].currentMinutes,
+      canonicalMonthly.slice(12,24).reduce((sum,row)=>sum+row[category],0));
+  }
+  assert.equal(result.months[0].total,0,"valid in-window zero-minute month is preserved");
+  assert.equal(result.months.at(-1)?.month,"2026-10","current partial month is plotted, not compared");
+});
+
 test("D1-V11 opt-in preview preserves the legacy preference editor and protected routes",()=>{
   const page=read("app/(protected)/dashboard/page.tsx"),editorial=read("components/dashboard-editorial.tsx"),pace=read("components/dashboard-pace.tsx"),css=read("app/dashboard-editorial.css"),layout=read("app/layout.tsx");
   assert.match(page,/params\.view==="v11"/);
@@ -67,6 +93,8 @@ test("D1-V11 opt-in preview preserves the legacy preference editor and protected
   assert.match(editorial,/d1v11-latest/);
   assert.match(editorial,/Saved result:/,"snapshot result must be explicitly historical");
   assert.match(editorial,/Captured /,"recency date is shown alongside its saved result");
+  assert.match(editorial,/Historical snapshot/,"historical snapshot headline must be prominent");
+  assert.match(editorial,/Not a current clearance/,"historical result must not imply live recency validity");
   assert.ok(layout.indexOf('import "./dashboard-editorial.css"')<layout.indexOf('import "./ui-system.css"'),
     "ui-system.css must remain the final canonical stylesheet");
   assert.match(pace,/role="slider"/);
