@@ -26,3 +26,16 @@ Motion **NONE**. Reuse existing FlyTally light/dark tokens, 11px controls/17px s
 
 **ROADMAP amendment PROPOSED, not canonical yet:** D1 visual choice A/B/C → independent read-only DeepSeek/Claude critique of frozen visual/compatibility contract → small D1-V4 implementation PR+exact-SHA risk verification → separate merge approval and deployment approval → D2 Flights list → D3 Add Flight GPS + Manual.
 **ONE NEXT STEP:** obtain owner feedback on A/B/C visual concept, freeze A (recommended) or alternative, then independent read-only review before implementation.
+
+
+## 2026-10-24 — Final editorial design direction V9 after owner feedback (visual stage only)
+
+Owner progressively accepted Editorial A, requested stronger Recency, **permanent Add flight in left panel**, removal of empty descriptive microcopy, compact single Latest Flight, and removal of the artificial/duplicated Quick Actions panel. V7 Quick Actions rejected, V8 visually accepted as direction; latest flight should live **inside the same visual card** as primary totals. V9 standalone prototype and user-persona design audit were produced **locally in this ChatGPT conversation**:
+- `FlyTally_Dashboard_D1_Final_Editorial_V9.html` (visual interactive synthetic mock; Light/Dark and sample/empty account toggles; navigation intentionally inert).
+- `FlyTally_D1_Final_Editorial_Design_Audit.md` (Apple Design V2 / Design Quality V2 human scenarios and implementation gates).
+
+V9 structure: unchanged prominent Add flight in the left navigation (mobile header when sidebar collapses), a single Flying Summary card displaying total+ULL/EASA and a **compact integrated last-flight row**, and a separate prominent Recency panel with explicit **Not assessed** when no verified snapshot. No Quick Actions duplicated on the mock. The real application's outstanding action/data-quality signals **must still be preserved conditionally** when there are actual unresolved items, not removed silently. User's existing saved `dashboard_widgets` must never be destroyed or silently replaced; on-page Customize retirement needs a reversible user-choice path.
+
+**Evidence:** local Chromium `page.set_content` rendered 320/390/768/1024/1440/1600 at Light and Dark (12 combinations); 12/12 document horizontal overflow=0, single Latest row, Add flight present, two main cards. Prototype sample/empty and theme controls worked. This is **PROTOTYPE PASS only**, not real Next.js app acceptance. Real CSS cascade/authenticated browser/production smoke/typecheck/build/Node/PG/native Safari/VoiceOver/night/200% zoom **NOT RUN**. Existing main G3 prod stays at `470656f01ce9d8999d7dff5dbf3a2474c7b2e4d9`, Vercel `dpl_ABShRChWDdg4oCzuygKMvQHX3oSe` READY. No code, merge/deploy/DB/flags/Training changes.
+
+**ONE NEXT STEP:** owner reviews V9 mock and accepts/revises final visual composition; then submit revised ROADMAP and independent read-only review of compatibility before a new implementation PR.
