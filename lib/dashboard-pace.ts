@@ -8,7 +8,7 @@ const formatInterval=(start:string,end:string)=>`${start} – ${end}`;
 const categoryNames=["total","ull","easa"] as const;
 
 export function buildDashboardPace(rows:readonly PaceMonth[]|null,asOf:Date=new Date(),invalidDateFlights=0):DashboardPaceView{
-  const invalid={status:"unavailable",months:[],comparisons:null,currentMonth:"",reason:"Monthly flight data is unavailable."} as const;
+  const invalid:DashboardPaceView={status:"unavailable",months:[],comparisons:null,currentMonth:"",reason:"Monthly flight data is unavailable."};
   if(!Number.isFinite(asOf.getTime())||rows===null||invalidDateFlights>0)return invalid;
   const baseYear=asOf.getUTCFullYear(),baseMonth=asOf.getUTCMonth();
   const keys=Array.from({length:25},(_,i)=>{const d=new Date(Date.UTC(baseYear,baseMonth-24+i,1));return monthId(d.getUTCFullYear(),d.getUTCMonth())});
