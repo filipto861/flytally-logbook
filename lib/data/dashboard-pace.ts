@@ -11,7 +11,7 @@ export type DashboardPaceData={months:PaceMonth[]|null;invalidWindowDates:number
  * canonical getDashboardOverviewData/getDashboardData flight role, evidence,
  * logged_minutes and safety-pilot activity_minutes contracts.
  *
- * Dates that cannot be placed in this lexical window cannot be assigned to it;
+ * Source column comparisons keep `(user_id,date)` index eligibility for\n * PostgreSQL DATE or ISO-format TEXT fixtures. Dates that cannot be placed\n * in the calendar window cannot be assigned to it;
  * their separate data-quality review is not proof of chart completeness.
  */
 export async function getDashboardPaceData(userId:number,asOf:Date=new Date()):Promise<DashboardPaceData>{
@@ -49,8 +49,8 @@ export async function getDashboardPaceData(userId:number,asOf:Date=new Date()):P
           ELSE 0 END::int air_minutes
       FROM flights f
       WHERE f.user_id=${userId}
-        AND f.date::text>=${startDate}::text
-        AND f.date::text<${endExclusive}::text
+        AND f.date>=${startDate}
+        AND f.date<${endExclusive}
     ),checked AS MATERIALIZED (
       SELECT *,CASE
         WHEN date_key~'^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
