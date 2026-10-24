@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DashboardEditor } from "@/components/dashboard-editor";
+import { DashboardEditorial } from "@/components/dashboard-editorial";
+import { buildDashboardPace } from "@/lib/dashboard-pace";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration,getDashboardOverviewData } from "@/lib/data/dashboard";
 import { sql } from "@/lib/db";
@@ -27,7 +29,7 @@ const isLegacyDetail=(value:string):value is LegacyDashboardDetail=>Object.proto
 const isLegacyPeriod=(value:string)=>periods.some(([key])=>key===value);
 function CategoryCard({title,data}:{title:string;data:{minutes:number;landings:number;flights:number}}){return <article className="metric category-card"><span>{title}</span><strong>{formatDuration(data.minutes)}</strong><div><small>{data.flights} flights</small><small>{data.landings} landings</small></div></article>}
 
-export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string;detail?:string}>}){
+export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string;detail?:string;view?:string}>}){
   const params=await searchParams,requestedPeriod=params.period??"all",legacyPeriod=isLegacyPeriod(requestedPeriod)?requestedPeriod:"all",detail=params.detail??"";
   if(isLegacyDetail(detail)){
     const target=legacyDashboardDetails[detail];
@@ -44,6 +46,8 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     getPendingActionCount(session.userId),
   ]);
   const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),hasSavedLayout=Array.isArray(preferences.dashboard_widgets)&&preferences.dashboard_widgets.length>0,layout=hasSavedLayout?dashboardOverviewLayout(savedLayout):defaultDashboardOverviewLayout(),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
+  // Preview is opt-in and URL-only. No destructive migration or silent rewrite of saved dashboard_widgets.
+  if(params.view==="v11")return <div className="ui-page-stack"><nav aria-label="Dashboard view"><Link href="/dashboard" className="secondary-link">← Classic dashboard</Link></nav><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={buildDashboardPace(data.paceMonths,new Date(),data.invalidPaceDates)}/></div>;
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
     if(id==="ull-time")return <CategoryCard title="ULL" data={data.ull}/>;
@@ -54,7 +58,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   };
   const visibleLayout=layout.filter(item=>item.enabled);
   return <div className="ui-page-stack">
-    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
+    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.</p></div><div className="d1v11-legacy-actions"><Link href="/dashboard?view=v11" className="secondary-link">Preview new Dashboard →</Link><Link className="primary-link" href="/flights/new">＋ Add flight</Link></div></header>
     <div className="dashboard-home-layout">
       <div className="dashboard-main-column">
         <section className="dashboard-layout-grid" aria-label="Dashboard overview">
