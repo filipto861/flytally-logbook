@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-24 — G1 GPS first-missing-field navigation merged into main (NOT YET DEPLOYED)
+
+- Owner approved merge of [PR #405](https://github.com/filipto861/flytally-logbook/pull/405) into `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5` from exact tested head `da2637ed41a11691ce56ba9394ab13d7260127a0`. The GPS review completion action now focuses the first real missing field; parser, domain rules, certification, saved GPS track and draft-only multi-flight behavior are unchanged.
+- Exact-HEAD owner-local release PASS: 99/99 preflight; 6/6 Design Quality fixtures; 261/261 source; 1688/1688 full Node; TypeScript and build PASS; 4/4 risk Playwright plus 2/2 independently mandated actual GPS Save & certify persistence browser checks (desktop/mobile); 0 skip/retries. Test fixture physically owned loopback-only PG16; standalone PG partitions N/A by candidate planner. Native iPad Safari/VoiceOver, production smoke and GitHub Actions NOT RUN.
+- **Deployed production remains older build** `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`; a separate explicit deployment approval is required. No prod DB/flag operation. Docs-only merge checkpoint is proposed independently; prior dated Draft history retained.
+
 ## 2026-10-24 — G1 GPS one-flight save: first actual blocker from bottom action (DRAFT, UNRELEASED)
 
 - When GPS review is incomplete, the existing bottom **Complete flight details** non-saving action now uses the same first missing-item navigation as the upper Entry Review. A missing Aircraft, Operation, Engine, applicable crew or per-flight evidence can direct the pilot to its existing control/disclosure instead of an unrelated review card. Old fallback preserved. No parser, server, persistence, aircraft/role defaults, schema, styling/motion, package, Training or certification changes.
