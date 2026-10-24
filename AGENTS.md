@@ -13,6 +13,8 @@ This is a **stable navigation contract**, not a second product roadmap or a subs
 
 Before any Logbook design, implementation, UI audit or verification, read the [skill registry](.agents/skills/README.md) at the verified work SHA (or main for new work). Select and read the FULL SKILL.md for only the task-relevant skills, combining them for cross-domain changes. For any user-visible Logbook UI task also read the full apple-design/SKILL.md and its required references/APPLE_DESIGN_PLAYBOOK.md; apply its principles even when no animation is needed. The registry is a router, not a replacement for canonical docs. For missing GitHub access report UNVERIFIED; do not pretend skills are auto-installed in ChatGPT Project settings. External design inspiration and copyright are documented in [third-party sources](docs/skills/THIRD_PARTY_SOURCES.md). The companion [Project Instructions addendum](docs/skills/CHATGPT_PROJECT_INSTRUCTIONS_ADDENDUM.md) is a manual update for the ChatGPT Project, not a live settings change.
 
+For UI audit or new visual design also read [External Design Quality V2](.agents/skills/ui-quality-audit/references/EXTERNAL_DESIGN_QUALITY_V2.md) **after** the mandatory Apple Design playbook. External Hallmark/Vercel/UI UX Pro Max/Kombai/shadcn materials remain advisory; their installation or automatic restyling is not authorized. Run `npm run audit:design` only as a read-only source heuristic and record browser/accessibility tests separately.
+
 ## Work safely and efficiently
 
 - Preserve canonical flight integrity, certification/audit evidence and explicit aircraft/regulatory applicability. Missing or conflicting critical data must **fail closed**, never become invented/default approved values.

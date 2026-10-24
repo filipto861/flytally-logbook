@@ -46,3 +46,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Retain this attribution when expanding the adaptation or vendoring exact source text. Review upstream licenses independently before adding any other external material.
+## Design Quality V2 — additional sources evaluated 2026-10-24
+
+- [Vercel Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines): read-only code and interaction review (keyboard, semantics, focus, responsive, feedback, reduced motion).
+- [Nutlope Hallmark](https://github.com/Nutlope/hallmark): *audit/study* anti-generic review, not theme generation/redesign or blind global CSS rules.
+- [UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill): reference patterns for tables/dashboards, never replace FlyTally color/tokens or run its installer.
+- [Kombai Gallery](https://kombai.com/gallery/web/): view public examples for information hierarchy; do not copy templates, source code or assets without license.
+- [shadcn/ui](https://ui.shadcn.com/docs): study narrowly selected component behavior; not installed or mandated.
+- Emil Kowalski remains adapted via existing project skills; **do not install a second copy**.
+
+See [FlyTally Design Quality V2 guide](../../.agents/skills/ui-quality-audit/references/EXTERNAL_DESIGN_QUALITY_V2.md). Nothing from these five external projects has been vendored as source, and upstream scripts have not been executed. Sources are inspiration or critique subordinate to the FlyTally brand, aviation data, code ownership and explicit approvals.
