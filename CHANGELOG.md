@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-24 — G1 GPS one-flight save: first actual blocker from bottom action (DRAFT, UNRELEASED)
+
+- When GPS review is incomplete, the existing bottom **Complete flight details** non-saving action now uses the same first missing-item navigation as the upper Entry Review. A missing Aircraft, Operation, Engine, applicable crew or per-flight evidence can direct the pilot to its existing control/disclosure instead of an unrelated review card. Old fallback preserved. No parser, server, persistence, aircraft/role defaults, schema, styling/motion, package, Training or certification changes.
+- Tests extended in existing N3-M1 source and authenticated browser targets; advisory source 26/26 match and pure callback stub PASS. Node24/TS/build/actual browser/PG/native Safari **NOT RUN**. Separate [G1 scope](docs/product/LOGBOOK_GPS_SAVE_FIRST_ISSUE_FOCUS_2026-10-24.md). No merge/deployment. Note owner GPS-save-first priority and separate docs planning Draft #404.
+
 ## 2026-10-24 — GPS single-upload CTA v2 source regressions passed, release aggregate blocked; scoped test-only fix (Draft #401)
 
 - Owner's SHA `4a16b3c6479d0ffd2ce2e7eabe64964b22cff850` preflight 96/96, source 261/261, domain 19/19, TypeScript PASS; full Node 1686/1687 **FAIL** due historical N3-M2 CSS contract reading appended unrelated GPS positioning styles. Risk-selected 18 browser targets, 0 blockers. PG/browser/build NOT RUN after Node failure; local owned scratch PG16 disposed safely.
