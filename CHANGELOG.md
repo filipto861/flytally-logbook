@@ -2,7 +2,7 @@
 
 ## 2026-10-24 — V11 Recency compact status candidate (NOT RELEASED)
 - Staged a compact mobile-first traffic-light marker using existing FlyTally semantic colors and historical snapshot statuses in `components/dashboard-editorial.tsx` and its scoped stylesheet. Removed redundant Saved Snapshot/Historical Snapshot/Saved result/Not current clearance prose; retained previous check date, clear non-live recheck prompt and one credentials link.
-- Green last OK, amber prior due-soon, red Needs review (not falsely NOT CURRENT), gray not assessed. No data/rules/snapshot schema/DB/flags changes; no impact on Classic Dashboard or saved widgets. Added source regression assertions; actual Node, build and browser for this new candidate **NOT RUN**. [Design and evidence contract](docs/product/LOGBOOK_D1_V11_RECENCY_COMPACT_STATUS_2026-10-24.md).
+- Final copy: green **Last check: OK**, amber **Last check: Due soon**, red **Last check: Needs review** (not falsely NOT CURRENT), gray **Not assessed**. Short dated note **Verify before flight**, no repetitive Saved/Check your licences paragraph. No data/rules/snapshot schema/DB/flags changes; no impact on Classic Dashboard or saved widgets. Added source regression assertions; actual Node, build and browser for this new candidate **NOT RUN**. [Design and evidence contract](docs/product/LOGBOOK_D1_V11_RECENCY_COMPACT_STATUS_2026-10-24.md).
 
 ## 2026-10-24 — D1-V11 independent review reconciliation (Draft PR #410; NOT RELEASED)
 - Owner-supplied read-only DeepSeek review returned **BLOCK** for releasing/default-promoting V11. Code risk in previous heavy `getDashboardData` preview accepted, though no actual latency failure was measured.
