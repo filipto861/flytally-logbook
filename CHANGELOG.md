@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-24 — Draft #401 GPS Required cue restored on single upper picker (NOT RELEASED)
+
+- Owner's exact-source first release FAIL was genuine v3.3 mixed-form UI cue regression: new upper file picker lacked visible Required hint; 47/47 preflight PASS, canonical source 260/261 FAIL, other gates NOT RUN. New code SHA `ba5460de4223f528044139b1387b9b80eec09c63` adds `Required` next to the sole upper upload button label before file selection. Source contract v3.3 now validates this delegated UI and the original native required input with no lower duplicate picker.
+- No change to GPS parser, airport/aircraft/UTC/role persistence, schema, flags, or deployment. Corrected SHA full Node/Playwright/Postgres/build NOT RUN, PR remains Draft. [Report](docs/product/LOGBOOK_GPS_SINGLE_UPLOAD_CTA_FIX_2026-10-23.md).
+
 ## 2026-10-23 — Draft GPS Import one-click file selection (NOT MERGED / NOT SHIPPED)
 
 - Changed N3-M1 GPS Entry Review's existing top action from scroll-only to a direct OS file-picker trigger. One visually hidden required `name="kml"` field remains for unchanged upload/parser/FormData. Users can reopen a previously chosen file via the same upper `Change GPS track` action; previous source metadata retained without duplicated lower file picker.
