@@ -33,7 +33,10 @@ test("N3-M2 does not rename fields, change value controls, or touch manual Edit 
   assert.match(form,/action=\{formAction\}/);
   assert.match(form,/onSubmitCapture=\{beginFormSubmit\}/);
   const css=read("app/ui-system.css");
-  const n3m2=css.slice(css.indexOf("/* N3-M2 —"));
+  const n3m2Start=css.indexOf("/* N3-M2 —");
+  const n3GpsStart=css.indexOf("/* N3 GPS single-source action:",n3m2Start);
+  assert.ok(n3m2Start>=0&&n3GpsStart>n3m2Start,"N3-M2 Manual CSS ends before independent GPS picker CSS");
+  const n3m2=css.slice(n3m2Start,n3GpsStart);
   assert.match(n3m2,/\.flight-form\[data-entry-flow="new"\]/);
   assert.doesNotMatch(n3m2,/data-entry-flow="edit"/);
   assert.doesNotMatch(n3m2,/(?:animation|transition|position|backdrop-filter)\s*:/);
