@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-24 — PR #405 GPS completion navigation deployed to production (READY)
+
+- Explicit separate owner approval produced Vercel **production** deployment `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM`, READY at `2026-10-24T10:56:05.801Z`, Git SHA `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5`, aliases including `fly-tally.com`. This is the previously merged G1 UI action that focuses the first missing GPS review item from the bottom Complete flight details control; original parser, save/certify authority and flight/track data remain unchanged. Additional merged Design Quality V2 read-only lint tooling becomes available in source; no user-visible redesign.
+- Owner-local exact PR HEAD release PASS as documented in PR #405 (targeted 99/99, source 261/261, Node 1688/1688, Design Quality 6/6, TS/build, 4/4 browser and 2/2 actual GPS Save & certify on owned disposable localhost PG16). Vercel build READY for merge SHA. **Production authenticated smoke NOT RUN; HTTP smoke UNVERIFIED from sandbox network/DNS.** Runtime error groups 1h: none observed. No production DB migration, flags, Training edits, or native Safari verification.
+- Owner requested after-deploy hands-on verification on `/flights/new`; prior deployment remains a rollback candidate. Docs-only checkpoint branch, not yet canonical.
+
 ## 2026-10-24 — G1 GPS first-missing-field navigation merged into main (NOT YET DEPLOYED)
 
 - Owner approved merge of [PR #405](https://github.com/filipto861/flytally-logbook/pull/405) into `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5` from exact tested head `da2637ed41a11691ce56ba9394ab13d7260127a0`. The GPS review completion action now focuses the first real missing field; parser, domain rules, certification, saved GPS track and draft-only multi-flight behavior are unchanged.
