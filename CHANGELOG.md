@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-24 — G3 source-reset legacy D2-C.1 regression corrected, not released
+
+- Owner Windows v1 actual candidate `43fbb27d232ca2d59fc11f770954e3552593d2dbe9518ac0d6115c57704bc4de` on `PR #407@625f5de8a812df5d5800ed3f785870ae2f41fb89` **FAIL** at full Node aggregate (`tests/v142-gps-import.test.ts:79`); initial 101/101, design 6/6, source 261/261, TypeScript PASS. Introducing G3 `setReadingSource` between old `setAnalysis(null)` and `setReviews([])` broke old exact source contract for immediate GPS preview invalidation. No browser/build/save execution after fail; disposable local PG16 removed.
+- Restore exact historical consecutive clears before setting reading status, strengthen G3 source assertion, leave old test unchanged. Advisory source 49/49 matches; complete corrected Node/TS/build/browser/Save gate NOT RUN. PR still Draft, G2 production untouched; no DB/flag/Training changes. [G3 case](docs/product/LOGBOOK_GPS_G3_FILE_READING_FEEDBACK_2026-10-24.md).
+
 ## 2026-10-24 — G3 accessible GPS file read-progress feedback (DRAFT / UNRELEASED)
 
 - Owner reports production G2 GPS error/retry works on `fly-tally.com`, Vercel `dpl_9e1Dhr7HdC67jMeSEA2vz5jxLUL5` READY `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6`. This owner smoke is narrower than native Safari or automated live error injection.
