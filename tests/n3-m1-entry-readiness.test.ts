@@ -57,7 +57,7 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   const shared=read("components/entry-review-summary.tsx");
   const ui=read("app/ui-system.css");
   assert.match(gps,/sourceInputRef=useRef<HTMLInputElement>\(null\)/);
-  assert.match(gps,/primaryAction=\{\{label:analysis\?"Change GPS track":"Upload a KML, GPX or CSV track",onSelect:\(\)=>sourceInputRef\.current\?\.click\(\)\}\}/);
+  assert.match(gps,/primaryAction=\{\{label:analysis\?"Change GPS track":"Upload a KML, GPX or CSV track",required:!analysis,onSelect:\(\)=>sourceInputRef\.current\?\.click\(\)\}\}/);
   assert.match(gps,/ref=\{sourceInputRef\} className="gps-track-file-native" name="kml" type="file"/);
   assert.match(gps,/tabIndex=\{-1\} accept="\.kml,\.gpx,\.csv/);
   assert.match(gps,/required onChange=\{async event=>\{/);
@@ -66,7 +66,8 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   assert.doesNotMatch(gps,/className="upload-zone"|<h2>Upload track<\/h2>/);
   assert.match(gps,/gps-track-source-status" role="status"/);
   assert.match(gps,/Choose a GPS source with usable flight data/);
-  assert.match(shared,/primaryAction\?:\{label:string;onSelect:\(\)=>void\}/);
+  assert.match(shared,/primaryAction\?:\{label:string;required\?:boolean;onSelect:\(\)=>void\}/);
+  assert.match(shared,/primaryAction\.required\?<span className="field-hint" aria-hidden="true">Required<\/span>/);
   assert.match(shared,/type="button" onClick=\{primaryAction\.onSelect\}/);
   assert.match(ui,/\.kml-wizard \.gps-track-file-native\{/);
   assert.match(ui,/clip-path:inset\(50%\)/);
