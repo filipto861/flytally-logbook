@@ -1,0 +1,39 @@
+# C0 — FlyTally Logbook core UI/UX consistency priority
+
+**Date:** 2026-10-24 · **Status:** OWNER REPRIORITIZATION, DRAFT ROADMAP PROPOSAL — NOT AN IMPLEMENTED REDESIGN  
+**Base:** `filipto861/flytally-logbook` `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`  
+**Production comparison:** Vercel `filipito/logbook` `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` READY for `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. The one additional main commit is Design Quality V2 docs/advisory tooling, not product UI runtime.
+
+## Owner's updated product priority
+
+Improve the **ordinary Logbook experience** before investing further in GPS-specific multi-flight UI. The user means day-to-day surfaces: Dashboard, Flights list, Flight Detail, Aircraft & airports, Statistics, Settings, core sidebar/header/actions. Focus on a coherent, elegant and simple app: consistent spacing/cards/type/buttons, intuitive affordances, clear hierarchy, immediate feedback and reliable responsive interaction. Existing FlyTally brand and operational correctness remain frozen. This reprioritization does NOT revoke the historical N3 priority decisions; it defers N3-M3 and any unapproved follow-on implementation, subject to later owner review.
+
+Independent Draft [#403](https://github.com/filipto861/flytally-logbook/pull/403) is **paused / no merge or deployment**. Do not convert it into this classic UI workstream. Historical UI draft PRs #377–#380 remain separate. Direct comparison with today's main shows #378/#379/#380 have diverged by ~235 main commits; treat their code as research/test evidence and selectively reconstruct future fixes from **current main**, not merge/rebase blindly.
+
+## Existing evidence and limitations
+
+1. **Established design language — CODE VERIFIED:** `app/layout.tsx` imports many legacy/versioned CSS layers, with `app/ui-system.css` last. Canonical CSS declares page section gap 24px, card gap 16px, card radius 17px, control radius 11px, card padding 22px (mobile 16px), touch min height 44px; `docs/design-language.md` preserves the FlyTally tokens and visual identity. Older module CSS uses additional margins, radii and typography values; this is an audit *target*, **not proof of a visual defect** until computed final cascade is measured.
+2. **Prior owner-local U0 Chromium visual evidence — RECORDED (2026-10-21):** 110 screenshots / metrics on 11 states × 5 viewport widths × light/dark, root horizontal overflow 0. Effective `Required` hint 10.4px (70 sampled styles); contextual helper 11.2px (50 samples). These were confirmed on an older SHA and do **not** automatically prove unchanged effective CSS in current main. Coverage excluded Flight Detail, Aircraft, Statistics and many loading/empty/destructive states. Not native iPad Safari.
+3. **Current route/source inventory — CODE VERIFIED:** Dashboard renders widget `hero-metric` and `panel dashboard-quick-card`; Flights uses `flight-finder`, `period-control` and `flights-table`; Statistics uses period/category/section controls and `metric-grid`; Aircraft has image/placeholder cards and `aircraft-manager` modal; Settings uses `u33-settings-workspace` with preference cards and security/privacy panels; navigation uses `Sidebar`. UI layouts and CSS are intentionally varied by function, but their common tokens/state contracts must be audited.
+4. **Existing in-progress fixes — CURRENT STATUS VERIFIED:** Draft #378 (unsaved tab focus), #379 (secondary copy legibility), #380 (mobile flight category visibility), #377 (U0 screenshot harness) all remain unmerged with historic bases and non-transferable tests. #379's reported Chromium legibility scenario previously failed with a state/hydration issue; #380 lacks reported browser acceptance. Avoid mislabelling earlier failures as current app defects or current PASS.
+5. **Today's evidence boundary:** GitHub source, Git refs, prior published screenshot audit and Vercel production metadata reviewed. **No newly executed Node, design scanner, Playwright, authenticated current-product DOM/computed CSS, screenshot comparison, keyboard/VoiceOver, iPad Safari or hardware checks** for this workstream. Thus source differences are *candidates*; no invented severity ranking from screenshots not seen.
+
+## Proposed small roadmap milestones
+
+| Milestone | Scope | Acceptance & verification |
+| --- | --- | --- |
+| **C0: Core UI baseline and audit** | Five primary everyday workspaces + Flight Detail and Sidebar. Visual/state matrix and computed cascade; classify observed vs code-inferred; map repeated patterns and selective remaining deviations. | Synthetic authenticated isolated PG fixture; desktop 1440, 1024; tablet 768/1024; phone 390/320; light/dark and supported appearance; keyboard/touch/reduced motion; empty/dense/loading/error; 0 unsafe live data writes. Annotated screenshots/measurements and ranked findings before CSS edits. |
+| **C1: Typography, card rhythm and hierarchy** | Reconcile actual effective CSS with existing tokens, especially helper copy, labels, vertical spacing, header/card hierarchy in Dashboard, Flights, Statistics, Aircraft & Settings. | Minimal component-local fixes, no blanket font scale; compare same states before/after, check 200% zoom/text wrapping and visual consistency, no critical truncation. |
+| **C2: Everyday navigation and primary actions** | Sidebar/context tabs, filters, selected states, Add/Open/Manage actions, search/toolbars, visibility on narrow mobile. Consult historical #378/#380 but implement against fresh main only where actual flaw is reproduced. | Touch + mouse/keyboard semantics, 44px coarse targets where applicable, no hidden-only essential action, URL/filter persistence, back/focus behaviors. |
+| **C3: Content/card patterns** | Aircraft photo vs placeholder geometry, Flights list/detail summaries, Dashboard metric cards, Statistics tables, Settings panels; resolve only observed mismatches. | Shared existing components/tokens; stable card anatomy, readable long Unicode/registrations, empty/dense states, responsive/no clipping. No new UI kit. |
+| **C4: Async/errors/a11y & acceptance** | Existing mutation states, disabled/duplicate submissions, focus-visible/return, destructive confirmation, alerts and reduced motion on the **classic** workspaces. | Exact candidate risk planner, targeted Node/TypeScript/build, protected isolated PostgreSQL/browser where selected, screenshot evidence, separate native Safari report. No PASS by static scan alone. |
+
+Milestones are **proposed**, not user-approved per-batch implementation scope. Choose a small, observable defect after C0 and freeze its exact UX contract before editing. Motion default **NONE**; if a real state change benefits from motion, choose **SIMPLE** only after review. No auto-fill/auto-apply aviation data, no certification/compliance/data model/parsers/DB changes, no new dependencies, brand rewrite or mass CSS cleanup. Keep Training and production out of scope. Never merge/deploy without distinct owner authorization.
+
+## Methodology
+
+Required complete Apple Design V2 skill/playbook (17 areas), plus UI UX Design, Design Engineering, Mobile/iPad, UI Quality Audit and External Design Quality V2 guide. Observe final CSS cascade rather than obsolete declarations. Advisory `npm run audit:design` is not a browser/WCAG PASS. Preserve current light/dark/system themes; night only if actually implemented in code. Use safe synthetic fixtures; no private flights, GPS files or production database.
+
+## ONE NEXT STEP
+
+Owner approves **C0 core-workspace visual baseline/audit** and the priority order above; then develop a bounded read-only capture/test plan against fresh `main`, use a newly verified physically owned disposable local PostgreSQL fixture, inspect measured screens and choose the first actual C1 micro-fix. This docs-only PR does not authorize UI changes, merges, Vercel deployment, database migrations or feature flags.
