@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — FlyTally Design Quality V2 review branch (separate from product/release streams)
+
+- **Scope:** owner wants all useful Woodcomp V3 design-quality methods available in FlyTally Logbook, adapted to its own Apple Design skills and aviation workflow. New [Draft PR #402](https://github.com/filipto861/flytally-logbook/pull/402), `docs/flytally-design-quality-v2-20261024`, base `main@5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. PR HEAD at initial creation `f5aa91dfa7d5bc224bc66d9148f3f57f6d8a9e37`; refresh after memory checkpoint.
+- **Changed surfaces:** .agents UI audit skill/registry/curated references, AGENTS, docs/skills, package scripts and read-only `tooling/design-quality-audit{,.test}.mjs` plus this Project Memory checkpoint. No `app/`, `components/`, `lib/`, `sql/`, e2e, dependency, schema, prod DB, flags, Vercel, Training or UI branding changes; existing Apple Design skill source SHA identical.
+- **Evidence:** scanner actual branch blob `9eb77c263a30bbb94603032df5279cc16dea6eec` + fixture blob `3d2a890ba2144eb9bfea9084c4f871d233fc0323`; isolated V8 source recompilation and 6/6 fixture cases PASS. Actual Node command/full repository audit/CI/build/PG/Playwright/native Safari **NOT RUN**; source scan is advisory only.
+- **Approval:** requested use/adaptation, not explicit PR merge or deployment. No outside installation. Independent read-only review per AGENTS if material UI redesign is later proposed.
+- **ONE NEXT STEP:** run `npm run test:design-audit` and `npm run audit:design -- --json` in a full clone; inspect findings and ask owner approval for scoped merge. Keep existing other PRs untouched.
+
 ## 2026-10-24T07:15:23.963Z — GPS CTA v2 full release FAIL on N3-M2 test-only CSS scope; exact new verification pending
 
 - Canonical GitHub Logbook `main@462b8d7b11c6ba59eb4a2b01b1eb4d53cb33abe2`, work implementation SHA `a254dd01cdacdc31d1363ffaf94b28e62e1ed21c` on `fix/logbook-gps-single-upload-cta-20261023`, Draft PR #401 base main; separate docs Draft PR #400 untouched. Production Vercel last verified READY at `dpl_fhvhcKB1AY21hHQHWz1WPpZ4ADYS` using `462b8d7b11c6ba59eb4a2b01b1eb4d53cb33abe2`. No Training modifications, prod DB migration, feature flags or deploy.
