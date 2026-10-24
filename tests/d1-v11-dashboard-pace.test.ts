@@ -92,12 +92,13 @@ test("D1-V11 opt-in preview preserves the legacy preference editor and protected
   assert.match(editorial,/href="\/actions"/);
   assert.match(editorial,/d1v11-latest/);
   assert.doesNotMatch(editorial,/SAVED SNAPSHOT|Historical snapshot|Saved result:/,"avoid redundant historical snapshot labels");
-  assert.match(editorial,/OK at last check/,"green only describes the previous assessment");
-  assert.match(editorial,/Due soon at last check/,"warning must not claim current expiry");
-  assert.match(editorial,/Needs review/,"ambiguous attention must never be labelled Not current");
+  assert.match(editorial,/Last check: OK/,"green is historical, not current");
+  assert.match(editorial,/Last check: Due soon/,"warning must not claim current expiry");
+  assert.match(editorial,/Last check: Needs review/,"ambiguous attention must never be labelled Not current");
   assert.match(editorial,/Not assessed/,"missing evidence must remain neutral");
-  assert.match(editorial,/Recheck before flight/,"no stale snapshot may imply live clearance");
+  assert.match(editorial,/Verify before flight/,"no stale snapshot may imply live clearance");
   assert.match(editorial,/formatDateOnly\(recencySnapshot\.generatedAt\.slice\(0,10\)\)/,"timestamp of previous assessment must remain visible");
+  assert.doesNotMatch(editorial,/Saved \$\{formatDateOnly|Check your licences and recency evidence/,"no duplicate explanatory copy");
   assert.match(editorial,/d1v11-recency-marker/,"status is identifiable without relying on color alone");
   assert.doesNotMatch(editorial,/recencyHeadline=.*Not current/,"attention is not proof of NOT CURRENT");
   assert.match(css,/\.d1v11-recency--ok\{--d1v11-recency-tone:var\(--success-text\)/);
