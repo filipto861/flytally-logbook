@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-24 — user reprioritized core Logbook UI/UX over GPS (docs-only proposal)
+
+- Verified `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`, latest Vercel production READY `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` for `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. Branch `docs/logbook-core-ui-consistency-priority-20261024` created from main for a **proposal only**, new PR/base/head to verify after commits. Existing GPS FE-05 Draft #403 remains open and **paused**, not merged; N3-M3 multi-part editor deferred. No Training changes.
+- Owner direction: classical day-to-day dashboard/flights/detail/aircraft/statistics/settings/sidebar and consistent cards, spacing, typography, buttons, feedback, mobile/iPad. Preserve branded current visual identity and flight integrity, no automatic data prefill, no new UI library, broad effects or CSS sweep. Apple Design V2 full methodology and Design Quality V2 guide reviewed.
+- Findings scope: code-confirmed global CSS canonical `ui-system.css` last with spacing and component tokens; older U0 synthetic viewport audit measured 10.4px Required hints and 11.2px contextual help (older SHA; current visual effect unverified). Historical #377–#380 remain unmerged and ~235 main commits behind; do not cherry-pick blindly. Full live UI, current authenticated browser computed cascade, design scanner, new Node/TS/build/PG tests, Safari/iPad all **NOT RUN**. This branch has **docs changes only**, no app runtime edits, DB/migration/flag/deploy actions.
+- Changed proposal files: `docs/product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md`, `ROADMAP.md`, this handoff and optionally `ACTIVE_WORK.md`. Tests: N/A for docs-only source; actual visual audit NOT RUN. Existing local candidate evidence is not a PASS for this plan.
+- **ONE NEXT STEP:** owner approves C0 core UI baseline before implementation; then use safe synthetic browser evidence against current main to identify minimal first UI correction. No merge/deploy authorization implied.
+
 ## 2026-10-24 — Design Quality V2 external guidelines, audit scanner; Draft #402
 
 - **UTC checkpoint:** 2026-10-24T09:00:00Z (documentation timestamp; remote branch head must be re-read). Repo `filipto861/flytally-logbook`; verified `main@5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` at start. Working branch `docs/flytally-design-quality-v2-20261024` initial PR head `f5aa91dfa7d5bc224bc66d9148f3f57f6d8a9e37`, [Draft PR #402](https://github.com/filipto861/flytally-logbook/pull/402), base `main`. This checkpoint commit will advance head; reverify.
