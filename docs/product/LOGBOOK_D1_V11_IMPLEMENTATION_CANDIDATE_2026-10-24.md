@@ -12,7 +12,7 @@
 
 ## Contract and source rationale
 - `lib/data/dashboard.ts` must stay byte-identical to main. Protected v2.3 large-logbook tests ban adding `jsonb_agg` or `month_key` to the lean `getDashboardOverviewData` SQL. An initial in-progress edit added aggregation there, was **reverted before the PR**, and the current file was fetched from main and restored. Do NOT reintroduce the performance regression.
-- V11 preview reads `getDashboardData(session.userId,"all")` **instead of** the legacy overview read (one application data query for the selected view); its monthly source is the canonical historical Statistics aggregation using `activity_minutes`, `logged_minutes`, `dashboard_total` and `evidence`. It may be expensive and is intentionally a protected opt-in prototype gate. **No default rollout or performance PASS before validating/replacing it with a bounded query that preserves exact aviation semantics.**
+- **Superseded by DeepSeek review correction:** V11 preview now reads canonical lean `getDashboardOverviewData(session.userId,"all")` PLUS the scoped `getDashboardPaceData(session.userId,asOf)`. The new query restricts `flights` by user and a lexical 25-calendar-month date window; it only produces Total/ULL/EASA monthly rows and in-window invalid-date count, using copied canonical `activity_minutes`/`logged_minutes`/`dashboard_total`/`evidence` and safety-pilot rules. It excludes future dated current-month records from the MTD chart, and invalid candidate dates in the window produce Unavailable. **This is SOURCE-STAGED, not 100k-performance-proven**; review reconciliation `LOGBOOK_D1_V11_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-24.md` takes precedence over earlier paragraphs.
 - `lib/dashboard-pace.ts` is pure UTC month-series and completed comparison helper; duplicate, negative or malformed rows and non-date flight evidence result in Unavailable, not fabricated zero/currency.
 - Isolated scoped stylesheet imports **before** canonical final `ui-system.css`, preserving original cascade ownership outside `.d1v11-*`. No new npm dependencies, theme tokens or color libraries.
 
@@ -24,6 +24,9 @@
 - `app/layout.tsx` (one extra scoped CSS import)
 - `app/(protected)/dashboard/page.tsx` (conditional reversible route preview)
 - `tests/d1-v11-dashboard-pace.test.ts` (new)
+- `tests/d1-v11-dashboard-bounded-read.test.ts` (new source/parity/ARIA guards)
+- `lib/data/dashboard-pace.ts` (new user-scoped SQL projection)
+- `docs/product/LOGBOOK_D1_V11_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-24.md` (independent review dispositions)
 - This implementation contract, ROADMAP/Project Memory checkpoint.
 
 ## Test/evidence ledger at current work
@@ -38,7 +41,7 @@
 Freeze exact main SHA and latest PR #410 work HEAD. Ask reviewer to inspect code and answer:
 1. Is the URL-only opt-in route truly backward-compatible with saved `dashboard_widgets` and legacy N2-B tests? What would a safe permanent user-controlled promotion/rollback contract require?
 2. Do V11 Total/ULL/EASA monthly series and comparison preserve canonical safety-pilot, category, invalid-date and calendar boundaries? Flag any wrong equivalence of NULL vs 0 or unsupported source-to-output assumptions.
-3. Can the heavy `getDashboardData` read in V11 impact 100k-flight performance and what minimal bounded equivalent avoids domain duplication? No new schema/DDL.
+3. Prior heavy `getDashboardData` read was eliminated from V11. Does the new bounded `getDashboardPaceData` leverage the existing `(user_id,date)` index and meet the project’s 100k performance budget on sparse and dense recent data? Verify with owned PostgreSQL `EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON)`; no new schema/DDL.
 4. Accessibility/responsiveness: one slider for 24 month bars, coarse touch, keyboard, 320px, focus/cancel/ARIA, empty/very-large values, 200% zoom, RTL/long labels.
 5. Recency: ensure no `CURRENT`/validity claim from stale snapshot; distinguish saved source from real-time status and avoid silently hiding attention.
 Reviewer MUST be read-only and return BLOCKER/MAJOR/MINOR with exact paths and recommended acceptance criteria. No permission to merge/modify production.
@@ -56,3 +59,7 @@ No PASS without actual console + ledger from exact SHA.
 
 ### 2026-10-24: local helper-only type validation
 The separately copied `lib/dashboard-pace.ts` matches the GitHub source revision in UTF-16 character count and FNV-1a fingerprint after the out-of-window fix (integrity indicator, **not cryptographic proof of byte identity**). On Linux with installed TypeScript 5.8.3 and Node 22, `tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck lib/dashboard-pace.ts` **PASS** for that single helper module. Application-wide TypeScript/React/build tests **NOT RUN**. This additional evidence is narrower than the repository's required Node24 release gate.
+
+## 2026-10-24 — review reconciliation and performance limits
+
+The owner supplied the actual DeepSeek read-only finding list; the reviewer verdict is **BLOCK for default rollout**, not proof of measured latency. See [disposition with exact source remedies](LOGBOOK_D1_V11_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-24.md). The current candidate is **still opt-in**. Source regression tests guard `getDashboardData` removal, 25-month bounds, copy of flight activity/category semantics and slider attributes; these have **NOT RUN** on the latest PR head. Existing earlier standalone helper tests do not establish this new SQL query or application build. Exact-SHA owned local PG16 read benchmarks, typecheck, build, authenticated Chromium and native Safari remain required. User settings migration, production DB, flags, merges and deployment remain explicitly out of scope.
