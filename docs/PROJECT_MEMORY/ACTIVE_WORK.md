@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24T10:56:05.801Z — G1 GPS Save #405 DEPLOYED/READY, awaiting owner smoke
+
+- **Live:** main `80a83ddcb5a13962e975ba7933b8472da6afd4c5`, PR #405 merged from tested `da2637ed41a11691ce56ba9394ab13d7260127a0`; Vercel prod `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM` **READY**, exact Git SHA main, `fly-tally.com` domain alias; prior prod `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` rollback candidate. Owner expressly approved merge and then separate deploy. No production migration/flags or Training changes.
+- **Test evidence:** source 261/261, Node 1688/1688, TS/build, risk browser 4/4, extra Save & certify flight/track 2/2 all PASS at exact PR source head; native Safari/iPad NOT RUN. Production HTTP smoke UNVERIFIED (network DNS unavailable), authenticated GPS smoke NOT RUN; Vercel one-hour error clusters none observed. Vercel READY confirms build/domain binding, not form runtime behavior.
+- **Docs persistence:** `docs/logbook-pr405-merge-checkpoint-20261024` work branch from `80a83ddcb5a13962e975ba7933b8472da6afd4c5` updates CHANGELOG/ROADMAP/SESSION_HANDOFF/ACTIVE_WORK on its own commits; not merged or production runtime. Separate Draft #403/#404 untouched; N3-M3 multi-flight editor deferred.
+- **ONE NEXT STEP:** user conducts safe real-browser GPS new-flight import and first-missing-field navigation smoke on `fly-tally.com`, with actual save only for genuine flight and no duplicate submissions.
+
 ## 2026-10-24T10:42:27Z — G1 GPS Save fix merged, deployment pending owner decision
 
 - Verified [PR #405](https://github.com/filipto861/flytally-logbook/pull/405) **MERGED** from source HEAD `da2637ed41a11691ce56ba9394ab13d7260127a0` into `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5` after explicit merge-only approval. Original feature branch automatically deleted. New docs-only checkpoint branch `docs/logbook-pr405-merge-checkpoint-20261024` from merged main; **NOT canonical until separately merged**.
