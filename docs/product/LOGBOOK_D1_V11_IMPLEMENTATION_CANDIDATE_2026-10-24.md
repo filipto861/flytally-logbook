@@ -12,7 +12,7 @@
 
 ## Contract and source rationale
 - `lib/data/dashboard.ts` must stay byte-identical to main. Protected v2.3 large-logbook tests ban adding `jsonb_agg` or `month_key` to the lean `getDashboardOverviewData` SQL. An initial in-progress edit added aggregation there, was **reverted before the PR**, and the current file was fetched from main and restored. Do NOT reintroduce the performance regression.
-- V11 preview reads `getDashboardData(session.userId,"all")` **in addition** to the legacy overview read; its monthly source is the canonical historical Statistics aggregation using `activity_minutes`, `logged_minutes`, `dashboard_total` and `evidence`. It may be expensive and is intentionally a bounded prototype gate. **No default rollout or performance PASS before validating/replacing it with a bounded query that preserves exact aviation semantics.**
+- V11 preview reads `getDashboardData(session.userId,"all")` **instead of** the legacy overview read (one application data query for the selected view); its monthly source is the canonical historical Statistics aggregation using `activity_minutes`, `logged_minutes`, `dashboard_total` and `evidence`. It may be expensive and is intentionally a protected opt-in prototype gate. **No default rollout or performance PASS before validating/replacing it with a bounded query that preserves exact aviation semantics.**
 - `lib/dashboard-pace.ts` is pure UTC month-series and completed comparison helper; duplicate, negative or malformed rows and non-date flight evidence result in Unavailable, not fabricated zero/currency.
 - Isolated scoped stylesheet imports after `ui-system.css`, preserving all prior effective CSS outside `.d1v11-*`. No new npm dependencies, theme tokens or color libraries.
 
