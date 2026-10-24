@@ -55,7 +55,7 @@ test("D1-V11 malformed or unaccounted date evidence fails closed",()=>{
 });
 
 test("D1-V11 opt-in preview preserves the legacy preference editor and protected routes",()=>{
-  const page=read("app/(protected)/dashboard/page.tsx"),editorial=read("components/dashboard-editorial.tsx"),pace=read("components/dashboard-pace.tsx"),css=read("app/dashboard-editorial.css");
+  const page=read("app/(protected)/dashboard/page.tsx"),editorial=read("components/dashboard-editorial.tsx"),pace=read("components/dashboard-pace.tsx"),css=read("app/dashboard-editorial.css"),layout=read("app/layout.tsx");
   assert.match(page,/params\.view==="v11"/);
   assert.match(page,/DashboardEditor layout=\{layout\}/);
   assert.match(page,/dashboardLayoutFromPreferences\(preferences\)/);
@@ -65,6 +65,10 @@ test("D1-V11 opt-in preview preserves the legacy preference editor and protected
   assert.match(editorial,/href="\/flights\/needs-attention"/);
   assert.match(editorial,/href="\/actions"/);
   assert.match(editorial,/d1v11-latest/);
+  assert.match(editorial,/Saved result:/,"snapshot result must be explicitly historical");
+  assert.match(editorial,/Captured /,"recency date is shown alongside its saved result");
+  assert.ok(layout.indexOf('import "./dashboard-editorial.css"')<layout.indexOf('import "./ui-system.css"'),
+    "ui-system.css must remain the final canonical stylesheet");
   assert.match(pace,/role="slider"/);
   assert.match(pace,/aria-valuetext/);
   assert.match(css,/@media\(max-width:610px\)/);
