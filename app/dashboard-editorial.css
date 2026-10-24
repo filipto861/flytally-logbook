@@ -83,3 +83,8 @@
   .d1v11-pace-plot{gap:2px}
 }
 @media(prefers-reduced-motion:reduce){.d1v11-page *{transition:none!important;animation:none!important}}
+
+/* Classic-to-V11 preview link; primary Add flight remains the shell's existing action. */
+.d1v11-legacy-actions{display:flex;align-items:center;gap:var(--ui-space-2);flex-wrap:wrap}
+.d1v11-legacy-actions>.secondary-link{min-height:44px;display:inline-flex;align-items:center}
+@media(max-width:560px){.d1v11-legacy-actions{width:100%}.d1v11-legacy-actions>a{flex:1 1 auto;justify-content:center}}
