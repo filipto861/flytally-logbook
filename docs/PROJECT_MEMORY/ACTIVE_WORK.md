@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — UI priority refined: routine Manual New Flight FIRST (Draft #404)
+
+- Verified `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; work `docs/logbook-core-ui-consistency-priority-20261024` in [Draft PR #404](https://github.com/filipto861/flytally-logbook/pull/404), docs-only / unmerged. Vercel production remains READY on earlier runtime `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`; no prod DB/migration/flag/deploy changes.
+- Owner priority: common `/flights/new` Manual entry/PIC/DUAL/SAFETY PILOT + edit parity FIRST; other classic UI only later. F0 read-only source/browser audit, F1 small measured UI fix, F2 Edit regression, F3 generic shell/cards/pages, F4 release gate. Preserve flight integrity and server contracts. GPS Draft #403 paused and N3-M3 postponed. Historical Drafts #377–#380 unchanged.
+- Current source inspected; previous screenshots historical only, **fresh F0 browser/keyboard/cascade/native Safari NOT RUN**, runtime/tests/build/PG N/A for docs-only change. [Detailed F0–F4 plan](../product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md).
+- **ONE NEXT STEP:** isolated synthetic F0 Manual flight entry current-main baseline, then choose first actionable F1 change from actual rendered evidence.
+
 ## 2026-10-24 — Core everyday UI consistency is owner's next priority (plan only)
 
 - Main `e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; production Vercel READY `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` on previous runtime SHA `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. New docs-only work branch `docs/logbook-core-ui-consistency-priority-20261024`. Full PR and final branch HEAD must be verified.
