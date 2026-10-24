@@ -1,5 +1,20 @@
 # FlyTally changelog
 
+## 2026-10-24 — GPS single-upload CTA v2 source regressions passed, release aggregate blocked; scoped test-only fix (Draft #401)
+
+- Owner's SHA `4a16b3c6479d0ffd2ce2e7eabe64964b22cff850` preflight 96/96, source 261/261, domain 19/19, TypeScript PASS; full Node 1686/1687 **FAIL** due historical N3-M2 CSS contract reading appended unrelated GPS positioning styles. Risk-selected 18 browser targets, 0 blockers. PG/browser/build NOT RUN after Node failure; local owned scratch PG16 disposed safely.
+- Scoped `tests/n3-m2-manual-layout.test.ts` to exactly N3-M2 CSS section before independent GPS marker. Preserved all intended Manual style invariants; no runtime files changed by this fix. **Fresh exact-SHA release tests NOT RUN**. No merge/deploy/flag or DB changes. [Incident and acceptance note](docs/product/LOGBOOK_GPS_SINGLE_UPLOAD_CTA_FIX_2026-10-23.md).
+
+## 2026-10-24 — Draft #401 GPS Required cue restored on single upper picker (NOT RELEASED)
+
+- Owner's exact-source first release FAIL was genuine v3.3 mixed-form UI cue regression: new upper file picker lacked visible Required hint; 47/47 preflight PASS, canonical source 260/261 FAIL, other gates NOT RUN. New code SHA `ba5460de4223f528044139b1387b9b80eec09c63` adds `Required` next to the sole upper upload button label before file selection. Source contract v3.3 now validates this delegated UI and the original native required input with no lower duplicate picker.
+- No change to GPS parser, airport/aircraft/UTC/role persistence, schema, flags, or deployment. Corrected SHA full Node/Playwright/Postgres/build NOT RUN, PR remains Draft. [Report](docs/product/LOGBOOK_GPS_SINGLE_UPLOAD_CTA_FIX_2026-10-23.md).
+
+## 2026-10-23 — Draft GPS Import one-click file selection (NOT MERGED / NOT SHIPPED)
+
+- Changed N3-M1 GPS Entry Review's existing top action from scroll-only to a direct OS file-picker trigger. One visually hidden required `name="kml"` field remains for unchanged upload/parser/FormData. Users can reopen a previously chosen file via the same upper `Change GPS track` action; previous source metadata retained without duplicated lower file picker.
+- Extended N3 source test and existing registered authenticated Playwright scenario for actual filechooser, invalid and valid input, replacement and unchanged other review links; no changes to Manual, server, database, auth, flight evidence or GPS parsing. [Details](docs/product/LOGBOOK_GPS_SINGLE_UPLOAD_CTA_FIX_2026-10-23.md). Tests **NOT RUN** on this branch; static source contract inspected. No merge/deploy/production DB actions.
+
 ## 2026-10-23 — N3-M2 exact-source local release validation PASS (Draft, not released)
 
 - Owner Windows `verify:release:risk -- --base origin/main` on `0e8b3f8787d6d55d1db6846d5a43f79e2a11f8f2`, candidate `d1e9dba3b762544687cb2a8562fe514a870f62f7b2acdbc5c4f85e9420d4f125`, **PASS**: source 261/261, domain 19/19, typecheck, full Node 1686/1686, production build, six owned isolated PG16 partitions 164/164, approved risk browser 22/22 desktop/mobile Chromium with 0 retries/skips. Safe browser PostgreSQL cleanup confirmed.

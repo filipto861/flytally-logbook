@@ -43,13 +43,23 @@ test("N3-M1 GPS review starts with source error then links to real aircraft cont
   const review=gps.locator(".entry-review-status");
   await expect(review).toContainText("Upload a KML, GPX or CSV track");
   const source=gps.locator('input[name="kml"]');
-  await source.setInputFiles({name:"invalid.csv",mimeType:"text/csv",buffer:Buffer.from("not,a,gps,track\n")});
+  await expect(source).toHaveCount(1);
+  await expect(source).toHaveAttribute("required","");
+  await expect(gps.locator(".upload-zone")).toHaveCount(0);
+  const initialPicker=page.waitForEvent("filechooser");
+  await review.getByRole("button",{name:"Upload a KML, GPX or CSV track"}).click();
+  await (await initialPicker).setFiles({name:"invalid.csv",mimeType:"text/csv",buffer:Buffer.from("not,a,gps,track\n")});
   await expect(review).toContainText("Choose a GPS source with usable flight data");
+  await expect(review.getByRole("button",{name:"Change GPS track"})).toBeVisible();
   const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
     '<when>2026-10-05T16:00:00Z</when><when>2026-10-05T16:01:00Z</when><when>2026-10-05T16:02:00Z</when><when>2026-10-05T16:03:00Z</when>'+
     '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.14 50.13 600</gx:coord><gx:coord>14.20 50.18 650</gx:coord><gx:coord>14.24 50.21 300</gx:coord>'+
     '</gx:Track></kml>';
-  await source.setInputFiles({name:"n3-m1-valid.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  const replacementPicker=page.waitForEvent("filechooser");
+  await review.getByRole("button",{name:"Change GPS track"}).click();
+  await (await replacementPicker).setFiles({name:"n3-m1-valid.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await expect(gps.getByRole("status")).toContainText("n3-m1-valid.kml");
+  await expect(review.getByRole("button",{name:"Change GPS track"})).toBeVisible();
   await expect(review.getByRole("button",{name:"Select aircraft"})).toBeVisible();
   await review.getByRole("button",{name:"Select aircraft"}).click();
   await expect(gps.locator('select[name="registration"]')).toBeFocused();

@@ -342,7 +342,17 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
   };
   for(const [file,labels] of Object.entries(checks)){
     const source=read(file);
-    for(const label of labels)assert.ok(source.includes(`${label} ${cue}`),`${file}: ${label}`);
+    for(const label of labels){
+      if(file==="components/kml-import-form.tsx"&&label==="KML, GPX or CSV"){
+        // The N3 single top upload button delegates its Required cue to EntryReviewSummary.
+        // Preserve the exact visible cue, the original native required field and one chooser.
+        const review=read("components/entry-review-summary.tsx");
+        assert.match(source,/primaryAction=\{\{label:analysis\?"Change GPS track":"Upload a KML, GPX or CSV track",required:!analysis,onSelect:/);
+        assert.match(source,/name="kml" type="file"[^>]+ required onChange=/);
+        assert.match(review,/primaryAction\.required\?<span className="field-hint" aria-hidden="true">Required<\/span>/);
+        assert.ok(!source.includes('className="upload-zone"'),"GPS must not reintroduce duplicate picker");
+      }else assert.ok(source.includes(`${label} ${cue}`),`${file}: ${label}`);
+    }
   }
 
   const picker=read("components/aircraft-type-picker.tsx");
@@ -362,7 +372,7 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
   assert.match(signature,/<span>\{allowExaminer\?"Instructor \/ examiner name":"Instructor name"\} <span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
   assert.match(signature,/confirm_in_person" value="yes" required\/><span>[^<]*<span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
 
-  const joined=Object.keys(checks).map(read).join("\n")+"\n"+picker+"\n"+expenses+"\n"+signature;
+  const joined=Object.keys(checks).map(read).join("\n")+"\n"+read("components/entry-review-summary.tsx")+"\n"+picker+"\n"+expenses+"\n"+signature;
   const requiredCueCount=(joined.match(/>Required<\/span>/g)??[]).length;
   const validCueCount=(joined.match(/<span className="field-hint" aria-hidden="true">Required<\/span>/g)??[]).length;
   assert.equal(requiredCueCount,validCueCount,"every Required cue must use field-hint and aria-hidden");
