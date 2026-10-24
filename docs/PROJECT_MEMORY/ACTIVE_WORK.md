@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — Core everyday UI consistency is owner's next priority (plan only)
+
+- Main `e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; production Vercel READY `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` on previous runtime SHA `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. New docs-only work branch `docs/logbook-core-ui-consistency-priority-20261024`. Full PR and final branch HEAD must be verified.
+- Owner direction: ordinary Logbook UI, not multi-GPS-flight editor. Proposed C0–C4 from baseline/audit to measured typography/layout, navigation/CTA, cards/detail consistency, accessibility acceptance. [Detailed priority proposal](../product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md). Preserve FlyTally identity; no automatic flight values, no GPS and no Training changes.
+- Existing [Draft #403](https://github.com/filipto861/flytally-logbook/pull/403) **paused/unmerged**. Historical U0/U1/U2/mobile #377–#380 not ready to merge on latest main; ~235 main commits ahead of their base, test results nontransferable.
+- Source review DONE; current authenticated UI, computed cascade, Node/TS/Playwright/PG, native Safari **NOT RUN**. Production DB/migrations/flags/deploy unchanged. **ONE NEXT STEP:** approve C0 read-only full everyday-workspace UI snapshot, then choose a targeted C1 fix based on observed evidence.
+
 ## 2026-10-24 — FlyTally Design Quality V2 review branch (separate from product/release streams)
 
 - **Scope:** owner wants all useful Woodcomp V3 design-quality methods available in FlyTally Logbook, adapted to its own Apple Design skills and aviation workflow. New [Draft PR #402](https://github.com/filipto861/flytally-logbook/pull/402), `docs/flytally-design-quality-v2-20261024`, base `main@5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. PR HEAD at initial creation `f5aa91dfa7d5bc224bc66d9148f3f57f6d8a9e37`; refresh after memory checkpoint.
