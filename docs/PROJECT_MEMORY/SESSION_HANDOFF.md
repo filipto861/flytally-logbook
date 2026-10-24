@@ -1,5 +1,14 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-24 — Design Quality V2 external guidelines, audit scanner; Draft #402
+
+- **UTC checkpoint:** 2026-10-24T09:00:00Z (documentation timestamp; remote branch head must be re-read). Repo `filipto861/flytally-logbook`; verified `main@5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` at start. Working branch `docs/flytally-design-quality-v2-20261024` initial PR head `f5aa91dfa7d5bc224bc66d9148f3f57f6d8a9e37`, [Draft PR #402](https://github.com/filipto861/flytally-logbook/pull/402), base `main`. This checkpoint commit will advance head; reverify.
+- **Owner decision/scope:** adapt Woodcomp Design V3 external quality methods in **FlyTally Logbook** with FlyTally brand, light/dark/night, Apple Design V2, aviation data integrity, existing verification architecture. Do not copy Woodcomp UI, introduce external library/theme, alter saved flights, certs, GPS, Training, DB, production, flags or deploy. User has NOT approved this specific PR merge.
+- **Changes:** curated external guideline at `.agents/skills/ui-quality-audit/references/EXTERNAL_DESIGN_QUALITY_V2.md`; routing via `AGENTS.md`, existing skill/README; sources/validation; read-only Node scanner and fixtures with two npm commands. `app/`, `components/`, `lib/`, `sql/`, `e2e/` and production files untouched; original Apple Design skill blob SHA `b9a791051891de5a24a4590bfac1cf359e7354bb` identical.
+- **Evidence:** exact scanner blob `9eb77c263a30bbb94603032df5279cc16dea6eec`, fixtures `3d2a890ba2144eb9bfea9084c4f871d233fc0323`; branch sources re-read; V8 isolated JS syntax subset and six logical fixture runs PASS. Node v24 real test, full repo scan, CI, typecheck, browser screenshots/Playwright, PG, native Safari, Vercel, release and product UI audit **NOT RUN**. No private data involved.
+- **Risk:** external examples are reference-only, not installed, not owner-approved restyling; static heuristics do not certify usability/accessibility; current ROADMAP and prior N3/GPS states may be historical—verify live GitHub, tests and production before unrelated development.
+- **ONE NEXT STEP:** verify latest PR #402 changed paths/head; run scanner Node fixtures and advisory app/component scan in complete checkout, disposition warnings; request separate owner permission for squash merge. No deploy.
+
 ## 2026-10-24T07:15:23.963Z — GPS CTA v2 full release FAIL on N3-M2 test-only CSS scope; exact new verification pending
 
 - Canonical GitHub Logbook `main@462b8d7b11c6ba59eb4a2b01b1eb4d53cb33abe2`, work implementation SHA `a254dd01cdacdc31d1363ffaf94b28e62e1ed21c` on `fix/logbook-gps-single-upload-cta-20261023`, Draft PR #401 base main; separate docs Draft PR #400 untouched. Production Vercel last verified READY at `dpl_fhvhcKB1AY21hHQHWz1WPpZ4ADYS` using `462b8d7b11c6ba59eb4a2b01b1eb4d53cb33abe2`. No Training modifications, prod DB migration, feature flags or deploy.
