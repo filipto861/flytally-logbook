@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24T12:10:32Z — GPS G2 error/retry MERGED, production deployment decision pending
+
+- Verified G2 [PR #406](https://github.com/filipto861/flytally-logbook/pull/406) **MERGED** from exact v2 tested source `2ae0c30b1d1d16752c5399f0233b240e190a7aa6` into `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6`; prior production base `80a83ddcb5a13962e975ba7933b8472da6afd4c5`. GitHub deleted source branch; checkpoint work branch `docs/logbook-g2-merged-checkpoint-20261024` docs only, pending independent merge approval.
+- Owner-local v2 release PASS on exact source SHA: source/typecheck/full Node/build PASS, risk authenticated browser 4/4 and extra persisted GPS Save & certify 2/2 desktop/mobile PASS, 0 browser skipped/retried. One shared `role="alert"` restored historical UX contract, existing G1 first missing focus preserved. Isolated fresh local PG16 disposed, standalone partition PG N/A by planner. Earlier v1 99/100 FAIL retained as dated evidence. Native Safari/VoiceOver/GitHub Actions NOT RUN.
+- Production Vercel `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM` READY for old G1 SHA `80a83ddcb5a13962e975ba7933b8472da6afd4c5`, so G2 **NOT SHIPPED**. No production DB/flag/migration/deploy or Training change.
+- **ONE NEXT STEP:** owner decides separately whether to authorize prod deploy of merged `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6`; if approved, verify Vercel Git SHA/aliases/READY plus actual GPS error/retry in authenticated browser (without unnecessary real flight saves).
+
 ## 2026-10-24 — G2 PR #406 local v1 release FAIL, shared-error corrective candidate prepared
 
 - Owner-provided PowerShell console `Vložený text(20261024-114508).txt` for G2 prior source SHA `74b8166e77b31c2f8af0975d8cafcfd7803cb5a7` (base `80a83ddcb5a13962e975ba7933b8472da6afd4c5`) shows **99/100 targeted pre-DB Node PASS, 1 FAIL**: `tests/v327-ui-ux-consistency-audit.test.ts:417` expected one GPS form-level `role="alert"` but found two. Runner safely stopped before PG16/browser/typecheck/build. This is a real source regression; no claim other gates ran.
