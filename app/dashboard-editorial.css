@@ -30,7 +30,6 @@
 .d1v11-recency--warning{--d1v11-recency-tone:var(--warning-text)}
 .d1v11-recency--review{--d1v11-recency-tone:var(--danger-text)}
 .d1v11-recency--unknown{--d1v11-recency-tone:var(--muted)}
-.d1v11-recency-state{font-size:.66rem;letter-spacing:.04em;font-weight:750;color:var(--muted)}
 .d1v11-recency h2{display:flex;align-items:center;gap:var(--ui-space-3);margin:var(--ui-space-3) 0 0;font-size:clamp(1.45rem,2.45vw,1.95rem);font-weight:790;line-height:1.15;letter-spacing:-.035em;overflow-wrap:anywhere}
 .d1v11-recency-marker{display:inline-block;flex:0 0 15px;width:15px;height:15px;border-radius:50%;background:var(--d1v11-recency-tone);box-shadow:0 0 0 4px color-mix(in srgb,var(--d1v11-recency-tone) 16%,transparent)}
 .d1v11-recency-detail{font-size:.8rem;color:var(--text-soft);line-height:1.4;margin:0}
