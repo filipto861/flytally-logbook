@@ -42,6 +42,7 @@ import "./v300-u4-flight-workflow.css";
 import "./v301-public-flight-viewer.css";
 import "./v300-u6-acceptance.css";
 import "./ui-system.css";
+import "./dashboard-editorial.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
