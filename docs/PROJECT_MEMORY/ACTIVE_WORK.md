@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — GPS G3 reading-state UX audit batch in Draft candidate (NOT RELEASED)
+
+- Live `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6` prod `dpl_9e1Dhr7HdC67jMeSEA2vz5jxLUL5` READY, G2 upload/retry owner-reported smoke works. G3 branch `fix/logbook-gps-file-read-pending-g3-20261024` separate from stale Draft #403/#404 and legacy docs branches.
+- G3 only: accessible Reading GPS track while awaiting `file.text()`, single top picker remains replaceable, old async read cannot overwrite new result, G2 one error alert and G1 first-missing-field focus preserved. E2E extended with synthetic slow file, replacement while pending and stale resolution; existing real Save & certify contract unchanged. Source 49/49 regex and E2E source parser advisory PASS; actual candidate Node/typecheck/build/PG/Playwright/native Safari NOT RUN. No prod schema/flags/deploy/Training change.
+- **ONE NEXT STEP:** owner-local exact-work-HEAD protected risk release with isolated physically verified local PG16 and supplemental real GPS Save & certify, then decide merge separately.
+
 ## 2026-10-24 — G2 PR #406 local v1 release FAIL, shared-error corrective candidate prepared
 
 - Owner-provided PowerShell console `Vložený text(20261024-114508).txt` for G2 prior source SHA `74b8166e77b31c2f8af0975d8cafcfd7803cb5a7` (base `80a83ddcb5a13962e975ba7933b8472da6afd4c5`) shows **99/100 targeted pre-DB Node PASS, 1 FAIL**: `tests/v327-ui-ux-consistency-audit.test.ts:417` expected one GPS form-level `role="alert"` but found two. Runner safely stopped before PG16/browser/typecheck/build. This is a real source regression; no claim other gates ran.
