@@ -1,5 +1,15 @@
 # G2 — GPS source failure feedback (rebased after deployed G1)
 
+
+## 2026-10-24 owner-local v1 verification FAIL and source correction
+
+- Exact owner Windows transcript `Vložený text(20261024-114508).txt` records `fix/logbook-gps-source-error-g2-20261024@74b8166e77b31c2f8af0975d8cafcfd7803cb5a7`, baseline `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5`, test started `2026-10-24T11:44:18Z`.
+- **ACTUAL `npm run test:target` FAIL** at pre-DB cheap source gate: **99 PASS, 1 FAIL, 100 total**, `tests/v327-ui-ux-consistency-audit.test.ts:417`, historical design batch 6 contract demands **exactly one literal `role="alert"` in `components/kml-import-form.tsx`**. G2 inserted a second adjacent source alert in addition to existing server-action alert, count 2 vs expected 1. This is a genuine consistency regression in source, not a parser/save/test-fixture error. PostgreSQL, full Node/TS/build and Playwright **NOT RUN**, runner aborted before touching any DB.
+- **Corrected runtime design:** a *single shared* `<p className="form-error" role="alert" tabIndex={-1} ref={errorRef}>` near the GPS source control renders `sourceError || state.error`, so either source read/inspect failure or server-action failure is announced via only **one** form-level alert. Existing `useEffect(state.error)` ref focus preserved; an actual new source error takes priority over a previously retained server error. The former bottom duplicate server error JSX is removed. This deliberately moves server error presentation to the upper source/review area while keeping its focus behavior; browser review is required to verify this does not degrade long-form save feedback. No parser/Flight/Track certification or DB change.
+- **Regression tests strengthened, not relaxed:** existing v3.3 batch 6 one-alert constraint remains **untouched**, new G2 source test demands shared source/server alert and original server focus. Existing N3-M1 authenticated browser error→retry+G1 remains unchanged. **Advisory current branch source check 38/38 regex assertions match, one literal alert, E2E V8 parse PASS. Real post-correction Node24/TypeScript/build/PG16/Playwright NOT RUN.**
+- **One next step:** owner reruns *new exact-HEAD* guarded G2 Windows release v2, confirming original 100/100 pre-DB checks, all planner-required risk gates, real G2 browser error/retry and GPS Save & certify persisted Flight+Track desktop/mobile; return sanitized evidence. No merge/deploy from source checks alone.
+
+
 **Date:** 2026-10-24  
 **Repo:** `filipto861/flytally-logbook`  
 **Verified baseline:** `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5` · deployed `fly-tally.com` Vercel `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM` READY for this SHA  
