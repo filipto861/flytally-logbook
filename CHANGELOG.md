@@ -1,3 +1,41 @@
+## 2026-10-21 — Logbook U1 local core acceptance PASS (Draft, NOT DEPLOYED)
+
+- Owner-local tested `fix/logbook-u1-flight-tab-cancel-focus-20261021@f6db89b7`: `node --check` PASS; targeted Node source **5/5 PASS**; disposable v21 DB identity/ownership/schema PASS; desktop Chromium Playwright `3.4.0 Manual explicit Save` **1/1 PASS (47.3s)**.
+- Verified full R1 certify → R1 archive/R2 draft → unsaved ArrowLeft Cancel retains focus/selection/arrival → R2 certify and immutable original hash → Enter creates DRAFT. The previously observed 5s action timeouts and 30s total test deadline are resolved by bounded waits and a **scoped** 90s scenario limit, not production-auth/certification changes.
+- Earlier U1 TypeScript typecheck PASS and Next production build PASS (41/41) on the same unmodified production source, **not rerun on exact tested head**. CI/full-suite/native iPad Safari/manual accepted-switch path NOT RUN.
+- Only client tab focus, bounded E2E regression, source assertions and governance documents changed. PR #378 still **DRAFT**, not merged; no production DB or deploy. Earlier failures retained chronologically below.
+
+## 2026-10-21 — U1 entire-scenario Playwright time budget (DRAFT / NOT VERIFIED)
+
+- Owner-local after 20s R1/R2 waits: targeted Node 4/4 PASS, isolated PostgreSQL v21 preflight PASS. Desktop browser advanced past certified R1, archived R1 / correction R2, unsaved-change keyboard cancellation/focus and recertified R2. It **failed 1/1** at final Enter-generated draft step because the overarching Playwright test hit **30-second total timeout**. The draft-save result is unverified, and no E2E completion PASS is claimed.
+- Scoped `test.setTimeout(90_000)` to the single comprehensive `3.4.0 Manual explicit Save & certify` test, consistent with existing `e2e/gps-rolecrew.spec.mjs` and `e2e/airport-elevation.spec.mjs` patterns. Existing per-action 20s gates, database integrity, and final Enter-draft checks are unchanged. Source contract test added.
+- **Updated code not yet locally tested**; app runtime/DB/certification unchanged; no merge or deploy.
+
+## 2026-10-21 — U1 R2 correction E2E completion gate (DRAFT / NOT VERIFIED)
+
+- Owner-local retest: targeted source 3/3 PASS, exact local test DB preflight PASS; Playwright **1 FAIL** at existing 5s `CORRECTION R2` expectation after initial R1 certification checks passed. U1 keyboard assertion still NOT REACHED.
+- Source review: correction action commits archived revision/write, refreshes recency and revalidates server view, with no redirect. Test now waits up to 20s on R2 badge and independently verifies persisted `R2 DRAFT` plus one archived R1 record. Source-only regression assertion added; no production certification/UI changes.
+- Revised branch TypeScript/Node/browser acceptance **NOT RUN**. No merge, deploy or production DB changes.
+
+## 2026-10-21 — U1 Playwright evidence-driven wait correction (DRAFT / NOT VERIFIED)
+
+- Owner trace + screenshot prove original 5 s assertion fired with `Save & certify` pending and `POST /flights/new` outstanding. Owner read-only DB proves the synthetic record was persisted `CERTIFIED R1`, so do not alter production certification logic.
+- Existing `e2e/manual-authority-certification.spec.mjs` now synchronizes initial save on a real detail redirect (20 s, matching existing GPS/certification test), R2 confirmation on explicit banner (20 s) and Enter-created draft on redirect (20 s). Success/lock badges and database evidence assertions preserved. Focused source test adds guard for completed-state synchronization.
+- Updated test/source head browser run, typecheck and build **NOT RUN**; no merge/deploy/DB migration or production runtime change.
+
+## 2026-10-21 — Logbook U1 owner-local verification attempt (DRAFT / BLOCKED)
+
+- Targeted source tests 2/2 PASS, TypeScript PASS, Next production build PASS (41/41), isolated PG18 DB v21 fixture preflight PASS.
+- Desktop Chromium Playwright **1 FAIL**, pre-existing initial Save & certify success banner expected within 5 seconds, not seen; U1 keyboard focus regression not reached. Screenshot, error context and trace need inspection. No runtime regression proven, do not mark browser acceptance PASS.
+- No merge, deploy, production DB mutation or new code changes in this evidence-only update.
+
+## 2026-10-21 — Logbook U1 tab focus cancel safety (Draft / not released)
+
+- `components/flight-detail-workspace.tsx`: `selectTab` reports acceptance; keyboard navigation only focuses a new tab when selection is actually accepted. Cancelling unsaved-change confirmation preserves focus on the selected logbook tab.
+- Added keyboard unsaved-correction scenario in `e2e/manual-authority-certification.spec.mjs` and focused source contract `tests/logbook-u1-flight-tab-focus.test.ts`.
+- No styling, navigation structure, regulatory logic, database schema, data migrations, or Training changes.
+- Current branch exact-head tests/typecheck/build/Playwright **NOT RUN**; no production deploy, main merge or GitHub Actions evidence. [Contract](docs/product/LOGBOOK_U1_FLIGHT_TAB_CANCEL_FOCUS_2026-10-21.md).
+
 # FlyTally changelog
 
 ## 2026-10-24 — GPS single-upload CTA v2 source regressions passed, release aggregate blocked; scoped test-only fix (Draft #401)
