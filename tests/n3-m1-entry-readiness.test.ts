@@ -62,7 +62,7 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   assert.match(gps,/tabIndex=\{-1\} accept="\.kml,\.gpx,\.csv/);
   assert.match(gps,/required onChange=\{async event=>\{/);
   assert.match(gps,/const epoch=\+\+fileEpoch\.current,file=event\.target\.files\?\.\[0\]/);
-  assert.match(gps,/const next=inspect\(source,file\.name\)/);
+  assert.match(gps,/let next:Analysis;try\{next=inspect\(source,file\.name\)\}/);
   assert.doesNotMatch(gps,/className="upload-zone"|<h2>Upload track<\/h2>/);
   assert.match(gps,/gps-track-source-status" role="status"/);
   assert.match(gps,/Choose a GPS source with usable flight data/);
@@ -89,4 +89,21 @@ test("G1 GPS completion action reuses first missing review item before any fallb
   assert.match(gps,/const focusEntryIssue=\(selector:string,detailsSelector\?:string,partIndex\?:number\)=>/);
   assert.match(gps,/details\.open=true/);
   assert.doesNotMatch(body,/\.submit\(|requestSubmit\(/,"review action never saves a flight");
+});
+
+
+test("G2 GPS source failures announce a safe error, fail closed, and retain G1 issue navigation",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  assert.match(gps,/\[sourceError,setSourceError\]=useState\(""\)/);
+  assert.match(gps,/const epoch=\+\+fileEpoch\.current,file=event\.target\.files\?\.\[0\];setSourceError\(""\);setAnalysis\(null\)/);
+  assert.match(gps,/if\(!file\)return;let source:string/);
+  assert.match(gps,/try\{source=await file\.text\(\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
+  assert.match(gps,/try\{next=inspect\(source,file\.name\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
+  assert.match(gps,/sourceError\|\|state\.error\?<p ref=\{errorRef\} className="form-error" role="alert" tabIndex=\{-1\}>\{sourceError\|\|state\.error\}<\/p>/);
+  assert.match(gps,/Unable to read the selected GPS file/);
+  assert.match(gps,/Unable to process the selected GPS file/);
+  assert.equal((gps.match(/role="alert"/g)??[]).length,1,"Only one form-level alert supports both source and server errors");
+  assert.match(gps,/if\(state\.error\)\{markDirty\(\);errorRef\.current\?\.focus\(\)\}/,"Original server error focus behavior remains");
+  assert.doesNotMatch(gps,/catch\{return\}/);
+  assert.match(gps,/if\(firstIssue\)\{firstIssue\.onSelect\(\);return\}/,"G1 completion focus must survive G2 change");
 });

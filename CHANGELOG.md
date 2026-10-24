@@ -1,5 +1,16 @@
 # FlyTally changelog
 
+## 2026-10-24 — G2 one shared accessible GPS error alert (DRAFT #406, retest pending)
+
+- Owner's Windows v1 pre-DB gate failed **99 PASS / 1 FAIL**: historical UI consistency test requires exactly one `role="alert"` per GPS form, whereas G2 initially added a second source read error alert. Source fix combines source/read/parse and server save error in one alert near source controls, keeps existing server error focus/visibility and fail-closed picker retry, removes duplicate bottom alert JSX. Existing `tests/v327-ui-ux-consistency-audit.test.ts` unchanged; targeted G2 test extended to enforce one combined alert and original server focus.
+- Static advisory 38/38 matches and one legacy alert invariant, actual updated Node24/TypeScript/build/PG/Playwright **NOT RUN**. G1 `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5` production remains READY and user-confirmed, G2 still Draft/unreleased; no DB/flag/Training/deploy edits. [Incident and correction](docs/product/LOGBOOK_GPS_G2_SOURCE_FAILURE_FEEDBACK_2026-10-24.md).
+
+## 2026-10-24 — GPS upload G2 accessible source error/retry (DRAFT / UNRELEASED)
+
+- Owner verified merged/deployed G1 production GPS completion focus and normal saving functionality; G1 production deployment `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM` on `80a83ddcb5a13962e975ba7933b8472da6afd4c5` READY. User-reported smoke PASS for explicitly confirmed actions; no independent native Safari/complete prod browser automation claimed.
+- New narrowly scoped G2 fix on `fix/logbook-gps-source-error-g2-20261024`: when file reading rejects or unexpected GPS inspection errors occur, show specific safe accessible inline error (no internal text), keep unavailable/empty import fail closed and permit reselect through the original single top chooser. No styling, parser, saving, certification, schema, Training, flags or production changes.
+- Existing N3-M1 source/E2E acceptance extended for error/retry and G1 preservation. In-memory advisory 37/37 GPS source patterns; **actual Node24/TS/Next build/Playwright/isolated PostgreSQL/native Safari NOT RUN**. Separate stale/unmergeable Draft #403 not merged. [Current contract](docs/product/LOGBOOK_GPS_G2_SOURCE_FAILURE_FEEDBACK_2026-10-24.md).
+
 ## 2026-10-24 — G1 GPS one-flight save: first actual blocker from bottom action (DRAFT, UNRELEASED)
 
 - When GPS review is incomplete, the existing bottom **Complete flight details** non-saving action now uses the same first missing-item navigation as the upper Entry Review. A missing Aircraft, Operation, Engine, applicable crew or per-flight evidence can direct the pilot to its existing control/disclosure instead of an unrelated review card. Old fallback preserved. No parser, server, persistence, aircraft/role defaults, schema, styling/motion, package, Training or certification changes.

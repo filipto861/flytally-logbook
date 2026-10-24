@@ -1,5 +1,18 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — G2 PR #406 local v1 release FAIL, shared-error corrective candidate prepared
+
+- Owner-provided PowerShell console `Vložený text(20261024-114508).txt` for G2 prior source SHA `74b8166e77b31c2f8af0975d8cafcfd7803cb5a7` (base `80a83ddcb5a13962e975ba7933b8472da6afd4c5`) shows **99/100 targeted pre-DB Node PASS, 1 FAIL**: `tests/v327-ui-ux-consistency-audit.test.ts:417` expected one GPS form-level `role="alert"` but found two. Runner safely stopped before PG16/browser/typecheck/build. This is a real source regression; no claim other gates ran.
+- Source corrected on `fix/logbook-gps-source-error-g2-20261024` Draft #406 to one unified `sourceError||state.error` alert near GPS picker, preserving existing server `errorRef` focus and G1 missing-field focus. Legacy one-alert test NOT changed; G2 source contract strengthened. 38/38 advisory matches incl new assertions; actual corrected Node/TS/build/browser/PG/native Safari NOT RUN. Owner G1 live smoke PASS/production `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM` READY `80a83ddcb5a13962e975ba7933b8472da6afd4c5`. No production DB/flags/deploy or Training changes.
+- **ONE NEXT STEP:** owner runs freshly SHA-pinned v2 local gated test package and provides console+sanitized JSON for G2 release evidence, including safe PG16/browser and real GPS Save & certify; never merge without full results and explicit approval.
+
+## 2026-10-24 — G2 GPS Save source read/error feedback in new Draft; G1 production smoke owner PASS
+
+- `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5` deployed Vercel READY `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM`, owner reports G1 Complete flight details and Save work correctly on live `fly-tally.com`. Source-error Draft #403 from old base now unmergeable and omitted merged G1; current small G2 implementation branch `fix/logbook-gps-source-error-g2-20261024` from new main preserves G1, pending full PR and release tests.
+- G2 only: visible safe `role=alert` for read/inspect failure, retry through same native file picker, fail-closed no stale flight. Original parser, Save draft/Save & certify, certification, flight evidence, Training untouched. Existing N3-M1 source/browser tests extended; source patterns 37/37 static advisory matches; Node/typecheck/build/PG/Playwright/native Safari NOT RUN.
+- Production migrations/flags/deploy unchanged, other Draft #404 and U0/U1/U2 unchanged. [G2 contract](../product/LOGBOOK_GPS_G2_SOURCE_FAILURE_FEEDBACK_2026-10-24.md).
+- **ONE NEXT STEP:** exact candidate isolated owner-local test gate (include error/retry, G1 and real GPS persisted Save & certify), then separate owner merge decision.
+
 ## 2026-10-24 — G1 GPS Save first-missing-control focus (separate implementation Draft)
 
 - Canonical `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`, new code branch `fix/logbook-gps-save-first-issue-focus-20261024`, base `main`, exact HEAD and draft PR number must be re-read after checkpoints. Existing docs-only GPS-first [Draft #404](https://github.com/filipto861/flytally-logbook/pull/404) separate/unmerged; prior source-error [Draft #403](https://github.com/filipto861/flytally-logbook/pull/403) separate/unmerged. Actual production remains Vercel `dpl_DrHNSRTuXbuLbLdk38MJ9PpZ4ADYS` READY on `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` at latest verified deployment; no production write.
