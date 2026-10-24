@@ -12,7 +12,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
   // The persisted snapshot is historical evidence, never a live privilege determination.
   // "attention" covers incomplete evidence too: it must NOT be relabelled "Not current".
   const recencyTone=recencySnapshot?.status==="ok"?"ok":recencySnapshot?.status==="warning"?"warning":recencySnapshot?.status==="attention"?"review":"unknown";
-  const recencyHeadline=recencyTone==="ok"?"OK at last check":recencyTone==="warning"?"Due soon at last check":recencyTone==="review"?"Needs review":"Not assessed";
+  const recencyHeadline=recencyTone==="ok"?"Last check: OK":recencyTone==="warning"?"Last check: Due soon":recencyTone==="review"?"Last check: Needs review":"Not assessed";
   return <div className="d1v11-page">
     <header className="d1v11-mast">
       <div><p className="d1v11-kicker">PILOT WORKSPACE</p><h1>Flight overview.</h1></div>
@@ -37,7 +37,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
       <section className={`d1v11-recency d1v11-recency--${recencyTone}`} aria-labelledby="d1v11-recency-title">
         <div className="d1v11-recency-top"><span className="d1v11-kicker">LICENCES & RECENCY</span></div>
         <h2 id="d1v11-recency-title"><span className="d1v11-recency-marker" aria-hidden="true"/>{recencyHeadline}</h2>
-        <p className="d1v11-recency-detail">{recencySnapshot?`Saved ${formatDateOnly(recencySnapshot.generatedAt.slice(0,10))} · Recheck before flight`:"Check your licences and recency evidence"}</p>
+        {recencySnapshot?<p className="d1v11-recency-detail">{formatDateOnly(recencySnapshot.generatedAt.slice(0,10))} · Verify before flight</p>:null}
         <Link className="d1v11-recency-link" href="/credentials">Check recency <span aria-hidden="true">→</span></Link>
         {attentionCount>0||actionCount>0?<div className="d1v11-attention" aria-label="Items requiring attention">
           {attentionCount>0?<Link href="/flights/needs-attention">{numberLabel(attentionCount,"flight needs","flights need")} review <span aria-hidden="true">→</span></Link>:null}
