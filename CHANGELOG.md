@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-24 — Draft #403: actionable GPS source failure feedback (UNRELEASED)
+
+- First small FlyTally Apple Design V2 / Design Quality V2 UI follow-up: the existing top KML/GPX/CSV chooser now displays an accessible safe read/parse failure instead of silently returning, clears that feedback on a new explicit file choice and keeps the original fail-closed analysis, parser and required input behavior. Extends existing source and registered N3-M1 Chromium test for synthetic unreadable source and recovery. No GPS calculations, server actions, flight persistence, styling, new library, database/schema, flags or Training changes.
+- Static source inspection advisory; **Node/TypeScript/build/PG16/Playwright/native Safari NOT RUN** on Draft #403. No merge/deploy. [Contract](docs/product/LOGBOOK_N3_FE05_GPS_SOURCE_ERROR_FEEDBACK_2026-10-24.md). The earlier PR #401 one-button fix is independently merged and Vercel production READY on `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` (2026-10-24).
+
 ## 2026-10-24 — GPS single-upload CTA v2 source regressions passed, release aggregate blocked; scoped test-only fix (Draft #401)
 
 - Owner's SHA `4a16b3c6479d0ffd2ce2e7eabe64964b22cff850` preflight 96/96, source 261/261, domain 19/19, TypeScript PASS; full Node 1686/1687 **FAIL** due historical N3-M2 CSS contract reading appended unrelated GPS positioning styles. Risk-selected 18 browser targets, 0 blockers. PG/browser/build NOT RUN after Node failure; local owned scratch PG16 disposed safely.
