@@ -155,6 +155,7 @@ Performance rules:
 - avoid N+1 queries on high-frequency pages;
 - aggregate in PostgreSQL when transferring raw rows is wasteful;
 - keep Dashboard read models lean and leave historical analysis to Statistics;
+- **D1-V11 (Draft PR #410; not yet deployed):** classic Dashboard continues to use `getDashboardOverviewData`. The URL-opt-in Editorial preview additionally requests `getDashboardPaceData(userId,asOf)`, a separate user-scoped SQL projection restricted to 25 UTC calendar months for 24 bars and two equal completed 12-month comparisons. It mirrors established activity/flight-category/safety-pilot rules, never calls unbounded `getDashboardData`, and must fail closed on invalid in-window date evidence. Missing/unplaceable dates are not inferred into a calendar period. The old `dashboard_widgets` preferences and legacy route remain unchanged. This is an **unreleased candidate**, with performance and browser validation still NOT RUN; read [review reconciliation](docs/product/LOGBOOK_D1_V11_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-24.md).
 - load detailed GPS only when required;
 - retain 10k/50k scale gates and the controlled 100k read benchmark for registered hot paths.
 
