@@ -39,6 +39,12 @@ test("D1-V11 zero baseline never fabricates a percentage and missing months are 
   assert.equal(result.months.filter(row=>row.total!==0).length,1);
   assert.equal(buildDashboardPace([],asOf).status,"empty");
   assert.equal(buildDashboardPace(null,asOf).status,"unavailable");
+  assert.equal(buildDashboardPace([sample("2023-01",900)],asOf).status,"empty",
+    "Only out-of-window source rows must not render a fake 24-month chart");
+  assert.equal(buildDashboardPace([sample("2024-10",40)],asOf).status,"empty",
+    "A comparison-only 25th source month is not visible Flying Pace activity");
+  assert.equal(buildDashboardPace([sample("2024-11",0)],asOf).status,"available",
+    "A valid zero-minute flight in the visible period is still a recorded activity month");
 });
 
 test("D1-V11 malformed or unaccounted date evidence fails closed",()=>{
