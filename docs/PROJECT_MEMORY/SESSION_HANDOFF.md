@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-24 — Owner clarified Manual New Flight is the top UI priority (Draft #404)
+
+- Canonical `filipto861/flytally-logbook` `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`, docs work branch `docs/logbook-core-ui-consistency-priority-20261024` base main; [Draft PR #404](https://github.com/filipto861/flytally-logbook/pull/404) remains unmerged. Verify final full work SHA after documentation commits, do not reuse pre-checkpoint SHA. Vercel production `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` READY using `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`; no new deploy/DB/flags.
+- Owner correction overrides previous generic UI route ordering: **FIRST /flights/new Manual entry**, then Edit flight regression, then Flights/Dashboard/Aircraft/Statistics/Settings and navigation. Separate GPS [Draft #403](https://github.com/filipto861/flytally-logbook/pull/403) PAUSED; N3-M3 multi-part GPS deferred; unrelated UI Draft #377–#380 untouched. No other repo.
+- Current main source reconstruction: `app/(protected)/flights/new/page.tsx` + `components/flight-entry-workspace.tsx` + shared `components/flight-form.tsx` + `components/entry-review-summary.tsx`; New-only top review status/direct correction, core Flight basics/Route UTC, conditional experience/crew, optional, Review & finish, two separate save intents. Edit uses same component and must not be changed unintentionally. No prefill last aircraft/airport or implicit role/time/flight evidence. Frozen flight integrity, compliance and canonical server rules.
+- Source audit only, focus/stack/copy candidates code-inferred, previous U0/N3 Chromium results historical; exact current source **F0 live rendered audit NOT RUN**, no Node/TS/build/Playwright/PG/native Safari executions on this docs branch. Motion NONE; no app/CSS implementation, new dependencies, SQL, production flags/deploy. Updated scope/acceptance [flight-entry-first plan](docs/product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md).
+- **ONE NEXT STEP:** run isolated, read-only synthetic F0 Manual New Flight and Edit baseline on exact main with valid physically owned localhost PG fixture; review measured UX issues before any F1 micro-change.
+
 ## 2026-10-24 — user reprioritized core Logbook UI/UX over GPS (docs-only proposal)
 
 - Verified `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`, latest Vercel production READY `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` for `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. Branch `docs/logbook-core-ui-consistency-priority-20261024` created from main for a **proposal only**, new PR/base/head to verify after commits. Existing GPS FE-05 Draft #403 remains open and **paused**, not merged; N3-M3 multi-part editor deferred. No Training changes.
