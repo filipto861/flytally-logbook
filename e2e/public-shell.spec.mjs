@@ -60,7 +60,16 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   test.skip(!authenticatedBrowser,"Authenticated browser smoke requires the isolated CI database.");
   await loginBrowserPilot(page,"/dashboard");
 
+  // V11 is the canonical default. Assert its real accessible heading and content
+  // before also exercising the intentionally hidden Classic rollback route.
+  await expectAuthenticatedRoute(page,"Flight overview.");
+  await expect(page.getByRole("region",{name:"Flying summary"})).toBeVisible();
+  await expect(page.locator('a.d1v11-recency-primary[href="/credentials"]')).toBeVisible();
+  await page.goto("/dashboard?view=classic");
   await expectAuthenticatedRoute(page,"At a glance");
+  await page.goto("/dashboard");
+  await expectAuthenticatedRoute(page,"Flight overview.");
+
   const mobileToggle=page.getByRole("button",{name:"Open navigation"});
   if(await mobileToggle.isVisible()){
     const toggleBox=await mobileToggle.boundingBox();
