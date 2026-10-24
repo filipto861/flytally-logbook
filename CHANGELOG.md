@@ -1,5 +1,7 @@
 # FlyTally changelog
 
+**2026-10-24 — D1-V11 Draft #410 review refinement (NOT RELEASED):** Fixed out-of-window Flying Pace false activity, added targeted boundary assertions, restored canonical final `ui-system.css` import order and labeled saved Recency as historic evidence. Verified exact helper code hash and ran local Node22 isolated pure-function 5/5 PASS plus standalone TypeScript 5.8.3 `tsc --noEmit` on that helper PASS. Repository test runner, full TypeScript/Next build/100k/PostgreSQL/Playwright/native Safari **NOT RUN**. Read-only DeepSeek request staged, response pending. No merge/deploy/DB/flags.
+
 ## 2026-10-24 — D1-V11 Editorial Dashboard candidate (Draft #410 / NOT RELEASED)
 - Implemented a **reversible URL-only** V11 preview at `/dashboard?view=v11`; the original `/dashboard`, persisted `dashboard_widgets`, sidebar Add flight and all user-scope protections remain operational in source.
 - V11 candidate includes single grouped flight-time/ULL/EASA card with integrated latest flight, prominent evidence-first recency, conditional real pending/data-quality links and 24-month Flying Pace with Total/ULL/EASA selector plus two equal completed twelve-month comparisons. Zero previous period is not presented as a percent change; invalid-date flight evidence prevents a false chart.
