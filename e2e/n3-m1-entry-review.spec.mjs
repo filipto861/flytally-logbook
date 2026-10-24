@@ -115,4 +115,39 @@ test("N3-M1 GPS review starts with source error then links to real aircraft cont
   await expect(review.getByRole("button",{name:"Change GPS track"})).toBeVisible();
   await expect(review.getByRole("button",{name:"Select aircraft"})).toBeVisible();
   await expectNoHorizontalOverflow(page);
+
+  // G3: an intentionally unresolved local File.text() must announce the
+  // pending state without trapping the user or accepting a stale GPS source.
+  await page.evaluate(()=>{
+    const previousText=File.prototype.text;
+    File.prototype.text=function(...args){
+      if(this.name==="g3-slow.kml")return new Promise(resolve=>{
+        window.__releaseG3OldRead=()=>resolve("not,a,valid,gps,track");
+      });
+      return previousText.apply(this,args);
+    };
+  });
+  const slowPicker=page.waitForEvent("filechooser");
+  await review.getByRole("button",{name:"Change GPS track"}).click();
+  await (await slowPicker).setFiles({name:"g3-slow.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await expect(review).toContainText("Reading GPS track");
+  await expect(gps.locator('.gps-track-source-status[role="status"]')).toContainText("Reading GPS track");
+  await expect(gps.getByRole("button",{name:"Save draft"})).toHaveCount(0);
+  await expect(review.getByRole("button",{name:"Upload a KML, GPX or CSV track"})).toBeEnabled();
+
+  // Replacing the in-flight read must render the newer source. Releasing the
+  // old File.text promise afterwards must NOT restore old analysis or pending.
+  const newPicker=page.waitForEvent("filechooser");
+  await review.getByRole("button",{name:"Upload a KML, GPX or CSV track"}).click();
+  await (await newPicker).setFiles({name:"g3-current.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await expect(gps.locator(".gps-track-source-status")).toContainText("g3-current.kml");
+  await expect(review).not.toContainText("Reading GPS track");
+  await page.evaluate(async()=>{
+    window.__releaseG3OldRead?.();
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  });
+  await expect(gps.locator(".gps-track-source-status")).toContainText("g3-current.kml");
+  await expect(review.getByRole("button",{name:"Select aircraft"})).toBeVisible();
+  await expect(gps.locator('.form-error[role="alert"]')).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
 });

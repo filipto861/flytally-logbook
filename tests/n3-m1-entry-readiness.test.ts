@@ -97,8 +97,8 @@ test("G2 GPS source failures announce a safe error, fail closed, and retain G1 i
   assert.match(gps,/\[sourceError,setSourceError\]=useState\(""\)/);
   assert.match(gps,/const epoch=\+\+fileEpoch\.current,file=event\.target\.files\?\.\[0\];setSourceError\(""\);setAnalysis\(null\)/);
   assert.match(gps,/if\(!file\)return;let source:string/);
-  assert.match(gps,/try\{source=await file\.text\(\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
-  assert.match(gps,/try\{next=inspect\(source,file\.name\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
+  assert.match(gps,/try\{source=await file\.text\(\)\}catch\{if\(epoch===fileEpoch\.current\)\{setReadingSource\(false\);setSourceError\(/);
+  assert.match(gps,/try\{next=inspect\(source,file\.name\)\}catch\{if\(epoch===fileEpoch\.current\)\{setReadingSource\(false\);setSourceError\(/);
   assert.match(gps,/sourceError\|\|state\.error\?<p ref=\{errorRef\} className="form-error" role="alert" tabIndex=\{-1\}>\{sourceError\|\|state\.error\}<\/p>/);
   assert.match(gps,/Unable to read the selected GPS file/);
   assert.match(gps,/Unable to process the selected GPS file/);
@@ -106,4 +106,21 @@ test("G2 GPS source failures announce a safe error, fail closed, and retain G1 i
   assert.match(gps,/if\(state\.error\)\{markDirty\(\);errorRef\.current\?\.focus\(\)\}/,"Original server error focus behavior remains");
   assert.doesNotMatch(gps,/catch\{return\}/);
   assert.match(gps,/if\(firstIssue\)\{firstIssue\.onSelect\(\);return\}/,"G1 completion focus must survive G2 change");
+});
+
+
+test("G3 GPS source reading has accessible pending feedback and stale-result-safe recovery",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  assert.match(gps,/\[readingSource,setReadingSource\]=useState\(false\)/);
+  assert.match(gps,/title=\{readingSource\?"Reading GPS track…":!analysis\?/);
+  assert.match(gps,/description=\{readingSource\?"Reading the selected GPS file\. You can choose another track\.":!analysis\?/);
+  assert.match(gps,/setSourceError\(""\);setAnalysis\(null\);setReviews\(\[\]\);setReadingSource\(Boolean\(file\)\)/,"old flight preview resets before G3 reading status; keep D2-C.1");
+  assert.match(gps,/readingSource\?<p className="gps-track-source-status" role="status">Reading GPS track… You can choose another file\.<\/p>/);
+  assert.match(gps,/if\(epoch!==fileEpoch\.current\)return;let next:Analysis/,"an older read cannot publish analysis");
+  assert.match(gps,/catch\{if\(epoch===fileEpoch\.current\)\{setReadingSource\(false\);setSourceError\("Unable to read/);
+  assert.match(gps,/catch\{if\(epoch===fileEpoch\.current\)\{setReadingSource\(false\);setSourceError\("Unable to process/);
+  assert.match(gps,/setAnalysis\(next\);setReadingSource\(false\)/,"successful analysis completes pending state");
+  assert.match(gps,/primaryAction=\{\{label:analysis\?"Change GPS track":"Upload a KML, GPX or CSV track",required:!analysis,onSelect:\(\)=>sourceInputRef\.current\?\.click\(\)\}\}/,"source replacement remains available during reading");
+  assert.equal((gps.match(/role="alert"/g)??[]).length,1,"G2 single shared error alert invariant");
+  assert.match(gps,/if\(firstIssue\)\{firstIssue\.onSelect\(\);return\}/,"G1 first-missing review focus invariant");
 });
