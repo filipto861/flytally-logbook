@@ -80,12 +80,16 @@ test("D1-V11 25-source-month canonical fixture maps exactly to 24 displayed UTC 
   assert.equal(result.months.at(-1)?.month,"2026-10","current partial month is plotted, not compared");
 });
 
-test("D1-V11 opt-in preview preserves the legacy preference editor and protected routes",()=>{
+test("D1-V11 is the default with no view switch and retains a hidden Classic fallback",()=>{
   const page=read("app/(protected)/dashboard/page.tsx"),editorial=read("components/dashboard-editorial.tsx"),pace=read("components/dashboard-pace.tsx"),css=read("app/dashboard-editorial.css"),layout=read("app/layout.tsx");
-  assert.match(page,/params\.view==="v11"/);
+  assert.match(page,/const classic=params\.view==="classic"/);
+  assert.match(page,/if\(!classic\)/);
+  assert.match(page,/!classic\?getDashboardPaceData\(session\.userId,asOf\):Promise\.resolve\(null\)/);
+  assert.match(page,/buildDashboardPace\(paceSource\?\.months\?\?null,asOf,paceSource\?\.invalidWindowDates\)/);
+  assert.doesNotMatch(page,/Preview new Dashboard|Classic dashboard|href="\/dashboard\?view=v11"/);
   assert.match(page,/DashboardEditor layout=\{layout\}/);
   assert.match(page,/dashboardLayoutFromPreferences\(preferences\)/);
-  assert.match(page,/href="\/dashboard"/);
+  assert.doesNotMatch(page,/href="\/dashboard" className="secondary-link"/);
   assert.match(page,/href="\/flights\/new"/);
   assert.match(editorial,/href="\/credentials"/);
   assert.match(editorial,/href="\/flights\/needs-attention"/);
