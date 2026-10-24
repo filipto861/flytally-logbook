@@ -73,3 +73,15 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   assert.match(ui,/clip-path:inset\(50%\)/);
   assert.doesNotMatch(ui.slice(ui.lastIndexOf("/* N3 GPS single-source action:")),/(?:animation|transition)\s*:/);
 });
+
+
+test("N3 GPS source read errors are actionable and cancellation does not clear the current import",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  assert.match(gps,/\[sourceError,setSourceError\]=useState\("")/);
+  assert.match(gps,/const epoch=\+\+fileEpoch\.current,file=event\.target\.files\?\.\[0\];if\(!file\)return;setSourceError\("","?\)/);
+  assert.match(gps,/try\{source=await file\.text\(\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
+  assert.match(gps,/try\{next=inspect\(source,file\.name\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
+  assert.match(gps,/sourceError\?<p className="form-error" role="alert">\{sourceError\}<\/p>/);
+  assert.match(gps,/Unable to read the selected GPS file/);
+  assert.match(gps,/Unable to process the selected GPS file/);
+});
