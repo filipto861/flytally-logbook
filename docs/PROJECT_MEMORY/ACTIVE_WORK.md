@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — First scoped UI batch following merged Design Quality V2 (Draft #403)
+
+- Main verified `e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a` (Design Quality V2 guidance and read-only scanner merged after deployed #401). Existing Vercel production `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm` READY at earlier code SHA `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`.
+- Separate work branch `fix/logbook-gps-source-read-feedback-20261024`, [Draft PR #403](https://github.com/filipto861/flytally-logbook/pull/403); first source/test HEAD `9f084e83242316be54be1b8f5066724951f05eac`. New docs commits advance branch; final HEAD see PR. No merge/deploy authorization.
+- Scope FE-05: visible `role=alert` for unreadable/exceptional GPS file source; retry through original single top picker; source/parser and server flight rules untouched. Tests: source patterns **30/30 STATIC MATCH ONLY**, actual Node24/TS/build/PG16/Playwright/iPad NOT RUN. No prod DB/schema/flags/Training.
+- Open prior UI Drafts #377–#380 remain independent. Full N3-M3 multi-part editor needs separate design freeze/acceptance; do not silently mix. Product contract: [FE-05 report](../../docs/product/LOGBOOK_N3_FE05_GPS_SOURCE_ERROR_FEEDBACK_2026-10-24.md).
+- **ONE NEXT STEP:** run owner-local exact final-HEAD targeted tests and risk-selected guarded Chromium/PG16 on clean branch, then review failures before asking for merge.
+
 ## 2026-10-24 — FlyTally Design Quality V2 review branch (separate from product/release streams)
 
 - **Scope:** owner wants all useful Woodcomp V3 design-quality methods available in FlyTally Logbook, adapted to its own Apple Design skills and aviation workflow. New [Draft PR #402](https://github.com/filipto861/flytally-logbook/pull/402), `docs/flytally-design-quality-v2-20261024`, base `main@5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. PR HEAD at initial creation `f5aa91dfa7d5bc224bc66d9148f3f57f6d8a9e37`; refresh after memory checkpoint.
