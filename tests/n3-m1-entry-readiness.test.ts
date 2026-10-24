@@ -73,3 +73,20 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   assert.match(ui,/clip-path:inset\(50%\)/);
   assert.doesNotMatch(ui.slice(ui.lastIndexOf("/* N3 GPS single-source action:")),/(?:animation|transition)\s*:/);
 });
+
+
+test("G1 GPS completion action reuses first missing review item before any fallback card focus",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  const list=gps.indexOf("const gpsReviewItems:EntryReviewItem[]=[]");
+  const action=gps.indexOf("const reviewImported=()=>{");
+  const render=gps.indexOf('return <form action={formAction} className="flight-form kml-wizard"');
+  assert.ok(list>=0&&action>list&&render>action,"completion action must consume the populated live missing-item list");
+  const body=gps.slice(action,render);
+  assert.match(body,/const firstIssue=gpsReviewItems\[0\]/);
+  assert.match(body,/if\(firstIssue\)\{firstIssue\.onSelect\(\);return\}/);
+  assert.match(body,/\.flight-review-card\[data-ready="false"\]/,"fallback remains for unexpected no-item state");
+  assert.match(gps,/onReview=\{reviewImported\}/);
+  assert.match(gps,/const focusEntryIssue=\(selector:string,detailsSelector\?:string,partIndex\?:number\)=>/);
+  assert.match(gps,/details\.open=true/);
+  assert.doesNotMatch(body,/\.submit\(|requestSubmit\(/,"review action never saves a flight");
+});
