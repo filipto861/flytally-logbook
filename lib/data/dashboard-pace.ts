@@ -85,6 +85,7 @@ export async function getDashboardPaceData(userId:number,asOf:Date=new Date()):P
   `,650) as Array<Record<string,unknown>>;
   if(rows.length!==1)return {months:null,invalidWindowDates:0};
   const row=rows[0];
+  if(row.invalid_window_dates===null||row.invalid_window_dates===undefined)return {months:null,invalidWindowDates:0};
   const issues=Number(row.invalid_window_dates);
   if(!Number.isSafeInteger(issues)||issues<0)return {months:null,invalidWindowDates:0};
   let value:unknown=row.months;
@@ -95,7 +96,7 @@ export async function getDashboardPaceData(userId:number,asOf:Date=new Date()):P
     if(!item||typeof item!=="object"||Array.isArray(item))return {months:null,invalidWindowDates:issues};
     const record=item as Record<string,unknown>;
     const monthValue=record.month_key,total=Number(record.total),ull=Number(record.ull),easa=Number(record.easa);
-    if(typeof monthValue!=="string"||![total,ull,easa].every(v=>Number.isSafeInteger(v)&&v>=0))
+    if(typeof monthValue!=="string"||["total","ull","easa"].some(key=>record[key]===null||record[key]===undefined)||![total,ull,easa].every(v=>Number.isSafeInteger(v)&&v>=0))
       return {months:null,invalidWindowDates:issues};
     months.push({month:monthValue,total,ull,easa});
   }
