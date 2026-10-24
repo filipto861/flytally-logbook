@@ -61,8 +61,8 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   assert.match(gps,/ref=\{sourceInputRef\} className="gps-track-file-native" name="kml" type="file"/);
   assert.match(gps,/tabIndex=\{-1\} accept="\.kml,\.gpx,\.csv/);
   assert.match(gps,/required onChange=\{async event=>\{/);
-  assert.match(gps,/const epoch=\+\+fileEpoch\.current,file=event\.target\.files\?\.\[0\]/);
-  assert.match(gps,/const next=inspect\(source,file\.name\)/);
+  assert.match(gps,/setGpsWarningAcknowledged\(false\);if\(!file\)return;let source:string/);
+  assert.match(gps,/let next:Analysis;try\{next=inspect\(source,file\.name\)\}/);
   assert.doesNotMatch(gps,/className="upload-zone"|<h2>Upload track<\/h2>/);
   assert.match(gps,/gps-track-source-status" role="status"/);
   assert.match(gps,/Choose a GPS source with usable flight data/);
@@ -72,4 +72,16 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   assert.match(ui,/\.kml-wizard \.gps-track-file-native\{/);
   assert.match(ui,/clip-path:inset\(50%\)/);
   assert.doesNotMatch(ui.slice(ui.lastIndexOf("/* N3 GPS single-source action:")),/(?:animation|transition)\s*:/);
+});
+
+
+test("N3 GPS source read errors are actionable and empty selection fails closed",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  assert.match(gps,/\[sourceError,setSourceError\]=useState\(""\)/);
+  assert.match(gps,/setGpsWarningAcknowledged\(false\);if\(!file\)return;let source:string/);
+  assert.match(gps,/try\{source=await file\.text\(\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
+  assert.match(gps,/try\{next=inspect\(source,file\.name\)\}catch\{if\(epoch===fileEpoch\.current\)setSourceError\(/);
+  assert.match(gps,/sourceError\?<p className="form-error" role="alert">\{sourceError\}<\/p>/);
+  assert.match(gps,/Unable to read the selected GPS file/);
+  assert.match(gps,/Unable to process the selected GPS file/);
 });

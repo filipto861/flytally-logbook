@@ -63,5 +63,28 @@ test("N3-M1 GPS review starts with source error then links to real aircraft cont
   await expect(review.getByRole("button",{name:"Select aircraft"})).toBeVisible();
   await review.getByRole("button",{name:"Select aircraft"}).click();
   await expect(gps.locator('select[name="registration"]')).toBeFocused();
+
+  // A browser file read failure should not leave an apparently ready stale import.
+  // Exercise the existing native picker, then recover using that same top action.
+  await page.evaluate(()=>{
+    const original=File.prototype.text;
+    File.prototype.text=function(...args){
+      if(this.name==="n3-unreadable.kml")return Promise.reject(new Error("Synthetic read failure"));
+      return original.apply(this,args);
+    };
+  });
+  const unreadablePicker=page.waitForEvent("filechooser");
+  await review.getByRole("button",{name:"Change GPS track"}).click();
+  await (await unreadablePicker).setFiles({name:"n3-unreadable.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await expect(gps.getByRole("alert")).toContainText("Unable to read the selected GPS file");
+  await expect(review.getByRole("button",{name:"Upload a KML, GPX or CSV track"})).toBeVisible();
+  await expect(gps.getByRole("status")).toHaveCount(0);
+
+  const recoveredPicker=page.waitForEvent("filechooser");
+  await review.getByRole("button",{name:"Upload a KML, GPX or CSV track"}).click();
+  await (await recoveredPicker).setFiles({name:"n3-recovered.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await expect(gps.getByRole("alert")).toHaveCount(0);
+  await expect(gps.getByRole("status")).toContainText("n3-recovered.kml");
+  await expect(review.getByRole("button",{name:"Change GPS track"})).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
