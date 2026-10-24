@@ -428,7 +428,9 @@
         "lib/performance",
         "lib/pilot-insights"
       ],
-      "files": [],
+      "files": [
+        "app/dashboard-editorial.css"
+      ],
       "risks": [
         "domain-data-integrity",
         "persistence-schema",
@@ -927,7 +929,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 401,
+    "auditedTotal": 406,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },

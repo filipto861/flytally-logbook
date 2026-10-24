@@ -1,5 +1,20 @@
 # FlyTally changelog
 
+## 2026-10-24 — D1-V11 independent review reconciliation (Draft PR #410; NOT RELEASED)
+- Owner-supplied read-only DeepSeek review returned **BLOCK** for releasing/default-promoting V11. Code risk in previous heavy `getDashboardData` preview accepted, though no actual latency failure was measured.
+- Staged source-only fix: V11 now combines existing optimized `getDashboardOverviewData` with a separate user-scoped **25-month bounded** `getDashboardPaceData`, returning monthly Total/ULL/EASA only. Source-copy canonical formulas for `dashboard_total`, `auxiliary`, `logged_minutes` and `activity_minutes`; current month remains MTD. Existing lean Dashboard SQL remains unchanged.
+- Strengthened historical recency warning without making regulatory CURRENT claim. Malformed dates lexically located in window cause Unavailable; unplaceable invalid dates cannot be asserted in/out of a period. Added 25-month parity tests and static bounded read/ARIA guards (all **NOT RUN** on current PR SHA).
+- Review reconciliation: `docs/product/LOGBOOK_D1_V11_DEEPSEEK_REVIEW_RECONCILIATION_2026-10-24.md`. Actual PG16 100k EXPLAIN ANALYZE, typecheck, Node24 test suite, Next build, authenticated Chromium, zoom, native Safari, production smoke and CI **NOT RUN**; performance **NOT VERIFIED**. No migration, feature flags, merge, deployment, Training or production DB changes.
+
+**2026-10-24 — D1-V11 Draft #410 review refinement (NOT RELEASED):** Fixed out-of-window Flying Pace false activity, added targeted boundary assertions, restored canonical final `ui-system.css` import order and labeled saved Recency as historic evidence. Verified exact helper code hash and ran local Node22 isolated pure-function 5/5 PASS plus standalone TypeScript 5.8.3 `tsc --noEmit` on that helper PASS. Repository test runner, full TypeScript/Next build/100k/PostgreSQL/Playwright/native Safari **NOT RUN**. Read-only DeepSeek request staged, response pending. No merge/deploy/DB/flags.
+
+## 2026-10-24 — D1-V11 Editorial Dashboard candidate (Draft #410 / NOT RELEASED)
+- Implemented a **reversible URL-only** V11 preview at `/dashboard?view=v11`; the original `/dashboard`, persisted `dashboard_widgets`, sidebar Add flight and all user-scope protections remain operational in source.
+- V11 candidate includes single grouped flight-time/ULL/EASA card with integrated latest flight, prominent evidence-first recency, conditional real pending/data-quality links and 24-month Flying Pace with Total/ULL/EASA selector plus two equal completed twelve-month comparisons. Zero previous period is not presented as a percent change; invalid-date flight evidence prevents a false chart.
+- Reuses existing monthly Statistics read on **preview only**, rather than adding aggregates to protected lean overview SQL, which was restored byte-identical before PR. This heavier preview is **not release-ready** until reviewed for scale or replaced with a correctly bounded source-backed query.
+- Added targeted tests (NOT RUN on candidate), dedicated scoped style and implementation/reviewer document. Source read-back and 11 isolated source assertions MATCH (advisory), real Node/TS/build/PG/browser/native Safari/CI **NOT RUN**; no merge, deploy, schema/flag changes, prod DB or Training modifications. See [D1-V11 implementation contract](docs/product/LOGBOOK_D1_V11_IMPLEMENTATION_CANDIDATE_2026-10-24.md).
+
+
 ## 2026-10-24 — G3 source-reset legacy D2-C.1 regression corrected, not released
 
 - Owner Windows v1 actual candidate `43fbb27d232ca2d59fc11f770954e3552593d2dbe9518ac0d6115c57704bc4de` on `PR #407@625f5de8a812df5d5800ed3f785870ae2f41fb89` **FAIL** at full Node aggregate (`tests/v142-gps-import.test.ts:79`); initial 101/101, design 6/6, source 261/261, TypeScript PASS. Introducing G3 `setReadingSource` between old `setAnalysis(null)` and `setReviews([])` broke old exact source contract for immediate GPS preview invalidation. No browser/build/save execution after fail; disposable local PG16 removed.
