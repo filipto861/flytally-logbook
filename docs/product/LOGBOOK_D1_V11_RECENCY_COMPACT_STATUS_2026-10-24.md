@@ -27,3 +27,11 @@ The final compact card is a **single primary link surface** to `/credentials`: t
 Draft PR only until exact-HEAD owner-local risk verification and explicit approval. No automatic merge/deploy/production DB change. Separate docs-only PR #411 is unrelated and untouched.
 
 **ONE NEXT STEP:** run candidate-bound targeted Node/TypeScript and mobile browser checks for the new recency card, then obtain owner visual approval for default color/text semantics before release.
+
+## 2026-10-24 — owner-approved immediate Editorial default (new release scope)
+- The earlier opt-in-only limitation was **superseded by explicit owner instruction** to remove the user-facing new/old Dashboard switch and show the new Dashboard directly on `/dashboard`.
+- `app/(protected)/dashboard/page.tsx` now uses `const classic=params.view==="classic"`. **Not Classic = Editorial default**, including prior `?view=v11` alias. The heavy past Statistics query remains prohibited: only existing optimized overview and separate bounded 25-month pace service. If monthly result is missing, `buildDashboardPace(null)` renders **Unavailable** and does not substitute zero or display Classic silently.
+- The old UI is preserved at `/dashboard?view=classic` **without a visible toggle**, for backwards-compatible rollback only. Previous `dashboard_widgets` preference storage/editor remains byte-identical; browser application is not rewritten or auto-migrated.
+- No change to Recency legal semantics: its green saved historical status is `Last check: OK`, not an assertion that the pilot is presently CURRENT; dashboard recency evaluation is not silently auto-applied.
+- New regression source tests assert default V11 read path, absent Preview/Classic UI labels, hidden Classic fallback, persistence compatibility, and unavailable pace on missing rows. Underlying SQL and credentials logic unmodified.
+- **DoD:** candidate-bound risk and authenticated mobile browser proof, Vercel preview build, owner-approved merge to main, manual prod deploy exact SHA, provider READY/domain verification, production authenticated smoke separately. No prod DB/flag/migration. Tests **NOT RUN** as of writing; do not claim release from approved plan alone.
