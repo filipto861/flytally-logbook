@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — GPS saving is top everyday UI priority (owner correction, Draft #404)
+
+- Baseline main `e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; Vercel production `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` READY. Docs branch `docs/logbook-core-ui-consistency-priority-20261024`, [Draft PR #404](https://github.com/filipto861/flytally-logbook/pull/404), no merge/deploy. Latest owner decision **GPS upload → explicit one-flight review → Save draft or Save & certify → definitive saved detail** is used the most; supersedes earlier general UI and Manual-first emphasis. Manual entry second, rest of UI third. Multiple-GPS-flight editor redesign deferred; GPS error Draft #403 separate/unmerged.
+- Source reconstruction complete on current main; one bottom unready `Complete flight details` scrolls to GPS review card rather than necessarily to missing aircraft/role control — **hypothesis from source**, not reproduced. Existing top direct-to-missing links, pending buttons and server verification preserved. Older N3-D0 ~4,099px single-flight selected screenshot at 390px documents historical density, not verified current runtime.
+- Canonical [G0–G2 GPS save first plan](../product/LOGBOOK_CORE_UI_CONSISTENCY_V2_PLAN_2026-10-24.md) defines exact owner-local synthetic one-flight save/certify/failure/redirect browser acceptance and subsequent targeted UX batch. No code changed; all current browser/Node/PG/native Safari **NOT RUN**, docs-only tests N/A.
+- **ONE NEXT STEP:** owner-local G0 authenticated browser visual/save evidence on exact main and disposable verified localhost DB. No prod SQL/migrations/flags, Training, merge/deploy.
+
 ## 2026-10-24 — UI priority refined: routine Manual New Flight FIRST (Draft #404)
 
 - Verified `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`; work `docs/logbook-core-ui-consistency-priority-20261024` in [Draft PR #404](https://github.com/filipto861/flytally-logbook/pull/404), docs-only / unmerged. Vercel production remains READY on earlier runtime `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`; no prod DB/migration/flag/deploy changes.
