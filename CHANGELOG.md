@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-24 — GPS single-upload CTA v2 source regressions passed, release aggregate blocked; scoped test-only fix (Draft #401)
+
+- Owner's SHA `4a16b3c6479d0ffd2ce2e7eabe64964b22cff850` preflight 96/96, source 261/261, domain 19/19, TypeScript PASS; full Node 1686/1687 **FAIL** due historical N3-M2 CSS contract reading appended unrelated GPS positioning styles. Risk-selected 18 browser targets, 0 blockers. PG/browser/build NOT RUN after Node failure; local owned scratch PG16 disposed safely.
+- Scoped `tests/n3-m2-manual-layout.test.ts` to exactly N3-M2 CSS section before independent GPS marker. Preserved all intended Manual style invariants; no runtime files changed by this fix. **Fresh exact-SHA release tests NOT RUN**. No merge/deploy/flag or DB changes. [Incident and acceptance note](docs/product/LOGBOOK_GPS_SINGLE_UPLOAD_CTA_FIX_2026-10-23.md).
+
 ## 2026-10-24 — Draft #401 GPS Required cue restored on single upper picker (NOT RELEASED)
 
 - Owner's exact-source first release FAIL was genuine v3.3 mixed-form UI cue regression: new upper file picker lacked visible Required hint; 47/47 preflight PASS, canonical source 260/261 FAIL, other gates NOT RUN. New code SHA `ba5460de4223f528044139b1387b9b80eec09c63` adds `Required` next to the sole upper upload button label before file selection. Source contract v3.3 now validates this delegated UI and the original native required input with no lower duplicate picker.
