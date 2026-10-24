@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-24 — G2 GPS source error/retry merged, not yet deployed
+
+- Owner-approved [PR #406](https://github.com/filipto861/flytally-logbook/pull/406) merged source HEAD `2ae0c30b1d1d16752c5399f0233b240e190a7aa6` into `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6`. Existing GPS picker now announces file-read / unexpected processing failures with a single accessible form-level alert, allows retry and retains original G1 issue focus, server save, certification and track integrity. Historical pre-DB 99/100 FAIL due duplicate alert remains documented; corrected source passed exact-HEAD v2 release.
+- Windows local v2 risk release PASS (source/typecheck/aggregate Node/build), authenticated browser 4/4 PASS, independent real GPS Save & certify persisted flight/track 2/2 PASS desktop/mobile; 0 skipped/retried; physically owned isolated PG16 removed. Standalone PostgreSQL partition N/A by planner, native Safari/CI and production G2 smoke NOT RUN.
+- **Production is still preceding G1 deployment** `dpl_4qY8BpkBrYS6gDwuinZjiz9LAtqM`, Git SHA `80a83ddcb5a13962e975ba7933b8472da6afd4c5`. No production DB migration, feature flags or Training change, no release authorization by merge. Separate post-merge checkpoint branch, not canonical main until reviewed.
+
 ## 2026-10-24 — G2 one shared accessible GPS error alert (DRAFT #406, retest pending)
 
 - Owner's Windows v1 pre-DB gate failed **99 PASS / 1 FAIL**: historical UI consistency test requires exactly one `role="alert"` per GPS form, whereas G2 initially added a second source read error alert. Source fix combines source/read/parse and server save error in one alert near source controls, keeps existing server error focus/visibility and fail-closed picker retry, removes duplicate bottom alert JSX. Existing `tests/v327-ui-ux-consistency-audit.test.ts` unchanged; targeted G2 test extended to enforce one combined alert and original server focus.
