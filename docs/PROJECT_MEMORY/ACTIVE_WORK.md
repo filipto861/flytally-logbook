@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24T12:44:03Z — G3 protected release v1 FAIL, localized correction; retest pending
+
+- `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6` G2 READY deployment `dpl_9e1Dhr7HdC67jMeSEA2vz5jxLUL5`. G3 Draft PR #407 earlier tested HEAD `625f5de8a812df5d5800ed3f785870ae2f41fb89`, v1 owner-local `runner=FAIL`: pre-DB 101/101, Design Quality 6/6, source 261/261, TypeScript PASS; full Node FAIL one legacy D2-C.1 old preview reset adjacency source assertion; build/browser/supplemental Save NOT RUN. Fresh owned isolated PG16 safely removed. NO production changes.
+- Work branch source now restores `setAnalysis(null);setReviews([])` before G3 `setReadingSource(Boolean(file))`; G3-only assertion explicitly covers both. Historical test unchanged. Advisory 49/49 source matches, one alert, E2E source syntax PASS; exact corrected Node/PG/browser/build NOT RUN. Draft branch documentation checkpoint update advancing HEAD; re-read before pinning tests.
+- **ONE NEXT STEP:** run protected exact-SHA v2 local release including G3 real browser pending-replacement and GPS Save & certify, inspect evidence before owner approval.
+
 ## 2026-10-24 — GPS G3 reading-state UX audit batch in Draft candidate (NOT RELEASED)
 
 - Live `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6` prod `dpl_9e1Dhr7HdC67jMeSEA2vz5jxLUL5` READY, G2 upload/retry owner-reported smoke works. G3 branch `fix/logbook-gps-file-read-pending-g3-20261024` separate from stale Draft #403/#404 and legacy docs branches.
