@@ -224,7 +224,6 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
   const singleLandingSummary=singleReview?(sourceRequirements?.landingMode==="DAY_NIGHT"?`${singleReview.landingsDay||"—"} day · ${singleReview.landingsNight||"—"} night`:singleReview.landingsDay||singleReview.starts||"—"):"—";
   const addCut=()=>{if(!analysis||parts.length>=20)return;const boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],segments=boundaries.slice(0,-1).map((start,index)=>({start,end:boundaries[index+1]-1})),largest=segments.sort((a,b)=>(b.end-b.start)-(a.end-a.start))[0];if(largest.end-largest.start<6)return;resetParts([...cuts,Math.floor((largest.start+largest.end)/2)])};
 
-  const reviewImported=()=>{const target=document.querySelector<HTMLElement>('.flight-review-card[data-ready="false"]')??document.querySelector<HTMLElement>(".flight-review-card");target?.scrollIntoView({behavior:"smooth",block:"start"});target?.focus({preventScroll:true})};
   useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);
   const focusEntryIssue=(selector:string,detailsSelector?:string,partIndex?:number)=>{
     if(detailsSelector){
@@ -286,6 +285,16 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
       addGpsIssue("completion","Review remaining flight details",".flight-review-card",undefined,0);
     }
   }
+  // The bottom completion action follows the same authoritative, user-facing
+  // missing-item list as Entry Review. Do not jump past missing aircraft/crew
+  // controls to a flight card when the required value lives above it.
+  const reviewImported=()=>{
+    const firstIssue=gpsReviewItems[0];
+    if(firstIssue){firstIssue.onSelect();return}
+    const target=document.querySelector<HTMLElement>('.flight-review-card[data-ready="false"]')??document.querySelector<HTMLElement>(".flight-review-card");
+    target?.scrollIntoView({behavior:"auto",block:"start"});
+    target?.focus({preventScroll:true});
+  };
   return <form action={formAction} className="flight-form kml-wizard" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
     <EntryReviewSummary
       mode="gps"
