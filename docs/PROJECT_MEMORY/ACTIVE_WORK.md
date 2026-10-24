@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24T10:42:27Z — G1 GPS Save fix merged, deployment pending owner decision
+
+- Verified [PR #405](https://github.com/filipto861/flytally-logbook/pull/405) **MERGED** from source HEAD `da2637ed41a11691ce56ba9394ab13d7260127a0` into `main@80a83ddcb5a13962e975ba7933b8472da6afd4c5` after explicit merge-only approval. Original feature branch automatically deleted. New docs-only checkpoint branch `docs/logbook-pr405-merge-checkpoint-20261024` from merged main; **NOT canonical until separately merged**.
+- Exact head owner-local risk release PASS (source 261/261; 99/99 preflight; Design Quality 6/6; TS; Node 1688/1688; build; risk-browser 4/4; separate real GPS Save & certify/persisted track 2/2), 0 skips/retries. Loopback-only disposable PG16, schema-first v20/v21; standalone partition PG N/A by risk plan. Native Safari/iPad/VoiceOver and production smoke NOT RUN. No new tests on post-merge merge commit.
+- Vercel **STILL old production** READY `dpl_DrHNSRTuXbuLbLdk38MJ9PpQjUnm`, SHA `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. Production DB/migrations/flags/deploy untouched, no Training changes. GPS-specific Draft #403 and GPS-first UX plan Draft #404 remain separate/unmerged, multi-flight N3-M3 deferred.
+- **ONE NEXT STEP:** owner approves or declines separately deploying merged SHA `80a83ddcb5a13962e975ba7933b8472da6afd4c5`; if approved, perform exact SHA controlled deploy, verify domain READY and production smoke.
+
 ## 2026-10-24 — G1 GPS Save first-missing-control focus (separate implementation Draft)
 
 - Canonical `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`, new code branch `fix/logbook-gps-save-first-issue-focus-20261024`, base `main`, exact HEAD and draft PR number must be re-read after checkpoints. Existing docs-only GPS-first [Draft #404](https://github.com/filipto861/flytally-logbook/pull/404) separate/unmerged; prior source-error [Draft #403](https://github.com/filipto861/flytally-logbook/pull/403) separate/unmerged. Actual production remains Vercel `dpl_DrHNSRTuXbuLbLdk38MJ9PpZ4ADYS` READY on `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` at latest verified deployment; no production write.
