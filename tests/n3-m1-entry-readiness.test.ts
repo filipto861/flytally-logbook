@@ -61,7 +61,7 @@ test("N3 GPS upload has one visible top file action; original required file inpu
   assert.match(gps,/ref=\{sourceInputRef\} className="gps-track-file-native" name="kml" type="file"/);
   assert.match(gps,/tabIndex=\{-1\} accept="\.kml,\.gpx,\.csv/);
   assert.match(gps,/required onChange=\{async event=>\{/);
-  assert.match(gps,/const epoch=\+\+fileEpoch\.current,file=event\.target\.files\?\.\[0\]/);
+  assert.match(gps,/if\(!file\)return;setSourceError\(""\);setAnalysis\(null\)/);
   assert.match(gps,/const next=inspect\(source,file\.name\)/);
   assert.doesNotMatch(gps,/className="upload-zone"|<h2>Upload track<\/h2>/);
   assert.match(gps,/gps-track-source-status" role="status"/);
