@@ -96,8 +96,11 @@ test("D1-V11 opt-in preview preserves the legacy preference editor and protected
   assert.match(editorial,/Last check: Due soon/,"warning must not claim current expiry");
   assert.match(editorial,/Last check: Needs review/,"ambiguous attention must never be labelled Not current");
   assert.match(editorial,/Not assessed/,"missing evidence must remain neutral");
-  assert.match(editorial,/Verify before flight/,"no stale snapshot may imply live clearance");
+  assert.doesNotMatch(editorial,/Verify before flight|Check recency <span|Saved result:/,"no duplicate explanatory or button copy");
   assert.match(editorial,/formatDateOnly\(recencySnapshot\.generatedAt\.slice\(0,10\)\)/,"timestamp of previous assessment must remain visible");
+  assert.match(editorial,/<Link className="d1v11-recency-primary" href="\/credentials">/,"whole status block is the sole action");
+  assert.match(css,/\.d1v11-recency-primary\{display:grid;/,"compact status area is touchable");
+  assert.match(css,/min-height:112px/,"primary Recency area must have a large touch target");
   assert.doesNotMatch(editorial,/Saved \$\{formatDateOnly|Check your licences and recency evidence/,"no duplicate explanatory copy");
   assert.match(editorial,/d1v11-recency-marker/,"status is identifiable without relying on color alone");
   assert.doesNotMatch(editorial,/recencyHeadline=.*Not current/,"attention is not proof of NOT CURRENT");
