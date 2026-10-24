@@ -1,5 +1,15 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-24T14:03:44.511Z — D1-A Dashboard visual audit test harness (PENDING browser execution)
+- Scope/owner: Dashboard D1 first, then Flights list D2, Add Flight (GPS and Manual) D3. No visual redesign before actual browser evidence. Existing docs-only source audit Draft PR #408 is separate.
+- Repo: filipto861/flytally-logbook; canonical main 470656f01ce9d8999d7dff5dbf3a2474c7b2e4d9; work branch test/logbook-d1-dashboard-visual-audit-20261024, base main. Baseline last work commit a24a6f28fa2a871e00c80cde70bf27a24f13a92b; final branch head / PR number verify after this checkpoint.
+- Changed test branch: e2e/d1-dashboard-visual-audit.spec.mjs; tooling/run-d1-dashboard-audit-local.ps1; docs/product/LOGBOOK_D1A_BROWSER_AUDIT_HARNESS_2026-10-24.md; ROADMAP.md; PROJECT_MEMORY checkpoint documents. No app/components/lib/CSS changes.
+- Evidence: JS source imports-stripped V8 parse PASS (ADVISORY only); actual Node24, PostgreSQL fixture, build, PowerShell, 30 Playwright screenshots/computed styles, native Safari, VoiceOver all NOT RUN. No release PASS claimed.
+- DB/schema/migrations/flags: no production operations; planned fixture creates a new physically owned loopback-only empty PG 16/18 cluster, guarded before synthetic bootstrap, teardown built in. Production DB identity/flags not inspected = UNKNOWN; deployment remains separately verified READY dpl_ABShRChWDdg4oCzuygKMvQHX3oSe SHA 470656f01ce9d8999d7dff5dbf3a2474c7b2e4d9, unchanged. No merge or production deployment authorization.
+- Blockers: authenticated browser fixture + Node24/Windows PG required for captured DOM screenshots, and native Safari requires Apple hardware. No secret/private flight/GPS data stored.
+- DO NOT: flight logic, recency engine, GPS, preference encoding, DB migrations/production, feature flags, Training, brand redesign, auto-prefill, merge or deploy without separate consent.
+- ONE NEXT STEP: run the guarded exact-work-HEAD local D1 capture script, collect 30 screenshots/JSON and decide source-grounded D1-B edits after independent read-only review.
+
 ## 2026-10-24T12:44:03Z — G3 PR #407 owner-local v1 FAIL; D2-C.1 strict preview reset recovered
 
 - GitHub canonical Logbook `main@1fe1e5d0928a46e18e674688bb92a431a89d1fb6`; current work branch `fix/logbook-gps-file-read-pending-g3-20261024`, open Draft [#407](https://github.com/filipto861/flytally-logbook/pull/407), previous failed HEAD `625f5de8a812df5d5800ed3f785870ae2f41fb89`. Final new work SHA must be verified after document checkpoint commits; base unchanged. G2 production still READY `dpl_9e1Dhr7HdC67jMeSEA2vz5jxLUL5` exact main; G2 user-reported live upload/error/retry works; G3 unmerged/undeployed.
