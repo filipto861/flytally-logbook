@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-24 — G1 GPS Save first-missing-control focus (separate implementation Draft)
+
+- Canonical `main@e58c49d810cc53a25ca1ab553f9c3f720a4e6f6a`, new code branch `fix/logbook-gps-save-first-issue-focus-20261024`, base `main`, exact HEAD and draft PR number must be re-read after checkpoints. Existing docs-only GPS-first [Draft #404](https://github.com/filipto861/flytally-logbook/pull/404) separate/unmerged; prior source-error [Draft #403](https://github.com/filipto861/flytally-logbook/pull/403) separate/unmerged. Actual production remains Vercel `dpl_DrHNSRTuXbuLbLdk38MJ9PpZ4ADYS` READY on `5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc` at latest verified deployment; no production write.
+- Verified source defect: GPS bottom `Complete flight details` jumped to first flight card instead of first missing aircraft/crew/engine field; code now reuses `gpsReviewItems[0].onSelect()` and original fallback. Single native upload, visible review status, unchanged `ready`/submit/flight certification. Existing N3-M1 source test and E2E updated; code-derived checks + simulated callback PASS, **actual Node24/TypeScript/Playwright/PG16 NOT RUN**. No CSS tokens/layout/motion changed. Product contract: [G1 GPS save navigation](../product/LOGBOOK_GPS_SAVE_FIRST_ISSUE_FOCUS_2026-10-24.md).
+- **ONE NEXT STEP:** exact SHA local targeted and protected schema-first G0 browser/save acceptance, followed by review of real screenshots/focus before any merge.
+
 ## 2026-10-24 — FlyTally Design Quality V2 review branch (separate from product/release streams)
 
 - **Scope:** owner wants all useful Woodcomp V3 design-quality methods available in FlyTally Logbook, adapted to its own Apple Design skills and aviation workflow. New [Draft PR #402](https://github.com/filipto861/flytally-logbook/pull/402), `docs/flytally-design-quality-v2-20261024`, base `main@5e75b68c42a3a0697a2ff395e6c4eb4d35eb89bc`. PR HEAD at initial creation `f5aa91dfa7d5bc224bc66d9148f3f57f6d8a9e37`; refresh after memory checkpoint.

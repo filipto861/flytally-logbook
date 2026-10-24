@@ -63,5 +63,30 @@ test("N3-M1 GPS review starts with source error then links to real aircraft cont
   await expect(review.getByRole("button",{name:"Select aircraft"})).toBeVisible();
   await review.getByRole("button",{name:"Select aircraft"}).click();
   await expect(gps.locator('select[name="registration"]')).toBeFocused();
-  await expectNoHorizontalOverflow(page);
+
+  // The bottom completion action must correct the FIRST actual blocker,
+  // not jump to the first per-flight review card while Aircraft is missing.
+  const complete=gps.getByRole("button",{name:"Complete flight details"});
+  await expect(complete).toBeVisible();
+  await complete.click();
+  await expect(gps.locator("details.gps-flight-context")).toHaveAttribute("open","");
+  await expect(gps.locator('select[name="registration"]')).toBeFocused();
+  await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+
+  // With aircraft selected the same action now targets Operation, then Engine.
+  await expect(review.getByRole("button",{name:"Operation (SP / MP)"})).toBeVisible();
+  await complete.click();
+  await expect(gps.locator('select[name="operationType"]')).toBeFocused();
+  await gps.locator('select[name="operationType"]').selectOption("SP");
+  await expect(review.getByRole("button",{name:"Engine (SE / ME)"})).toBeVisible();
+  await complete.click();
+  await expect(gps.locator('select[name="engineType"]')).toBeFocused();
+
+  // No motion is added; verify reachable correction actions in phone/iPad layouts.
+  for(const width of [320,390,768,1024,1440]){
+    await page.setViewportSize({width,height:844});
+    await complete.click();
+    await expect(gps.locator('select[name="engineType"]')).toBeFocused();
+    await expectNoHorizontalOverflow(page);
+  }
 });
