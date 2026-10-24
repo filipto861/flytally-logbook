@@ -35,7 +35,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
         </div>
       </section>
       <section className={`d1v11-recency d1v11-recency--${recencyTone}`} aria-labelledby="d1v11-recency-title">
-        <div className="d1v11-recency-top"><span className="d1v11-kicker">LICENCES & RECENCY</span><span className="d1v11-recency-state">{recencySnapshot?"LAST CHECK":"NO CHECK"}</span></div>
+        <div className="d1v11-recency-top"><span className="d1v11-kicker">LICENCES & RECENCY</span></div>
         <h2 id="d1v11-recency-title"><span className="d1v11-recency-marker" aria-hidden="true"/>{recencyHeadline}</h2>
         <p className="d1v11-recency-detail">{recencySnapshot?`Saved ${formatDateOnly(recencySnapshot.generatedAt.slice(0,10))} · Recheck before flight`:"Check your licences and recency evidence"}</p>
         <Link className="d1v11-recency-link" href="/credentials">Check recency <span aria-hidden="true">→</span></Link>
