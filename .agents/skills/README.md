@@ -1,4 +1,4 @@
-# FlyTally Logbook — Agent Skills V1 (Apple Design V2 proposal pending)
+# FlyTally Logbook — active Agent Skills registry
 
 This is the task-specific skill registry for filipto861/flytally-logbook ONLY. Never apply to flytally-training.
 
@@ -9,8 +9,8 @@ This is the task-specific skill registry for filipto861/flytally-logbook ONLY. N
 4. A skill is a procedure, not authority to change product scope, production resources, or approved designs. No implicit merge/deploy, DB/flag changes or automatic data prefill.
 5. When no suitable skill exists, follow AGENTS.md and canonical docs; propose a new skill only when a genuinely repeatable workflow emerges.
 
-## Apple Design default for user-visible Logbook changes (pending V2 approval)
-Every UI/UX task — including a small button, spacing, form, typography, focus, feedback or mobile correction — must ALSO read the full apple-design/SKILL.md AND its required references/APPLE_DESIGN_PLAYBOOK.md. Apple Design defines evaluation and interaction craft, not permission to add animation, dependencies or change the FlyTally brand. This is a proposed V2 addition until merged.
+## Apple Design default for user-visible Logbook changes
+Every UI/UX task — including a small button, spacing, form, typography, focus, feedback or mobile correction — must ALSO read the full apple-design/SKILL.md AND its required references/APPLE_DESIGN_PLAYBOOK.md. Apple Design defines evaluation and interaction craft, not permission to add animation, dependencies or change the FlyTally brand. The existing Apple Design skill and its full playbook are active on main; do not assume a duplicate install.
 
 ## Activation registry
 
@@ -26,9 +26,12 @@ Every UI/UX task — including a small button, spacing, form, typography, focus,
 | Tests, candidate selection, Playwright, failures | testing-quality | affected domain skill |
 | Branch/PR, docs, releases, handoff, Vercel | release-workflow | testing-quality |
 
-New Apple Design skill (proposed V2): apple-design — read SKILL.md + its REQUIRED playbook together.
+Apple Design: `apple-design` — read SKILL.md + its REQUIRED playbook together.
 
 Paths for each skill: .agents/skills/<skill-name>/SKILL.md.
+
+## Curated Design Quality V2 review
+For UI audit, new page design, layout review or reference studies also read [External Design Quality V2](ui-quality-audit/references/EXTERNAL_DESIGN_QUALITY_V2.md) together with the full local `ui-quality-audit`, `apple-design` and task-relevant UI skills. Hallmark is audit/study only; Vercel Guidelines are code-review guidance; UI UX Pro Max and Kombai are inspiration; shadcn/ui is optional research. Existing FlyTally branding and aviation/data integrity always win. A read-only `npm run audit:design` source scan is advisory, not a WCAG or visual PASS. Do not auto-run vendor installers.
 
 ## External design reference
 The user-provided skills-main.zip (15 skills) was reviewed for design practice. Relevant approaches from Emil Kowalski's design engineering, apple-design, mobile-native, break-ui, animate and animation-performance are ADAPTED in our project skills, not activated as unfiltered commands. See docs/skills/THIRD_PARTY_SOURCES.md. Vendor library choices, imposed introductory responses, and generic examples do not override FlyTally-specific architecture, accessibility, or safety.
