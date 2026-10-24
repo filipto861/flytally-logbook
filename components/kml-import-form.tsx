@@ -292,7 +292,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections}:{ac
     const firstIssue=gpsReviewItems[0];
     if(firstIssue){firstIssue.onSelect();return}
     const target=document.querySelector<HTMLElement>('.flight-review-card[data-ready="false"]')??document.querySelector<HTMLElement>(".flight-review-card");
-    target?.scrollIntoView({behavior:"auto",block:"start"});
+    target?.scrollIntoView({behavior:"smooth",block:"start"});
     target?.focus({preventScroll:true});
   };
   return <form action={formAction} className="flight-form kml-wizard" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
