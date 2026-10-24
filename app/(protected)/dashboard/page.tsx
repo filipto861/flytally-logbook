@@ -4,7 +4,8 @@ import { DashboardEditor } from "@/components/dashboard-editor";
 import { DashboardEditorial } from "@/components/dashboard-editorial";
 import { buildDashboardPace } from "@/lib/dashboard-pace";
 import { requireUser } from "@/lib/auth/require-user";
-import { formatDuration,getDashboardOverviewData,getDashboardData } from "@/lib/data/dashboard";
+import { formatDuration,getDashboardOverviewData } from "@/lib/data/dashboard";
+import { getDashboardPaceData } from "@/lib/data/dashboard-pace";
 import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
 import { dashboardLayoutFromPreferences,dashboardOverviewLayout,defaultDashboardOverviewLayout,type DashboardWidgetId } from "@/lib/dashboard-widgets";
@@ -38,19 +39,20 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   }
   if(!detail&&params.period&&isLegacyPeriod(requestedPeriod))redirect(`/statistics?period=${encodeURIComponent(legacyPeriod)}&section=overview`);
 
-  const session=await requireUser();
-  const[data,settings,attentionItems,actionCount]=await Promise.all([
-    params.view==="v11"?getDashboardData(session.userId,"all"):getDashboardOverviewData(session.userId,"all"),
+  const session=await requireUser(),asOf=new Date();
+  const[data,settings,attentionItems,actionCount,paceSource]=await Promise.all([
+    getDashboardOverviewData(session.userId,"all"),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     getIntelligentLogbookAttention(session.userId),
     getPendingActionCount(session.userId),
+    params.view==="v11"?getDashboardPaceData(session.userId,asOf):Promise.resolve(null),
   ]);
   const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),hasSavedLayout=Array.isArray(preferences.dashboard_widgets)&&preferences.dashboard_widgets.length>0,layout=hasSavedLayout?dashboardOverviewLayout(savedLayout):defaultDashboardOverviewLayout(),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
   // Preview is opt-in and URL-only. No destructive migration or silent rewrite of saved dashboard_widgets.
-  if(params.view==="v11"&&"monthly" in data){
-    // Reuse the source-backed monthly Statistics aggregation only in the opt-in view.
-    // Classic Dashboard still uses the unchanged lean v2.3 overview query.
-    const pace=buildDashboardPace(data.monthly.map(item=>({month:item.month,total:item.total,ull:item.ull,easa:item.easa})),new Date(),data.invalidDateFlights);
+  if(params.view==="v11"&&paceSource){
+    // Always use the unchanged lean overview; only V11 requests a separate,
+    // user-scoped 25-month data projection. No full Statistics query.
+    const pace=buildDashboardPace(paceSource.months,asOf,paceSource.invalidWindowDates);
     return <div className="ui-page-stack"><nav aria-label="Dashboard view"><Link href="/dashboard" className="secondary-link">← Classic dashboard</Link></nav><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace}/></div>;
   }
   const renderWidget=(id:DashboardWidgetId)=>{
