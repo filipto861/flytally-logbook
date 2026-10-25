@@ -1,5 +1,14 @@
 # FlyTally changelog
 
+## 2026-10-24 — Owner-approved V11 direct-default routing candidate (NOT YET RELEASED)
+- Move Editorial V11 to `/dashboard` by default and remove both user-facing Preview/Classic switch links; preserve `?view=v11` as compatible alias and Classic `?view=classic` as unadvertised rollback. Existing `dashboard_widgets` preferences/editor retained unchanged; historical Dashboard period/detail URLs still redirect to Statistics. Missing pace data fails closed as **Unavailable**, not synthetic zero or an implicit switch to Classic. `getDashboardOverviewData` and the bounded 25-month SQL source remain unchanged.
+- Include Draft #412 compact Recency card: one tappable section, simple four-color historical statuses and optional saved-check date only. No false live legal clearance, no thresholds/database mutations, feature flags, migrations, Training or new libraries.
+- Owner explicitly approved merge and manual Vercel deploy of this combined scoped change **contingent on release verification**. Source updated, local full/risk tests and Vercel preview/browser status **NOT RUN** at checkpoint. History below for previous opt-in V11 remains true at its time.
+
+## 2026-10-24 — V11 Recency compact status candidate (NOT RELEASED)
+- Staged a compact mobile-first traffic-light marker using existing FlyTally semantic colors and historical snapshot statuses in `components/dashboard-editorial.tsx` and its scoped stylesheet. Removed redundant Saved Snapshot/Historical Snapshot/Saved result/Not current clearance prose; retained previous check date, clear non-live recheck prompt and one credentials link.
+- Final copy: green **Last check: OK**, amber **Last check: Due soon**, red **Last check: Needs review** (not falsely NOT CURRENT), gray **Not assessed**. Only the date appears below the status, and the entire status surface is one clickable link to `/credentials`, with a small arrow; no extra disclaimer or CTA paragraph. No data/rules/snapshot schema/DB/flags changes; no impact on Classic Dashboard or saved widgets. Added source regression assertions; actual Node, build and browser for this new candidate **NOT RUN**. [Design and evidence contract](docs/product/LOGBOOK_D1_V11_RECENCY_COMPACT_STATUS_2026-10-24.md).
+
 ## 2026-10-24 — D1-V11 independent review reconciliation (Draft PR #410; NOT RELEASED)
 - Owner-supplied read-only DeepSeek review returned **BLOCK** for releasing/default-promoting V11. Code risk in previous heavy `getDashboardData` preview accepted, though no actual latency failure was measured.
 - Staged source-only fix: V11 now combines existing optimized `getDashboardOverviewData` with a separate user-scoped **25-month bounded** `getDashboardPaceData`, returning monthly Total/ULL/EASA only. Source-copy canonical formulas for `dashboard_total`, `auxiliary`, `logged_minutes` and `activity_minutes`; current month remains MTD. Existing lean Dashboard SQL remains unchanged.

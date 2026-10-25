@@ -39,21 +39,23 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   }
   if(!detail&&params.period&&isLegacyPeriod(requestedPeriod))redirect(`/statistics?period=${encodeURIComponent(legacyPeriod)}&section=overview`);
 
+  // Editorial is the default. Keep the Classic route explicitly addressable only as a safe rollback,
+  // without exposing a view switch or mutating any saved dashboard_widgets preferences.
+  const classic=params.view==="classic";
   const session=await requireUser(),asOf=new Date();
   const[data,settings,attentionItems,actionCount,paceSource]=await Promise.all([
     getDashboardOverviewData(session.userId,"all"),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     getIntelligentLogbookAttention(session.userId),
     getPendingActionCount(session.userId),
-    params.view==="v11"?getDashboardPaceData(session.userId,asOf):Promise.resolve(null),
+    !classic?getDashboardPaceData(session.userId,asOf):Promise.resolve(null),
   ]);
   const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),hasSavedLayout=Array.isArray(preferences.dashboard_widgets)&&preferences.dashboard_widgets.length>0,layout=hasSavedLayout?dashboardOverviewLayout(savedLayout):defaultDashboardOverviewLayout(),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
-  // Preview is opt-in and URL-only. No destructive migration or silent rewrite of saved dashboard_widgets.
-  if(params.view==="v11"&&paceSource){
-    // Always use the unchanged lean overview; only V11 requests a separate,
-    // user-scoped 25-month data projection. No full Statistics query.
-    const pace=buildDashboardPace(paceSource.months,asOf,paceSource.invalidWindowDates);
-    return <div className="ui-page-stack"><nav aria-label="Dashboard view"><Link href="/dashboard" className="secondary-link">← Classic dashboard</Link></nav><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace}/></div>;
+  // Default path is the bounded Editorial read. Missing pace evidence fails closed as Unavailable;
+  // never silently switch to Classic or synthesize zero activity from missing data.
+  if(!classic){
+    const pace=buildDashboardPace(paceSource?.months??null,asOf,paceSource?.invalidWindowDates);
+    return <div className="ui-page-stack"><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace}/></div>;
   }
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
@@ -65,7 +67,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   };
   const visibleLayout=layout.filter(item=>item.enabled);
   return <div className="ui-page-stack">
-    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.</p></div><div className="d1v11-legacy-actions"><Link href="/dashboard?view=v11" className="secondary-link">Preview new Dashboard →</Link><Link className="primary-link" href="/flights/new">＋ Add flight</Link></div></header>
+    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.</p></div><div className="d1v11-legacy-actions"><Link className="primary-link" href="/flights/new">＋ Add flight</Link></div></header>
     <div className="dashboard-home-layout">
       <div className="dashboard-main-column">
         <section className="dashboard-layout-grid" aria-label="Dashboard overview">

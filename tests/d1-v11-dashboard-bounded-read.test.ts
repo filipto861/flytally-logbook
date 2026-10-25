@@ -10,7 +10,9 @@ test("D1-V11 does not invoke unbounded Statistics aggregation",()=>{
   const page=read("app/(protected)/dashboard/page.tsx");
   const monthly=read("lib/data/dashboard-pace.ts");
   assert.match(page,/getDashboardOverviewData\(session\.userId,"all"\)/);
-  assert.match(page,/params\.view==="v11"\?getDashboardPaceData\(session\.userId,asOf\):Promise\.resolve\(null\)/);
+  assert.match(page,/!classic\?getDashboardPaceData\(session\.userId,asOf\):Promise\.resolve\(null\)/);
+  assert.match(page,/const classic=params\.view==="classic"/);
+  assert.match(page,/if\(!classic\)/);
   assert.doesNotMatch(page,/getDashboardData\(/);
   assert.doesNotMatch(monthly,/\bgetDashboardData\(/, "bounded module must not call heavy Statistics data");
   assert.match(monthly,/WHERE f\.user_id=\$\{userId\}/, "new read must be user-scoped");
@@ -42,12 +44,13 @@ test("D1-V11 bounded categories mirror existing role, safety pilot and flight du
   assert.match(bounded,/TO_CHAR\(TO_DATE\(date_key,'YYYY-MM-DD'\),'YYYY-MM-DD'\)=date_key/);
 });
 
-test("D1-V11 classic view retains all persisted layouts and the last canonical stylesheet",()=>{
+test("D1-V11 default retains persisted Classic rollback and last canonical stylesheet",()=>{
   const page=read("app/(protected)/dashboard/page.tsx");
   const layout=read("app/layout.tsx");
   assert.match(page,/dashboardLayoutFromPreferences\(preferences\)/);
   assert.match(page,/<DashboardEditor layout=\{layout\}\/>/);
-  assert.match(page,/href="\/dashboard"/);
+  assert.match(page,/<DashboardEditorial data=\{data\}/);
+  assert.doesNotMatch(page,/Preview new Dashboard|Classic dashboard/);
   assert.ok(layout.indexOf('import "./dashboard-editorial.css"')<
             layout.indexOf('import "./ui-system.css"'));
 });

@@ -80,21 +80,38 @@ test("D1-V11 25-source-month canonical fixture maps exactly to 24 displayed UTC 
   assert.equal(result.months.at(-1)?.month,"2026-10","current partial month is plotted, not compared");
 });
 
-test("D1-V11 opt-in preview preserves the legacy preference editor and protected routes",()=>{
+test("D1-V11 is the default with no view switch and retains a hidden Classic fallback",()=>{
   const page=read("app/(protected)/dashboard/page.tsx"),editorial=read("components/dashboard-editorial.tsx"),pace=read("components/dashboard-pace.tsx"),css=read("app/dashboard-editorial.css"),layout=read("app/layout.tsx");
-  assert.match(page,/params\.view==="v11"/);
+  assert.match(page,/const classic=params\.view==="classic"/);
+  assert.match(page,/if\(!classic\)/);
+  assert.match(page,/!classic\?getDashboardPaceData\(session\.userId,asOf\):Promise\.resolve\(null\)/);
+  assert.match(page,/buildDashboardPace\(paceSource\?\.months\?\?null,asOf,paceSource\?\.invalidWindowDates\)/);
+  assert.doesNotMatch(page,/Preview new Dashboard|Classic dashboard|href="\/dashboard\?view=v11"/);
   assert.match(page,/DashboardEditor layout=\{layout\}/);
   assert.match(page,/dashboardLayoutFromPreferences\(preferences\)/);
-  assert.match(page,/href="\/dashboard"/);
+  assert.doesNotMatch(page,/href="\/dashboard" className="secondary-link"/);
   assert.match(page,/href="\/flights\/new"/);
   assert.match(editorial,/href="\/credentials"/);
   assert.match(editorial,/href="\/flights\/needs-attention"/);
   assert.match(editorial,/href="\/actions"/);
   assert.match(editorial,/d1v11-latest/);
-  assert.match(editorial,/Saved result:/,"snapshot result must be explicitly historical");
-  assert.match(editorial,/Captured /,"recency date is shown alongside its saved result");
-  assert.match(editorial,/Historical snapshot/,"historical snapshot headline must be prominent");
-  assert.match(editorial,/Not a current clearance/,"historical result must not imply live recency validity");
+  assert.doesNotMatch(editorial,/SAVED SNAPSHOT|Historical snapshot|Saved result:/,"avoid redundant historical snapshot labels");
+  assert.match(editorial,/Last check: OK/,"green is historical, not current");
+  assert.match(editorial,/Last check: Due soon/,"warning must not claim current expiry");
+  assert.match(editorial,/Last check: Needs review/,"ambiguous attention must never be labelled Not current");
+  assert.match(editorial,/Not assessed/,"missing evidence must remain neutral");
+  assert.doesNotMatch(editorial,/Verify before flight|Check recency <span|Saved result:/,"no duplicate explanatory or button copy");
+  assert.match(editorial,/formatDateOnly\(recencySnapshot\.generatedAt\.slice\(0,10\)\)/,"timestamp of previous assessment must remain visible");
+  assert.match(editorial,/<Link className="d1v11-recency-primary" href="\/credentials">/,"whole status block is the sole action");
+  assert.match(css,/\.d1v11-recency-primary\{display:grid;/,"compact status area is touchable");
+  assert.match(css,/min-height:112px/,"primary Recency area must have a large touch target");
+  assert.doesNotMatch(editorial,/Saved \$\{formatDateOnly|Check your licences and recency evidence/,"no duplicate explanatory copy");
+  assert.match(editorial,/d1v11-recency-marker/,"status is identifiable without relying on color alone");
+  assert.doesNotMatch(editorial,/recencyHeadline=.*Not current/,"attention is not proof of NOT CURRENT");
+  assert.match(css,/\.d1v11-recency--ok\{--d1v11-recency-tone:var\(--success-text\)/);
+  assert.match(css,/\.d1v11-recency--warning\{--d1v11-recency-tone:var\(--warning-text\)/);
+  assert.match(css,/\.d1v11-recency--review\{--d1v11-recency-tone:var\(--danger-text\)/);
+  assert.match(css,/\.d1v11-recency--unknown\{--d1v11-recency-tone:var\(--muted\)/);
   assert.ok(layout.indexOf('import "./dashboard-editorial.css"')<layout.indexOf('import "./ui-system.css"'),
     "ui-system.css must remain the final canonical stylesheet");
   assert.match(pace,/role="slider"/);

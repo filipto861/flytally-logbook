@@ -9,6 +9,10 @@ const numberLabel=(value:number,singular:string,plural:string)=>`${value} ${valu
 
 export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView}){
   const flight=data.lastFlight;
+  // The persisted snapshot is historical evidence, never a live privilege determination.
+  // "attention" covers incomplete evidence too: it must NOT be relabelled "Not current".
+  const recencyTone=recencySnapshot?.status==="ok"?"ok":recencySnapshot?.status==="warning"?"warning":recencySnapshot?.status==="attention"?"review":"unknown";
+  const recencyHeadline=recencyTone==="ok"?"Last check: OK":recencyTone==="warning"?"Last check: Due soon":recencyTone==="review"?"Last check: Needs review":"Not assessed";
   return <div className="d1v11-page">
     <header className="d1v11-mast">
       <div><p className="d1v11-kicker">PILOT WORKSPACE</p><h1>Flight overview.</h1></div>
@@ -30,12 +34,13 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
           <Link href={flight?`/flights/${flight.id}`:"/flights/new"}>{flight?"Open flight →":"Add flight →"}</Link>
         </div>
       </section>
-      <section className="d1v11-recency" aria-labelledby="d1v11-recency-title">
-        <div className="d1v11-recency-top"><span className="d1v11-kicker">LICENCES & RECENCY</span><span className="d1v11-recency-state">{recencySnapshot?"SAVED SNAPSHOT":"NOT ASSESSED"}</span></div>
-        <h2 id="d1v11-recency-title">{recencySnapshot?"Historical snapshot":"Not assessed"}</h2>
-        <p className="d1v11-recency-detail">{recencySnapshot?`Saved result: ${recencySnapshot.label}`:"No saved recency assessment is available."}</p>
-        {recencySnapshot?<p className="d1v11-recency-freshness">Not a current clearance · Captured {recencySnapshot.generatedAt.slice(0,10)} · Verify the underlying evidence</p>:null}
-        <Link className="d1v11-recency-link" href="/credentials">Open licences & recency <span aria-hidden="true">→</span></Link>
+      <section className={`d1v11-recency d1v11-recency--${recencyTone}`} aria-labelledby="d1v11-recency-title">
+        <Link className="d1v11-recency-primary" href="/credentials">
+          <span className="d1v11-kicker">LICENCES & RECENCY</span>
+          <h2 id="d1v11-recency-title"><span className="d1v11-recency-marker" aria-hidden="true"/>{recencyHeadline}</h2>
+          {recencySnapshot?<span className="d1v11-recency-date">{formatDateOnly(recencySnapshot.generatedAt.slice(0,10))}</span>:null}
+          <span className="d1v11-recency-arrow" aria-hidden="true">→</span>
+        </Link>
         {attentionCount>0||actionCount>0?<div className="d1v11-attention" aria-label="Items requiring attention">
           {attentionCount>0?<Link href="/flights/needs-attention">{numberLabel(attentionCount,"flight needs","flights need")} review <span aria-hidden="true">→</span></Link>:null}
           {actionCount>0?<Link href="/actions">{numberLabel(actionCount,"pending action","pending actions")} <span aria-hidden="true">→</span></Link>:null}
