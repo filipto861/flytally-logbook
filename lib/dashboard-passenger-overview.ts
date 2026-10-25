@@ -5,7 +5,7 @@ import { confirmedQualificationMatches,hasConfirmedQualificationStructure,qualif
 
 export type PassengerClass="SEP"|"TMG";
 export type DashboardPassengerIndicator={
-  key:string;label:string;status:"Recorded OK"|"Due soon"|"Limited evidence"|"Not met in logbook"|"No flight evidence";
+  key:string;label:string;status:"CURRENT"|"NOT CURRENT"|"UNVERIFIED";dueSoon:boolean;
   tone:"neutral"|"warning"|"danger"|"muted";until:string|null;detail:string;
 };
 const t=(v:unknown)=>String(v??"").trim();
@@ -62,14 +62,16 @@ export function passengerRecencyOverview(input:{
     const until=evaluation.status==="current"&&evaluation.forecastDate?
       new Date(Date.parse(evaluation.forecastDate+"T00:00:00Z")-86400000).toISOString().slice(0,10):null;
     const days=evaluation.forecastDate?daysBetween(asOf,evaluation.forecastDate):Infinity;
-    const status:DashboardPassengerIndicator["status"]=evaluation.status==="current"?
-      days<=30?"Due soon":"Recorded OK":
-      evaluation.status==="attention"?"Limited evidence":
-      evaluation.requirements.every(item=>item.current===0)?"No flight evidence":"Not met in logbook";
-    const tone:DashboardPassengerIndicator["tone"]=status==="Recorded OK"?"neutral":status==="Due soon"||status==="Limited evidence"?"warning":status==="No flight evidence"?"muted":"danger";
+    // The badge states the calculated condition TODAY; an approaching loss of
+    // coverage is secondary, never a replacement for CURRENT.
+    const noFlightEvidence=evaluation.status!=="current"&&evaluation.requirements.every(item=>item.current===0);
+    const status:DashboardPassengerIndicator["status"]=evaluation.status==="current"?"CURRENT":
+      evaluation.status==="attention"||noFlightEvidence?"UNVERIFIED":"NOT CURRENT";
+    const tone:DashboardPassengerIndicator["tone"]=status==="CURRENT"?"neutral":status==="NOT CURRENT"?"danger":"muted";
     return{
       key:aircraftClass+"-"+mode,label:aircraftClass+" · "+(mode==="day"?"Day":"Night"),
-      status,tone,until,detail:evaluation.status==="current"?"Based on certified recorded PF movements; assumes no new qualifying flights":evaluation.summary,
+      status,tone,until,dueSoon:status==="CURRENT"&&days<=30,
+      detail:evaluation.status==="current"?"Based on certified recorded PF movements; assumes no new qualifying flights":evaluation.summary,
     };
   }));
 }
