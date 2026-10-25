@@ -23,9 +23,23 @@ const isNight=(row:Record<string,unknown>)=>hasConfirmedQualificationStructure(r
   confirmedQualificationMatches(row,"OPERATIONAL","AEROPLANE","PILOT")&&upper(qualificationLogicScope(row)).includes("NIGHT"):
   upper(row.qualification_type).includes("NIGHT");
 
+// A malformed/ambiguous stored qualification date must not unlock the
+// Dashboard night or IR-exemption route. The general credentials formatter
+// accepts legacy date shapes; this regulatory read is intentionally stricter.
+const validStoredDay=(value:unknown):value is string=>{
+  const day=t(value);
+  return /^\d{4}-\d{2}-\d{2}$/.test(day)&&!day.startsWith("0000")&&
+    Number.isFinite(Date.parse(day+"T00:00:00Z"))&&
+    new Date(day+"T00:00:00Z").toISOString().slice(0,10)===day;
+};
 const credentialActive=(row:Record<string,unknown>,asOf:string)=>{
-  const status=credentialValidity({mode:row.validity_mode,validUntil:row.valid_until,recencyUntil:row.recency_until},asOf).status;
-  return status!=="expired"&&status!=="incomplete";
+  const mode=t(row.validity_mode).toLowerCase();
+  if(mode==="unlimited")return true;
+  if(mode!=="date"&&mode!=="recency")return false;
+  const date=mode==="recency"?row.recency_until:row.valid_until;
+  if(!validStoredDay(date))return false;
+  const status=credentialValidity({mode,validUntil:row.valid_until,recencyUntil:row.recency_until},asOf).status;
+  return status==="valid"||status==="warning";
 };
 
 export function activePassengerClasses(licences:readonly {licenceType:string}[],qualificationRows:readonly Record<string,unknown>[]):PassengerClass[]{
