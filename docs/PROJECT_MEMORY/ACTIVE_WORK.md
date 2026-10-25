@@ -1,5 +1,15 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-25T06:54:58.896Z — V11 released; remaining owner-authenticated production smoke
+- Canonical main=babd8abdb91039fbbfedaf0936ac0c14eac13957; PR #412 merged (squash) from exact tested source=d25c941018eb77e8e5ee74be028ce32dd8ae4352. Git trees identical (36e30ecf2f1a868ec75fe3f3d7d3333da6ca810f).
+- Owner Windows candidate 7e8dd3b3a98a23aa296ecc11855e994433549e7772566d38c3ab3de271072ad5: canonical release_status=PASS; full Node 1700/1700; target V11 10/10; source 261/261; domain 9/9; TypeScript/build PASS; six physically owned localhost PG16 partitions 164/164; authenticated Chromium desktop 5/5, mobile 5/5; supplemental V11 route/responsive/theme/keyboard 2/2. Risk scale N/A.
+- Manual Vercel production deployment dpl_5H9PwxWYLJseKA7TQ2MghkAgwwpj READY on exact merged SHA, domain fly-tally.com verified and aliased; build complete, no identified build error; Vercel runtime errors none in sampled 20m.
+- Independent public HTTP and signed-in production smoke NOT VERIFIED (assistant network unavailable); native Safari NOT RUN, CI UNKNOWN.
+- No production DB, schema, migration, feature-flag or Training changes. Production DB/schema identity not independently inspected (UNKNOWN).
+- ONE NEXT STEP: owner signs in to fly-tally.com/dashboard and checks default V11, Recency link and ?view=classic fallback on desktop/mobile.
+- No additional V11 runtime changes authorized. Docs-only checkpoint branch docs/logbook-d1-v11-default-release-checkpoint-20261025 remains separate; previous docs PR #411 unaffected.
+
+
 ## 2026-10-24T21:13:29.643Z — D1-V11 Windows gate: PG PASS, authenticated browser FAIL; stale shell expectation corrected (NO RELEASE)
 - Live GitHub canonical main verified `2f7aaa07ecd7ecf1de200f08094a72b95e1e44f7`, PR #412 Draft base `main`, work branch `fix/logbook-v11-recency-traffic-light-20261024`; test-only fix commit `90e98ce99c1a29edd7ba1870dd83cacd8e5dd4f4` before this Project Memory checkpoint. Draft #411 and unrelated PRs untouched. HEAD after checkpoint MUST be reverified.
 - Owner-uploaded Windows PowerShell log for exact earlier candidate `5aa9c1b8065e538f4364da19d40d49ae4201aa46`: candidate planner completed, D1 target 10/10 PASS, full Node 1700/1700 PASS, TypeScript PASS, owned SIX-partition PostgreSQL16 **164/164 PASS** (124+8+5+19+6+2), local Next build PASS. Isolated loopback PG16 browser fixture bootstrap and v20/v21 shape PASS.
