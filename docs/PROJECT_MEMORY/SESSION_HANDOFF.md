@@ -1,5 +1,12 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-25T07:09:27.904Z — owner V11 licence mini-list scope staged, UNRELEASED
+- GitHub canonical `main@babd8abdb91039fbbfedaf0936ac0c14eac13957`, production Vercel `dpl_5H9PwxWYLJseKA7TQ2MghkAgwwpj` READY same SHA. Work `feat/logbook-v11-licence-summary-20261025` from main; checked source change commit `17c6ebde83038b3930eb051532ece983b2d24d4c` and contract test commit `5678a2f319d7d7c62986554be7b866c694cf1d57`; final branch HEAD must be reverified after docs writes. New PR will be Draft base main; unrelated draft #413 and #411 left untouched.
+- Scope: `components/dashboard-editorial.tsx`, `app/(protected)/dashboard/page.tsx`, `app/dashboard-editorial.css`, `tests/d1-v11-dashboard-bounded-read.test.ts`; user-owned SELECT active pilot_licences type/mode/recorded date, no new endpoint/tables; Classic path short-circuited; all active licences list, missing/invalid date displays no invented validity, LAPL(A/H) Unlimited; existing historical Recency last-check unchanged and no legal CURRENT label. Mobile under 380px rows stack; motion NONE.
+- Static source advisory 10/10 matched new owner-scoped/rollback/empty/expiry/responsive contracts; actual Node24/typecheck/build, PostgreSQL, authenticated Playwright, device Safari NOT RUN. Production DB/flags/migrations NO ACTION, production identity/schema UNKNOWN; no merge/deploy or Training changes. NO secrets/user licence numbers/private flight data stored.
+- **ONE NEXT STEP:** review Draft candidate and run exact-HEAD targeted + canonical risk release tests on owned local Windows environment; request separate owner approval before merge/deploy.
+
+
 ## 2026-10-24T21:13:29.643Z — D1-V11 Windows gate: PG PASS, authenticated browser FAIL; stale shell expectation corrected (NO RELEASE)
 - Live GitHub canonical main verified `2f7aaa07ecd7ecf1de200f08094a72b95e1e44f7`, PR #412 Draft base `main`, work branch `fix/logbook-v11-recency-traffic-light-20261024`; test-only fix commit `90e98ce99c1a29edd7ba1870dd83cacd8e5dd4f4` before this Project Memory checkpoint. Draft #411 and unrelated PRs untouched. HEAD after checkpoint MUST be reverified.
 - Owner-uploaded Windows PowerShell log for exact earlier candidate `5aa9c1b8065e538f4364da19d40d49ae4201aa46`: candidate planner completed, D1 target 10/10 PASS, full Node 1700/1700 PASS, TypeScript PASS, owned SIX-partition PostgreSQL16 **164/164 PASS** (124+8+5+19+6+2), local Next build PASS. Isolated loopback PG16 browser fixture bootstrap and v20/v21 shape PASS.
