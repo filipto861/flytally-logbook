@@ -15,6 +15,8 @@ Before any Logbook design, implementation, UI audit or verification, read the [s
 
 For UI audit or new visual design also read [External Design Quality V2](.agents/skills/ui-quality-audit/references/EXTERNAL_DESIGN_QUALITY_V2.md) **after** the mandatory Apple Design playbook. External Hallmark/Vercel/UI UX Pro Max/Kombai/shadcn materials remain advisory; their installation or automatic restyling is not authorized. Run `npm run audit:design` only as a read-only source heuristic and record browser/accessibility tests separately.
 
+For requests to audit launch/production readiness, cybersecurity, continuity, billing safety or observability, load [production-readiness/SKILL.md](.agents/skills/production-readiness/SKILL.md) and its control matrix in addition to database-security, testing-quality and release-workflow. Audit production only through read-only metadata and current source. Never infer a verified recovery, security approval or uptime SLA from existing code, Vercel READY, or historical tests.
+
 ## Work safely and efficiently
 
 - Preserve canonical flight integrity, certification/audit evidence and explicit aircraft/regulatory applicability. Missing or conflicting critical data must **fail closed**, never become invented/default approved values.
