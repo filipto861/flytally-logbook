@@ -13,24 +13,24 @@ const movement=(date:string,cl="SEP",count=3):RecencyFlight=>({
 const qualifying=[{id:1,qualificationType:"SEP",licenceType:"LAPL(A)",validityMode:"recency",validUntil:"",recencyUntil:""}];
 const overview=(flights:RecencyFlight[])=>passengerRecencyOverview({flights,classes:["SEP"],qualifications:[],asOf:today});
 
-test("LAPL SEP missing fixed expiry is Recency-based, not falsely expired or orange",()=>{
+test("LAPL SEP dates cannot masquerade as the FCL.140.A engine result",()=>{
   const v=buildCredentialOverview({licences:[],qualifications:qualifying,documents:[],asOf:today}).ratings;
-  assert.deepEqual(v,{count:1,status:"Recency-based",tone:"muted",reviewCount:0});
+  assert.deepEqual(v,{count:1,status:"UNVERIFIED",tone:"muted",reviewCount:1});
   const dated=buildCredentialOverview({licences:[],qualifications:[{...qualifying[0],recencyUntil:"2026-12-01"}],documents:[],asOf:today}).ratings;
-  assert.deepEqual(dated,{count:1,status:"No date alerts",tone:"neutral",reviewCount:0});
+  assert.deepEqual(dated,{count:1,status:"UNVERIFIED",tone:"muted",reviewCount:1});
 });
 
-test("saved rating recency date still alarms when it has actually passed",()=>{
+test("LAPL saved recency dates do not override actual FCL.140.A evidence",()=>{
   const v=buildCredentialOverview({licences:[],qualifications:[{...qualifying[0],recencyUntil:"2026-10-20"}],documents:[],asOf:today}).ratings;
-  assert.equal(v.status,"Date passed");
+  assert.equal(v.status,"UNVERIFIED");
   assert.equal(v.reviewCount,1);
-  assert.equal(buildCredentialOverview({licences:[],qualifications:[{...qualifying[0],recencyUntil:"n/a"}],documents:[],asOf:today}).ratings.status,"Needs review");
+  assert.equal(buildCredentialOverview({licences:[],qualifications:[{...qualifying[0],recencyUntil:"n/a"}],documents:[],asOf:today}).ratings.status,"UNVERIFIED");
 });
 
 test("passenger day recency uses certified movement requirements and forecasts next loss of coverage",()=>{
   const [day]=overview([movement("2026-10-20")]);
   assert.equal(day.label,"SEP · Day");
-  assert.equal(day.status,"Recorded OK");
+  assert.equal(day.status,"CURRENT");
   assert.equal(day.tone,"neutral");
   assert.equal(day.until,"2027-01-17");
   assert.match(day.detail,/certified recorded PF movements/);
@@ -38,21 +38,22 @@ test("passenger day recency uses certified movement requirements and forecasts n
 
 test("passenger recency due soon uses engine forecast and does not invent an extension",()=>{
   const [day]=overview([movement("2026-08-10")]);
-  assert.equal(day.status,"Due soon");
+  assert.equal(day.status,"CURRENT");
+  assert.equal(day.dueSoon,true);
   assert.equal(day.tone,"warning");
   assert.equal(day.until,"2026-11-07");
 });
 
 test("missing movement evidence cannot generate a positive passenger indicator",()=>{
   const [limited]=overview([{...movement("2026-10-20"),movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0}]);
-  assert.equal(limited.status,"Limited evidence");
+  assert.equal(limited.status,"UNVERIFIED");
   assert.equal(limited.until,null);
   const [none]=overview([]);
-  assert.equal(none.status,"No flight evidence");
+  assert.equal(none.status,"UNVERIFIED");
   assert.equal(none.tone,"muted");
   assert.equal(none.until,null);
   const [insufficient]=overview([movement("2026-10-20","SEP",1)]);
-  assert.equal(insufficient.status,"Not met in logbook");
+  assert.equal(insufficient.status,"NOT CURRENT");
 });
 
 test("LAPL(A) maps to SEP, while confirmed unrelated qualification cannot masquerade as SEP",()=>{
@@ -67,7 +68,7 @@ test("passenger night is separately visible only when recorded operational night
   assert.equal(rows.length,2);
   assert.equal(rows[0].label,"SEP · Day");
   assert.equal(rows[1].label,"SEP · Night");
-  assert.notEqual(rows[1].status,"Recorded OK");
+  assert.notEqual(rows[1].status,"CURRENT");
 });
 
 test("malformed or ambiguous IR/Night validity cannot enable passenger night indication",()=>{
@@ -91,12 +92,20 @@ test("malformed or ambiguous IR/Night validity cannot enable passenger night ind
   });
   assert.equal(validIr.length,2);
   assert.equal(validIr[1].label,"SEP · Night");
-  assert.equal(validIr[1].status,"Recorded OK");
+  assert.equal(validIr[1].status,"CURRENT");
 
   const validNight=passengerRecencyOverview({
     flights:[movement("2026-10-20")],classes:["SEP"],
     qualifications:[{qualification_type:"NIGHT",validity_mode:"unlimited"}],asOf:today,
   });
   assert.equal(validNight.length,2);
-  assert.notEqual(validNight[1].status,"Recorded OK");
+  assert.notEqual(validNight[1].status,"CURRENT");
 });
+
+test("no flight evidence stays UNVERIFIED even when saved credentials have a future date",()=>{
+  const [day]=overview([]);
+  assert.equal(day.status,"UNVERIFIED");
+  assert.equal(day.dueSoon,false);
+  assert.equal(day.until,null);
+});
+
