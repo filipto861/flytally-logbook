@@ -78,7 +78,7 @@ test("D1-V11 shows only active user-owned recorded licence dates without claimin
   assert.match(page,/FROM pilot_licences WHERE user_id=\$\{session\.userId\} AND active=TRUE/);
   assert.match(page,/classic\?Promise\.resolve\(\[\]\):sql/,"Classic must not gain the new read");
   assert.match(page,/SELECT id,licence_type,validity_mode,valid_until::text AS valid_until,recency_until::text AS recency_until/);
-  assert.match(page,/licences=\{licences\} asOf=\{asOf\.toISOString\(\)\.slice\(0,10\)\}/);
+  assert.match(page,/licences=\{licences\} qualifications=\{qualifications\} medical=\{medical\} asOf=\{asOf\.toISOString\(\)\.slice\(0,10\)\}/);
   assert.match(editorial,/Recorded licences/);
   assert.match(editorial,/No active licences recorded/);
   assert.match(editorial,/Validity not recorded/);
