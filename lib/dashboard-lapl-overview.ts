@@ -22,7 +22,7 @@ function recordedEvidence(raw:unknown){
   }
   if(!Array.isArray(entries))return null;
   const parsed=parseRecencyEvidence(entries);
-  return parsed.length===entries.length?parsed:null;
+  return parsed.length===entries.length&&parsed.every(entry=>validDay(entry.date))?parsed:null;
 }
 
 export function dashboardLaplIndicator(flights:readonly RecencyFlight[],asOf:string,rawEvidence:unknown):DashboardLaplIndicator{
@@ -30,6 +30,8 @@ export function dashboardLaplIndicator(flights:readonly RecencyFlight[],asOf:str
   if(!validDay(asOf))return unknown("Invalid assessment date");
   const evidence=recordedEvidence(rawEvidence);
   if(!evidence)return unknown("Stored proficiency-check evidence requires review");
+  if(!flights.length&&!evidence.some(item=>item.kind==="LAPL_PROFICIENCY_CHECK"))
+    return unknown("No certified FCL.140.A flights or examiner evidence recorded");
   if(flights.some(f=>!validDay(f.date)||!Number.isFinite(f.minutes)||f.minutes<0))
     return unknown("Recorded flight dates or duration require review");
   const evaluated=evaluateLaplA([...flights],asOf,evidence);
