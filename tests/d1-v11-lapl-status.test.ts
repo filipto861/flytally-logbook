@@ -28,6 +28,12 @@ test("FCL.140.A CURRENT comes from 2-year certified experience and a signed refr
   assert.ok(result.forecastDate);
 });
 
+test("no certified flight or examiner evidence remains UNVERIFIED",()=>{
+  const result=dashboardLaplIndicator([],day,[]);
+  assert.equal(result.status,"UNVERIFIED");
+  assert.equal(result.tone,"muted");
+});
+
 test("complete but insufficient FCL.140.A flight evidence is NOT CURRENT",()=>{
   const result=dashboardLaplIndicator([flight()],day,[]);
   assert.equal(result.status,"NOT CURRENT");
