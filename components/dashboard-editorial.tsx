@@ -8,7 +8,7 @@ import { DashboardPace } from "@/components/dashboard-pace";
 const numberLabel=(value:number,singular:string,plural:string)=>`${value} ${value===1?singular:plural}`;
 
 export type DashboardLicenceSummary={id:number;licenceType:string;validityMode:string;validUntil:string;recencyUntil:string};
-const isRecordedDay=(date:string)=>/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(new Date(date+"T00:00:00Z").getTime())&&new Date(date+"T00:00:00Z").toISOString().slice(0,10)===date;
+const isRecordedDay=(date:string)=>/^\d{4}-\d{2}-\d{2}$/.test(date)&&!date.startsWith("0000")&&Number.isFinite(new Date(date+"T00:00:00Z").getTime())&&new Date(date+"T00:00:00Z").toISOString().slice(0,10)===date;
 function recordedLicenceValidity(licence:DashboardLicenceSummary,today:string){
   // LAPL licence validity is unlimited in the existing Records editor; this never asserts privileges or recency.
   if(["LAPL(A)","LAPL(H)"].includes(licence.licenceType.toUpperCase())||licence.validityMode==="unlimited")return{label:"Unlimited",tone:"neutral"};
