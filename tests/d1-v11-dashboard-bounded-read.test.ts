@@ -86,6 +86,8 @@ test("D1-V11 shows only active user-owned recorded licence dates without claimin
   assert.match(editorial,/Recency date not recorded/);
   assert.match(editorial,/\["LAPL\(A\)","LAPL\(H\)"\]/,"LAPL recorded indefinite expiry must stay separate from current recency");
   assert.match(editorial,/isRecordedDay\(date\)/,"unverified or malformed dates cannot acquire a positive label");
+  assert.match(editorial,/!date\.startsWith\("0000"\)/,"year zero cannot become an ordinary expiry");
+  assert.match(editorial,/date passed/,"past dates must have a textual warning beyond color");
   assert.match(editorial,/href="\/credentials\?view=licences"/);
   assert.doesNotMatch(editorial,/\bCURRENT\b|\bCOMPLIANT\b/,"Dashboard licence rows must not infer privilege clearance");
   assert.match(css,/\.d1v11-licences-list li/);
