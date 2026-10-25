@@ -11,7 +11,7 @@ const number=(value:unknown)=>Math.max(0,Number(value)||0);
 const validDay=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!value.startsWith("0000")&&
   Number.isFinite(Date.parse(value+"T00:00:00Z"))&&new Date(value+"T00:00:00Z").toISOString().slice(0,10)===value;
 
-export async function getDashboardLaplFlights(userId:number,asOf:string):Promise<RecencyFlight[]>{
+export async function getDashboardLaplFlights(userId:number,asOf:string):Promise<RecencyFlight[]|null>{
   if(!Number.isSafeInteger(userId)||userId<=0||!validDay(asOf))return[];
   const start=rollingYearsStart(asOf,2);
   const rows=await sql`SELECT f.date,f.starts,f.evidence,f.aircraft_class,f.role,
@@ -35,13 +35,15 @@ export async function getDashboardLaplFlights(userId:number,asOf:string):Promise
     FROM flights f LEFT JOIN aircraft a ON a.user_id=f.user_id
       AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration))
     WHERE f.user_id=${userId} AND f.certified_at IS NOT NULL
-      AND CASE WHEN f.date~'^\\d{4}-\\d{2}-\\d{2}$'
-        THEN f.date::date ELSE NULL END>=${start}::date
-      AND CASE WHEN f.date~'^\\d{4}-\\d{2}-\\d{2}$'
-        THEN f.date::date ELSE NULL END<=${asOf}::date
+      -- Canonical ISO date text permits a bounded indexed string range.
+      -- Never cast malformed legacy flight dates to PostgreSQL DATE.
+      AND f.date>=${start} AND f.date<=${asOf}
     ORDER BY f.date DESC,f.id DESC` as Array<Record<string,unknown>>;
+  // Any in-window malformed date invalidates the assessment. Do not skip a
+  // relevant record and then accidentally report a positive/negative status.
+  if(rows.some(row=>!validDay(text(row.date))))return null;
   return rows.flatMap(row=>{
-    const date=text(row.date).slice(0,10);
+    const date=text(row.date);
     if(!validDay(date)||date<start||date>asOf)return[];
     const movement=resolveMovementCompatibility({
       evidence:row.evidence,movementEvidenceRecorded:row.movement_evidence_recorded,
