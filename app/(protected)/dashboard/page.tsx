@@ -4,6 +4,8 @@ import { DashboardEditor } from "@/components/dashboard-editor";
 import { DashboardEditorial } from "@/components/dashboard-editorial";
 import type { DashboardLicenceSummary,DashboardQualificationSummary,DashboardDocumentSummary } from "@/lib/dashboard-credential-overview";
 import { getDashboardPassengerFlights } from "@/lib/data/dashboard-passenger-recency";
+import { getDashboardLaplFlights } from "@/lib/data/dashboard-lapl-flights";
+import { dashboardLaplIndicator } from "@/lib/dashboard-lapl-overview";
 import { activePassengerClasses,passengerRecencyOverview } from "@/lib/dashboard-passenger-overview";
 import { buildDashboardPace } from "@/lib/dashboard-pace";
 import { requireUser } from "@/lib/auth/require-user";
@@ -84,11 +86,17 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       id:Number(row.id),category:String(row.category??"").trim(),
       label:String(row.label??"").trim(),expiryDate:String(row.expiry_date??"").slice(0,10),
     }));
+    const day=asOf.toISOString().slice(0,10);
+    const hasLapl=licences.some(row=>row.licenceType.toUpperCase()==="LAPL(A)");
+    // FCL.140.A uses two years and instructor/examiner evidence; FCL.060
+    // passenger currency remains a separate 90-day calculation.
+    const laplFlights=hasLapl?await getDashboardLaplFlights(session.userId,day):null;
+    const laplRecency=laplFlights?dashboardLaplIndicator(laplFlights,day,preferences.recency_evidence):null;
     const passengerClasses=activePassengerClasses(licences,qualificationRows);
-    const passengerFlights=passengerClasses.length?await getDashboardPassengerFlights(session.userId,asOf.toISOString().slice(0,10)):[];
-    const passengerRecency=passengerRecencyOverview({flights:passengerFlights,classes:passengerClasses,qualifications:qualificationRows,asOf:asOf.toISOString().slice(0,10)});
+    const passengerFlights=passengerClasses.length?await getDashboardPassengerFlights(session.userId,day):[];
+    const passengerRecency=passengerRecencyOverview({flights:passengerFlights,classes:passengerClasses,qualifications:qualificationRows,asOf:day});
     const pace=buildDashboardPace(paceSource?.months??null,asOf,paceSource?.invalidWindowDates);
-    return <div className="ui-page-stack"><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace} licences={licences} qualifications={qualifications} documents={documents} passengerRecency={passengerRecency} asOf={asOf.toISOString().slice(0,10)}/></div>;
+    return <div className="ui-page-stack"><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace} licences={licences} qualifications={qualifications} documents={documents} passengerRecency={passengerRecency} laplRecency={laplRecency} asOf={day}/></div>;
   }
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
