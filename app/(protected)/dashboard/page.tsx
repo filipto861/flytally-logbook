@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { DashboardEditor } from "@/components/dashboard-editor";
 import { DashboardEditorial } from "@/components/dashboard-editorial";
 import type { DashboardLicenceSummary,DashboardQualificationSummary,DashboardDocumentSummary } from "@/lib/dashboard-credential-overview";
+import { getDashboardPassengerFlights } from "@/lib/data/dashboard-passenger-recency";
+import { activePassengerClasses,passengerRecencyOverview } from "@/lib/dashboard-passenger-overview";
 import { buildDashboardPace } from "@/lib/dashboard-pace";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration,getDashboardOverviewData } from "@/lib/data/dashboard";
@@ -46,7 +48,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   const session=await requireUser(),asOf=new Date();
   // Credential records are a bounded, user-scoped read for V11 only. Classic does not query them.
   const licenceRowsPromise:Promise<Array<Record<string,unknown>>>=classic?Promise.resolve([]):sql`SELECT id,licence_type,validity_mode,valid_until::text AS valid_until,recency_until::text AS recency_until FROM pilot_licences WHERE user_id=${session.userId} AND active=TRUE ORDER BY licence_type,id`;
-  const qualificationRowsPromise:Promise<Array<Record<string,unknown>>>=classic?Promise.resolve([]):sql`SELECT q.id,q.qualification_type,q.validity_mode,q.valid_until::text AS valid_until,q.recency_until::text AS recency_until,l.licence_type
+  const qualificationRowsPromise:Promise<Array<Record<string,unknown>>>=classic?Promise.resolve([]):sql`SELECT q.id,q.qualification_type,q.validity_mode,q.valid_until::text AS valid_until,q.recency_until::text AS recency_until,l.licence_type,q.qualification_family,q.regulatory_category,q.qualification_scope,q.privilege_role,q.classification_source
     FROM pilot_qualifications q JOIN pilot_licences l ON l.id=q.licence_id AND l.user_id=q.user_id
     WHERE q.user_id=${session.userId} AND q.active=TRUE AND l.active=TRUE AND COALESCE(q.record_kind,'')<>'aircraft_training'
     ORDER BY q.qualification_type,q.id`;
@@ -82,8 +84,11 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       id:Number(row.id),category:String(row.category??"").trim(),
       label:String(row.label??"").trim(),expiryDate:String(row.expiry_date??"").slice(0,10),
     }));
+    const passengerClasses=activePassengerClasses(licences,qualificationRows);
+    const passengerFlights=passengerClasses.length?await getDashboardPassengerFlights(session.userId,asOf.toISOString().slice(0,10)):[];
+    const passengerRecency=passengerRecencyOverview({flights:passengerFlights,classes:passengerClasses,qualifications:qualificationRows,asOf:asOf.toISOString().slice(0,10)});
     const pace=buildDashboardPace(paceSource?.months??null,asOf,paceSource?.invalidWindowDates);
-    return <div className="ui-page-stack"><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace} licences={licences} qualifications={qualifications} documents={documents} asOf={asOf.toISOString().slice(0,10)}/></div>;
+    return <div className="ui-page-stack"><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace} licences={licences} qualifications={qualifications} documents={documents} passengerRecency={passengerRecency} asOf={asOf.toISOString().slice(0,10)}/></div>;
   }
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
