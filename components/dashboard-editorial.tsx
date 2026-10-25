@@ -65,6 +65,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
                   {category.summary.status}
                 </span>
                 <small>{category.summary.count} recorded{category.summary.reviewCount>0?` · ${category.summary.reviewCount} to review`:""}{category.key==="ratings"&&laplRatingStatus?" · FCL.140.A":""}</small>
+                {category.key==="ratings"&&laplRatingStatus&&laplRecency?.status==="CURRENT"&&laplRecency.forecastDate?<small>Next recency change: {formatDateOnly(laplRecency.forecastDate)} (if no further flights)</small>:null}
                 {category.key==="ratings"&&!laplRatingStatus&&laplRecency?<small>LAPL(A) FCL.140.A: {laplRecency.status}</small>:null}
               </span>
               <span className="d1v11-credential-chevron" aria-hidden="true">→</span>
