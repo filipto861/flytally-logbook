@@ -11,9 +11,9 @@ export type DashboardLicenceSummary={id:number;licenceType:string;validityMode:s
 export type DashboardQualificationSummary={id:number;qualificationType:string;licenceType:string;validityMode:string;validUntil:string;recencyUntil:string};
 export type DashboardMedicalSummary={id:number;label:string;expiryDate:string};
 const isRecordedDay=(date:string)=>/^\d{4}-\d{2}-\d{2}$/.test(date)&&!date.startsWith("0000")&&Number.isFinite(new Date(date+"T00:00:00Z").getTime())&&new Date(date+"T00:00:00Z").toISOString().slice(0,10)===date;
-function recordedLicenceValidity(licence:DashboardLicenceSummary,today:string){
+function recordedLicenceValidity(licence:Pick<DashboardLicenceSummary,"validityMode"|"validUntil"|"recencyUntil">&{licenceType?:string},today:string){
   // LAPL licence validity is unlimited in the existing Records editor; this never asserts privileges or recency.
-  if(["LAPL(A)","LAPL(H)"].includes(licence.licenceType.toUpperCase())||licence.validityMode==="unlimited")return{label:"Unlimited",tone:"neutral"};
+  if(["LAPL(A)","LAPL(H)"].includes((licence.licenceType??"").toUpperCase())||licence.validityMode==="unlimited")return{label:"Unlimited",tone:"neutral"};
   if(licence.validityMode!=="date"&&licence.validityMode!=="recency")return{label:"Validity not recorded",tone:"muted"};
   const date=licence.validityMode==="recency"?licence.recencyUntil:licence.validUntil;
   if(!isRecordedDay(date))return{label:licence.validityMode==="recency"?"Recency date not recorded":"Expiry not recorded",tone:"muted"};
