@@ -53,7 +53,7 @@ export function buildCredentialOverview(input:{licences:readonly DashboardLicenc
   const {documents,medical}=partitionCredentialDocuments(input.documents);
   return{
     licences:summarize(input.licences,input.asOf,licenceEvidence),
-    ratings:(()=>{
+    ratings:(():CredentialOverviewGroup=>{
       const regular=summarize(input.qualifications,input.asOf,ratingEvidence,input.laplRecency??undefined);
       // LAPL(A) is a licence-level FCL.140.A assessment. Its recency applies
       // even where a separate SEP/TMG qualification record is not saved.
