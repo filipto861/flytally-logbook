@@ -61,13 +61,13 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
           {recencySnapshot?<span className="d1v11-recency-date">{formatDateOnly(recencySnapshot.generatedAt.slice(0,10))}</span>:null}
           <span className="d1v11-recency-arrow" aria-hidden="true">→</span>
         </Link>
-        <div className="d1v11-licences" aria-label="Recorded licences">
+        <div className="d1v11-licences" role="group" aria-label="Recorded licences">
           <div className="d1v11-licences-heading"><span className="d1v11-kicker">RECORDED LICENCES</span><small>{licences.length} active</small></div>
           {licences.length?<ul className="d1v11-licences-list">{licences.map(licence=>{
             const validity=recordedLicenceValidity(licence,asOf);
             return <li key={licence.id}><strong>{licence.licenceType||"Licence type not recorded"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>;
           })}</ul>:<p className="d1v11-licences-empty">No active licences recorded</p>}
-          <div className="d1v11-record-subgroup" aria-label="Recorded ratings and qualifications">
+          <div className="d1v11-record-subgroup" role="group" aria-label="Recorded ratings and qualifications">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">RATINGS &amp; QUALIFICATIONS</span><small>{qualifications.length} recorded</small></div>
             {qualifications.length?<ul className="d1v11-licences-list">{qualifications.map(item=>{
               // LAPL(A) SEP/TMG privileges are recency-based; saved qualification dates alone do not establish currency.
@@ -76,7 +76,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
               return <li key={item.id}><strong>{item.qualificationType||"Qualification not named"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>;
             })}</ul>:<p className="d1v11-licences-empty">No ratings recorded</p>}
           </div>
-          <div className="d1v11-record-subgroup" aria-label="Recorded medical certificates">
+          <div className="d1v11-record-subgroup" role="group" aria-label="Recorded medical certificates">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">MEDICAL</span><small>{medical.length} recorded</small></div>
             {medical.length?<ul className="d1v11-licences-list">{medical.map(item=>{
               // Medical is a saved document date, not proof of medical fitness or operating privileges.
