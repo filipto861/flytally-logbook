@@ -93,3 +93,26 @@ test("D1-V11 shows only active user-owned recorded licence dates without claimin
   assert.match(css,/\.d1v11-licences-list li/);
   assert.match(css,/@media\(max-width:380px\).*?\.d1v11-licences-list li/s);
 });
+
+test("D1-V11 licence card reads only owned active qualifications and medical documents",()=>{
+  const route=read("app/(protected)/dashboard/page.tsx");
+  const view=read("components/dashboard-editorial.tsx");
+  const css=read("app/dashboard-editorial.css");
+  assert.match(route,/FROM pilot_qualifications q JOIN pilot_licences l ON l.id=q.licence_id AND l.user_id=q.user_id/);
+  assert.match(route,/WHERE q.user_id=\$\{session\.userId\} AND q.active=TRUE AND l.active=TRUE/);
+  assert.match(route,/COALESCE\(q.record_kind,\x27\x27\)<>\x27aircraft_training\x27/);
+  assert.match(route,/FROM user_expiries\s+WHERE user_id=\$\{session\.userId\} AND active=1/);
+  assert.match(route,/UPPER\(TRIM\(category\)\)<>\x27LICENCE\x27/);
+  assert.match(route,/\bmedical\b/i);
+  assert.match(route,/classic\?Promise\.resolve\(\[\]\):sql/g);
+  assert.match(route,/qualifications=\{qualifications\} medical=\{medical\}/);
+  assert.match(view,/RATINGS &amp; QUALIFICATIONS/);
+  assert.match(view,/MEDICAL/);
+  assert.match(view,/No ratings recorded/);
+  assert.match(view,/No medical recorded/);
+  assert.match(view,/needsRecency\?\{label:"Check recency",tone:"muted"\}:recordedLicenceValidity/);
+  assert.match(view,/expiry>="9999-01-01"\?"unlimited":"date"/);
+  assert.match(view,/href="\/credentials\?view=documents"/);
+  assert.match(css,/\.d1v11-record-subgroup/);
+  assert.match(css,/\.d1v11-record-links/);
+});
