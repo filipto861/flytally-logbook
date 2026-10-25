@@ -1,5 +1,15 @@
 # FlyTally changelog
 
+## 2026-10-25 — V11 default Dashboard and compact Recency production release (#412)
+- Shipped Editorial as default /dashboard, removed user-visible view switches, retained hidden Classic rollback and saved widget preferences. Compact historical Recency dot/status/date links to Credentials; no change to the recency legal engine or bounded pace SQL.
+- Canonical main=babd8abdb91039fbbfedaf0936ac0c14eac13957; PR #412 merged (squash) from exact tested source=d25c941018eb77e8e5ee74be028ce32dd8ae4352. Git trees identical (36e30ecf2f1a868ec75fe3f3d7d3333da6ca810f).
+- Owner Windows candidate 7e8dd3b3a98a23aa296ecc11855e994433549e7772566d38c3ab3de271072ad5: canonical release_status=PASS; full Node 1700/1700; target V11 10/10; source 261/261; domain 9/9; TypeScript/build PASS; six physically owned localhost PG16 partitions 164/164; authenticated Chromium desktop 5/5, mobile 5/5; supplemental V11 route/responsive/theme/keyboard 2/2. Risk scale N/A.
+- Manual Vercel production deployment dpl_5H9PwxWYLJseKA7TQ2MghkAgwwpj READY on exact merged SHA, domain fly-tally.com verified and aliased; build complete, no identified build error; Vercel runtime errors none in sampled 20m.
+- Independent public HTTP and signed-in production smoke NOT VERIFIED (assistant network unavailable); native Safari NOT RUN, CI UNKNOWN.
+- No production DB, schema, migration, feature-flag or Training changes. Production DB/schema identity not independently inspected (UNKNOWN).
+- ONE NEXT STEP: owner signs in to fly-tally.com/dashboard and checks default V11, Recency link and ?view=classic fallback on desktop/mobile.
+
+
 ## 2026-10-24 — Owner-approved V11 direct-default routing candidate (NOT YET RELEASED)
 - Move Editorial V11 to `/dashboard` by default and remove both user-facing Preview/Classic switch links; preserve `?view=v11` as compatible alias and Classic `?view=classic` as unadvertised rollback. Existing `dashboard_widgets` preferences/editor retained unchanged; historical Dashboard period/detail URLs still redirect to Statistics. Missing pace data fails closed as **Unavailable**, not synthetic zero or an implicit switch to Classic. `getDashboardOverviewData` and the bounded 25-month SQL source remain unchanged.
 - Include Draft #412 compact Recency card: one tappable section, simple four-color historical statuses and optional saved-check date only. No false live legal clearance, no thresholds/database mutations, feature flags, migrations, Training or new libraries.
