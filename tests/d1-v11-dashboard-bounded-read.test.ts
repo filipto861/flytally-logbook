@@ -110,7 +110,10 @@ test("D1-V11 licence card reads only owned active qualifications and medical doc
   assert.match(view,/MEDICAL/);
   assert.match(view,/No ratings recorded/);
   assert.match(view,/No medical recorded/);
-  assert.match(view,/needsRecency\?\{label:"Check recency",tone:"muted"\}:recordedLicenceValidity/);
+  assert.match(view,/needsRecency\?\{label:"Check recency",tone:"muted"\}:recordedDateValidity/);
+  assert.match(view,/function recordedLicenceValidity\(licence:DashboardLicenceSummary,today:string\)/);
+  assert.match(view,/function recordedDateValidity\(/);
+  assert.doesNotMatch(view,/recordedLicenceValidity\(item,asOf\)/,"a parent LAPL must not make its rating Unlimited");
   assert.match(view,/expiry>="9999-01-01"\?"unlimited":"date"/);
   assert.match(view,/href="\/credentials\?view=documents"/);
   assert.match(css,/\.d1v11-record-subgroup/);
