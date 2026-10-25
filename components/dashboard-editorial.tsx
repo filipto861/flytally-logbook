@@ -80,7 +80,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
                 <small>{item.until?`Recorded through ${formatDateOnly(item.until)}`:item.status==="No flight evidence"?"No qualifying certified flights":item.status==="Limited evidence"?"Check movement evidence":"Open recency details"}</small>
               </span>
             </Link>
-          )):<p className="d1v11-passenger-empty">No SEP/TMG passenger assessment available</p>}
+          ):<p className="d1v11-passenger-empty">No SEP/TMG passenger assessment available</p>}
           <small className="d1v11-passenger-disclaimer">Forecast assumes no new qualifying flights. Recorded evidence, not flight authorization.</small>
         </div>
         {attentionCount>0||actionCount>0?<div className="d1v11-attention" aria-label="Items requiring attention">
