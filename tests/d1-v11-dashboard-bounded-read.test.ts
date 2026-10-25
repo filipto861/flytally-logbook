@@ -96,12 +96,33 @@ test("D1-V11 four category overview keeps account-scoped source reads and rollba
   assert.match(view,/href:"\/credentials\?view=documents"/);
   assert.match(view,/category\.summary\.reviewCount/);
   assert.doesNotMatch(view,/licencePreview|qualificationPreview|medicalPreview|previewLimits/);
-  assert.doesNotMatch(view,/\bCURRENT\b|\bCOMPLIANT\b/);
+  // Explicit CURRENT is now permitted ONLY as a scoped FCL.140.A or FCL.060
+  // evidence result, never a blanket legal compliance assertion.
+  assert.match(view,/LAPL\(A\) · FCL\.140\.A/);
+  assert.match(view,/laplRatingStatus/);
+  assert.doesNotMatch(view,/\bCOMPLIANT\b/);
   assert.match(summary,/partitionCredentialDocuments/);
   assert.match(summary,/!day\.startsWith\("0000"\)/);
   assert.match(summary,/validityMode/);
   assert.match(css,/\.d1v11-credential-row\{[^}]*min-height:74px/);
   assert.match(css,/@media\(max-width:380px\).*?\.d1v11-credential-row/s);
+});
+
+test("D1-V11 LAPL recency reads signed certified flights for two years without mutation",()=>{
+  const page=read("app/(protected)/dashboard/page.tsx");
+  const source=read("lib/data/dashboard-lapl-flights.ts");
+  const status=read("lib/dashboard-lapl-overview.ts");
+  assert.match(page,/getDashboardLaplFlights\(session\.userId,day\)/);
+  assert.match(page,/dashboardLaplIndicator\(laplFlights,day,preferences\.recency_evidence\)/);
+  assert.match(source,/rollingYearsStart\(asOf,2\)/);
+  assert.match(source,/f\.user_id=\$\{userId\} AND f\.certified_at IS NOT NULL/);
+  assert.match(source,/f\.date>=\$\{start\} AND f\.date<=\$\{asOf\}/s);
+  assert.match(source,/v\.verification_role='INSTRUCTOR' AND v\.status='signed'/);
+  assert.match(source,/resolveMovementCompatibility/);
+  assert.doesNotMatch(source,/getRecencyStateForUser|ensureDatabaseOptimizations|UPDATE|DELETE|INSERT/);
+  assert.match(status,/evaluateLaplA/);
+  assert.match(status,/NOT CURRENT/);
+  assert.match(status,/UNVERIFIED/);
 });
 
 test("D1-V11 passenger recency uses bounded certified owner-scoped 90-day movement evidence",()=>{
