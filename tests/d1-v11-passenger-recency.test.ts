@@ -69,3 +69,34 @@ test("passenger night is separately visible only when recorded operational night
   assert.equal(rows[1].label,"SEP · Night");
   assert.notEqual(rows[1].status,"Recorded OK");
 });
+
+test("malformed or ambiguous IR/Night validity cannot enable passenger night indication",()=>{
+  const invalid=[
+    {qualification_type:"IR(A)",validity_mode:"date",valid_until:"not-a-date"},
+    {qualification_type:"IR(A)",validity_mode:"date",valid_until:"2027-02-31"},
+    {qualification_type:"NIGHT",validity_mode:"recency",recency_until:"0000-01-01"},
+    {qualification_type:"NIGHT",validity_mode:"legacy",valid_until:"2027-01-01"},
+    {qualification_type:"IR(A)",validity_mode:"recency",recency_until:""},
+    {qualification_type:"IR(A)",validity_mode:"date",valid_until:"2026-10-24"},
+  ];
+  for(const qualification of invalid){
+    const rows=passengerRecencyOverview({
+      flights:[movement("2026-10-20")],classes:["SEP"],qualifications:[qualification],asOf:today,
+    });
+    assert.deepEqual(rows.map(row=>row.label),["SEP · Day"],JSON.stringify(qualification));
+  }
+  const validIr=passengerRecencyOverview({
+    flights:[movement("2026-10-20")],classes:["SEP"],
+    qualifications:[{qualification_type:"IR(A)",validity_mode:"date",valid_until:"2027-02-28"}],asOf:today,
+  });
+  assert.equal(validIr.length,2);
+  assert.equal(validIr[1].label,"SEP · Night");
+  assert.equal(validIr[1].status,"Recorded OK");
+
+  const validNight=passengerRecencyOverview({
+    flights:[movement("2026-10-20")],classes:["SEP"],
+    qualifications:[{qualification_type:"NIGHT",validity_mode:"unlimited"}],asOf:today,
+  });
+  assert.equal(validNight.length,2);
+  assert.notEqual(validNight[1].status,"Recorded OK");
+});
