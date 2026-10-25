@@ -65,10 +65,39 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await expectAuthenticatedRoute(page,"Flight overview.");
   await expect(page.getByRole("region",{name:"Flying summary"})).toBeVisible();
   await expect(page.locator('a.d1v11-recency-primary[href="/credentials"]')).toBeVisible();
-  await expect(page.getByRole("group",{name:"Recorded licences"})).toBeVisible();
-  await expect(page.getByRole("group",{name:"Recorded ratings and qualifications"})).toBeVisible();
-  await expect(page.getByRole("group",{name:"Recorded medical certificates"})).toBeVisible();
-  await expect(page.getByRole("link",{name:"Medical & documents"})).toBeVisible();
+  const credentials=page.getByRole("group",{name:"Recorded credentials overview"});
+  await expect(credentials).toBeVisible();
+  for(const label of ["LICENCES","RATINGS","DOCUMENTS","MEDICAL"]){
+    await expect(credentials.getByRole("link",{name:new RegExp(label)})).toBeVisible();
+  }
+  const categoryLinks=credentials.locator("a.d1v11-credential-row");
+  await expect(categoryLinks).toHaveCount(4);
+  for(const [index,href] of ["/credentials?view=licences","/credentials?view=licences","/credentials?view=documents","/credentials?view=documents"].entries()){
+    await expect(categoryLinks.nth(index)).toHaveAttribute("href",href);
+  }
+
+  // Real authenticated synthetic fixture: check touch/keyboard affordance and layout
+  // at narrow mobile, phone, iPad and desktop sizes. No real pilot records or private screenshots.
+  const originalViewport=page.viewportSize();
+  for(const width of [320,390,768,1024,1440]){
+    await page.setViewportSize({width,height:900});
+    await expectNoHorizontalOverflow(page);
+    await expect(categoryLinks).toHaveCount(4);
+    for(const row of await categoryLinks.all()){
+      const size=await row.boundingBox();
+      expect(size?.height??0).toBeGreaterThanOrEqual(44);
+    }
+    // The test fixture uses synthetic pilot records only. Attach the card crop to
+    // the local Playwright report for real light/mobile/tablet/desktop visual review.
+    await test.info().attach(`v11-credential-card-${width}px`,{
+      body:await credentials.screenshot(),
+      contentType:"image/png",
+    });
+  }
+  if(originalViewport)await page.setViewportSize(originalViewport);
+  await categoryLinks.first().focus();
+  await expect(categoryLinks.first()).toBeFocused();
+
   await page.goto("/dashboard?view=classic");
   await expectAuthenticatedRoute(page,"At a glance");
   await page.goto("/dashboard");
