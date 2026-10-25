@@ -90,8 +90,13 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     const hasLapl=licences.some(row=>row.licenceType.toUpperCase()==="LAPL(A)");
     // FCL.140.A uses two years and instructor/examiner evidence; FCL.060
     // passenger currency remains a separate 90-day calculation.
-    const laplFlights=hasLapl?await getDashboardLaplFlights(session.userId,day):null;
-    const laplRecency=laplFlights?dashboardLaplIndicator(laplFlights,day,preferences.recency_evidence):null;
+    const laplFlights=hasLapl?await getDashboardLaplFlights(session.userId,day).catch(()=>{
+      console.error("Dashboard LAPL recency evidence read unavailable");
+      return null;
+    }):null;
+    const laplRecency=!hasLapl?null:laplFlights===null?
+      {status:"UNVERIFIED" as const,tone:"muted" as const,forecastDate:null,detail:"Recorded FCL.140.A flight evidence unavailable"}:
+      dashboardLaplIndicator(laplFlights,day,preferences.recency_evidence);
     const passengerClasses=activePassengerClasses(licences,qualificationRows);
     const passengerFlights=passengerClasses.length?await getDashboardPassengerFlights(session.userId,day):[];
     const passengerRecency=passengerRecencyOverview({flights:passengerFlights,classes:passengerClasses,qualifications:qualificationRows,asOf:day});
