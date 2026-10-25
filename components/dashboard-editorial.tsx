@@ -47,7 +47,7 @@ function previewRows<T>(rows:readonly T[],limit:number,display:(row:T)=>Recorded
   const ranked=rows.map((item,index)=>({item,index,validity:display(item)}));
   ranked.sort((a,b)=>rank(a.validity.tone)-rank(b.validity.tone)||a.index-b.index);
   const remaining=ranked.slice(limit);
-  return {visible:ranked.slice(0,limit),more:remaining.length,hiddenDateWarnings:remaining.filter(row=>row.validity.tone==="past"||row.validity.tone==="soon").length};
+  return {visible:ranked.slice(0,limit),more:remaining.length,hiddenNeedsReview:remaining.filter(row=>row.validity.tone!=="neutral").length};
 }
 export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,qualifications,medical,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];qualifications:DashboardQualificationSummary[];medical:DashboardMedicalSummary[];asOf:string}){
   const flight=data.lastFlight;
@@ -91,20 +91,20 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
           {licences.length?<ul className="d1v11-licences-list">{licencePreview.visible.map(({item:licence,validity})=>
             <li key={licence.id}><strong>{licence.licenceType||"Licence type not recorded"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
           )}</ul>:<p className="d1v11-licences-empty">No active licences recorded</p>}
-          {licencePreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{licencePreview.more} more {licencePreview.more===1?"licence":"licences"}{licencePreview.hiddenDateWarnings>0? ` · ${licencePreview.hiddenDateWarnings} more date ${licencePreview.hiddenDateWarnings===1?"warning":"warnings"}`:""} <span aria-hidden="true">→</span></Link>:null}
+          {licencePreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{licencePreview.more} more {licencePreview.more===1?"licence":"licences"}{licencePreview.hiddenNeedsReview>0? ` · ${licencePreview.hiddenNeedsReview} ${licencePreview.hiddenNeedsReview===1?"to review":"to review"}`:""} <span aria-hidden="true">→</span></Link>:null}
           <div className="d1v11-record-subgroup" role="group" aria-label="Recorded ratings and qualifications">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">RATINGS &amp; QUALIFICATIONS</span><small>{qualifications.length} recorded</small></div>
             {qualifications.length?<ul className="d1v11-licences-list">{qualificationPreview.visible.map(({item,validity})=>
               <li key={item.id}><strong>{item.qualificationType||"Qualification not named"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
             )}</ul>:<p className="d1v11-licences-empty">No ratings recorded</p>}
-            {qualificationPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{qualificationPreview.more} more {qualificationPreview.more===1?"rating":"ratings"}{qualificationPreview.hiddenDateWarnings>0?` · ${qualificationPreview.hiddenDateWarnings} more date ${qualificationPreview.hiddenDateWarnings===1?"warning":"warnings"}`:""} <span aria-hidden="true">→</span></Link>:null}
+            {qualificationPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{qualificationPreview.more} more {qualificationPreview.more===1?"rating":"ratings"}{qualificationPreview.hiddenNeedsReview>0?` · ${qualificationPreview.hiddenNeedsReview} ${qualificationPreview.hiddenNeedsReview===1?"to review":"to review"}`:""} <span aria-hidden="true">→</span></Link>:null}
           </div>
           <div className="d1v11-record-subgroup" role="group" aria-label="Recorded medical certificates">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">MEDICAL</span><small>{medical.length} recorded</small></div>
             {medical.length?<ul className="d1v11-licences-list">{medicalPreview.visible.map(({item,validity})=>
               <li key={item.id}><strong>{item.label||"Medical document"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
             )}</ul>:<p className="d1v11-licences-empty">No medical recorded</p>}
-            {medicalPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=documents">+{medicalPreview.more} more {medicalPreview.more===1?"medical record":"medical records"}{medicalPreview.hiddenDateWarnings>0?` · ${medicalPreview.hiddenDateWarnings} more date ${medicalPreview.hiddenDateWarnings===1?"warning":"warnings"}`:""} <span aria-hidden="true">→</span></Link>:null}
+            {medicalPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=documents">+{medicalPreview.more} more {medicalPreview.more===1?"medical record":"medical records"}{medicalPreview.hiddenNeedsReview>0?` · ${medicalPreview.hiddenNeedsReview} ${medicalPreview.hiddenNeedsReview===1?"to review":"to review"}`:""} <span aria-hidden="true">→</span></Link>:null}
           </div>
           <div className="d1v11-record-links">
             <Link className="d1v11-licences-link" href="/credentials?view=licences">All licences &amp; ratings <span aria-hidden="true">→</span></Link>
