@@ -107,6 +107,8 @@ test("D1-V11 licence card reads only owned active qualifications and medical doc
   assert.match(route,/classic\?Promise\.resolve\(\[\]\):sql/g);
   assert.match(route,/qualifications=\{qualifications\} medical=\{medical\}/);
   assert.match(view,/RATINGS &amp; QUALIFICATIONS/);
+  assert.match(view,/role="group" aria-label="Recorded ratings and qualifications"/);
+  assert.match(view,/role="group" aria-label="Recorded medical certificates"/);
   assert.match(view,/MEDICAL/);
   assert.match(view,/No ratings recorded/);
   assert.match(view,/No medical recorded/);
