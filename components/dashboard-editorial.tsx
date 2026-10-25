@@ -3,22 +3,24 @@ import { formatDuration,type DashboardOverviewData } from "@/lib/data/dashboard"
 import { formatDateOnly } from "@/lib/display-format";
 import { buildCredentialOverview,type DashboardLicenceSummary,type DashboardQualificationSummary,type DashboardDocumentSummary } from "@/lib/dashboard-credential-overview";
 import type { DashboardPassengerIndicator } from "@/lib/dashboard-passenger-overview";
+import type { DashboardLaplIndicator } from "@/lib/dashboard-lapl-overview";
 import type { RecencySnapshot } from "@/lib/recency-service";
 import type { DashboardPaceView } from "@/lib/dashboard-pace";
 import { DashboardPace } from "@/components/dashboard-pace";
 
 const numberLabel=(value:number,singular:string,plural:string)=>`${value} ${value===1?singular:plural}`;
 
-export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,qualifications,documents,passengerRecency,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];qualifications:DashboardQualificationSummary[];documents:DashboardDocumentSummary[];passengerRecency:DashboardPassengerIndicator[];asOf:string}){
+export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,qualifications,documents,passengerRecency,laplRecency,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];qualifications:DashboardQualificationSummary[];documents:DashboardDocumentSummary[];passengerRecency:DashboardPassengerIndicator[];laplRecency:DashboardLaplIndicator|null;asOf:string}){
   const flight=data.lastFlight;
   // The persisted snapshot is historical evidence, never a live privilege determination.
   // "attention" covers incomplete evidence too: it must NOT be relabelled "Not current".
   const recencyTone=recencySnapshot?.status==="ok"?"ok":recencySnapshot?.status==="warning"?"warning":recencySnapshot?.status==="attention"?"review":"unknown";
   const recencyHeadline=recencyTone==="ok"?"Last check: OK":recencyTone==="warning"?"Last check: Due soon":recencyTone==="review"?"Last check: Needs review":"Not assessed";
-  const credentialOverview=buildCredentialOverview({licences,qualifications,documents,asOf});
+  const credentialOverview=buildCredentialOverview({licences,qualifications,documents,asOf,laplRecency});
+  const laplRatingStatus=["CURRENT","NOT CURRENT","UNVERIFIED"].includes(credentialOverview.ratings.status);
   const credentialCategories=[
     {key:"licences",label:"LICENCES",subtitle:"Recorded expiry dates",href:"/credentials?view=licences",summary:credentialOverview.licences},
-    {key:"ratings",label:"RATINGS",subtitle:"Validity & recency evidence",href:"/credentials?view=licences",summary:credentialOverview.ratings},
+    {key:"ratings",label:"RATINGS",subtitle:laplRatingStatus?"LAPL(A) · FCL.140.A (recorded evidence)":"Recorded validity dates",href:laplRatingStatus?"/credentials?view=recency":"/credentials?view=licences",summary:credentialOverview.ratings},
     {key:"documents",label:"DOCUMENTS",subtitle:"Other saved documents",href:"/credentials?view=documents",summary:credentialOverview.documents},
     {key:"medical",label:"MEDICAL",subtitle:"Recorded medical expiry",href:"/credentials?view=documents",summary:credentialOverview.medical},
   ];
@@ -62,7 +64,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
                   <span className="d1v11-credential-dot" aria-hidden="true"/>
                   {category.summary.status}
                 </span>
-                <small>{category.summary.count} recorded{category.summary.reviewCount>0?` · ${category.summary.reviewCount} to review`:""}</small>
+                <small>{category.summary.count} recorded{category.summary.reviewCount>0?` · ${category.summary.reviewCount} to review`:""}{category.key==="ratings"&&laplRatingStatus?` · FCL.140.A`:""}</small>
               </span>
               <span className="d1v11-credential-chevron" aria-hidden="true">→</span>
             </Link>
@@ -77,7 +79,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
               <span className="d1v11-passenger-class">{item.label}</span>
               <span className="d1v11-passenger-value">
                 <span className={`d1v11-credential-status d1v11-credential-status--${item.tone}`}><span className="d1v11-credential-dot" aria-hidden="true"/>{item.status}</span>
-                <small>{item.until?`Recorded through ${formatDateOnly(item.until)}`:item.status==="No flight evidence"?"No qualifying certified flights":item.status==="Limited evidence"?"Check movement evidence":"Open recency details"}</small>
+                <small>{item.until?`${item.dueSoon?"Due soon · ":""}Recorded through ${formatDateOnly(item.until)}`:item.status==="UNVERIFIED"?"Insufficient recorded evidence":item.status==="NOT CURRENT"?"Not met in recorded flights":"Open recency details"}</small>
               </span>
             </Link>
           ):<p className="d1v11-passenger-empty">No SEP/TMG passenger assessment available</p>}
