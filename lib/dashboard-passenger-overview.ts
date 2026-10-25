@@ -1,5 +1,6 @@
 import { evaluatePassengerCurrencyMode,daysBetween,type RecencyFlight } from "./recency-engine.ts";
 import { credentialValidity } from "./credential-validity.ts";
+import { isAeroplaneIrQualification } from "./regulatory-qualification.ts";
 import { confirmedQualificationMatches,hasConfirmedQualificationStructure,qualificationLogicScope } from "./qualification-record.ts";
 
 export type PassengerClass="SEP"|"TMG";
@@ -16,11 +17,16 @@ const classOf=(row:Record<string,unknown>):PassengerClass|""=>{
   const value=upper(name);return value.startsWith("SEP")?"SEP":value.startsWith("TMG")?"TMG":"";
 };
 const isIr=(row:Record<string,unknown>)=>hasConfirmedQualificationStructure(row)?
-  confirmedQualificationMatches(row,"INSTRUMENT","AEROPLANE","PILOT")&&upper(qualificationLogicScope(row)).includes("IR"):
-  upper(row.qualification_type).includes("IR");
+  confirmedQualificationMatches(row,"INSTRUMENT","AEROPLANE","PILOT")&&isAeroplaneIrQualification(qualificationLogicScope(row)):
+  isAeroplaneIrQualification(row.qualification_type);
 const isNight=(row:Record<string,unknown>)=>hasConfirmedQualificationStructure(row)?
   confirmedQualificationMatches(row,"OPERATIONAL","AEROPLANE","PILOT")&&upper(qualificationLogicScope(row)).includes("NIGHT"):
   upper(row.qualification_type).includes("NIGHT");
+
+const credentialActive=(row:Record<string,unknown>,asOf:string)=>{
+  const status=credentialValidity({mode:row.validity_mode,validUntil:row.valid_until,recencyUntil:row.recency_until},asOf).status;
+  return status!=="expired"&&status!=="incomplete";
+};
 
 export function activePassengerClasses(licences:readonly {licenceType:string}[],qualificationRows:readonly Record<string,unknown>[]):PassengerClass[]{
   const classes=new Set<PassengerClass>();
@@ -35,8 +41,8 @@ export function passengerRecencyOverview(input:{
 }):DashboardPassengerIndicator[]{
   const {flights,classes,qualifications,asOf}=input;
   // A saved, unexpired IR is needed for the night IR route; do not infer IR currency.
-  const hasIr=qualifications.some(row=>isIr(row)&&credentialValidity({mode:row.validity_mode,validUntil:row.valid_until,recencyUntil:row.recency_until},asOf).status==="valid");
-  const hasNight=hasIr||qualifications.some(row=>isNight(row)&&credentialValidity({mode:row.validity_mode,validUntil:row.valid_until,recencyUntil:row.recency_until},asOf).status==="valid");
+  const hasIr=qualifications.some(row=>isIr(row)&&credentialActive(row,asOf));
+  const hasNight=hasIr||qualifications.some(row=>isNight(row)&&credentialActive(row,asOf));
   return classes.flatMap(aircraftClass=>(hasNight?["day","night"]:["day"] as const).map(mode=>{
     const evaluation=evaluatePassengerCurrencyMode([...flights],aircraftClass,hasIr,asOf,mode as "day"|"night");
     const until=evaluation.status==="current"&&evaluation.forecastDate?
