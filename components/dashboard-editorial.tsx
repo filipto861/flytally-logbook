@@ -64,7 +64,8 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
                   <span className="d1v11-credential-dot" aria-hidden="true"/>
                   {category.summary.status}
                 </span>
-                <small>{category.summary.count} recorded{category.summary.reviewCount>0?` · ${category.summary.reviewCount} to review`:""}{category.key==="ratings"&&laplRatingStatus?` · FCL.140.A`:""}</small>
+                <small>{category.summary.count} recorded{category.summary.reviewCount>0?` · ${category.summary.reviewCount} to review`:""}{category.key==="ratings"&&laplRatingStatus?" · FCL.140.A":""}</small>
+                {category.key==="ratings"&&!laplRatingStatus&&laplRecency?<small>LAPL(A) FCL.140.A: {laplRecency.status}</small>:null}
               </span>
               <span className="d1v11-credential-chevron" aria-hidden="true">→</span>
             </Link>
