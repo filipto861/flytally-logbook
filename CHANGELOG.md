@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-25 — V11 Dashboard licence, rating & Medical mini-summary (DRAFT, not released)
+- Following owner approval, extend Draft #414 beyond licence-only list with active recorded `pilot_qualifications` (non-aircraft-training, active parent licence) and Medical documents from user-owned `user_expiries`, labelled as recorded dates only. Reuse existing Valid until, stored recency and Unlimited fields; LAPL(A) SEP/TMG qualification explicitly directs to recency evidence and does not invent validity.
+- No changes to recency rules, flight/certification, database schema/write/migrations, flags, external dependencies, Training, Classic Dashboard, brand or motion; no production deployment. CSS scoped to card and 380px stack. Source advisory 14/14 matches; actual Node, TS, build, owned-PG, Chromium desktop/mobile/native Safari tests NOT RUN on amended SHA.
+- Owner consent covers expanding the draft UI, not merge or production deploy. Draft PR #414 requires exact-SHA QA and distinct release decision.
+
+
 ## 2026-10-25 — Unreleased V11 licence mini-list candidate
 - Show all active recorded pilot licences and saved expiry/recency dates beneath the existing historical Recency snapshot on Editorial Dashboard. No dashboard Classic query, recency calculations, certification, DB, flags or Training changes. Empty/malformed inputs fail closed; date warnings have text and color; LAPL validity Unlimited independent of flight privileges. Compact responsive styling, no motion or dependencies. A scoped source regression was added, but actual Node24/TypeScript/build/PostgreSQL/Playwright/native Safari NOT RUN. Branch `feat/logbook-v11-licence-summary-20261025`, not merged/deployed.
 
