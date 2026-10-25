@@ -89,6 +89,8 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
     }
   }
   if(originalViewport)await page.setViewportSize(originalViewport);
+  await categoryLinks.first().focus();
+  await expect(categoryLinks.first()).toBeFocused();
 
   await page.goto("/dashboard?view=classic");
   await expectAuthenticatedRoute(page,"At a glance");
