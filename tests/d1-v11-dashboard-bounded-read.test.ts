@@ -129,7 +129,7 @@ test("D1-V11 recorded credential preview is bounded and does not bury extra date
   assert.match(view,/rank=\(tone:string\)=>tone==="past"\?0:tone==="soon"\?1:tone==="muted"\?2:3/);
   assert.match(view,/ranked\.sort\(\(a,b\)=>rank\(a\.validity\.tone\)-rank\(b\.validity\.tone\)\|\|a\.index-b\.index\)/,"warn first; stable existing record order");
   assert.match(view,/remaining=ranked\.slice\(limit\)/);
-  assert.match(view,/hiddenDateWarnings:remaining\.filter\(row=>row\.validity\.tone==="past"\|\|row\.validity\.tone==="soon"\)\.length/);
+  assert.match(view,/hiddenNeedsReview:remaining\.filter\(row=>row\.validity\.tone!=="neutral"\)\.length/,"missing evidence must remain visible in hidden review count");
   assert.match(view,/licencePreview\.visible\.map/);
   assert.match(view,/qualificationPreview\.visible\.map/);
   assert.match(view,/medicalPreview\.visible\.map/);
@@ -137,6 +137,6 @@ test("D1-V11 recorded credential preview is bounded and does not bury extra date
   assert.match(view,/licencePreview\.more>0\?<Link className="d1v11-overflow-link" href="\/credentials\?view=licences"/);
   assert.match(view,/qualificationPreview\.more>0\?<Link className="d1v11-overflow-link" href="\/credentials\?view=licences"/);
   assert.match(view,/medicalPreview\.more>0\?<Link className="d1v11-overflow-link" href="\/credentials\?view=documents"/);
-  assert.match(view,/more date/,"hidden warning count must remain visible");
+  assert.match(view,/to review/,"hidden unresolved states remain visible without implying clearance");
   assert.match(css,/\.d1v11-overflow-link\{[^}]*min-height:44px/);
 });
