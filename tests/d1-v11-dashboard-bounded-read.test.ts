@@ -103,3 +103,21 @@ test("D1-V11 four category overview keeps account-scoped source reads and rollba
   assert.match(css,/\.d1v11-credential-row\{[^}]*min-height:74px/);
   assert.match(css,/@media\(max-width:380px\).*?\.d1v11-credential-row/s);
 });
+
+test("D1-V11 passenger recency uses bounded certified owner-scoped 90-day movement evidence",()=>{
+  const page=read("app/(protected)/dashboard/page.tsx");
+  const source=read("lib/data/dashboard-passenger-recency.ts");
+  const view=read("components/dashboard-editorial.tsx");
+  const css=read("app/dashboard-editorial.css");
+  assert.match(page,/!classic\?getDashboardPaceData/);
+  assert.match(page,/passengerClasses\.length\?await getDashboardPassengerFlights\(session\.userId/);
+  assert.match(page,/passengerRecency=\{passengerRecency\}/);
+  assert.match(source,/rollingDaysStart\(asOf,90\)/);
+  assert.match(source,/f\.user_id=\$\{userId\} AND f\.certified_at IS NOT NULL/);
+  assert.match(source,/f\.date>=\$\{startDate\} AND f\.date<=\$\{asOf\}/);
+  assert.match(source,/resolveMovementCompatibility/);
+  assert.doesNotMatch(source,/getRecencyStateForUser|ensureDatabaseOptimizations|UPDATE|DELETE|INSERT/);
+  assert.match(view,/role="group" aria-label="Passenger recency, recorded flight evidence"/);
+  assert.match(view,/Recorded through \$\{formatDateOnly\(item\.until\)\}/);
+  assert.match(css,/\.d1v11-passenger-row\{[^}]*min-height:52px/);
+});
