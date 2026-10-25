@@ -70,3 +70,54 @@ test("D1-V11 slider has source-level keyboard and focus semantics",()=>{
   const css=read("app/dashboard-editorial.css");
   assert.match(css,/\.d1v11-page :is\(a,button,\[role="slider"\]\):focus-visible/);
 });
+
+test("D1-V11 shows only active user-owned recorded licence dates without claiming live privileges",()=>{
+  const page=read("app/(protected)/dashboard/page.tsx");
+  const editorial=read("components/dashboard-editorial.tsx");
+  const css=read("app/dashboard-editorial.css");
+  assert.match(page,/FROM pilot_licences WHERE user_id=\$\{session\.userId\} AND active=TRUE/);
+  assert.match(page,/classic\?Promise\.resolve\(\[\]\):sql/,"Classic must not gain the new read");
+  assert.match(page,/SELECT id,licence_type,validity_mode,valid_until::text AS valid_until,recency_until::text AS recency_until/);
+  assert.match(page,/licences=\{licences\} qualifications=\{qualifications\} medical=\{medical\} asOf=\{asOf\.toISOString\(\)\.slice\(0,10\)\}/);
+  assert.match(editorial,/Recorded licences/);
+  assert.match(editorial,/No active licences recorded/);
+  assert.match(editorial,/Validity not recorded/);
+  assert.match(editorial,/Expiry not recorded/);
+  assert.match(editorial,/Recency date not recorded/);
+  assert.match(editorial,/\["LAPL\(A\)","LAPL\(H\)"\]/,"LAPL recorded indefinite expiry must stay separate from current recency");
+  assert.match(editorial,/isRecordedDay\(date\)/,"unverified or malformed dates cannot acquire a positive label");
+  assert.match(editorial,/!date\.startsWith\("0000"\)/,"year zero cannot become an ordinary expiry");
+  assert.match(editorial,/date passed/,"past dates must have a textual warning beyond color");
+  assert.match(editorial,/href="\/credentials\?view=licences"/);
+  assert.doesNotMatch(editorial,/\bCURRENT\b|\bCOMPLIANT\b/,"Dashboard licence rows must not infer privilege clearance");
+  assert.match(css,/\.d1v11-licences-list li/);
+  assert.match(css,/@media\(max-width:380px\).*?\.d1v11-licences-list li/s);
+});
+
+test("D1-V11 licence card reads only owned active qualifications and medical documents",()=>{
+  const route=read("app/(protected)/dashboard/page.tsx");
+  const view=read("components/dashboard-editorial.tsx");
+  const css=read("app/dashboard-editorial.css");
+  assert.match(route,/FROM pilot_qualifications q JOIN pilot_licences l ON l.id=q.licence_id AND l.user_id=q.user_id/);
+  assert.match(route,/WHERE q.user_id=\$\{session\.userId\} AND q.active=TRUE AND l.active=TRUE/);
+  assert.match(route,/COALESCE\(q.record_kind,\x27\x27\)<>\x27aircraft_training\x27/);
+  assert.match(route,/FROM user_expiries\s+WHERE user_id=\$\{session\.userId\} AND active=1/);
+  assert.match(route,/UPPER\(TRIM\(category\)\)<>\x27LICENCE\x27/);
+  assert.match(route,/\bmedical\b/i);
+  assert.match(route,/classic\?Promise\.resolve\(\[\]\):sql/g);
+  assert.match(route,/qualifications=\{qualifications\} medical=\{medical\}/);
+  assert.match(view,/RATINGS &amp; QUALIFICATIONS/);
+  assert.match(view,/role="group" aria-label="Recorded ratings and qualifications"/);
+  assert.match(view,/role="group" aria-label="Recorded medical certificates"/);
+  assert.match(view,/MEDICAL/);
+  assert.match(view,/No ratings recorded/);
+  assert.match(view,/No medical recorded/);
+  assert.match(view,/needsRecency\?\{label:"Check recency",tone:"muted"\}:recordedDateValidity/);
+  assert.match(view,/function recordedLicenceValidity\(licence:DashboardLicenceSummary,today:string\)/);
+  assert.match(view,/function recordedDateValidity\(/);
+  assert.doesNotMatch(view,/recordedLicenceValidity\(item,asOf\)/,"a parent LAPL must not make its rating Unlimited");
+  assert.match(view,/expiry>="9999-01-01"\?"unlimited":"date"/);
+  assert.match(view,/href="\/credentials\?view=documents"/);
+  assert.match(css,/\.d1v11-record-subgroup/);
+  assert.match(css,/\.d1v11-record-links/);
+});

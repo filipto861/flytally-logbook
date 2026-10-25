@@ -65,6 +65,10 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await expectAuthenticatedRoute(page,"Flight overview.");
   await expect(page.getByRole("region",{name:"Flying summary"})).toBeVisible();
   await expect(page.locator('a.d1v11-recency-primary[href="/credentials"]')).toBeVisible();
+  await expect(page.getByRole("group",{name:"Recorded licences"})).toBeVisible();
+  await expect(page.getByRole("group",{name:"Recorded ratings and qualifications"})).toBeVisible();
+  await expect(page.getByRole("group",{name:"Recorded medical certificates"})).toBeVisible();
+  await expect(page.getByRole("link",{name:"Medical & documents"})).toBeVisible();
   await page.goto("/dashboard?view=classic");
   await expectAuthenticatedRoute(page,"At a glance");
   await page.goto("/dashboard");
