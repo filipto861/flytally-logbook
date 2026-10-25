@@ -55,7 +55,7 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
   // "attention" covers incomplete evidence too: it must NOT be relabelled "Not current".
   const recencyTone=recencySnapshot?.status==="ok"?"ok":recencySnapshot?.status==="warning"?"warning":recencySnapshot?.status==="attention"?"review":"unknown";
   const recencyHeadline=recencyTone==="ok"?"Last check: OK":recencyTone==="warning"?"Last check: Due soon":recencyTone==="review"?"Last check: Needs review":"Not assessed";
-  const licencePreview=previewRows(licences,previewLimits.licences,item=>recordedLicenceValidity(item,asOf));
+  const licencePreview=previewRows(licences,previewLimits.licences,licence=>recordedLicenceValidity(licence,asOf));
   const qualificationPreview=previewRows(qualifications,previewLimits.qualifications,item=>qualificationValidity(item,asOf));
   const medicalPreview=previewRows(medical,previewLimits.medical,item=>medicalValidity(item,asOf));
   return <div className="d1v11-page">
