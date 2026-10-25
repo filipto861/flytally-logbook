@@ -17,7 +17,7 @@ function recordedLicenceValidity(licence:DashboardLicenceSummary,today:string){
   if(!isRecordedDay(date))return{label:licence.validityMode==="recency"?"Recency date not recorded":"Expiry not recorded",tone:"muted"};
   const days=(Date.parse(date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000;
   const prefix=licence.validityMode==="recency"?"Recorded recency":"Until";
-  return{label:`${prefix} ${formatDateOnly(date)}`,tone:days<0?"past":days<=30?"soon":"neutral"};
+  return{label:`${prefix} ${formatDateOnly(date)}${days<0?" · date passed":days<=30?" · soon":""}`,tone:days<0?"past":days<=30?"soon":"neutral"};
 }
 
 export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];asOf:string}){
