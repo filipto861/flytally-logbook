@@ -25,10 +25,14 @@ Every UI/UX task — including a small button, spacing, form, typography, focus,
 | Auth, permissions, database, schema, data recovery | database-security | flight-integrity, testing-quality |
 | Tests, candidate selection, Playwright, failures | testing-quality | affected domain skill |
 | Branch/PR, docs, releases, handoff, Vercel | release-workflow | testing-quality |
+| Production readiness, security posture, incident/backup recovery, cost/observability audit | production-readiness + database-security + testing-quality + release-workflow | affected domain skills |
 
 Apple Design: `apple-design` — read SKILL.md + its REQUIRED playbook together.
 
 Paths for each skill: .agents/skills/<skill-name>/SKILL.md.
+
+## Production readiness audit
+For a broad production/security/operations audit, read [production-readiness/SKILL.md](production-readiness/SKILL.md) **and** [the 29-control matrix](production-readiness/references/CONTROL_MATRIX.md). Inspect live exact-SHA GitHub/Vercel metadata and source before reporting. This is a read-only skill: no unapproved production tests, credentials, database actions, alerts, billing or deployment. A report is not compliance certification.
 
 ## Curated Design Quality V2 review
 For UI audit, new page design, layout review or reference studies also read [External Design Quality V2](ui-quality-audit/references/EXTERNAL_DESIGN_QUALITY_V2.md) together with the full local `ui-quality-audit`, `apple-design` and task-relevant UI skills. Hallmark is audit/study only; Vercel Guidelines are code-review guidance; UI UX Pro Max and Kombai are inspiration; shadcn/ui is optional research. Existing FlyTally branding and aviation/data integrity always win. A read-only `npm run audit:design` source scan is advisory, not a WCAG or visual PASS. Do not auto-run vendor installers.
