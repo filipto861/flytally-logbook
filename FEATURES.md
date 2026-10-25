@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**2026-10-25 — DRAFT V11 Dashboard licence + ratings + Medical recorded-date overview (UNRELEASED PR #414).** User approved a concise non-regulatory list of all active recorded licences, qualifications/ratings and medical-labelled documents underneath the existing persisted historical Recency status. Data from authenticated-owned active tables; recorded dates/unlimited/unknown only, with overdue/soon cues but no current flight privileges claims. LAPL(A) SEP/TMG defers to separate Recency workspace. Direct links to Licences & ratings and Medical & documents; Classic Dashboard unchanged. Runtime and release evidence NOT RUN on latest SHA; main/production unchanged.
+
+
 **2026-10-25 — V11 licence validity mini-list CANDIDATE (UNRELEASED):** Staged account-scoped read of all active `pilot_licences` records for a compact list below existing historical Recency indicator. Displays type + recorded expiration / recency date or Unlimited; absent/malformed values explicitly unavailable, LAPL(A/H) Unlimited. Links to existing Licences & ratings records. No derived current privileges, no storage changes. Test/runtime/browser acceptance NOT RUN; remains a draft.
 
 
