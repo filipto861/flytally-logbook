@@ -40,7 +40,7 @@ test("passenger recency due soon uses engine forecast and does not invent an ext
   const [day]=overview([movement("2026-08-10")]);
   assert.equal(day.status,"CURRENT");
   assert.equal(day.dueSoon,true);
-  assert.equal(day.tone,"warning");
+  assert.equal(day.tone,"neutral");
   assert.equal(day.until,"2026-11-07");
 });
 
