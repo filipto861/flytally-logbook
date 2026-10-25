@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DashboardEditor } from "@/components/dashboard-editor";
-import { DashboardEditorial } from "@/components/dashboard-editorial";
+import { DashboardEditorial,type DashboardLicenceSummary } from "@/components/dashboard-editorial";
 import { buildDashboardPace } from "@/lib/dashboard-pace";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration,getDashboardOverviewData } from "@/lib/data/dashboard";
@@ -43,19 +43,26 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   // without exposing a view switch or mutating any saved dashboard_widgets preferences.
   const classic=params.view==="classic";
   const session=await requireUser(),asOf=new Date();
-  const[data,settings,attentionItems,actionCount,paceSource]=await Promise.all([
+  // Credential records are a bounded, user-scoped read for V11 only. Classic does not query them.
+  const licenceRowsPromise:Promise<Array<Record<string,unknown>>>=classic?Promise.resolve([]):sql`SELECT id,licence_type,validity_mode,valid_until::text AS valid_until,recency_until::text AS recency_until FROM pilot_licences WHERE user_id=${session.userId} AND active=TRUE ORDER BY licence_type,id`;
+  const[data,settings,attentionItems,actionCount,paceSource,licenceRows]=await Promise.all([
     getDashboardOverviewData(session.userId,"all"),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     getIntelligentLogbookAttention(session.userId),
     getPendingActionCount(session.userId),
     !classic?getDashboardPaceData(session.userId,asOf):Promise.resolve(null),
+    licenceRowsPromise,
   ]);
   const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),hasSavedLayout=Array.isArray(preferences.dashboard_widgets)&&preferences.dashboard_widgets.length>0,layout=hasSavedLayout?dashboardOverviewLayout(savedLayout):defaultDashboardOverviewLayout(),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
   // Default path is the bounded Editorial read. Missing pace evidence fails closed as Unavailable;
   // never silently switch to Classic or synthesize zero activity from missing data.
   if(!classic){
+    const licences:DashboardLicenceSummary[]=licenceRows.map(row=>({
+      id:Number(row.id),licenceType:String(row.licence_type??"").trim(),validityMode:String(row.validity_mode??"").trim().toLowerCase(),
+      validUntil:String(row.valid_until??"").slice(0,10),recencyUntil:String(row.recency_until??"").slice(0,10),
+    }));
     const pace=buildDashboardPace(paceSource?.months??null,asOf,paceSource?.invalidWindowDates);
-    return <div className="ui-page-stack"><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace}/></div>;
+    return <div className="ui-page-stack"><DashboardEditorial data={data} recencySnapshot={recencySnapshot} attentionCount={attentionItems.length} actionCount={actionCount} pace={pace} licences={licences} asOf={asOf.toISOString().slice(0,10)}/></div>;
   }
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
