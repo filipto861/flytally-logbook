@@ -1,5 +1,11 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-25T07:11:39.362Z — licence date guard refined after Draft #414; tests pending
+- Verified current main at branch creation `babd8abdb91039fbbfedaf0936ac0c14eac13957`, work `feat/logbook-v11-licence-summary-20261025`, Draft PR #414 base main. Work source refinement `93a0ed57f8235f0e474b1a72709260c81a27e8b9` and source regression `09ca2abff6ca74d6fe78dacf9d51a8eaa9634215`; reverify final SHA after this checkpoint.
+- Added explicit zero-year date rejection and a non-color past/soon cue on recorded validity dates. UI/read scope unchanged: active user-owned pilot_licences only, all records, Classic isolated, no aviation privileges inferred. Source contract assertions written; actual Node24/TS/build/owned PG16/Playwright/native Safari NOT RUN. DB/migration/production flags NO ACTION, production deployment unchanged `dpl_5H9PwxWYLJseKA7TQ2MghkAgwwpj`; no merge or release approval.
+- **ONE NEXT STEP:** exact-HEAD owner-local targeted Node + candidate risk gate and UI review, then request explicit owner merge/deploy decisions.
+
+
 ## 2026-10-25T07:09:27.904Z — owner V11 licence mini-list scope staged, UNRELEASED
 - GitHub canonical `main@babd8abdb91039fbbfedaf0936ac0c14eac13957`, production Vercel `dpl_5H9PwxWYLJseKA7TQ2MghkAgwwpj` READY same SHA. Work `feat/logbook-v11-licence-summary-20261025` from main; checked source change commit `17c6ebde83038b3930eb051532ece983b2d24d4c` and contract test commit `5678a2f319d7d7c62986554be7b866c694cf1d57`; final branch HEAD must be reverified after docs writes. New PR will be Draft base main; unrelated draft #413 and #411 left untouched.
 - Scope: `components/dashboard-editorial.tsx`, `app/(protected)/dashboard/page.tsx`, `app/dashboard-editorial.css`, `tests/d1-v11-dashboard-bounded-read.test.ts`; user-owned SELECT active pilot_licences type/mode/recorded date, no new endpoint/tables; Classic path short-circuited; all active licences list, missing/invalid date displays no invented validity, LAPL(A/H) Unlimited; existing historical Recency last-check unchanged and no legal CURRENT label. Mobile under 380px rows stack; motion NONE.
