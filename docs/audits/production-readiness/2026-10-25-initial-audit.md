@@ -74,6 +74,12 @@ Statuses: **VERIFIED** = direct current provider/executed evidence scoped to tha
 ### P2 — Supply chain, provider limits, domains and performance (SEC-05/06, OPS-03/04/05, WEB-01)
 Run an authorized secret/history scan and `npm audit --json` in isolated checkout (never print env values), inspect Vercel/Neon/Resend billing caps and alert contacts (metadata only), validate mail domain SPF/DKIM/DMARC, sample real HTTPS headers and slow-network/keyboard tests, and confirm public pages' robots/sitemap/OG only if a public acquisition surface is planned. No evidence currently establishes a particular vulnerability.
 
+
+## Additional direct Vercel observability inspection (2026-10-25)
+- Read-only Vercel **project-scoped log drains listing returned zero drains** for the `logbook` project. This establishes that no Vercel log drain was returned for this project, **not** that all observability is absent: Vercel's built-in runtime logs still exist and external monitors could be configured elsewhere. Classify `OPS-01=PARTIAL`.
+- Read-only Vercel **runtime error aggregation returned “No runtime errors found” during the most recent 24-hour query window**. This is a limited no-error observation, **not** evidence that all errors, outages or missing alerts are impossible; does not certify notification delivery or every route. `OPS-02=UNKNOWN` remains.
+- No error notification, log stream, provider billing configuration or connected Neon production DB was modified.
+
 ## Recommended safe audit phase 2
 
 1. **Read-only provider inventory:** identify production Neon project and PITR/retention settings, Vercel uptime/errors and budget alert configuration, Resend domain status, effective GitHub protection policy. Record dates/scope but not secrets or personally identifying data.
