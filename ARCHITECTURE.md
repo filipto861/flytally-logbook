@@ -1,5 +1,8 @@
 # FlyTally Logbook — architecture (current Next.js generation)
 
+**2026-10-25T10:20:41.502Z — DRAFT Dashboard FCL.060 read contract (unreleased):** a separate bounded 90-day certified owner-scoped movement query (`lib/data/dashboard-passenger-recency.ts`) is projected with existing `resolveMovementCompatibility` and canonical `evaluatePassengerCurrencyMode`; it is not a new legal rule engine nor the full mutable Recency workspace. Displayed day/night SEP/TMG indicators and dates are recorded-evidence forecasts, not regulatory CURRENT or authorization. The present Classic fallback and persisted historic recency snapshot remain unchanged. Source `9d94fad28f09b24c9cc8b0501bd8fb1c254e440e`; PostgreSQL/browser release gates pending.
+
+
 This document describes the active Next.js application and architectural rules that should guide new work. The previous title's `v2.7 generation` was ambiguous and is **not** the current canonical product version; current shipped product/release status belongs in `ROADMAP.md` and `package.json`. Historical release-specific design documents remain useful as regression context, but they are not the current system map.
 
 ## Production stack
