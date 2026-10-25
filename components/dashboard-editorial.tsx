@@ -2,13 +2,14 @@ import Link from "next/link";
 import { formatDuration,type DashboardOverviewData } from "@/lib/data/dashboard";
 import { formatDateOnly } from "@/lib/display-format";
 import { buildCredentialOverview,type DashboardLicenceSummary,type DashboardQualificationSummary,type DashboardDocumentSummary } from "@/lib/dashboard-credential-overview";
+import type { DashboardPassengerIndicator } from "@/lib/dashboard-passenger-overview";
 import type { RecencySnapshot } from "@/lib/recency-service";
 import type { DashboardPaceView } from "@/lib/dashboard-pace";
 import { DashboardPace } from "@/components/dashboard-pace";
 
 const numberLabel=(value:number,singular:string,plural:string)=>`${value} ${value===1?singular:plural}`;
 
-export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,qualifications,documents,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];qualifications:DashboardQualificationSummary[];documents:DashboardDocumentSummary[];asOf:string}){
+export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,qualifications,documents,passengerRecency,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];qualifications:DashboardQualificationSummary[];documents:DashboardDocumentSummary[];passengerRecency:DashboardPassengerIndicator[];asOf:string}){
   const flight=data.lastFlight;
   // The persisted snapshot is historical evidence, never a live privilege determination.
   // "attention" covers incomplete evidence too: it must NOT be relabelled "Not current".
@@ -66,6 +67,21 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
               <span className="d1v11-credential-chevron" aria-hidden="true">→</span>
             </Link>
           )}
+        </div>
+        <div className="d1v11-passenger-overview" role="group" aria-label="Passenger recency, recorded flight evidence">
+          <Link className="d1v11-passenger-title" href="/credentials?view=recency">
+            <strong>PASSENGER RECENCY</strong><span aria-hidden="true">→</span>
+          </Link>
+          {passengerRecency.length?passengerRecency.map(item=>
+            <Link key={item.key} className="d1v11-passenger-row" href="/credentials?view=recency">
+              <span className="d1v11-passenger-class">{item.label}</span>
+              <span className="d1v11-passenger-value">
+                <span className={`d1v11-credential-status d1v11-credential-status--${item.tone}`}><span className="d1v11-credential-dot" aria-hidden="true"/>{item.status}</span>
+                <small>{item.until?`Recorded through ${formatDateOnly(item.until)}`:item.status==="No flight evidence"?"No qualifying certified flights":item.status==="Limited evidence"?"Check movement evidence":"Open recency details"}</small>
+              </span>
+            </Link>
+          )):<p className="d1v11-passenger-empty">No SEP/TMG passenger assessment available</p>}
+          <small className="d1v11-passenger-disclaimer">Forecast assumes no new qualifying flights. Recorded evidence, not flight authorization.</small>
         </div>
         {attentionCount>0||actionCount>0?<div className="d1v11-attention" aria-label="Items requiring attention">
           {attentionCount>0?<Link href="/flights/needs-attention">{numberLabel(attentionCount,"flight needs","flights need")} review <span aria-hidden="true">→</span></Link>:null}
