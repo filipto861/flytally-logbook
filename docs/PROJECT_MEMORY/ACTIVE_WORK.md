@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-25T07:09:27.904Z — V11 active licence mini-list (Draft, unreleased)
+- Main `babd8abdb91039fbbfedaf0936ac0c14eac13957` READY production; work `feat/logbook-v11-licence-summary-20261025`, old independent drafts #411/#413 untouched. User requested fill vacant V11 Recency card with compact active licence expiry overview. Read-only pilot_licences filtered by authenticated user and active=TRUE, display all rows; LAPL Unlimited, malformed/missing date Not recorded, no legal CURRENT. No DB/schema/flag/migration/Training change. Static source 10/10 advisory; actual Node24/TS/build/PG/browser/Safari NOT RUN. Final work SHA/PR to reverify after checkpoint.
+- **ONE NEXT STEP:** local exact-candidate risk gate + owner UI review before merge/deploy decision.
+
+
 ## 2026-10-24T21:13:29.643Z — D1-V11 Windows gate: PG PASS, authenticated browser FAIL; stale shell expectation corrected (NO RELEASE)
 - Live GitHub canonical main verified `2f7aaa07ecd7ecf1de200f08094a72b95e1e44f7`, PR #412 Draft base `main`, work branch `fix/logbook-v11-recency-traffic-light-20261024`; test-only fix commit `90e98ce99c1a29edd7ba1870dd83cacd8e5dd4f4` before this Project Memory checkpoint. Draft #411 and unrelated PRs untouched. HEAD after checkpoint MUST be reverified.
 - Owner-uploaded Windows PowerShell log for exact earlier candidate `5aa9c1b8065e538f4364da19d40d49ae4201aa46`: candidate planner completed, D1 target 10/10 PASS, full Node 1700/1700 PASS, TypeScript PASS, owned SIX-partition PostgreSQL16 **164/164 PASS** (124+8+5+19+6+2), local Next build PASS. Isolated loopback PG16 browser fixture bootstrap and v20/v21 shape PASS.
