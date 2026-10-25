@@ -449,7 +449,8 @@
       "evidenceTests": {
         "domain-unit": [
           "tests/dashboard-math.test.ts",
-          "tests/v168-pilot-insights.test.ts"
+          "tests/v168-pilot-insights.test.ts",
+          "tests/d1-v11-credential-overview.test.ts"
         ]
       }
     },
