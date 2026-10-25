@@ -91,20 +91,20 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
           {licences.length?<ul className="d1v11-licences-list">{licencePreview.visible.map(({item:licence,validity})=>
             <li key={licence.id}><strong>{licence.licenceType||"Licence type not recorded"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
           )}</ul>:<p className="d1v11-licences-empty">No active licences recorded</p>}
-          {licencePreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{licencePreview.more} more {licencePreview.more===1?"licence":"licences"}{licencePreview.hiddenNeedsReview>0? ` · ${licencePreview.hiddenNeedsReview} ${licencePreview.hiddenNeedsReview===1?"to review":"to review"}`:""} <span aria-hidden="true">→</span></Link>:null}
+          {licencePreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{licencePreview.more} more {licencePreview.more===1?"licence":"licences"}{licencePreview.hiddenNeedsReview>0? ` · ${licencePreview.hiddenNeedsReview} to review`:""} <span aria-hidden="true">→</span></Link>:null}
           <div className="d1v11-record-subgroup" role="group" aria-label="Recorded ratings and qualifications">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">RATINGS &amp; QUALIFICATIONS</span><small>{qualifications.length} recorded</small></div>
             {qualifications.length?<ul className="d1v11-licences-list">{qualificationPreview.visible.map(({item,validity})=>
               <li key={item.id}><strong>{item.qualificationType||"Qualification not named"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
             )}</ul>:<p className="d1v11-licences-empty">No ratings recorded</p>}
-            {qualificationPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{qualificationPreview.more} more {qualificationPreview.more===1?"rating":"ratings"}{qualificationPreview.hiddenNeedsReview>0?` · ${qualificationPreview.hiddenNeedsReview} ${qualificationPreview.hiddenNeedsReview===1?"to review":"to review"}`:""} <span aria-hidden="true">→</span></Link>:null}
+            {qualificationPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{qualificationPreview.more} more {qualificationPreview.more===1?"rating":"ratings"}{qualificationPreview.hiddenNeedsReview>0?` · ${qualificationPreview.hiddenNeedsReview} to review`:""} <span aria-hidden="true">→</span></Link>:null}
           </div>
           <div className="d1v11-record-subgroup" role="group" aria-label="Recorded medical certificates">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">MEDICAL</span><small>{medical.length} recorded</small></div>
             {medical.length?<ul className="d1v11-licences-list">{medicalPreview.visible.map(({item,validity})=>
               <li key={item.id}><strong>{item.label||"Medical document"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
             )}</ul>:<p className="d1v11-licences-empty">No medical recorded</p>}
-            {medicalPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=documents">+{medicalPreview.more} more {medicalPreview.more===1?"medical record":"medical records"}{medicalPreview.hiddenNeedsReview>0?` · ${medicalPreview.hiddenNeedsReview} ${medicalPreview.hiddenNeedsReview===1?"to review":"to review"}`:""} <span aria-hidden="true">→</span></Link>:null}
+            {medicalPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=documents">+{medicalPreview.more} more {medicalPreview.more===1?"medical record":"medical records"}{medicalPreview.hiddenNeedsReview>0?` · ${medicalPreview.hiddenNeedsReview} to review`:""} <span aria-hidden="true">→</span></Link>:null}
           </div>
           <div className="d1v11-record-links">
             <Link className="d1v11-licences-link" href="/credentials?view=licences">All licences &amp; ratings <span aria-hidden="true">→</span></Link>
