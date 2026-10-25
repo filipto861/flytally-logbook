@@ -7,7 +7,20 @@ import { DashboardPace } from "@/components/dashboard-pace";
 
 const numberLabel=(value:number,singular:string,plural:string)=>`${value} ${value===1?singular:plural}`;
 
-export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView}){
+export type DashboardLicenceSummary={id:number;licenceType:string;validityMode:string;validUntil:string;recencyUntil:string};
+const isRecordedDay=(date:string)=>/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(new Date(date+"T00:00:00Z").getTime())&&new Date(date+"T00:00:00Z").toISOString().slice(0,10)===date;
+function recordedLicenceValidity(licence:DashboardLicenceSummary,today:string){
+  // LAPL licence validity is unlimited in the existing Records editor; this never asserts privileges or recency.
+  if(["LAPL(A)","LAPL(H)"].includes(licence.licenceType.toUpperCase())||licence.validityMode==="unlimited")return{label:"Unlimited",tone:"neutral"};
+  if(licence.validityMode!=="date"&&licence.validityMode!=="recency")return{label:"Validity not recorded",tone:"muted"};
+  const date=licence.validityMode==="recency"?licence.recencyUntil:licence.validUntil;
+  if(!isRecordedDay(date))return{label:licence.validityMode==="recency"?"Recency date not recorded":"Expiry not recorded",tone:"muted"};
+  const days=(Date.parse(date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000;
+  const prefix=licence.validityMode==="recency"?"Recorded recency":"Until";
+  return{label:`${prefix} ${formatDateOnly(date)}`,tone:days<0?"past":days<=30?"soon":"neutral"};
+}
+
+export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];asOf:string}){
   const flight=data.lastFlight;
   // The persisted snapshot is historical evidence, never a live privilege determination.
   // "attention" covers incomplete evidence too: it must NOT be relabelled "Not current".
@@ -41,6 +54,14 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
           {recencySnapshot?<span className="d1v11-recency-date">{formatDateOnly(recencySnapshot.generatedAt.slice(0,10))}</span>:null}
           <span className="d1v11-recency-arrow" aria-hidden="true">→</span>
         </Link>
+        <div className="d1v11-licences" aria-label="Recorded licences">
+          <div className="d1v11-licences-heading"><span className="d1v11-kicker">RECORDED LICENCES</span><small>{licences.length} active</small></div>
+          {licences.length?<ul className="d1v11-licences-list">{licences.map(licence=>{
+            const validity=recordedLicenceValidity(licence,asOf);
+            return <li key={licence.id}><strong>{licence.licenceType||"Licence type not recorded"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>;
+          })}</ul>:<p className="d1v11-licences-empty">No active licences recorded</p>}
+          <Link className="d1v11-licences-link" href="/credentials?view=licences">All licences &amp; ratings <span aria-hidden="true">→</span></Link>
+        </div>
         {attentionCount>0||actionCount>0?<div className="d1v11-attention" aria-label="Items requiring attention">
           {attentionCount>0?<Link href="/flights/needs-attention">{numberLabel(attentionCount,"flight needs","flights need")} review <span aria-hidden="true">→</span></Link>:null}
           {actionCount>0?<Link href="/actions">{numberLabel(actionCount,"pending action","pending actions")} <span aria-hidden="true">→</span></Link>:null}
