@@ -87,6 +87,12 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
       const size=await row.boundingBox();
       expect(size?.height??0).toBeGreaterThanOrEqual(44);
     }
+    // The test fixture uses synthetic pilot records only. Attach the card crop to
+    // the local Playwright report for real light/mobile/tablet/desktop visual review.
+    await test.info().attach(`v11-credential-card-${width}px`,{
+      body:await credentials.screenshot(),
+      contentType:"image/png",
+    });
   }
   if(originalViewport)await page.setViewportSize(originalViewport);
   await categoryLinks.first().focus();
