@@ -27,12 +27,37 @@ function recordedLicenceValidity(licence:DashboardLicenceSummary,today:string){
   return recordedDateValidity({validityMode:["LAPL(A)","LAPL(H)"].includes(licence.licenceType.toUpperCase())?"unlimited":licence.validityMode,validUntil:licence.validUntil,recencyUntil:licence.recencyUntil},today);
 }
 
+
+// The Dashboard is a preview, not a licence register or regulatory clearance decision.
+// Show recorded dates needing attention first; retain all entries in Records.
+const previewLimits={licences:2,qualifications:2,medical:1} as const;
+type RecordedValidity={label:string;tone:string};
+function qualificationValidity(item:DashboardQualificationSummary,asOf:string){
+  // A stored LAPL(A) SEP/TMG date is not a substitute for recency evidence.
+  const needsRecency=item.licenceType.toUpperCase()==="LAPL(A)"&&/^(SEP|TMG)/i.test(item.qualificationType);
+  return needsRecency?{label:"Check recency",tone:"muted"}:recordedDateValidity(item,asOf);
+}
+function medicalValidity(item:DashboardMedicalSummary,asOf:string){
+  // Medical expiry is a saved document date, not a fitness or privilege determination.
+  const expiry=item.expiryDate;
+  return recordedDateValidity({validityMode:expiry>="9999-01-01"?"unlimited":"date",validUntil:expiry,recencyUntil:""},asOf);
+}
+function previewRows<T>(rows:readonly T[],limit:number,display:(row:T)=>RecordedValidity){
+  const rank=(tone:string)=>tone==="past"?0:tone==="soon"?1:tone==="muted"?2:3;
+  const ranked=rows.map((item,index)=>({item,index,validity:display(item)}));
+  ranked.sort((a,b)=>rank(a.validity.tone)-rank(b.validity.tone)||a.index-b.index);
+  const remaining=ranked.slice(limit);
+  return {visible:ranked.slice(0,limit),more:remaining.length,hiddenDateWarnings:remaining.filter(row=>row.validity.tone==="past"||row.validity.tone==="soon").length};
+}
 export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCount,pace,licences,qualifications,medical,asOf}:{data:DashboardOverviewData;recencySnapshot:RecencySnapshot|null;actionCount:number;attentionCount:number;pace:DashboardPaceView;licences:DashboardLicenceSummary[];qualifications:DashboardQualificationSummary[];medical:DashboardMedicalSummary[];asOf:string}){
   const flight=data.lastFlight;
   // The persisted snapshot is historical evidence, never a live privilege determination.
   // "attention" covers incomplete evidence too: it must NOT be relabelled "Not current".
   const recencyTone=recencySnapshot?.status==="ok"?"ok":recencySnapshot?.status==="warning"?"warning":recencySnapshot?.status==="attention"?"review":"unknown";
   const recencyHeadline=recencyTone==="ok"?"Last check: OK":recencyTone==="warning"?"Last check: Due soon":recencyTone==="review"?"Last check: Needs review":"Not assessed";
+  const licencePreview=previewRows(licences,previewLimits.licences,item=>recordedLicenceValidity(item,asOf));
+  const qualificationPreview=previewRows(qualifications,previewLimits.qualifications,item=>qualificationValidity(item,asOf));
+  const medicalPreview=previewRows(medical,previewLimits.medical,item=>medicalValidity(item,asOf));
   return <div className="d1v11-page">
     <header className="d1v11-mast">
       <div><p className="d1v11-kicker">PILOT WORKSPACE</p><h1>Flight overview.</h1></div>
@@ -63,27 +88,23 @@ export function DashboardEditorial({data,recencySnapshot,actionCount,attentionCo
         </Link>
         <div className="d1v11-licences" role="group" aria-label="Recorded licences">
           <div className="d1v11-licences-heading"><span className="d1v11-kicker">RECORDED LICENCES</span><small>{licences.length} active</small></div>
-          {licences.length?<ul className="d1v11-licences-list">{licences.map(licence=>{
-            const validity=recordedLicenceValidity(licence,asOf);
-            return <li key={licence.id}><strong>{licence.licenceType||"Licence type not recorded"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>;
-          })}</ul>:<p className="d1v11-licences-empty">No active licences recorded</p>}
+          {licences.length?<ul className="d1v11-licences-list">{licencePreview.visible.map(({item:licence,validity})=>
+            <li key={licence.id}><strong>{licence.licenceType||"Licence type not recorded"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
+          )}</ul>:<p className="d1v11-licences-empty">No active licences recorded</p>}
+          {licencePreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{licencePreview.more} more {licencePreview.more===1?"licence":"licences"}{licencePreview.hiddenDateWarnings>0? ` · ${licencePreview.hiddenDateWarnings} more date ${licencePreview.hiddenDateWarnings===1?"warning":"warnings"}`:""} <span aria-hidden="true">→</span></Link>:null}
           <div className="d1v11-record-subgroup" role="group" aria-label="Recorded ratings and qualifications">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">RATINGS &amp; QUALIFICATIONS</span><small>{qualifications.length} recorded</small></div>
-            {qualifications.length?<ul className="d1v11-licences-list">{qualifications.map(item=>{
-              // LAPL(A) SEP/TMG privileges are recency-based; saved qualification dates alone do not establish currency.
-              const needsRecency=item.licenceType.toUpperCase()==="LAPL(A)"&&/^(SEP|TMG)/i.test(item.qualificationType);
-              const validity=needsRecency?{label:"Check recency",tone:"muted"}:recordedDateValidity(item,asOf);
-              return <li key={item.id}><strong>{item.qualificationType||"Qualification not named"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>;
-            })}</ul>:<p className="d1v11-licences-empty">No ratings recorded</p>}
+            {qualifications.length?<ul className="d1v11-licences-list">{qualificationPreview.visible.map(({item,validity})=>
+              <li key={item.id}><strong>{item.qualificationType||"Qualification not named"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
+            )}</ul>:<p className="d1v11-licences-empty">No ratings recorded</p>}
+            {qualificationPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=licences">+{qualificationPreview.more} more {qualificationPreview.more===1?"rating":"ratings"}{qualificationPreview.hiddenDateWarnings>0?` · ${qualificationPreview.hiddenDateWarnings} more date ${qualificationPreview.hiddenDateWarnings===1?"warning":"warnings"}`:""} <span aria-hidden="true">→</span></Link>:null}
           </div>
           <div className="d1v11-record-subgroup" role="group" aria-label="Recorded medical certificates">
             <div className="d1v11-licences-heading"><span className="d1v11-kicker">MEDICAL</span><small>{medical.length} recorded</small></div>
-            {medical.length?<ul className="d1v11-licences-list">{medical.map(item=>{
-              // Medical is a saved document date, not proof of medical fitness or operating privileges.
-              const expiry=item.expiryDate;
-              const validity=recordedDateValidity({validityMode:expiry>="9999-01-01"?"unlimited":"date",validUntil:expiry,recencyUntil:""},asOf);
-              return <li key={item.id}><strong>{item.label||"Medical document"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>;
-            })}</ul>:<p className="d1v11-licences-empty">No medical recorded</p>}
+            {medical.length?<ul className="d1v11-licences-list">{medicalPreview.visible.map(({item,validity})=>
+              <li key={item.id}><strong>{item.label||"Medical document"}</strong><span className={`d1v11-licence-validity d1v11-licence-validity--${validity.tone}`}>{validity.label}</span></li>
+            )}</ul>:<p className="d1v11-licences-empty">No medical recorded</p>}
+            {medicalPreview.more>0?<Link className="d1v11-overflow-link" href="/credentials?view=documents">+{medicalPreview.more} more {medicalPreview.more===1?"medical record":"medical records"}{medicalPreview.hiddenDateWarnings>0?` · ${medicalPreview.hiddenDateWarnings} more date ${medicalPreview.hiddenDateWarnings===1?"warning":"warnings"}`:""} <span aria-hidden="true">→</span></Link>:null}
           </div>
           <div className="d1v11-record-links">
             <Link className="d1v11-licences-link" href="/credentials?view=licences">All licences &amp; ratings <span aria-hidden="true">→</span></Link>
