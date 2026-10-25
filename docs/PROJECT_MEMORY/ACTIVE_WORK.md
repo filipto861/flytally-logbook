@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-25T07:25:38.334Z — PR #414 expanded mini-credential overview, release blocked on real tests
+- Verified canonical main `babd8abdb91039fbbfedaf0936ac0c14eac13957` and Vercel production READY on that exact SHA. Branch `feat/logbook-v11-licence-summary-20261025`, Draft PR #414 base main (final source/doc HEAD reverify). Scope accepted by owner: read-only active saved licences, non-training ratings/qualifications and medical-labelled documents; no LAPL SEP/TMG/current legal privilege inference. All three groups inside existing V11 Recency card, Classic untouched; no auth/DB/schema/flags/deploy/Training changes.
+- Source-only inspection 14/14 advisory matches; Node24 targeted/full selected, TS, build, owned PG, authenticated browser desktop/mobile/iPad, native Safari NOT RUN. Existing docs Draft #411/#413 preserved, no merge/deploy permission conferred.
+- **ONE NEXT STEP:** run exact-head risk-selected owner-local QA before further review/release decision.
+
+
 ## 2026-10-25T07:09:27.904Z — V11 active licence mini-list (Draft, unreleased)
 - Main `babd8abdb91039fbbfedaf0936ac0c14eac13957` READY production; work `feat/logbook-v11-licence-summary-20261025`, old independent drafts #411/#413 untouched. User requested fill vacant V11 Recency card with compact active licence expiry overview. Read-only pilot_licences filtered by authenticated user and active=TRUE, display all rows; LAPL Unlimited, malformed/missing date Not recorded, no legal CURRENT. No DB/schema/flag/migration/Training change. Static source 10/10 advisory; actual Node24/TS/build/PG/browser/Safari NOT RUN. Final work SHA/PR to reverify after checkpoint.
 - **ONE NEXT STEP:** local exact-candidate risk gate + owner UI review before merge/deploy decision.
