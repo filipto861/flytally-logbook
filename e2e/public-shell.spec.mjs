@@ -70,7 +70,26 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   for(const label of ["LICENCES","RATINGS","DOCUMENTS","MEDICAL"]){
     await expect(credentials.getByRole("link",{name:new RegExp(label)})).toBeVisible();
   }
-  await expect(credentials.locator("a.d1v11-credential-row")).toHaveCount(4);
+  const categoryLinks=credentials.locator("a.d1v11-credential-row");
+  await expect(categoryLinks).toHaveCount(4);
+  for(const [index,href] of ["/credentials?view=licences","/credentials?view=licences","/credentials?view=documents","/credentials?view=documents"].entries()){
+    await expect(categoryLinks.nth(index)).toHaveAttribute("href",href);
+  }
+
+  // Real authenticated synthetic fixture: check touch/keyboard affordance and layout
+  // at narrow mobile, phone, iPad and desktop sizes. No real pilot records or private screenshots.
+  const originalViewport=page.viewportSize();
+  for(const width of [320,390,768,1024,1440]){
+    await page.setViewportSize({width,height:900});
+    await expectNoHorizontalOverflow(page);
+    await expect(categoryLinks).toHaveCount(4);
+    for(const row of await categoryLinks.all()){
+      const size=await row.boundingBox();
+      expect(size?.height??0).toBeGreaterThanOrEqual(44);
+    }
+  }
+  if(originalViewport)await page.setViewportSize(originalViewport);
+
   await page.goto("/dashboard?view=classic");
   await expectAuthenticatedRoute(page,"At a glance");
   await page.goto("/dashboard");
