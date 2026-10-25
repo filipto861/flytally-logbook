@@ -70,3 +70,24 @@ test("D1-V11 slider has source-level keyboard and focus semantics",()=>{
   const css=read("app/dashboard-editorial.css");
   assert.match(css,/\.d1v11-page :is\(a,button,\[role="slider"\]\):focus-visible/);
 });
+
+test("D1-V11 shows only active user-owned recorded licence dates without claiming live privileges",()=>{
+  const page=read("app/(protected)/dashboard/page.tsx");
+  const editorial=read("components/dashboard-editorial.tsx");
+  const css=read("app/dashboard-editorial.css");
+  assert.match(page,/FROM pilot_licences WHERE user_id=\$\{session\.userId\} AND active=TRUE/);
+  assert.match(page,/classic\?Promise\.resolve\(\[\]\):sql/,"Classic must not gain the new read");
+  assert.match(page,/SELECT id,licence_type,validity_mode,valid_until::text AS valid_until,recency_until::text AS recency_until/);
+  assert.match(page,/licences=\{licences\} asOf=\{asOf\.toISOString\(\)\.slice\(0,10\)\}/);
+  assert.match(editorial,/Recorded licences/);
+  assert.match(editorial,/No active licences recorded/);
+  assert.match(editorial,/Validity not recorded/);
+  assert.match(editorial,/Expiry not recorded/);
+  assert.match(editorial,/Recency date not recorded/);
+  assert.match(editorial,/\["LAPL\(A\)","LAPL\(H\)"\]/,"LAPL recorded indefinite expiry must stay separate from current recency");
+  assert.match(editorial,/isRecordedDay\(date\)/,"unverified or malformed dates cannot acquire a positive label");
+  assert.match(editorial,/href="\/credentials\?view=licences"/);
+  assert.doesNotMatch(editorial,/\bCURRENT\b|\bCOMPLIANT\b/,"Dashboard licence rows must not infer privilege clearance");
+  assert.match(css,/\.d1v11-licences-list li/);
+  assert.match(css,/@media\(max-width:380px\).*?\.d1v11-licences-list li/s);
+});
