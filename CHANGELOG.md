@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-25 — Unreleased V11 licence mini-list candidate
+- Show all active recorded pilot licences and saved expiry/recency dates beneath the existing historical Recency snapshot on Editorial Dashboard. No dashboard Classic query, recency calculations, certification, DB, flags or Training changes. Empty/malformed inputs fail closed; date warnings have text and color; LAPL validity Unlimited independent of flight privileges. Compact responsive styling, no motion or dependencies. A scoped source regression was added, but actual Node24/TypeScript/build/PostgreSQL/Playwright/native Safari NOT RUN. Branch `feat/logbook-v11-licence-summary-20261025`, not merged/deployed.
+
+
 ## 2026-10-24 — Owner-approved V11 direct-default routing candidate (NOT YET RELEASED)
 - Move Editorial V11 to `/dashboard` by default and remove both user-facing Preview/Classic switch links; preserve `?view=v11` as compatible alias and Classic `?view=classic` as unadvertised rollback. Existing `dashboard_widgets` preferences/editor retained unchanged; historical Dashboard period/detail URLs still redirect to Statistics. Missing pace data fails closed as **Unavailable**, not synthetic zero or an implicit switch to Classic. `getDashboardOverviewData` and the bounded 25-month SQL source remain unchanged.
 - Include Draft #412 compact Recency card: one tappable section, simple four-color historical statuses and optional saved-check date only. No false live legal clearance, no thresholds/database mutations, feature flags, migrations, Training or new libraries.
