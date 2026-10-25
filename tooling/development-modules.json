@@ -451,7 +451,8 @@
           "tests/dashboard-math.test.ts",
           "tests/v168-pilot-insights.test.ts",
           "tests/d1-v11-credential-overview.test.ts",
-          "tests/d1-v11-passenger-recency.test.ts"
+          "tests/d1-v11-passenger-recency.test.ts",
+        "tests/d1-v11-lapl-status.test.ts"
         ]
       }
     },
