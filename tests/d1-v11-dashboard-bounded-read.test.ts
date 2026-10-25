@@ -121,3 +121,22 @@ test("D1-V11 licence card reads only owned active qualifications and medical doc
   assert.match(css,/\.d1v11-record-subgroup/);
   assert.match(css,/\.d1v11-record-links/);
 });
+
+test("D1-V11 recorded credential preview is bounded and does not bury extra date warnings",()=>{
+  const view=read("components/dashboard-editorial.tsx");
+  const css=read("app/dashboard-editorial.css");
+  assert.match(view,/previewLimits=\{licences:2,qualifications:2,medical:1\}/);
+  assert.match(view,/rank=\(tone:string\)=>tone==="past"\?0:tone==="soon"\?1:tone==="muted"\?2:3/);
+  assert.match(view,/ranked\.sort\(\(a,b\)=>rank\(a\.validity\.tone\)-rank\(b\.validity\.tone\)\|\|a\.index-b\.index\)/,"warn first; stable existing record order");
+  assert.match(view,/remaining=ranked\.slice\(limit\)/);
+  assert.match(view,/hiddenDateWarnings:remaining\.filter\(row=>row\.validity\.tone==="past"\|\|row\.validity\.tone==="soon"\)\.length/);
+  assert.match(view,/licencePreview\.visible\.map/);
+  assert.match(view,/qualificationPreview\.visible\.map/);
+  assert.match(view,/medicalPreview\.visible\.map/);
+  assert.doesNotMatch(view,/\{(?:licences|qualifications|medical)\.map\(/,"avoid unbounded rows in Dashboard");
+  assert.match(view,/licencePreview\.more>0\?<Link className="d1v11-overflow-link" href="\/credentials\?view=licences"/);
+  assert.match(view,/qualificationPreview\.more>0\?<Link className="d1v11-overflow-link" href="\/credentials\?view=licences"/);
+  assert.match(view,/medicalPreview\.more>0\?<Link className="d1v11-overflow-link" href="\/credentials\?view=documents"/);
+  assert.match(view,/more date/,"hidden warning count must remain visible");
+  assert.match(css,/\.d1v11-overflow-link\{[^}]*min-height:44px/);
+});
