@@ -37,24 +37,22 @@
 .d1v11-recency-date{grid-column:1;grid-row:3;font-size:.8rem;color:var(--text-soft);line-height:1.4}
 .d1v11-recency-arrow{grid-column:2;grid-row:2;color:var(--link);font-size:1.35rem;font-weight:750}
 .d1v11-recency-primary:hover .d1v11-recency-arrow{color:var(--text)}
-.d1v11-licences{display:flex;flex-direction:column;flex:1;gap:var(--ui-space-3);min-width:0;padding-top:var(--ui-space-5);border-top:1px solid var(--line-soft)}
-.d1v11-licences-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--ui-space-3)}
-.d1v11-licences-heading small{font-size:.74rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.d1v11-record-subgroup{display:flex;flex-direction:column;gap:var(--ui-space-2);padding-top:var(--ui-space-4);border-top:1px solid var(--line-soft);min-width:0}
-.d1v11-record-links{display:grid;gap:var(--ui-space-1);margin-top:auto;padding-top:var(--ui-space-2)}
-.d1v11-record-links .d1v11-licences-link{margin-top:0}
-.d1v11-licences-list{display:grid;gap:0;list-style:none;margin:0;padding:0;min-width:0}
-.d1v11-licences-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--ui-space-3);min-width:0;padding:var(--ui-space-3) 0;border-bottom:1px solid var(--line-soft)}
-.d1v11-licences-list strong{min-width:0;font-size:.88rem;line-height:1.3;font-weight:750;overflow-wrap:anywhere}
-.d1v11-licence-validity{font-size:.77rem;line-height:1.4;text-align:right;color:var(--text-soft);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.d1v11-licence-validity--soon{color:var(--warning-text)}
-.d1v11-licence-validity--past{color:var(--danger-text)}
-.d1v11-licence-validity--muted{color:var(--muted)}
-.d1v11-overflow-link{display:inline-flex;align-items:center;justify-content:space-between;gap:var(--ui-space-2);min-height:44px;color:var(--link);font-size:.78rem;font-weight:700;line-height:1.45;overflow-wrap:anywhere}
-.d1v11-overflow-link span{flex:none}
-.d1v11-licences-empty{margin:0;color:var(--muted);font-size:.82rem}
-.d1v11-licences-link{display:inline-flex;align-items:center;justify-content:space-between;gap:var(--ui-space-3);min-height:44px;margin-top:auto;padding-top:var(--ui-space-3);color:var(--link);font-size:.82rem;font-weight:750}
-@media(max-width:380px){.d1v11-licences-list li{grid-template-columns:minmax(0,1fr)}.d1v11-licence-validity{text-align:left}}
+.d1v11-credential-overview{display:grid;min-width:0;border-top:1px solid var(--line-soft)}
+.d1v11-credential-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:center;gap:var(--ui-space-3);min-height:74px;padding:var(--ui-space-3) 0;border-bottom:1px solid var(--line-soft);color:var(--text);text-decoration:none}
+.d1v11-credential-row:hover{background:var(--surface-raised)}
+.d1v11-credential-info,.d1v11-credential-result{display:grid;min-width:0;gap:4px}
+.d1v11-credential-info strong{font-size:.79rem;letter-spacing:.035em;font-weight:800}
+.d1v11-credential-info small,.d1v11-credential-result small{font-size:.71rem;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
+.d1v11-credential-result{justify-items:end;text-align:right}
+.d1v11-credential-status{display:inline-flex;align-items:center;justify-content:flex-end;gap:var(--ui-space-2);font-size:.8rem;line-height:1.35;font-weight:750;min-width:0;color:var(--text-soft);overflow-wrap:anywhere}
+.d1v11-credential-dot{flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.d1v11-credential-status--danger{color:var(--danger-text)}
+.d1v11-credential-status--danger .d1v11-credential-dot{background:var(--danger-text)}
+.d1v11-credential-status--warning{color:var(--warning-text)}
+.d1v11-credential-status--warning .d1v11-credential-dot{background:var(--warning-text)}
+.d1v11-credential-status--neutral .d1v11-credential-dot{background:var(--success-text)}
+.d1v11-credential-chevron{flex:none;font-size:1.13rem;color:var(--link);font-weight:750}
+@media(max-width:380px){.d1v11-credential-row{grid-template-columns:minmax(0,1fr) auto;row-gap:var(--ui-space-2)}.d1v11-credential-info{grid-column:1}.d1v11-credential-result{grid-column:1;justify-items:start;text-align:left}.d1v11-credential-chevron{grid-column:2;grid-row:1/3}}
 .d1v11-attention{display:grid;gap:var(--ui-space-2);border-top:1px solid var(--line-soft);padding-top:var(--ui-space-3)}
 .d1v11-attention>a{display:flex;align-items:center;justify-content:space-between;min-height:44px;gap:var(--ui-space-2);font-size:.8rem;font-weight:720;color:var(--link)}
 .d1v11-pace{padding:var(--ui-space-6) var(--ui-space-8)}
