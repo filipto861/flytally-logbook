@@ -50,6 +50,8 @@
 .d1v11-licence-validity--soon{color:var(--warning-text)}
 .d1v11-licence-validity--past{color:var(--danger-text)}
 .d1v11-licence-validity--muted{color:var(--muted)}
+.d1v11-overflow-link{display:inline-flex;align-items:center;justify-content:space-between;gap:var(--ui-space-2);min-height:44px;color:var(--link);font-size:.78rem;font-weight:700;line-height:1.45;overflow-wrap:anywhere}
+.d1v11-overflow-link span{flex:none}
 .d1v11-licences-empty{margin:0;color:var(--muted);font-size:.82rem}
 .d1v11-licences-link{display:inline-flex;align-items:center;justify-content:space-between;gap:var(--ui-space-3);min-height:44px;margin-top:auto;padding-top:var(--ui-space-3);color:var(--link);font-size:.82rem;font-weight:750}
 @media(max-width:380px){.d1v11-licences-list li{grid-template-columns:minmax(0,1fr)}.d1v11-licence-validity{text-align:left}}
