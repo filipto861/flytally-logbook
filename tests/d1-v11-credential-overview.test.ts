@@ -51,9 +51,11 @@ test("V11 LAPL indefinite licence date does not silently clear its SEP/TMG recen
     rating(2,"unlimited","","LAPL(A)","TMG"),
   ],documents:[],asOf});
   assert.equal(output.licences.status,"No date alerts");
-  assert.equal(output.ratings.status,"Needs review");
-  assert.equal(output.ratings.reviewCount,2);
+  assert.equal(output.ratings.status,"Recency-based");
+  assert.equal(output.ratings.reviewCount,0);
   assert.equal(buildCredentialOverview({licences:[],qualifications:[rating(1,"recency","2027-01-01")],documents:[],asOf}).ratings.status,"Needs review");
+  // Recency date only counts when stored in recencyUntil, not fixed validUntil.
+  assert.equal(buildCredentialOverview({licences:[],qualifications:[{...rating(1,"recency",""),recencyUntil:"2027-01-01"}],documents:[],asOf}).ratings.status,"No date alerts");
 });
 
 test("V11 displayed group state stays independent of the number of records",()=>{
