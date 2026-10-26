@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## 2026-10-26 — PR421 Flights F2 compact iPhone cards DEPLOYED for owner visual review (unmerged)
+- Owner-approved direct production Vercel deployment (no main merge): F2 mobile-only CSS source `d5d84aad5c48dd7982f3a30839418fc41a50304b`, identical runtime to native Windows V5 risk-tested `bea902bf612d5fd43b3ed7cb4d73f3833909772f` except docs+source-contract tests. Previous production `dpl_3K7mQPRsvSBcWrApZmyUdKaSdGGm` older Flights cards; replacement **READY** `dpl_czpoARQEKzyZMjBZgRbwnu3BqHKT`, production `fly-tally.com` alias independently confirmed.
+- Actual local Windows V5 `release_status=PASS` candidate `e7c8664d90e9d01e815e44fb49e4b7c6db5cedfa81d2447ef2b26dd046032022`: source261, domain19, Node1730, TypeScript/build, 164 native owned PG16, desktop/mobile Chromium 28. Browser emulation does not prove iPhone Safari; owner iOS screenshot/acceptance still pending. No cloud test/Sandbox, no prod DB migrations/flags, no Training changes. Draft PR #421 retained without merge.
+
+
 ## 2026-10-26 — F2 native Windows V5 acceptance verified; production deployment PENDING
 - Actual owner PowerShell V5 pinned `feat/logbook-flights-list-time-flags-20261026@bea902bf612d5fd43b3ed7cb4d73f3833909772f`, release candidate `e7c8664d90e9d01e815e44fb49e4b7c6db5cedfa81d2447ef2b26dd046032022`: `release_status=PASS`, source **261/261**, domain **19/19**, aggregate Node **1730/1730**, TypeScript **PASS**, Next production build **PASS**, owned native Windows PostgreSQL16 six partitions **164/164**, Playwright Chromium desktop14/mobile14 **28/28 PASS**, browser disposable v20/v21 schema-first fixture PASS, required blocked evidence none, scale N/A. The work SHA differs from F2 source+test `21924086645f034ffa4657ba58ddb7d7ee97708b` only in documentation; app/test unchanged. Real iPhone after-change visual review NOT RUN. **F2 NOT DEPLOYED**: current READY Vercel remains `dpl_3K7mQPRsvSBcWrApZmyUdKaSdGGm` on older Flights card CSS; no merge, production DB or flags modified. Owner Windows local-only policy honored.
 
