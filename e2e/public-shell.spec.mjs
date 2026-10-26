@@ -151,11 +151,11 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
     for(const ledger of [blockLedger,airLedger]){
       const duration=(await ledger.locator("strong").innerText()).trim();
       const originalClocks=(await ledger.locator("small").innerText()).trim();
-      expect(duration).toMatch(/^(?:—|\\d+:\\d{2})$/);
+      expect(duration).toMatch(/^(?:—|\d+:\d{2})$/);
       if(duration==="—"){
         expect(originalClocks).toMatch(/^(?:Needs review|Not recorded)$/);
       }else{
-        expect(originalClocks).toMatch(/^(?:[01]\\d|2[0-3]):[0-5]\\d–(?:[01]\\d|2[0-3]):[0-5]\\d$/);
+        expect(originalClocks).toMatch(/^(?:[01]\d|2[0-3]):[0-5]\d–(?:[01]\d|2[0-3]):[0-5]\d$/);
       }
     }
     const blockBox=await blockLedger.boundingBox(),airBox=await airLedger.boundingBox();
