@@ -32,7 +32,7 @@ export function FlightDetailOverview({
   return <section className="flight-f3-overview" aria-label="Flight at a glance">
     <div className="flight-f3-time-grid" aria-label="Recorded flight times">
       <article className="flight-f3-time-card">
-        <div className="flight-f3-time-heading"><span>BLOCK</span><small>Off-block to on-block</small></div>
+        <div className="flight-f3-time-heading"><h2>BLOCK</h2><small>Off-block to on-block</small></div>
         <strong>{blockKnown?formatDuration(blockMinutes):"—"}</strong>
         <dl className="flight-f3-clock-pair">
           <div><dt>OFF</dt><dd>{recordedClock(offBlock)}</dd></div>
@@ -41,7 +41,7 @@ export function FlightDetailOverview({
         {!blockKnown?<small className="flight-f3-time-warning">Complete clock pair not recorded</small>:null}
       </article>
       <article className="flight-f3-time-card">
-        <div className="flight-f3-time-heading"><span>AIR</span><small>Takeoff to landing</small></div>
+        <div className="flight-f3-time-heading"><h2>AIR</h2><small>Takeoff to landing</small></div>
         <strong>{airKnown?formatDuration(airMinutes):"—"}</strong>
         <dl className="flight-f3-clock-pair">
           <div><dt>TAKEOFF</dt><dd>{recordedClock(takeoff)}</dd></div>
