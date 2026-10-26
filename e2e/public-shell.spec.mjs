@@ -134,8 +134,9 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   // Techlog-facing BLOCK and AIR remain independently labeled at desktop and mobile widths.
   await expect(baselineFlightRow.locator('td[data-label="BLOCK"] .flight-time-ledger')).toHaveCount(1);
   await expect(baselineFlightRow.locator('td[data-label="AIR"] .flight-time-ledger')).toHaveCount(1);
-  await expect(page.getByRole("columnheader",{name:"BLOCK"})).toHaveCount(1);
-  await expect(page.getByRole("columnheader",{name:"AIR"})).toHaveCount(1);
+  // Mobile CSS visually hides <thead>; DOM assertions must not require an exposed columnheader role.
+  await expect(page.locator(".flights-table thead th").filter({hasText:"BLOCK"})).toHaveCount(1);
+  await expect(page.locator(".flights-table thead th").filter({hasText:"AIR"})).toHaveCount(1);
 
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);
