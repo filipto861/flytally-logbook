@@ -70,6 +70,9 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   for(const label of ["LICENCES","RATINGS","DOCUMENTS","MEDICAL"]){
     await expect(credentials.getByRole("link",{name:new RegExp(label)})).toBeVisible();
   }
+  const passenger=page.getByRole("group",{name:"Passenger recency, recorded flight evidence"});
+  await expect(passenger).toBeVisible();
+  await expect(passenger.getByRole("link",{name:/PASSENGER RECENCY/})).toHaveAttribute("href","/credentials?view=recency");
   const categoryLinks=credentials.locator("a.d1v11-credential-row");
   await expect(categoryLinks).toHaveCount(4);
   for(const [index,href] of ["/credentials?view=licences","/credentials?view=licences","/credentials?view=documents","/credentials?view=documents"].entries()){
@@ -83,6 +86,11 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
     await page.setViewportSize({width,height:900});
     await expectNoHorizontalOverflow(page);
     await expect(categoryLinks).toHaveCount(4);
+    await expect(passenger).toBeVisible();
+    for(const row of await passenger.locator("a").all()){
+      const box=await row.boundingBox();
+      expect(box?.height??0).toBeGreaterThanOrEqual(44);
+    }
     for(const row of await categoryLinks.all()){
       const size=await row.boundingBox();
       expect(size?.height??0).toBeGreaterThanOrEqual(44);
@@ -92,6 +100,9 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
     await test.info().attach(`v11-credential-card-${width}px`,{
       body:await credentials.screenshot(),
       contentType:"image/png",
+    });
+    await test.info().attach(`v11-passenger-recency-${width}px`,{
+      body:await passenger.screenshot(),contentType:"image/png",
     });
   }
   if(originalViewport)await page.setViewportSize(originalViewport);

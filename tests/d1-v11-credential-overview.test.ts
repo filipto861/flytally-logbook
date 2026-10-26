@@ -49,11 +49,33 @@ test("V11 LAPL indefinite licence date does not silently clear its SEP/TMG recen
   const output=buildCredentialOverview({licences:[licence(1,"date","","LAPL(A)")],qualifications:[
     rating(1,"date","2028-01-01","LAPL(A)","SEP"),
     rating(2,"unlimited","","LAPL(A)","TMG"),
-  ],documents:[],asOf});
+  ],documents:[],asOf,laplRecency:{status:"CURRENT",tone:"neutral",forecastDate:"2027-01-01",detail:"FCL.140.A evidence recorded"}});
   assert.equal(output.licences.status,"No date alerts");
-  assert.equal(output.ratings.status,"Needs review");
-  assert.equal(output.ratings.reviewCount,2);
+  assert.equal(output.ratings.status,"CURRENT");
+  assert.equal(output.ratings.reviewCount,0);
   assert.equal(buildCredentialOverview({licences:[],qualifications:[rating(1,"recency","2027-01-01")],documents:[],asOf}).ratings.status,"Needs review");
+  // Recency date only counts when stored in recencyUntil, not fixed validUntil.
+  assert.equal(buildCredentialOverview({licences:[],qualifications:[{...rating(1,"recency",""),recencyUntil:"2027-01-01"}],documents:[],asOf}).ratings.status,"No date alerts");
+});
+
+test("LAPL(A) flying recency is evaluated even without a separate SEP rating record",()=>{
+  const lapl=licence(1,"unlimited","","LAPL(A)");
+  const summary=buildCredentialOverview({
+    licences:[lapl],qualifications:[],documents:[],asOf,
+    laplRecency:{status:"NOT CURRENT",tone:"danger",forecastDate:null,detail:"Requirements not met in recorded flights"},
+  });
+  assert.equal(summary.ratings.status,"NOT CURRENT");
+  assert.equal(summary.ratings.count,0);
+  const missing=buildCredentialOverview({licences:[lapl],qualifications:[rating(2,"recency","","LAPL(A)")],documents:[],asOf});
+  assert.equal(missing.ratings.status,"UNVERIFIED");
+  assert.equal(missing.ratings.tone,"muted");
+});
+
+test("a user-saved future LAPL rating date cannot manufacture CURRENT",()=>{
+  const future=rating(1,"recency","","LAPL(A)");
+  const base={licences:[licence(2,"unlimited","","LAPL(A)")],qualifications:[{...future,recencyUntil:"2031-01-01"}],documents:[],asOf};
+  assert.equal(buildCredentialOverview(base).ratings.status,"UNVERIFIED");
+  assert.equal(buildCredentialOverview({...base,laplRecency:{status:"NOT CURRENT",tone:"danger",forecastDate:null,detail:"Not met"}}).ratings.status,"NOT CURRENT");
 });
 
 test("V11 displayed group state stays independent of the number of records",()=>{

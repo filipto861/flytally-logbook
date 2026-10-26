@@ -53,6 +53,17 @@
 .d1v11-credential-status--neutral .d1v11-credential-dot{background:var(--success-text)}
 .d1v11-credential-chevron{flex:none;font-size:1.13rem;color:var(--link);font-weight:750}
 @media(max-width:380px){.d1v11-credential-row{grid-template-columns:minmax(0,1fr) auto;row-gap:var(--ui-space-2)}.d1v11-credential-info{grid-column:1}.d1v11-credential-result{grid-column:1;justify-items:start;text-align:left}.d1v11-credential-chevron{grid-column:2;grid-row:1/3}}
+.d1v11-passenger-overview{display:grid;min-width:0;gap:var(--ui-space-2);border-top:1px solid var(--line-soft);padding-top:var(--ui-space-3)}
+.d1v11-passenger-title{display:flex;align-items:center;justify-content:space-between;gap:var(--ui-space-2);min-height:44px;color:var(--text);font-size:.79rem;font-weight:800;text-decoration:none;letter-spacing:.035em}
+.d1v11-passenger-title span{color:var(--link);font-size:1.13rem}
+.d1v11-passenger-row{display:flex;align-items:center;justify-content:space-between;gap:var(--ui-space-3);min-width:0;min-height:52px;color:var(--text);text-decoration:none}
+.d1v11-passenger-row:hover,.d1v11-passenger-title:hover{background:var(--surface-raised)}
+.d1v11-passenger-class{font-size:.8rem;font-weight:720}
+.d1v11-passenger-value{display:grid;gap:4px;min-width:0;justify-items:end;text-align:right}
+.d1v11-passenger-value small,.d1v11-passenger-empty,.d1v11-passenger-disclaimer{font-size:.7rem;line-height:1.4;color:var(--muted)}
+.d1v11-passenger-empty{margin:0;padding:var(--ui-space-2) 0}
+.d1v11-passenger-disclaimer{display:block;margin-top:var(--ui-space-1)}
+@media(max-width:380px){.d1v11-passenger-row{flex-wrap:wrap}.d1v11-passenger-value{width:100%;justify-items:start;text-align:left}}
 .d1v11-attention{display:grid;gap:var(--ui-space-2);border-top:1px solid var(--line-soft);padding-top:var(--ui-space-3)}
 .d1v11-attention>a{display:flex;align-items:center;justify-content:space-between;min-height:44px;gap:var(--ui-space-2);font-size:.8rem;font-weight:720;color:var(--link)}
 .d1v11-pace{padding:var(--ui-space-6) var(--ui-space-8)}
