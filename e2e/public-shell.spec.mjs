@@ -131,6 +131,79 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   const baselineFlightRow=page.locator("tr.flight-list-row").filter({hasText:"18/09/2026"}).filter({hasText:"OK-E2E"});
   await expect(baselineFlightRow).toHaveCount(1);
   await expect(baselineFlightRow).toBeVisible();
+  const countryFlags=baselineFlightRow.locator(".flight-airport-flag");
+  await expect(countryFlags).toHaveCount(2);
+  for(const flag of await countryFlags.all()){
+    await expect(flag).toHaveAttribute("data-country","CZ");
+    const background=await flag.evaluate(element=>getComputedStyle(element).backgroundImage);
+    expect(background).toContain("/flags/iso-atlas.png");
+  }
+  const flagSprite=await page.request.get("/flags/iso-atlas.png");
+  expect(flagSprite.status()).toBe(200);
+  const spritePng=await flagSprite.body();
+  expect(spritePng.readUInt32BE(16)).toBe(936);
+  expect(spritePng.readUInt32BE(20)).toBe(702);
+  // Techlog-facing BLOCK and AIR remain independently labeled at desktop and mobile widths.
+  await expect(baselineFlightRow.locator('td[data-label="BLOCK"] .flight-time-ledger')).toHaveCount(1);
+  await expect(baselineFlightRow.locator('td[data-label="AIR"] .flight-time-ledger')).toHaveCount(1);
+  // Mobile CSS visually hides <thead>; DOM assertions must not require an exposed columnheader role.
+  await expect(page.locator(".flights-table thead th").filter({hasText:"BLOCK"})).toHaveCount(1);
+  await expect(page.locator(".flights-table thead th").filter({hasText:"AIR"})).toHaveCount(1);
+
+  // This is a viewport/crop acceptance probe, not a claim that the browser or
+  // Windows flag glyphs have already been visually verified.
+  const originalFlightsViewport=page.viewportSize();
+  const blockLedger=baselineFlightRow.locator('td[data-label="BLOCK"] .flight-time-ledger');
+  const airLedger=baselineFlightRow.locator('td[data-label="AIR"] .flight-time-ledger');
+  for(const width of [320,390,768,1024,1440]){
+    await page.setViewportSize({width,height:900});
+    await expectNoHorizontalOverflow(page);
+    await expect(blockLedger).toBeVisible();
+    await expect(airLedger).toBeVisible();
+    for(const ledger of [blockLedger,airLedger]){
+      const duration=(await ledger.locator("strong").innerText()).trim();
+      const originalClocks=(await ledger.locator("small").innerText()).trim();
+      expect(duration).toMatch(/^(?:—|\d+:\d{2})$/);
+      if(duration==="—"){
+        expect(originalClocks).toMatch(/^(?:Needs review|Not recorded)$/);
+      }else{
+        expect(originalClocks).toMatch(/^(?:[01]\d|2[0-3]):[0-5]\d–(?:[01]\d|2[0-3]):[0-5]\d$/);
+      }
+    }
+    const blockBox=await blockLedger.boundingBox(),airBox=await airLedger.boundingBox();
+    expect(blockBox).not.toBeNull();
+    expect(airBox).not.toBeNull();
+    expect((blockBox?.x??0)+(blockBox?.width??0)).toBeLessThanOrEqual((airBox?.x??0)+2);
+    // F2.1: real compact grouping, not only smaller padding. Keep all metadata
+    // independently visible and preserve 44px tap affordance on phone widths.
+    if(width===320||width===390){
+      const [landingsCell,gpsCell,costCell]=[
+        baselineFlightRow.locator('td[data-label="Landings"]'),
+        baselineFlightRow.locator('td[data-label="GPS"]'),
+        baselineFlightRow.locator('td[data-label="Cost"]'),
+      ];
+      for(const cell of [landingsCell,gpsCell,costCell])await expect(cell).toBeVisible();
+      const footerBoxes=await Promise.all([landingsCell,gpsCell,costCell].map(cell=>cell.boundingBox()));
+      expect(footerBoxes.every(Boolean)).toBe(true);
+      expect(Math.abs((footerBoxes[0]?.y??0)-(footerBoxes[1]?.y??0))).toBeLessThanOrEqual(2);
+      expect(Math.abs((footerBoxes[1]?.y??0)-(footerBoxes[2]?.y??0))).toBeLessThanOrEqual(2);
+      await expect(baselineFlightRow.locator('td[data-label="Role / status"] .record-status')).toBeVisible();
+      const openFlight=baselineFlightRow.locator(".flight-route-link");
+      const cta=await openFlight.locator(".flight-open-cta").boundingBox();
+      expect(cta?.height??0).toBeGreaterThanOrEqual(44);
+      // Typical iPhone width should present one full card without the former
+      // tall sixth cost band. Allow long/exceptional values to expand naturally.
+      if(width===390){
+        const card=await baselineFlightRow.boundingBox();
+        expect(card?.height??Infinity).toBeLessThanOrEqual(365);
+      }
+    }
+    // Synthetic seeded flight only; never capture private account records.
+    await test.info().attach(`flights-techlog-row-${width}px`,{
+      body:await baselineFlightRow.screenshot(),contentType:"image/png",
+    });
+  }
+  if(originalFlightsViewport)await page.setViewportSize(originalFlightsViewport);
 
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);

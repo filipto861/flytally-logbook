@@ -62,3 +62,92 @@ test("v1.40.0 leaves stabilized GPS inference and certification direction unchan
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(gps,/hasImplausibleAltitudeJump/);
 });
+
+test("Flights list exposes equally legible recorded BLOCK and AIR without claiming missing times are zero",()=>{
+  const page=read("app/(protected)/flights/page.tsx");
+  assert.match(page,/<th>BLOCK<\/th><th>AIR<\/th>/);
+  assert.match(page,/const flightClockPattern=/);
+  assert.match(page,/hasCompleteClockPair\(f\.off_block,f\.on_block\)/);
+  assert.match(page,/hasCompleteClockPair\(f\.takeoff,f\.landing\)/);
+  assert.match(page,/data-label="BLOCK"/);
+  assert.match(page,/data-label="AIR"/);
+  assert.match(page,/blockKnown\?formatDuration\(f\.block_minutes\):"—"/);
+  assert.match(page,/airKnown\?formatDuration\(f\.air_minutes\):"—"/);
+  assert.doesNotMatch(page,/loggedMinutes=usesAir/);
+  const css=read("app/ui-system.css");
+  assert.match(css,/\.flights-table \.flight-list-row \.flight-time-ledger/);
+  assert.match(css,/font-variant-numeric:tabular-nums/);
+});
+
+test("Flights country decoration uses only the source-backed airport catalog and never ICAO prefix guessing",()=>{
+  const page=read("app/(protected)/flights/page.tsx");
+  assert.match(page,/getCatalogAirport\(ident\)\?\.country/);
+  assert.match(page,/\/\^\[A-Z\]\{2\}\$\//);
+  assert.match(page,/country==="ZZ"\|\|country==="XX"/);
+  assert.match(page,/departureFlag=airportFlag\(f\.departure\)/);
+  assert.match(page,/arrivalFlag=airportFlag\(f\.arrival\)/);
+  assert.match(page,/className="flight-airport-flag" aria-hidden="true"/);
+  assert.match(page,/className="flight-route-link"/);
+  const catalog=read("lib/airport-catalog.ts");
+  assert.match(catalog,/countryAt=at\("iso_country"\)/);
+});
+
+test("Flights mobile F2 uses compact scan rows without hiding route, clock provenance or certified status",()=>{
+  const css=read("app/ui-system.css");
+  const start=css.indexOf("/* Flights F2 — compact phone-only scan cards.");
+  assert.ok(start>css.indexOf("/* Flights F1 —"),"F2 overrides must follow the F1 ledger");
+  const mobile=css.slice(start);
+  assert.match(mobile,/@media\(max-width:700px\)/);
+  assert.match(mobile,/\.flights-table \.flight-list-row\s*\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(mobile,/\.flight-route-codes\s*\{[\s\S]*?flex-wrap:nowrap/);
+  assert.match(mobile,/\.flight-open-cta\s*\{[\s\S]*?min-height:44px/);
+  assert.match(mobile,/td\[data-label="BLOCK"\],[\s\S]*?td\[data-label="AIR"\]\s*\{[\s\S]*?grid-column:span 1/);
+  assert.match(mobile,/\.flight-role-stack\s*\{[\s\S]*?flex-wrap:wrap/);
+  assert.match(mobile,/td\[data-label="Landings"\],[\s\S]*?td\[data-label="GPS"\]\s*\{[\s\S]*?grid-column:span 1/);
+  assert.match(mobile,/td\[data-label="Cost"\]\s*\{[\s\S]*?grid-column:1 \/ -1/);
+  const page=read("app/(protected)/flights/page.tsx");
+  for(const label of ["Flight","Route","BLOCK","AIR","Role / status","Landings","GPS","Cost"]){
+    assert.ok(page.includes(`data-label="${label}"`),`Preserve the ${label} field`);
+  }
+});
+
+test("Flights country assets render independently of OS emoji fonts, and cannot be inferred from ICAO",()=>{
+  const page=read("app/(protected)/flights/page.tsx"),css=read("app/ui-system.css");
+  const atlas=fs.readFileSync(path.join(root,"public/flags/iso-atlas.png"));
+  assert.deepEqual([...atlas.subarray(0,8)],[137,80,78,71,13,10,26,10]);
+  assert.equal(atlas.readUInt32BE(16),936);
+  assert.equal(atlas.readUInt32BE(20),702);
+  assert.match(page,/supportedFlagCountries\.has\(country\)/);
+  assert.match(page,/data-country=\{departureFlag\.country\}/);
+  assert.match(page,/data-country=\{arrivalFlag\.country\}/);
+  assert.doesNotMatch(page,/String\.fromCodePoint/);
+  assert.match(css,/background-image:url\("\/flags\/iso-atlas\.png"\)/);
+  assert.match(css,/background-size:468px 351px/);
+});
+
+
+test("Flights F2.1 folds all eight cells into five mobile scan bands without dropping evidence",()=>{
+  const css=read("app/ui-system.css");
+  const start=css.indexOf("/* Flights F2.1 — owner iPhone review:");
+  assert.ok(start>css.indexOf("/* Flights F2 — compact phone-only"),"F2.1 must override the verified F2 cascade");
+  const mobile=css.slice(start);
+  assert.match(mobile,/@media\(max-width:700px\)/);
+  assert.match(mobile,/grid-template-columns:repeat\(12,minmax\(0,1fr\)\)/);
+  assert.match(mobile,/td\[data-label="BLOCK"\],[\s\S]*?td\[data-label="AIR"\]\s*\{[\s\S]*?grid-column:span 6/);
+  assert.match(mobile,/td\[data-label="Role \/ status"\]\s*\{[\s\S]*?grid-column:1 \/ -1/);
+  assert.match(mobile,/td\[data-label="Landings"\]\s*\{[\s\S]*?grid-column:span 3/);
+  assert.match(mobile,/td\[data-label="GPS"\]\s*\{[\s\S]*?grid-column:span 3/);
+  assert.match(mobile,/td\[data-label="Cost"\]\s*\{[\s\S]*?grid-column:span 6/);
+  assert.match(mobile,/\.flight-identity > small:nth-of-type\(1\)/);
+  assert.match(mobile,/\.flight-identity > small:nth-of-type\(2\)/);
+  assert.match(mobile,/\.gps-badge\s*\{[\s\S]*?min-height:44px/);
+  assert.doesNotMatch(mobile,/display:none[^}]*?(?:record-status|workflow-status|flight-time-ledger)/);
+  const page=read("app/(protected)/flights/page.tsx");
+  for(const label of ["Flight","Route","BLOCK","AIR","Role / status","Landings","GPS","Cost"]){
+    assert.ok(page.includes('data-label="'+label+'"'),"F2.1 must preserve "+label);
+  }
+  assert.match(page,/tab=gps/);
+  assert.match(page,/hasCompleteClockPair\(f\.off_block,f\.on_block\)/);
+  assert.match(page,/hasCompleteClockPair\(f\.takeoff,f\.landing\)/);
+  assert.ok(page.includes("record-status "), "Status badge is still rendered");
+});

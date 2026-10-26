@@ -276,6 +276,8 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await expect(revisionForm.locator('input[name="arrival"]')).toHaveValue("LKMT");
   expect(browserSqlScalar(`SELECT arrival||'|'||CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKPR|DRAFT");
   await revisionForm.getByRole("button",{name:"Save & certify",exact:true}).click();
+  // The server action must finish and redirect to its specific certified revision before the completion UI is asserted.
+  await expect(page).toHaveURL(url=>url.pathname===`/flights/${correctedFlightId}`&&url.searchParams.get("certified")==="1",{timeout:15000});
   await expect(page.getByText("Flight saved and certified.")).toBeVisible();
   await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R2");
   expect(browserSqlScalar(`SELECT arrival||'|'||record_revision::text||'|'||length(certification_hash)::text FROM flights WHERE id=${correctedFlightId} AND user_id=9001`)).toBe("LKMT|2|64");

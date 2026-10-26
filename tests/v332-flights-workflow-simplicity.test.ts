@@ -13,7 +13,7 @@ test("v3.3 U11 makes the route itself the primary flight-list open action",()=>{
   assert.doesNotMatch(page,/>View flight</);
   assert.match(page,/className="flight-open-cta">Open flight/);
   assert.match(page,/className="flight-identity"/);
-  assert.match(page,/<th>Flight<\/th><th>Route<\/th><th>Times<\/th><th>Logged time<\/th><th>Role \/ status<\/th><th>Landings<\/th><th>GPS<\/th><th>Cost<\/th>/);
+  assert.match(page,/<th>Flight<\/th><th>Route<\/th><th>BLOCK<\/th><th>AIR<\/th><th>Role \/ status<\/th><th>Landings<\/th><th>GPS<\/th><th>Cost<\/th>/);
 });
 
 test("v3.3 U11 separates navigation from secondary flight-detail actions",()=>{

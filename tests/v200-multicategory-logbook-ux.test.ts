@@ -37,8 +37,9 @@ test("v2.0-C uses category-aware logged time in totals and rows",()=>{
   assert.match(fast,/summary_logged/);
   assert.match(fast,/resolved_category IN \('SAILPLANE','BALLOON'\)/);
   assert.match(page,/Logged time/);
-  assert.match(page,/usesAir=category[.]category==="sailplane"\|\|category[.]category==="balloon"/);
-  assert.match(page,/loggedMinutes=usesAir\?\(f[.]air_minutes\|\|f[.]block_minutes\):f[.]block_minutes/);
+  assert.match(page,/<th>BLOCK<\/th><th>AIR<\/th>/);
+  assert.match(page,/blockKnown=hasCompleteClockPair\(f[.]off_block,f[.]on_block\)/);
+  assert.match(page,/airKnown=hasCompleteClockPair\(f[.]takeoff,f[.]landing\)/);
 });
 
 test("v2.0-C scale fixtures mirror the regulatory category schema used by Flights",()=>{
