@@ -16,7 +16,7 @@
 .flight-f3-time-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .flight-f3-time-card{min-width:0;display:grid;align-content:start;gap:12px;padding:clamp(16px,2vw,23px);border:1px solid color-mix(in srgb,var(--accent2) 24%,var(--line));border-radius:16px;background:var(--panel);color:var(--text)}
 .flight-f3-time-heading{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:5px 16px}
-.flight-f3-time-heading span{color:var(--accent2);font-weight:850;font-size:.76rem;letter-spacing:.12em}
+.flight-f3-time-heading h2{margin:0;color:var(--accent2);font-weight:850;font-size:.76rem;letter-spacing:.12em}
 .flight-f3-time-heading small{color:var(--muted);font-size:.74rem}
 .flight-f3-time-card > strong{font-size:clamp(1.95rem,3vw,2.7rem);line-height:1.12;letter-spacing:-.05em;font-weight:800;font-variant-numeric:tabular-nums}
 .flight-f3-clock-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
