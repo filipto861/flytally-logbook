@@ -92,6 +92,25 @@ test("Flights country decoration uses only the source-backed airport catalog and
   assert.match(catalog,/countryAt=at\("iso_country"\)/);
 });
 
+test("Flights mobile F2 uses compact scan rows without hiding route, clock provenance or certified status",()=>{
+  const css=read("app/ui-system.css");
+  const start=css.indexOf("/* Flights F2 — compact phone-only scan cards.");
+  assert.ok(start>css.indexOf("/* Flights F1 —"),"F2 overrides must follow the F1 ledger");
+  const mobile=css.slice(start);
+  assert.match(mobile,/@media\(max-width:700px\)/);
+  assert.match(mobile,/\.flights-table \.flight-list-row\s*\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(mobile,/\.flight-route-codes\s*\{[\s\S]*?flex-wrap:nowrap/);
+  assert.match(mobile,/\.flight-open-cta\s*\{[\s\S]*?min-height:44px/);
+  assert.match(mobile,/td\[data-label="BLOCK"\],[\s\S]*?td\[data-label="AIR"\]\s*\{[\s\S]*?grid-column:span 1/);
+  assert.match(mobile,/\.flight-role-stack\s*\{[\s\S]*?flex-wrap:wrap/);
+  assert.match(mobile,/td\[data-label="Landings"\],[\s\S]*?td\[data-label="GPS"\]\s*\{[\s\S]*?grid-column:span 1/);
+  assert.match(mobile,/td\[data-label="Cost"\]\s*\{[\s\S]*?grid-column:1 \/ -1/);
+  const page=read("app/(protected)/flights/page.tsx");
+  for(const label of ["Flight","Route","BLOCK","AIR","Role / status","Landings","GPS","Cost"]){
+    assert.ok(page.includes(`data-label="${label}"`),`Preserve the ${label} field`);
+  }
+});
+
 test("Flights country assets render independently of OS emoji fonts, and cannot be inferred from ICAO",()=>{
   const page=read("app/(protected)/flights/page.tsx"),css=read("app/ui-system.css");
   const atlas=fs.readFileSync(path.join(root,"public/flags/iso-atlas.png"));
