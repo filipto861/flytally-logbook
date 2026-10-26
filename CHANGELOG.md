@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## 2026-10-26 — F2 native Windows V5 acceptance verified; production deployment PENDING
+- Actual owner PowerShell V5 pinned `feat/logbook-flights-list-time-flags-20261026@bea902bf612d5fd43b3ed7cb4d73f3833909772f`, release candidate `e7c8664d90e9d01e815e44fb49e4b7c6db5cedfa81d2447ef2b26dd046032022`: `release_status=PASS`, source **261/261**, domain **19/19**, aggregate Node **1730/1730**, TypeScript **PASS**, Next production build **PASS**, owned native Windows PostgreSQL16 six partitions **164/164**, Playwright Chromium desktop14/mobile14 **28/28 PASS**, browser disposable v20/v21 schema-first fixture PASS, required blocked evidence none, scale N/A. The work SHA differs from F2 source+test `21924086645f034ffa4657ba58ddb7d7ee97708b` only in documentation; app/test unchanged. Real iPhone after-change visual review NOT RUN. **F2 NOT DEPLOYED**: current READY Vercel remains `dpl_3K7mQPRsvSBcWrApZmyUdKaSdGGm` on older Flights card CSS; no merge, production DB or flags modified. Owner Windows local-only policy honored.
+
+
 ## Unreleased — 2026-10-26 — F2 compact Flights mobile cards (PR #421; NOT VERIFIED / NOT DEPLOYED)
 - Owner-approved compact phone cards after real iPhone screenshot: changed only `app/ui-system.css` for max-width 700px/360px and `tests/v140-flights-ux.test.ts`; date+registration aligned, route+flag+44px Open flight kept together, separate BLOCK/AIR clocks, role/certification/shared, Landings/GPS/Cost preserved. No flight data/business logic or desktop redesign. App/test SHA `21924086645f034ffa4657ba58ddb7d7ee97708b`; new-SHA tests and native Safari visual QA NOT RUN. Previous Windows V4 PASS applies to prior version; production currently READY `dpl_3K7mQPRsvSBcWrApZmyUdKaSdGGm` still OLD code. No merge, deployment, DB/flag or Training changes. Owner local-Windows-only testing policy.
 
