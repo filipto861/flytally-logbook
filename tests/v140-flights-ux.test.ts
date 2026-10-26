@@ -124,3 +124,30 @@ test("Flights country assets render independently of OS emoji fonts, and cannot 
   assert.match(css,/background-image:url\("\/flags\/iso-atlas\.png"\)/);
   assert.match(css,/background-size:468px 351px/);
 });
+
+
+test("Flights F2.1 folds all eight cells into five mobile scan bands without dropping evidence",()=>{
+  const css=read("app/ui-system.css");
+  const start=css.indexOf("/* Flights F2.1 — owner iPhone review:");
+  assert.ok(start>css.indexOf("/* Flights F2 — compact phone-only"),"F2.1 must override the verified F2 cascade");
+  const mobile=css.slice(start);
+  assert.match(mobile,/@media\(max-width:700px\)/);
+  assert.match(mobile,/grid-template-columns:repeat\(12,minmax\(0,1fr\)\)/);
+  assert.match(mobile,/td\[data-label="BLOCK"\],[\s\S]*?td\[data-label="AIR"\]\s*\{[\s\S]*?grid-column:span 6/);
+  assert.match(mobile,/td\[data-label="Role \/ status"\]\s*\{[\s\S]*?grid-column:1 \/ -1/);
+  assert.match(mobile,/td\[data-label="Landings"\]\s*\{[\s\S]*?grid-column:span 3/);
+  assert.match(mobile,/td\[data-label="GPS"\]\s*\{[\s\S]*?grid-column:span 3/);
+  assert.match(mobile,/td\[data-label="Cost"\]\s*\{[\s\S]*?grid-column:span 6/);
+  assert.match(mobile,/\.flight-identity > small:nth-of-type\(1\)/);
+  assert.match(mobile,/\.flight-identity > small:nth-of-type\(2\)/);
+  assert.match(mobile,/\.gps-badge\s*\{[\s\S]*?min-height:44px/);
+  assert.doesNotMatch(mobile,/display:none[^}]*?(?:record-status|workflow-status|flight-time-ledger)/);
+  const page=read("app/(protected)/flights/page.tsx");
+  for(const label of ["Flight","Route","BLOCK","AIR","Role / status","Landings","GPS","Cost"]){
+    assert.ok(page.includes('data-label="'+label+'"'),"F2.1 must preserve "+label);
+  }
+  assert.match(page,/tab=gps/);
+  assert.match(page,/hasCompleteClockPair\(f\.off_block,f\.on_block\)/);
+  assert.match(page,/hasCompleteClockPair\(f\.takeoff,f\.landing\)/);
+  assert.ok(page.includes("record-status "), "Status badge is still rendered");
+});
