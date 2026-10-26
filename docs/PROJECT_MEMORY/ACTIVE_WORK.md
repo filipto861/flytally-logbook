@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-26 — PR421 mobile F2 DEPLOYED on production; iPhone visual review pending
+- GitHub main `5a51a214016a5815851b875a395bb12a36efc207`; OPEN DRAFT PR421 `feat/logbook-flights-list-time-flags-20261026`, pre-deploy/docs work `ea06bf766a3eb3061f93b4a8d94e75dc26a87138`, base main. Owner explicitly approved direct production deployment `nasad` for F2 iPhone testing, **NOT** merge, prod DB/migrations/flags.
+- Owner Windows V5 at `bea902bf612d5fd43b3ed7cb4d73f3833909772f` candidate `e7c8664d90e9d01e815e44fb49e4b7c6db5cedfa81d2447ef2b26dd046032022`: release_status PASS; source261/261, domain19/19, Node1730/1730, TS/build, 6 owned PG16 partitions164/164, Chromium desktop/mobile14+14 PASS. No cloud Sandbox/tests, local-only policy preserved.
+- **Vercel PROD READY** `dpl_czpoARQEKzyZMjBZgRbwnu3BqHKT`, verified exact source F2 CSS commit `d5d84aad5c48dd7982f3a30839418fc41a50304b`, custom `fly-tally.com` alias attached and domain verified. Work/test HEAD differs from deployed SHA only in docs and test. Previous READY `dpl_3K7mQPRsvSBcWrApZmyUdKaSdGGm` rollback ref. No migration, prod flags, merge, Training changes; prod DB/flag state UNKNOWN.
+- **Outstanding:** owner authenticated iPhone Safari/PWA real layout, 320px overflow, light/dark, 44px touch, source time display NOT VERIFIED, no claim accepted UI yet.
+- **ONE NEXT STEP:** owner reviews F2 at `https://fly-tally.com/flights` from iPhone, supplies screenshot/feedback; only then decide separate PR merge or targeted CSS fix.
+
+
 ## 2026-10-26 — F2 release risk PASS from owner native Windows V5 (NOT DEPLOYED)
 - Main `5a51a214016a5815851b875a395bb12a36efc207`; PR421 OPEN DRAFT on `feat/logbook-flights-list-time-flags-20261026`, Windows V5 exact HEAD `bea902bf612d5fd43b3ed7cb4d73f3833909772f`, risk candidate `e7c8664d90e9d01e815e44fb49e4b7c6db5cedfa81d2447ef2b26dd046032022`.
 - User-supplied canonical `npm run verify:release:risk -- --base origin/main`: **release_status=PASS**; source261/261, domain19/19, full Node1730/1730, TS/build PASS, owner-local independent PG16 six-partitions164/164, Chromium desktop14/mobile14 (28/28), `scale=N/A`, `blocked_evidence=none`. No paid cloud/Sandbox used. Only docs changed since F2 code+test SHA `21924086645f034ffa4657ba58ddb7d7ee97708b`; no runtime drift.
