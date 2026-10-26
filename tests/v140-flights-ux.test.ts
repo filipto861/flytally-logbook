@@ -65,7 +65,7 @@ test("v1.40.0 leaves stabilized GPS inference and certification direction unchan
 
 test("Flights list exposes equally legible recorded BLOCK and AIR without claiming missing times are zero",()=>{
   const page=read("app/(protected)/flights/page.tsx");
-  assert.match(page,/<th>BLOCK<\\/th><th>AIR<\\/th>/);
+  assert.match(page,/<th>BLOCK<\/th><th>AIR<\/th>/);
   assert.match(page,/const flightClockPattern=/);
   assert.match(page,/hasCompleteClockPair\(f\.off_block,f\.on_block\)/);
   assert.match(page,/hasCompleteClockPair\(f\.takeoff,f\.landing\)/);
