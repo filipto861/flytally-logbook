@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-26T10:05Z — PR421 full browser risk PASS; Windows PG16 and flag visuals still open
+- **Exact candidate source** `e08d4eed656cb9723e4da0d1c1d61d5d5aa9762e`, main/base `5a51a214016a5815851b875a395bb12a36efc207`, candidate `cd0dd1b30c9946b2671ae4ebf5e42da0e1c0d8257636152b7620b8673f06a06f`; PR #421 Draft OPEN, docs-only checkpoints after verified code SHA.
+- **PASS:** Node24 build on exact `e08d...`; **authenticated guarded Chromium risk 24/24 (12 desktop/12 mobile, zero retries/skips/fails)** against owned Linux localhost PostgreSQL16.15 browser fixture with explicit disposable schema-first v21; focused Flights desktop 1/1, mobile 1/1 with responsive 320–1440 assertion. Prior `8eea...` code/test SHA typecheck, aggregate 1728/1728, source 261/261, domain 19/19, iteration PASS; `8eea...`→`e08d...` docs-only.
+- **NOT RUN:** authoritative six-partition PG16 164/164 because runner is Windows-only, actual Windows flag emoji visual, owner screenshot audit, native Safari. Linux browser PASS does not qualify as native Windows. No new merge, prod deployment, prod DB or feature-flag actions; prod READY older `dpl_Dqo7Tyj7kk311BdfwFPm8UXx9mLa` unchanged; production DB/flags UNKNOWN.
+- **DO NOT:** modify unrelated Flights detail/New/GPS, filters/All cap/mobile category, certification/recency, production, Training.
+- **ONE NEXT STEP:** owner Windows isolated PG16 risk release run on exact PR HEAD plus Windows desktop/phone screenshot flag check; only then request separate approval for merge/deploy.
+
+
 ## 2026-10-26T09:46:38Z — PR421 Flights list verification advanced; final release/visual gates pending
 - **Verified:** `main@5a51a214016a5815851b875a395bb12a36efc207`; code/test `feat/logbook-flights-list-time-flags-20261026@8eea27889811dfe9b49df29c77fd0ca3a5427f9a`, Draft OPEN [PR #421](https://github.com/filipto861/flytally-logbook/pull/421), followed by documentation-only checkpoints (re-resolve work HEAD). Scope `/flights` list only. No owner merge, deploy, DB or flag authorization.
 - **Actual Node24 isolated candidate evidence:** corrected optional takeoff/landing TypeScript guard after observed TS2345; targeted 17/17, aggregate 1728/1728, typecheck PASS, Next build PASS 41 static pages, `verify:iterate` PASS (source 261/261; domain 19/19; typecheck PASS) for exact `8eea...` / base `5a51...`. Candidate ID `4dc4ffaa22848a4468697d751197d897aeb813f2a0dcb05b8821c058a9670a08`. Extended authenticated browser test with Flights row responsive screenshot attachments but browser test **NOT RUN**.
