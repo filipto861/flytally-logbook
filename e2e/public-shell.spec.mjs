@@ -138,6 +138,37 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await expect(page.locator(".flights-table thead th").filter({hasText:"BLOCK"})).toHaveCount(1);
   await expect(page.locator(".flights-table thead th").filter({hasText:"AIR"})).toHaveCount(1);
 
+  // This is a viewport/crop acceptance probe, not a claim that the browser or
+  // Windows flag glyphs have already been visually verified.
+  const originalFlightsViewport=page.viewportSize();
+  const blockLedger=baselineFlightRow.locator('td[data-label="BLOCK"] .flight-time-ledger');
+  const airLedger=baselineFlightRow.locator('td[data-label="AIR"] .flight-time-ledger');
+  for(const width of [320,390,768,1024,1440]){
+    await page.setViewportSize({width,height:900});
+    await expectNoHorizontalOverflow(page);
+    await expect(blockLedger).toBeVisible();
+    await expect(airLedger).toBeVisible();
+    for(const ledger of [blockLedger,airLedger]){
+      const duration=(await ledger.locator("strong").innerText()).trim();
+      const originalClocks=(await ledger.locator("small").innerText()).trim();
+      expect(duration).toMatch(/^(?:—|\\d+:\\d{2})$/);
+      if(duration==="—"){
+        expect(originalClocks).toMatch(/^(?:Needs review|Not recorded)$/);
+      }else{
+        expect(originalClocks).toMatch(/^(?:[01]\\d|2[0-3]):[0-5]\\d–(?:[01]\\d|2[0-3]):[0-5]\\d$/);
+      }
+    }
+    const blockBox=await blockLedger.boundingBox(),airBox=await airLedger.boundingBox();
+    expect(blockBox).not.toBeNull();
+    expect(airBox).not.toBeNull();
+    expect((blockBox?.x??0)+(blockBox?.width??0)).toBeLessThanOrEqual((airBox?.x??0)+2);
+    // Synthetic seeded flight only; never capture private account records.
+    await test.info().attach(`flights-techlog-row-${width}px`,{
+      body:await baselineFlightRow.screenshot(),contentType:"image/png",
+    });
+  }
+  if(originalFlightsViewport)await page.setViewportSize(originalFlightsViewport);
+
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);
   await expectAuthenticatedRoute(page,"Settings");
