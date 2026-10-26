@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-26 — PR421 owner Windows PG16 164/164 PASS, final browser tool-path fix pending
+- **Verified GitHub:** canonical main `5a51a214016a5815851b875a395bb12a36efc207`; PR #421 OPEN DRAFT branch source+tests `2bfec220ff1fade6f20141a65a16bf030840e878`; Windows-tested branch `e137b13f96eb5ee9d4f003dfc4eb21ff760b8b31` (later docs-only checkpoint `7efc47c06630174c4c98d17b9005b37f2004f8b0`). No merge/deploy/remote DB/flags; production DB/flags UNKNOWN.
+- **Actual V2 OWNER Windows release command:** source 261/261 PASS, domain19/19 PASS, Node1729/1729 PASS, typecheck PASS, build PASS (41), **six OWNED physically independent PG16 clusters 164/164 PASS** (124+8+5+19+6+2) candidate `fa0d36b1954780e4921b1686e4852503d048df93e679bd9e677ab6543dbaa08a`. `browser=PARTIAL`: `psql ENOENT` in child browser preflight due missing `FLYTALLY_PSQL` in outer PowerShell environment, `release_status=NOT RUN`; native screenshot NOT RUN. Previous Linux Chromium 24/24 PASS + 390px atlas visual remains separate evidence.
+- **Artifact-only V3 fix:** pass the already validated absolute native PG16 `psql.exe` path to locked browser via `FLYTALLY_PSQL`, save/restore environment; all guards retain exact origin/head verification and localhost-only fixture. Script itself awaits owner Windows execution. No app/test runtime code change.
+- **DO NOT:** merge, deploy, prod DB/migrations/flags, Training, flight record/recency logic and out-of-scope UX. Test authorization is not release authorization.
+- **ONE NEXT STEP:** execute corrected SHA-pinned V3 ZIP on owner Windows and inspect browser=PASS/full `release_status=PASS` and native Chrome flag screenshots before asking for separate merge/deploy approval.
+
+
 ## 2026-10-26 — PR421 Windows acceptance owner-approved, execution pending on native host
 - Verified main `5a51a214016a5815851b875a395bb12a36efc207`, work PR #421 app SHA `2bfec220ff1fade6f20141a65a16bf030840e878`, docs-only branch HEAD `8e7d14fc179ed90abd26604877ec9b1271ac56f0` before this checkpoint; Draft OPEN. Owner authorized proceeding with Windows six-partition PG16 and Chrome visual QA only, not merge/deploy/production DB/flag action.
 - **Windows owned PG16 164/164 remains NOT RUN**: current tool runtime is Linux and project Windows executor explicitly fails closed on non-Windows/CI/Vercel. Current existing executable results: Node 1729/1729, Flights18/18, TS/build/iteration PASS; guarded browser 24/24 PASS on same app/test code in isolated Linux PG16; 390px CSS atlas native Linux Chromium visual PASS, Windows native manual NOT RUN. Canonical release `verify:release:risk` NOT RUN.
