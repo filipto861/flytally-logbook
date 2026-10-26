@@ -131,6 +131,11 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   const baselineFlightRow=page.locator("tr.flight-list-row").filter({hasText:"18/09/2026"}).filter({hasText:"OK-E2E"});
   await expect(baselineFlightRow).toHaveCount(1);
   await expect(baselineFlightRow).toBeVisible();
+  // Techlog-facing BLOCK and AIR remain independently labeled at desktop and mobile widths.
+  await expect(baselineFlightRow.locator('td[data-label="BLOCK"] .flight-time-ledger')).toHaveCount(1);
+  await expect(baselineFlightRow.locator('td[data-label="AIR"] .flight-time-ledger')).toHaveCount(1);
+  await expect(page.getByRole("columnheader",{name:"BLOCK"})).toHaveCount(1);
+  await expect(page.getByRole("columnheader",{name:"AIR"})).toHaveCount(1);
 
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);
