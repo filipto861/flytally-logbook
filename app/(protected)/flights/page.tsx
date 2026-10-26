@@ -18,7 +18,7 @@ type FilterKey=keyof Params;
 
 // Display-only guards; keep the canonical persisted BLOCK/AIR calculations untouched.
 const flightClockPattern=/^([01][0-9]|2[0-3]):[0-5][0-9]$/;
-const hasCompleteClockPair=(start:string,end:string)=>flightClockPattern.test(start)&&flightClockPattern.test(end);
+const hasCompleteClockPair=(start:string|undefined,end:string|undefined)=>typeof start==="string"&&typeof end==="string"&&flightClockPattern.test(start)&&flightClockPattern.test(end);
 const airportFlag=(ident:string):{flag:string;country:string}|null=>{
   const country=getCatalogAirport(ident)?.country?.trim().toUpperCase()??"";
   if(!/^[A-Z]{2}$/.test(country)||country==="ZZ"||country==="XX")return null;
