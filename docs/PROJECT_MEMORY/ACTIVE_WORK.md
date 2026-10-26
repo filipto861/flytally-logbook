@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-26 — PR421 BLOCKER: real Linux flag glyph squares, local atlas candidate lost with ephemeral sandbox
+- **PR baseline:** main `5a51a214016a5815851b875a395bb12a36efc207`, candidate app source HEAD `ac234c8e13ce127fcb92a23d00397095ee397fdb`; Draft #421 OPEN, later docs-only checkpoint(s) (re-resolve branch SHA). No merge/deploy/DB/flag mutation.
+- **OBSERVED** real synthetic-browser screenshot at 390px: both `🇨🇿` appear as empty glyph squares in Flights Route (LKLT–LKPR). BLOCK/AIR shown simultaneously **0:50/0:40**, correct source clock pairs, 320/390 no root overflow. Linux Chromium visual FAIL for flags; Windows Chrome/native Safari visual NOT RUN. Previous guarded 24/24 browsers PASS remains valid for its tested semantics but does not cover emoji glyph rendering.
+- **Unpersisted prototype:** MIT `flag-icons` v7.6.0, 256 backed country images, single 46,405-byte self-hosted atlas with country grid, no runtime dependency/CDN. Temporary source/CSS and local-target 17/17 and TS PASS; **all prototype files destroyed when sandbox auto-stopped**. Full atlas patch, binary, licensing and visual regression NOT COMMITTED / NOT VERIFIED in GitHub. Exact source/checksum and implementation details in SESSION_HANDOFF latest.
+- **BLOCKER:** do not advance PR to merge before local flag assets are committed and new exact-SHA screenshot verification; separately required six-owned Windows PG16 164/164 gate remains NOT RUN. Production Vercel READY last older `dpl_Dqo7Tyj7kk311BdfwFPm8UXx9mLa`; prod DB/flags UNKNOWN.
+- **ONE NEXT STEP:** implement/push compact self-hosted flag atlas fix on the existing PR421 branch, with MIT attribution and regression test, then verify 320/390/768/1024/1440 actual rendered flags and run required release gates.
+
+
 ## 2026-10-26T10:05Z — PR421 full browser risk PASS; Windows PG16 and flag visuals still open
 - **Exact candidate source** `e08d4eed656cb9723e4da0d1c1d61d5d5aa9762e`, main/base `5a51a214016a5815851b875a395bb12a36efc207`, candidate `cd0dd1b30c9946b2671ae4ebf5e42da0e1c0d8257636152b7620b8673f06a06f`; PR #421 Draft OPEN, docs-only checkpoints after verified code SHA.
 - **PASS:** Node24 build on exact `e08d...`; **authenticated guarded Chromium risk 24/24 (12 desktop/12 mobile, zero retries/skips/fails)** against owned Linux localhost PostgreSQL16.15 browser fixture with explicit disposable schema-first v21; focused Flights desktop 1/1, mobile 1/1 with responsive 320–1440 assertion. Prior `8eea...` code/test SHA typecheck, aggregate 1728/1728, source 261/261, domain 19/19, iteration PASS; `8eea...`→`e08d...` docs-only.
