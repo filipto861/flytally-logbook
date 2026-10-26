@@ -58,8 +58,8 @@
   .flight-detail-header .flight-f3-heading{align-items:flex-start;flex-direction:column;gap:9px}
   .flight-detail-workspace .flight-workflow > header{align-items:stretch}
   .flight-detail-workspace .flight-workflow-steps{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .flight-detail-workspace .flight-workflow-step{justify-content:center;gap:5px;padding:7px 3px;min-height:38px}
-  .flight-detail-workspace .flight-workflow-step > span{display:none}
+  .flight-detail-workspace .flight-workflow-step{flex-direction:column;justify-content:center;gap:4px;padding:6px 3px;min-height:44px}
+  .flight-detail-workspace .flight-workflow-step > span{width:16px;height:16px;flex:0 0 16px;font-size:.62rem}
   .flight-detail-workspace .flight-workflow-step strong{font-size:.66rem;text-align:center;overflow-wrap:anywhere}
   .flight-f3-time-grid{grid-template-columns:minmax(0,1fr);gap:9px}
   .flight-f3-time-card{padding:16px;gap:11px}
