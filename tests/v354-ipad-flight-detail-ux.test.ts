@@ -32,3 +32,33 @@ test("3.5.4 fully hides the skip link until keyboard focus",()=>{
   assert.match(css,/\.skip-link:not\(:focus\):not\(:focus-visible\)\{[\s\S]*?width:1px;[\s\S]*?height:1px;[\s\S]*?clip-path:inset\(50%\);[\s\S]*?border:0;[\s\S]*?transform:none/);
   assert.match(css,/\.skip-link:focus,[\s\S]*?\.skip-link:focus-visible\{[\s\S]*?width:auto;[\s\S]*?height:auto;[\s\S]*?clip-path:none;[\s\S]*?border:2px solid var\(--accent2\);[\s\S]*?transform:none/);
 });
+
+test("F3 shows the route first and separates complete BLOCK/AIR clocks without changing logged-time rules",()=>{
+  const page=read("app/(protected)/flights/[id]/page.tsx");
+  const summary=read("components/flight-detail-overview.tsx");
+  const css=read("app/flight-detail-f3.css");
+  const layout=read("app/layout.tsx");
+  assert.match(page,/className="flight-f3-heading"/);
+  assert.match(page,/flight\.departure\|\|"—"\} → \{flight\.arrival\|\|"—"/);
+  assert.match(page,/<FlightDetailOverview blockMinutes=\{flight\.block_minutes\} airMinutes=\{flight\.air_minutes\}/);
+  assert.match(summary,/completePair\(offBlock,onBlock\)/);
+  assert.match(summary,/completePair\(takeoff,landing\)/);
+  assert.match(summary,/blockKnown\?formatDuration\(blockMinutes\):"—"/);
+  assert.match(summary,/airKnown\?formatDuration\(airMinutes\):"—"/);
+  assert.match(summary,/landingCount=Number\.isSafeInteger\(landings\)/);
+  assert.match(summary,/trackTotal>0&&Number\.isFinite\(gpsKm\)/);
+  assert.ok(layout.indexOf('import "./flight-detail-f3.css"')>layout.indexOf('import "./ui-system.css"'));
+  for(const name of ["flight-f3-time-grid","flight-f3-clock-pair","flight-f3-facts"])assert.ok(css.includes(name),name);
+  for(const width of ["max-width:900px","max-width:700px","max-width:360px"])assert.ok(css.includes(width),width);
+  for(const preserved of ["certifyFlight.bind","startCertifiedCorrection.bind","ReadonlyLogbookEntry","<FlightForm","crewPanel","LazyFlightTrackReview","TrackManager"])assert.ok(page.includes(preserved),preserved);
+});
+
+test("F3 cancelled unsaved tab switch cannot move keyboard focus to an unselected tab",()=>{
+  const tabs=read("components/flight-detail-workspace.tsx");
+  assert.match(tabs,/const selectTab=\(value:Tab\):boolean=>/);
+  assert.match(tabs,/if\(submitting\)return false/);
+  assert.match(tabs,/if\(unsaved&&!window\.confirm\([^\n]+\)\)return false/);
+  assert.match(tabs,/if\(selectTab\(nextTab\)\)document\.getElementById/);
+  assert.match(tabs,/role="tablist"/);
+  assert.match(tabs,/role="tabpanel"/);
+});
