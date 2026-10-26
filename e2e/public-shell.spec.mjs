@@ -174,6 +174,30 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
     expect(blockBox).not.toBeNull();
     expect(airBox).not.toBeNull();
     expect((blockBox?.x??0)+(blockBox?.width??0)).toBeLessThanOrEqual((airBox?.x??0)+2);
+    // F2.1: real compact grouping, not only smaller padding. Keep all metadata
+    // independently visible and preserve 44px tap affordance on phone widths.
+    if(width===320||width===390){
+      const [landingsCell,gpsCell,costCell]=[
+        baselineFlightRow.locator('td[data-label="Landings"]'),
+        baselineFlightRow.locator('td[data-label="GPS"]'),
+        baselineFlightRow.locator('td[data-label="Cost"]'),
+      ];
+      for(const cell of [landingsCell,gpsCell,costCell])await expect(cell).toBeVisible();
+      const footerBoxes=await Promise.all([landingsCell,gpsCell,costCell].map(cell=>cell.boundingBox()));
+      expect(footerBoxes.every(Boolean)).toBe(true);
+      expect(Math.abs((footerBoxes[0]?.y??0)-(footerBoxes[1]?.y??0))).toBeLessThanOrEqual(2);
+      expect(Math.abs((footerBoxes[1]?.y??0)-(footerBoxes[2]?.y??0))).toBeLessThanOrEqual(2);
+      await expect(baselineFlightRow.locator('td[data-label="Role / status"] .record-status')).toBeVisible();
+      const openFlight=baselineFlightRow.locator(".flight-route-link");
+      const cta=await openFlight.locator(".flight-open-cta").boundingBox();
+      expect(cta?.height??0).toBeGreaterThanOrEqual(44);
+      // Typical iPhone width should present one full card without the former
+      // tall sixth cost band. Allow long/exceptional values to expand naturally.
+      if(width===390){
+        const card=await baselineFlightRow.boundingBox();
+        expect(card?.height??Infinity).toBeLessThanOrEqual(365);
+      }
+    }
     // Synthetic seeded flight only; never capture private account records.
     await test.info().attach(`flights-techlog-row-${width}px`,{
       body:await baselineFlightRow.screenshot(),contentType:"image/png",
