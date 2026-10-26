@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-26 — F2 release risk PASS from owner native Windows V5 (NOT DEPLOYED)
+- Main `5a51a214016a5815851b875a395bb12a36efc207`; PR421 OPEN DRAFT on `feat/logbook-flights-list-time-flags-20261026`, Windows V5 exact HEAD `bea902bf612d5fd43b3ed7cb4d73f3833909772f`, risk candidate `e7c8664d90e9d01e815e44fb49e4b7c6db5cedfa81d2447ef2b26dd046032022`.
+- User-supplied canonical `npm run verify:release:risk -- --base origin/main`: **release_status=PASS**; source261/261, domain19/19, full Node1730/1730, TS/build PASS, owner-local independent PG16 six-partitions164/164, Chromium desktop14/mobile14 (28/28), `scale=N/A`, `blocked_evidence=none`. No paid cloud/Sandbox used. Only docs changed since F2 code+test SHA `21924086645f034ffa4657ba58ddb7d7ee97708b`; no runtime drift.
+- Production still **older** `dpl_3K7mQPRsvSBcWrApZmyUdKaSdGGm` READY, source `2bfec220ff1fade6f20141a65a16bf030840e878`. New F2 **NOT DEPLOYED**. No merge, production DB migration/flag change, Training changes; DB/flags UNKNOWN. Native iPhone *after* new CSS and 320px/light theme NOT RUN. Owner gave test log, not new deployment or merge consent.
+- **ONE NEXT STEP:** seek owner explicit approval to deploy F2 on production test web *without merge* for real iPhone inspection; do not cloud test or auto deploy.
+
+
 ## 2026-10-26 — PR421 F2 compact Flights iPhone cards committed; owner-local QA gate pending
 - **Authority:** `main@5a51a214016a5815851b875a395bb12a36efc207`, Draft PR #421 work branch `feat/logbook-flights-list-time-flags-20261026`, initial mobile approved source `d5d84aad5c48dd7982f3a30839418fc41a50304b`, accompanying source-contract test `21924086645f034ffa4657ba58ddb7d7ee97708b`. Later docs commits `6fa17bede1d211447fab1d0823a40ea4ca1e1d36` ROADMAP, `02e878e4db5b3f662f4e64d9b3a7dfe2518eb4e6` CHANGELOG, `4a5345749bc7199c292ac20b878e874516cacc7f` SESSION_HANDOFF; this ACTIVE_WORK checkpoint to follow.
 - **Owner's approval boundary:** compact mobile UX before final release; keep desktop unchanged, all BLOCK/AIR source clocks, certification/shared state, GPS, Landings, pricing, source-backed flags, costs and no new library/motion (NONE). Changes scoped to `app/ui-system.css` <=700 / <=360 and `tests/v140-flights-ux.test.ts`, no JS runtime/data changes. Previous owner iPhone screenshot BEFORE F2 confirms issue; new native iPhone AFTER F2 **NOT RUN**.
