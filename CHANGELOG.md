@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-26 — F3 opened Flight Detail presentation and interaction candidate
+- New `components/flight-detail-overview.tsx`: BLOCK/AIR presented with separate source clock pairs, `—` for missing/invalid pair, zero only when pair valid; landings, GPS and expenses retain values with clearer hierarchy.
+- Route becomes main detail heading, registration/date/type/role/evidence and revision remain available. Compact workflow CTA uses Edit logbook; keyboard tab switch no longer moves focus when unsaved-discard confirmation is cancelled. Existing forms, certification, archived corrections, GPS, expense and sharing server actions are untouched.
+- New `app/flight-detail-f3.css` is loaded after canonical `ui-system.css`, scoped to Flight Detail and responsive/cockpit/accessibility. Regression contracts added to existing iPad detail test file. No new libraries, business logic, persistence, SQL, schema or brand changes.
+- Work branch `feat/logbook-flight-detail-f3-20261026` based on `main@4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`. Owner requested **all implementation before tests** and skipped independent AI review. Automated release gates/browser/native Safari **NOT RUN yet**. No merge, production deployment, migrations or feature-flag changes.
+
+
 ## 2026-10-26 — Flights F2.1 owner-approved production deployment (native iPhone approval pending)
 - F2.1 five-band compact mobile Flights rows released to `https://fly-tally.com/flights` on Vercel project `logbook`: deployment `dpl_8ePTCJZrUZUeACo67WBwAuSsdzgi`, Vercel production state READY, `fly-tally.com` alias independently points to this deployment. Git runtime source `1cca51c24325cb5dfe0bde3b0d595895e76a7987`; subsequent Windows V7 tested `ff950852687ed0771c82fb61df17359d05bf237a` differs only in tests/markdown docs (not application runtime). Canonical exact source Windows V7 PASS (1,731 Node, 164 local PG16, 28 Playwright, typecheck and build). Vercel build logs show runtime change built successfully. Prior failed attempt `dpl_3vXR59PDXGu17exjsaQSLforkdye` was CANCELED because docs-only source triggered existing ignored-build policy; no project setting changed.
 - No merge to main, no production DB, schema, migration or feature flag changes performed. Runtime error clusters none over 1h as reported by provider; no deployment-scoped error logs over 30min; public HTTP smoke unavailable from agent network, so NOT VERIFIED. Real owner iPhone Safari visual check is now the outstanding release-acceptance step. PR #421 stays OPEN DRAFT.
