@@ -1,0 +1,88 @@
+/* F3 flight detail — layout-only layer, after ui-system.css. Preserve FlyTally tokens and domain actions. */
+.flight-detail-header{min-width:0}
+.flight-detail-header > .flight-f3-identity{min-width:0;display:grid;align-content:center;gap:10px}
+.flight-detail-header .flight-f3-heading{display:flex;align-items:center;flex-wrap:wrap;gap:10px;min-width:0}
+.flight-detail-header .flight-f3-heading h1{margin:0;min-width:0;font-size:clamp(1.7rem,2.75vw,2.55rem);font-weight:820;letter-spacing:-.045em;line-height:1.16;overflow-wrap:anywhere}
+.flight-detail-header .flight-f3-meta{display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;margin:0;color:var(--muted);font-size:.83rem;line-height:1.5}
+.flight-detail-header .flight-f3-meta strong{color:var(--text);font-weight:780}
+.flight-detail-header .flight-f3-meta span+span::before{content:"·";margin-right:12px;color:var(--muted)}
+.flight-detail-header .flight-lock-badge{max-width:100%;overflow-wrap:anywhere}
+.flight-detail-workspace{min-width:0}
+.flight-detail-workspace .detail-tabs{min-width:0;margin-bottom:15px}
+.flight-detail-workspace .detail-tabs button{min-height:44px;white-space:normal;text-align:center}
+.flight-detail-workspace .detail-tabs button:focus-visible{outline:2px solid var(--focus-color,var(--accent2));outline-offset:2px}
+.flight-detail-workspace .detail-tab-content{min-width:0}
+.flight-f3-overview{display:grid;gap:12px;margin-bottom:14px;min-width:0}
+.flight-f3-time-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.flight-f3-time-card{min-width:0;display:grid;align-content:start;gap:12px;padding:clamp(16px,2vw,23px);border:1px solid color-mix(in srgb,var(--accent2) 24%,var(--line));border-radius:16px;background:var(--panel);color:var(--text)}
+.flight-f3-time-heading{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:5px 16px}
+.flight-f3-time-heading span{color:var(--accent2);font-weight:850;font-size:.76rem;letter-spacing:.12em}
+.flight-f3-time-heading small{color:var(--muted);font-size:.74rem}
+.flight-f3-time-card > strong{font-size:clamp(1.95rem,3vw,2.7rem);line-height:1.12;letter-spacing:-.05em;font-weight:800;font-variant-numeric:tabular-nums}
+.flight-f3-clock-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.flight-f3-clock-pair > div{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-raised,var(--panel2))}
+.flight-f3-clock-pair dt{font-size:.7rem;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.flight-f3-clock-pair dd{margin:0;color:var(--text);font-size:.96rem;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
+.flight-f3-time-warning{color:var(--muted);font-size:.74rem}
+.flight-f3-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.flight-f3-fact{min-width:0;display:grid;align-content:start;gap:5px;padding:17px 19px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.flight-f3-fact h2{margin:0;color:var(--muted);font-size:.73rem;font-weight:750;letter-spacing:.05em;text-transform:uppercase}
+.flight-f3-fact > strong{font-size:1.26rem;line-height:1.32;font-weight:790;letter-spacing:-.02em;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.flight-f3-fact p{margin:0;color:var(--muted);font-size:.76rem;line-height:1.5;overflow-wrap:anywhere}
+.flight-detail-workspace .flight-workflow{gap:10px;margin-bottom:14px;padding:13px 17px}
+.flight-detail-workspace .flight-workflow > header{gap:14px}
+.flight-detail-workspace .flight-workflow > header .eyebrow{font-size:.66rem;margin-bottom:3px}
+.flight-detail-workspace .flight-workflow h2{font-size:.99rem;margin:0 0 3px}
+.flight-detail-workspace .flight-workflow p{font-size:.76rem;line-height:1.45}
+.flight-detail-workspace .flight-workflow-steps{gap:5px}
+.flight-detail-workspace .flight-workflow-step{min-height:34px;padding:6px 9px;border-radius:9px}
+.flight-detail-workspace .flight-workflow-step strong{font-size:.68rem}
+.flight-detail-workspace .flight-workflow-primary :is(.primary-button,.secondary-button){min-height:44px}
+.flight-detail-workspace .flight-lock-panel{min-width:0}
+.flight-detail-workspace .flight-secondary-panel{min-width:0}
+.flight-detail-workspace .no-track{display:grid;gap:7px}
+.flight-detail-workspace .no-track p{margin:0}
+.flight-detail-workspace .logbook-edit-panel{min-width:0}
+@media(max-width:1180px){
+  .flight-detail-header .flight-detail-navigation{justify-content:flex-start}
+}
+@media(max-width:900px){
+  .flight-f3-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .flight-f3-clock-pair{grid-template-columns:minmax(0,1fr)}
+  .flight-f3-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .flight-f3-cost{grid-column:1/-1}
+}
+@media(max-width:700px){
+  .flight-detail-header .flight-f3-meta{font-size:.77rem;gap:4px 8px}
+  .flight-detail-header .flight-f3-meta span+span::before{margin-right:8px}
+  .flight-detail-header .flight-f3-heading{align-items:flex-start;flex-direction:column;gap:9px}
+  .flight-detail-workspace .flight-workflow > header{align-items:stretch}
+  .flight-detail-workspace .flight-workflow-steps{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .flight-detail-workspace .flight-workflow-step{justify-content:center;gap:5px;padding:7px 3px;min-height:38px}
+  .flight-detail-workspace .flight-workflow-step > span{display:none}
+  .flight-detail-workspace .flight-workflow-step strong{font-size:.66rem;text-align:center;overflow-wrap:anywhere}
+  .flight-f3-time-grid{grid-template-columns:minmax(0,1fr);gap:9px}
+  .flight-f3-time-card{padding:16px;gap:11px}
+  .flight-f3-clock-pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .flight-f3-clock-pair > div{padding:10px}
+  .flight-f3-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .flight-f3-fact{padding:14px}
+}
+@media(max-width:360px){
+  .flight-f3-clock-pair > div{flex-direction:column;align-items:flex-start;gap:4px}
+  .flight-f3-facts{grid-template-columns:minmax(0,1fr)}
+  .flight-f3-cost{grid-column:auto}
+  .flight-detail-workspace .detail-tabs button{padding-inline:6px;font-size:.74rem}
+}
+@media(pointer:coarse){
+  .flight-detail-header .flight-detail-navigation :is(a,button,summary),
+  .flight-detail-workspace .detail-tabs button{min-height:44px}
+}
+@media(forced-colors:active){
+  .flight-f3-time-card,.flight-f3-fact,.flight-f3-clock-pair > div{border:1px solid CanvasText}
+  .flight-detail-workspace .detail-tabs button:focus-visible{outline:2px solid Highlight}
+}
+@media print{
+  .flight-f3-time-card,.flight-f3-fact{break-inside:avoid;box-shadow:none}
+  .flight-detail-workspace .flight-workflow-primary{display:none}
+}
