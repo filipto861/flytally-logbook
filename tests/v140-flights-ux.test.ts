@@ -91,3 +91,17 @@ test("Flights country decoration uses only the source-backed airport catalog and
   const catalog=read("lib/airport-catalog.ts");
   assert.match(catalog,/countryAt=at\("iso_country"\)/);
 });
+
+test("Flights country assets render independently of OS emoji fonts, and cannot be inferred from ICAO",()=>{
+  const page=read("app/(protected)/flights/page.tsx"),css=read("app/ui-system.css");
+  const atlas=fs.readFileSync(path.join(root,"public/flags/iso-atlas.png"));
+  assert.deepEqual([...atlas.subarray(0,8)],[137,80,78,71,13,10,26,10]);
+  assert.equal(atlas.readUInt32BE(16),936);
+  assert.equal(atlas.readUInt32BE(20),702);
+  assert.match(page,/supportedFlagCountries\.has\(country\)/);
+  assert.match(page,/data-country=\{departureFlag\.country\}/);
+  assert.match(page,/data-country=\{arrivalFlag\.country\}/);
+  assert.doesNotMatch(page,/String\.fromCodePoint/);
+  assert.match(css,/background-image:url\("\/flags\/iso-atlas\.png"\)/);
+  assert.match(css,/background-size:468px 351px/);
+});

@@ -131,6 +131,18 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   const baselineFlightRow=page.locator("tr.flight-list-row").filter({hasText:"18/09/2026"}).filter({hasText:"OK-E2E"});
   await expect(baselineFlightRow).toHaveCount(1);
   await expect(baselineFlightRow).toBeVisible();
+  const countryFlags=baselineFlightRow.locator(".flight-airport-flag");
+  await expect(countryFlags).toHaveCount(2);
+  for(const flag of await countryFlags.all()){
+    await expect(flag).toHaveAttribute("data-country","CZ");
+    const background=await flag.evaluate(element=>getComputedStyle(element).backgroundImage);
+    expect(background).toContain("/flags/iso-atlas.png");
+  }
+  const flagSprite=await page.request.get("/flags/iso-atlas.png");
+  expect(flagSprite.status()).toBe(200);
+  const spritePng=await flagSprite.body();
+  expect(spritePng.readUInt32BE(16)).toBe(936);
+  expect(spritePng.readUInt32BE(20)).toBe(702);
   // Techlog-facing BLOCK and AIR remain independently labeled at desktop and mobile widths.
   await expect(baselineFlightRow.locator('td[data-label="BLOCK"] .flight-time-ledger')).toHaveCount(1);
   await expect(baselineFlightRow.locator('td[data-label="AIR"] .flight-time-ledger')).toHaveCount(1);
