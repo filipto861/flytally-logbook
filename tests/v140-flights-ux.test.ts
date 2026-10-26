@@ -62,3 +62,32 @@ test("v1.40.0 leaves stabilized GPS inference and certification direction unchan
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(gps,/hasImplausibleAltitudeJump/);
 });
+
+test("Flights list exposes equally legible recorded BLOCK and AIR without claiming missing times are zero",()=>{
+  const page=read("app/(protected)/flights/page.tsx");
+  assert.match(page,/<th>BLOCK<\\/th><th>AIR<\\/th>/);
+  assert.match(page,/const flightClockPattern=/);
+  assert.match(page,/hasCompleteClockPair\(f\.off_block,f\.on_block\)/);
+  assert.match(page,/hasCompleteClockPair\(f\.takeoff,f\.landing\)/);
+  assert.match(page,/data-label="BLOCK"/);
+  assert.match(page,/data-label="AIR"/);
+  assert.match(page,/blockKnown\?formatDuration\(f\.block_minutes\):"—"/);
+  assert.match(page,/airKnown\?formatDuration\(f\.air_minutes\):"—"/);
+  assert.doesNotMatch(page,/loggedMinutes=usesAir/);
+  const css=read("app/ui-system.css");
+  assert.match(css,/\.flights-table \.flight-list-row \.flight-time-ledger/);
+  assert.match(css,/font-variant-numeric:tabular-nums/);
+});
+
+test("Flights country decoration uses only the source-backed airport catalog and never ICAO prefix guessing",()=>{
+  const page=read("app/(protected)/flights/page.tsx");
+  assert.match(page,/getCatalogAirport\(ident\)\?\.country/);
+  assert.match(page,/\/\^\[A-Z\]\{2\}\$\//);
+  assert.match(page,/country==="ZZ"\|\|country==="XX"/);
+  assert.match(page,/departureFlag=airportFlag\(f\.departure\)/);
+  assert.match(page,/arrivalFlag=airportFlag\(f\.arrival\)/);
+  assert.match(page,/className="flight-airport-flag" aria-hidden="true"/);
+  assert.match(page,/className="flight-route-link"/);
+  const catalog=read("lib/airport-catalog.ts");
+  assert.match(catalog,/countryAt=at\("iso_country"\)/);
+});
