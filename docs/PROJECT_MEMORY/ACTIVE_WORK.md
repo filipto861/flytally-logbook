@@ -1,5 +1,15 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-26 — PR421 flag glyph defect corrected; actual Linux screenshot PASS, Windows owned PG release pending
+- **Canonical:** `main@5a51a214016a5815851b875a395bb12a36efc207`; code+test commit `2bfec220ff1fade6f20141a65a16bf030840e878`; Draft PR #421 OPEN, subsequent docs-only handoff (re-resolve HEAD). No merge/deploy; current production Vercel older READY `dpl_Dqo7Tyj7kk311BdfwFPm8UXx9mLa`, production DB/flags UNKNOWN.
+- **Visual defect FIXED on branch:** 390px actual synthetic Chrome screenshot before had two blank emoji flag glyphs; after compact 46,405-byte locally hosted licensed MIT ISO sprite flags render actual Czech flag graphics at both airports. SHA `656a18eb2d3a632d176d4e34e5979bd24d425cb4187562a17c2451c837f7410a`, no new app dependency/CDN. Separate images captured 320/390/768/1024/1440, root viewport widths respected; screenshot visually reviewed at 390 only; Windows native/Chrome glyph and Safari NOT RUN.
+- **Exact source SHA evidence PASS:** targeted Flights 18/18, full Node 1729/1729, TypeScript, Next production build, `verify:iterate` (source PASS, domain 19/19 PASS, candidate `114992b97faf564f0849952bf023457983c6efacbac87baff75f7b24347c62c4`), authenticated disposable local PG16.15/Chromium Flights desktop 1/1 and mobile 1/1 with new atlas HTTP and viewport checks.
+- **Release pending:** full browser-risk selected cases on **new SHA NOT RUN**, owner-Windows six separate PG16 partitions 164/164 **NOT RUN**, Windows Chrome/device visual QA and native Safari **NOT RUN**, so `verify:release:risk` release overall NOT RUN. Previous older code browser 24/24 is historical only.
+- **DO NOT:** change flight detail/New/Edit/GPS, filters, 5000 All cap, mobile category strip, SQL/persisted data, certification/recency/financials, Training; no merge/production deploy/DB/flag actions without explicit approval.
+- **ONE NEXT STEP:** owner-Windows isolated six-owned PG16 and full candidate release-risk + actual Windows Chrome desktop/phone flag QA before asking owner for separate merge/deploy.
+
+
+
 ## 2026-10-26 — PR421 BLOCKER: real Linux flag glyph squares, local atlas candidate lost with ephemeral sandbox
 - **PR baseline:** main `5a51a214016a5815851b875a395bb12a36efc207`, candidate app source HEAD `ac234c8e13ce127fcb92a23d00397095ee397fdb`; Draft #421 OPEN, later docs-only checkpoint(s) (re-resolve branch SHA). No merge/deploy/DB/flag mutation.
 - **OBSERVED** real synthetic-browser screenshot at 390px: both `🇨🇿` appear as empty glyph squares in Flights Route (LKLT–LKPR). BLOCK/AIR shown simultaneously **0:50/0:40**, correct source clock pairs, 320/390 no root overflow. Linux Chromium visual FAIL for flags; Windows Chrome/native Safari visual NOT RUN. Previous guarded 24/24 browsers PASS remains valid for its tested semantics but does not cover emoji glyph rendering.
