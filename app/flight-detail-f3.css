@@ -86,3 +86,45 @@
   .flight-f3-time-card,.flight-f3-fact{break-inside:avoid;box-shadow:none}
   .flight-detail-workspace .flight-workflow-primary{display:none}
 }
+
+
+/* F3.1 — progressive disclosure for optional personal expenses only.
+   Keep certified record state visible above this panel; no motion needed. */
+.flight-detail-workspace .flight-f3-expenses{min-width:0;padding:0}
+.flight-f3-expenses > summary{display:flex;align-items:center;flex-wrap:wrap;gap:9px 16px;min-height:58px;padding:14px 19px;cursor:pointer;list-style:none}
+.flight-f3-expenses > summary::-webkit-details-marker{display:none}
+.flight-f3-expenses > summary > span:first-child{display:grid;gap:3px;min-width:0}
+.flight-f3-expenses > summary strong{font-size:.98rem;line-height:1.35;color:var(--text)}
+.flight-f3-expenses > summary small{font-size:.82rem;line-height:1.45;color:var(--muted)}
+.flight-f3-expenses .flight-f3-expenses-count{margin-left:auto;font-size:.83rem;line-height:1.4;color:var(--muted);font-weight:650}
+.flight-f3-expenses > summary::after{content:"▾";font-size:1.1rem;line-height:1;color:var(--muted)}
+.flight-f3-expenses[open] > summary::after{content:"▴"}
+.flight-f3-expenses[open] > summary{border-bottom:1px solid var(--line)}
+.flight-f3-expenses > summary:focus-visible{outline:2px solid var(--focus-color,var(--accent2));outline-offset:-3px;border-radius:12px}
+.flight-f3-expenses-body{display:grid;gap:13px;padding:16px 19px 19px}
+.flight-f3-expenses-body > p{margin:0;font-size:.85rem;line-height:1.5}
+.flight-f3-expenses-body .expense-standalone-form{min-width:0}
+.flight-f3-expenses-body .expense-standalone-form > .primary-button{min-height:44px}
+
+/* Increase scanability of secondary facts without changing approved visual tokens. */
+.flight-detail-header .flight-f3-meta{font-size:.87rem}
+.flight-f3-time-heading h2{font-size:.8rem}
+.flight-f3-time-heading small{font-size:.81rem}
+.flight-f3-clock-pair dt{font-size:.76rem}
+.flight-f3-time-warning{font-size:.79rem}
+.flight-f3-fact h2{font-size:.79rem}
+.flight-f3-fact p{font-size:.82rem}
+.flight-detail-workspace .flight-workflow > header .eyebrow{font-size:.73rem}
+.flight-detail-workspace .flight-workflow p{font-size:.82rem}
+.flight-detail-workspace .flight-workflow-step strong{font-size:.75rem}
+
+@media(max-width:700px){
+  .flight-f3-expenses > summary{padding:14px;gap:7px 12px}
+  .flight-f3-expenses .flight-f3-expenses-count{margin-left:0}
+  .flight-f3-expenses > summary::after{margin-left:auto}
+  .flight-f3-expenses-body{padding:14px}
+  .flight-detail-header .flight-f3-meta{font-size:.81rem}
+}
+@media(forced-colors:active){
+  .flight-f3-expenses > summary:focus-visible{outline:2px solid Highlight}
+}
