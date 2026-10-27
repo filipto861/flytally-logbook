@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-27T14:21:24.211Z — F3 Flight Detail merged after separate F3.2 production visual review
+- Owner expressly approved merge of PR #422; squash merge `484d84c33f34c5049a30a28aecc0a957bc6d9d07` on `main`. Delivered route-first detail header, source-clock-aware BLOCK/AIR, workflow hierarchy, preserved certification/GPS/currency/crew behavior, optional personal expense disclosure, 2-row phone navigation, compact four-step status, opaque sticky tabs under 700px. No new dependencies, motion or schema.
+- Executable source at `f6a88b39e524f0a04da3c38e2db7b331b7bf3b77`: 44 targeted, 1740 Node, TS/build, PG16 164, Chromium desktop11/mobile10 PASS; post-test and merge app/test blobs identical; canonical Windows aggregate release_status NOT RUN. Owner native iPhone screenshots visually reviewed (PARTIAL; native touch/VoiceOver unverified).
+- Production had independently been deployed before merge: `dpl_GxGKV6dexcrjhtaNwqhxTrrc36jT` READY at runtime Git `343e675c489424bf7eddb2a40ae7caf6372dc47b`. Postmerge alias checked unchanged. No new Vercel deployment, production DB/flag operations, unrelated PR merges or Training changes.
+
+
 ## Unreleased — 2026-10-27T13:56:28.544Z — F3.2 iPhone-only Flight Detail refinements (Draft PR #422)
 - Based on owner-provided real iPhone dark screenshots, reduced vertical density of Flight Detail header and record workflow under 700 CSS px. Mobile nav uses two visual rows without changing DOM focus order, labels or action availability: Back above previous/next + More; four certification workflow stages remain visible with >=44px touch height and a <=360px fallback for label fitting. Existing desktop/tablet layout unchanged.
 - Replaced the semi-transparent mobile sticky tab background with the existing opaque panel token; disabled backdrop translucency, retained mobile shell/safe-area positioning and added anchored panel scroll margin. Motion NONE; no new package, aviation-state, money, GPS, record/certification or server-action changes.
