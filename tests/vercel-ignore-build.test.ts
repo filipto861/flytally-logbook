@@ -139,6 +139,31 @@ test("multi-commit preview is skipped without spending a Vercel build",()=>{
   }
 });
 
+test("manual feature-branch production deployment builds despite a docs-only final commit",()=>{
+  const repo=initRepo();
+  try{
+    git(repo,"checkout","-b","feature/manual-release");
+    fs.mkdirSync(path.join(repo,"lib"),{recursive:true});
+    fs.writeFileSync(path.join(repo,"lib","runtime.ts"),"export const runtime = true;\n");
+    git(repo,"add","lib/runtime.ts");
+    git(repo,"commit","-m","app runtime");
+    fs.writeFileSync(path.join(repo,"ARCHITECTURE.md"),"# Handoff after app runtime\n");
+    git(repo,"add","ARCHITECTURE.md");
+    git(repo,"commit","-m","docs only");
+
+    const manualProduction=gitDecision(repo,{
+      VERCEL_GIT_PREVIOUS_SHA:undefined,
+      VERCEL_ENV:"production",
+      VERCEL_TARGET_ENV:"production",
+      VERCEL_GIT_COMMIT_REF:"feature/manual-release",
+    });
+    assert.equal(manualProduction.status,1,manualProduction.stderr||manualProduction.stdout);
+    assert.match(manualProduction.stdout,/explicitly selected non-main ref/);
+  }finally{
+    fs.rmSync(repo,{recursive:true,force:true});
+  }
+});
+
 test("previous deployment SHA does not cause a preview build",()=>{
   const repo=initRepo();
   try{
