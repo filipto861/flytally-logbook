@@ -26,7 +26,10 @@ test("E1.4 read-only owner and shared-preview views keep raw Task visible and ad
   assert.match(entry,/Task <code>\{text\(row\.task\)\}<\/code>/);
   assert.match(entry,/retained exactly as stored evidence/);
   assert.match(detail,/isLegacyGpsImportTask\(flight\.task\)/);
-  assert.match(detail,/\{flight\.task\|\|"flight"\}\{legacyGpsImportTask\?<span className="legacy-task-inline">LEGACY GPS IMPORT<\/span>:null\}/);
+  const overview=read("components/flight-detail-overview.tsx");
+  assert.match(detail,/<FlightDetailOverview[^>]*task=\{String\(flight\.task\?\?""\)\} legacyGpsImportTask=\{legacyGpsImportTask\}/);
+  assert.match(overview,/<p>\{task\|\|"Task not recorded"\}\{legacyGpsImportTask\?<span className="legacy-task-inline">LEGACY GPS IMPORT<\/span>:null\}<\/p>/);
+  assert.doesNotMatch(overview,/task\.trim\(/);
   assert.match(shared,/ReadonlyLogbookEntry/);
   assert.doesNotMatch(entry,/legacyGpsImportTask\?\s*["']{2}/);
 });

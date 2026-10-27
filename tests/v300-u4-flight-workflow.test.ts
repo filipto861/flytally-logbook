@@ -95,7 +95,10 @@ test("flight correction cannot discard a dirty edit by switching workflow tabs w
   const workspace=read("components/flight-detail-workspace.tsx");
   const form=read("components/flight-form.tsx");
   assert.match(workspace,/FlightEditContext\.Provider/);
-  assert.match(workspace,/if\(value===tab\|\|submitting\)return/);
+  assert.match(workspace,/if\(value===tab\)return true/);
+  assert.match(workspace,/if\(submitting\)return false/);
+  assert.match(workspace,/if\(unsaved&&!window\.confirm\([^\n]+\)\)return false/);
+  assert.match(workspace,/if\(selectTab\(nextTab\)\)document\.getElementById\(`flight-tab-\$\{nextTab\}`\)\?\.focus\(\)/);
   assert.match(workspace,/unsaved&&!window\.confirm\("You have unsaved flight changes\. Switch tabs and discard them\?"\)/);
   assert.match(workspace,/if\(unsaved\)setUnsaved\(false\)/);
   assert.match(form,/useFlightEditState\(\)/);

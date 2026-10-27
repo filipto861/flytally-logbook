@@ -828,6 +828,7 @@
         "app/(protected)/notifications/notifications.module.css",
         "app/(protected)/print/print.module.css",
         "app/dashboard-customization.css",
+        "app/flight-detail-f3.css",
         "app/globals.css",
         "app/light-interactions.css",
         "app/theme.css",
@@ -932,7 +933,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 411,
+    "auditedTotal": 413,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
