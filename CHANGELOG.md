@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-27 — F3 QA reconciliation on Draft #422
+- Windows QA at `08882faf840aaed53828c9efc20d2ba8b7debca5`: targeted F3 5/5 PASS; UI source 115/115 PASS; domain 19/19 PASS; typecheck PASS; aggregate 1730/1733 with three failures; canonical `release_status=FAIL`; build, owned PostgreSQL and browser NOT RUN. No deploy, DB or feature-flag changes.
+- Updated development ownership registry for two F3 runtime assets, with new scoped CSS explicitly owned under shell-presentation; updated stale source tests to assert preserved unsaved focus guarding and raw legacy Task annotation after extraction into the F3 overview. No application flight logic changed by QA corrections. Re-run required on exact new HEAD, previous PASS does not transfer.
+
+
 ## Unreleased — 2026-10-26 — F3 opened Flight Detail presentation and interaction candidate
 - New `components/flight-detail-overview.tsx`: BLOCK/AIR presented with separate source clock pairs, `—` for missing/invalid pair, zero only when pair valid; landings, GPS and expenses retain values with clearer hierarchy.
 - Route becomes main detail heading, registration/date/type/role/evidence and revision remain available. Compact workflow CTA uses Edit logbook; keyboard tab switch no longer moves focus when unsaved-discard confirmation is cancelled. Existing forms, certification, archived corrections, GPS, expense and sharing server actions are untouched.
