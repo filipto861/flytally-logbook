@@ -62,3 +62,57 @@ test("F3 cancelled unsaved tab switch cannot move keyboard focus to an unselecte
   assert.match(tabs,/role="tablist"/);
   assert.match(tabs,/role="tabpanel"/);
 });
+
+
+test("F3.1 keeps certified status above optional expenses and never blends an unqualified aircraft rate into personal totals",()=>{
+  const page=read("app/(protected)/flights/[id]/page.tsx");
+  const standalone=read("components/flight-expenses-standalone.tsx");
+  const editor=read("components/flight-expenses-editor.tsx");
+
+  const overview=page.indexOf("<FlightDetailOverview ");
+  const status=page.indexOf('flight-lock-panel');
+  const expenses=page.indexOf("<FlightExpensesStandalone ");
+  assert.ok(overview>=0&&overview<status&&status<expenses,
+    "F3 overview must lead with BLOCK/AIR, then status, then optional personal expenses");
+  assert.match(page,/<FlightExpensesStandalone action=\{saveExpenses\} initial=\{expenses\}\/>/);
+  assert.doesNotMatch(standalone,/aircraftCost=\{aircraftCost\}/);
+  assert.match(standalone,/<FlightExpensesEditor initial=\{initial\} defaultCurrency=\{defaultCurrency\}\/>/);
+  assert.match(editor,/costTotalsLabel\(parsed\.data\.map/);
+  assert.match(page,/calculateSupportedCurrencyFlightCost\(/);
+  assert.match(page,/currencyRateLabel/);
+});
+
+test("F3.1 uses native keyboard-operable personal-expense disclosure and never hides save feedback",()=>{
+  const panel=read("components/flight-expenses-standalone.tsx");
+  const css=read("app/flight-detail-f3.css");
+  const layout=read("app/layout.tsx");
+
+  assert.match(panel,/<details ref=\{detailsRef\} className="panel flight-expense-panel flight-f3-expenses">/);
+  assert.match(panel,/<summary className="flight-f3-expenses-summary">/);
+  assert.match(panel,/count===0\?"No additional expenses"/);
+  assert.match(panel,/if\(state\.error\|\|state\.success\)detailsRef\.current\?\.setAttribute\("open",""\)/);
+  assert.match(panel,/<form action=\{formAction\} className="expense-standalone-form">/);
+  assert.match(panel,/state\.error\?<p className="form-error" role="alert">/);
+  assert.match(panel,/state\.success\?<p className="form-success" role="status">/);
+  assert.match(panel,/<PendingActionButton className="primary-button" pendingLabel="Saving expenses…">Save expenses<\/PendingActionButton>/);
+  assert.ok(layout.indexOf('import "./flight-detail-f3.css"')>layout.indexOf('import "./ui-system.css"'));
+  assert.match(css,/\.flight-f3-expenses > summary:focus-visible/);
+  assert.match(css,/@media\(max-width:700px\)/);
+  assert.doesNotMatch(css,/transition:\s*all/);
+});
+
+test("F3.1 improves small flight-detail labels with scoped CSS and unchanged BLOCK/AIR data semantics",()=>{
+  const css=read("app/flight-detail-f3.css");
+  const overview=read("components/flight-detail-overview.tsx");
+  for(const selector of [
+    ".flight-detail-header .flight-f3-meta",
+    ".flight-f3-time-heading small",
+    ".flight-f3-clock-pair dt",
+    ".flight-f3-fact p",
+    ".flight-detail-workspace .flight-workflow p",
+  ])assert.ok(css.includes(selector),selector);
+  assert.match(overview,/completePair\(offBlock,onBlock\)/);
+  assert.match(overview,/completePair\(takeoff,landing\)/);
+  assert.match(overview,/blockKnown\?formatDuration\(blockMinutes\):"—"/);
+  assert.match(overview,/airKnown\?formatDuration\(airMinutes\):"—"/);
+});
