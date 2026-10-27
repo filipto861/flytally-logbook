@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-27T13:09:41.471Z — F3.1 exact-SHA testing evidence
+- At `8491cfedf61225f5fe4b21cc562412494d5a73ae`, Node24.22.1 ephemeral isolated test checkout: `npm ci` PASS, F3.1/expenses/workflow/development-scopes targeted **48/48 PASS**, Node full **1737/1737 PASS**, TS typecheck PASS, Next.js build PASS, risk source PASS, domain unit **19/19 PASS**, risk plan PASS (blocked_evidence=none).
+- Isolated owned local PostgreSQL16.15: six separately provisioned localhost clusters, registry-validated strict TAP partitions **124+8+5+19+6+2=164/164 PASS**; runner labels these `VALIDATED-ONLY`, NOT the Windows-only canonical owned-six-PG16 release ledger. Authenticated Playwright risk Chromium desktop **11/11 PASS**, mobile **10/10 PASS** on seventh ephemeral loopback DB with disposable schema-first currency v21 (1 registry/12 columns/4 CHECK). Browser host Ubuntu26.04 ran Playwright's Ubuntu24.04-compatible Chromium override; native Safari NOT RUN. `npm run audit:design` exit 0 with six existing advisory scanner findings, not an accessibility certification.
+- `npm run verify:release:risk` Windows-only six-cluster authoritative wrapper **NOT RUN**; don't infer a canonical `release_status=PASS`. Actual F3.1 owner screenshots/native iPhone/iPad/VoiceOver also NOT RUN. Production remains earlier F3 source; no merge, deployment, DB/schema/flag or Training change.
+
+
 ## Unreleased — 2026-10-27T12:39:30.054Z — F3.1 Flight Detail visual finishing (Draft PR #422)
 - After owner review of deployed F3 detail, reordered Overview so Record status precedes the optional personal-expense editor. Flight expenses is now a native collapsible `<details>` surface with saved-item count and pending/error/success feedback, retaining original per-user `saveFlightExpenses` server action and editor's untouched currency/precision validation.
 - Removed the unitless aircraft-rate amount from standalone **personal expense totals**; the existing source-backed aircraft Costs overview and separate currency-grouped additional expenses remain unchanged. This fixes misleading “Aircraft rate currency unknown” from an editor that cannot attribute the rate currency; does **not** change the persisted money, recompute currency, infer CZK or apply FX.
