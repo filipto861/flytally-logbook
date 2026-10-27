@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-27 — F3 QA Round 3 browser redirect synchronization
+- Candidate `42588d4a541403dc3cfc17f5d5bcd3c823f655cc` Windows release runner reused previous valid source/domain/TypeScript/Node/build/PG16 PASS and correctly applied disposable currency schema v21. Desktop Chromium: 8/9 PASS, one Enter-to-draft test timed out before post-submit URL/DB assertions, mobile NOT RUN. Canonical release FAIL / browser PARTIAL; no app behavior claim.
+- Tightened `e2e/manual-authority-certification.spec.mjs`: explicitly await new numeric saved-flight URL before asserting visible Draft completion and database-level DRAFT. Preserve no implicit certification; no flight runtime/database model/production change. New exact-head full test run required, previous verified evidence belongs only to prior candidate SHA.
+
+
 ## Unreleased — 2026-10-27 — F3 QA reconciliation on Draft #422
 - Windows QA at `08882faf840aaed53828c9efc20d2ba8b7debca5`: targeted F3 5/5 PASS; UI source 115/115 PASS; domain 19/19 PASS; typecheck PASS; aggregate 1730/1733 with three failures; canonical `release_status=FAIL`; build, owned PostgreSQL and browser NOT RUN. No deploy, DB or feature-flag changes.
 - Updated development ownership registry for two F3 runtime assets, with new scoped CSS explicitly owned under shell-presentation; updated stale source tests to assert preserved unsaved focus guarding and raw legacy Task annotation after extraction into the F3 overview. No application flight logic changed by QA corrections. Re-run required on exact new HEAD, previous PASS does not transfer.
