@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-27 — F3 PR #422 automated acceptance PASS; physical visual signoff pending
+- Work `feat/logbook-flight-detail-f3-20261026` exact owner-tested Git commit `6381b5aacdd54913f1074a8096910071aa78dcea`; main/base `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`, PR #422 OPEN DRAFT and unmerged. Windows candidate ID `db31680e660f015ca2e7c33f23f7ad3524579f9954555344e030d18806f2a67e`; independent AI reviewer omitted per owner decision.
+- **PASS** F3 target 5/5, recovered regressions 39/39, source 261, domain 19, full Node 1733, Node24 typecheck, Next build, owned local PG16 six partitions 164, physical v21 browser fixture 1/12/4, browser Chromium 11/11 desktop + 10/10 mobile, no retries; canonical `release_status=PASS`. Previous Enter draft issue passed with persisted/DRAFT check. Advisory source UI scanner six unchanged findings (not WCAG evidence).
+- **NOT RUN:** actual F3 owner visual review in authenticated app, physical Safari/iPhone/iPad/VoiceOver, separately authorized production deployment. Last verified production READY F2.1 `dpl_8ePTCJZrUZUeACo67WBwAuSsdzgi` from runtime SHA `1cca51c24325cb5dfe0bde3b0d595895e76a7987`; prod DB/flags status not independently read, no writes attempted. No merge, deploy, schema migration or Training change.
+- **ONE NEXT STEP:** arrange owner visual/interaction inspection of actual F3 detail from a verified preview/owned local fixture before any release decision; do not use F2.1 production as F3 visual evidence.
+
+
+
 ## 2026-10-27 — F3 third owner Windows QA: currency v21 ready, Enter draft browser case unresolved
 - Work branch `feat/logbook-flight-detail-f3-20261026`, Draft PR #422, base/main `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c` unchanged. Owner Windows log on `42588d4a541403dc3cfc17f5d5bcd3c823f655cc`: v21-only test DB provision PASS, source/domain/typecheck/aggregate/build/PG reused from same exact commit, 164/164 owned PG16 prior PASS; browser desktop 8/9 PASS, one test at manual Enter-to-draft timeout after 5s awaiting toast, mobile NOT RUN. Canonical `release_status=FAIL` / browser PARTIAL. Unproven whether Enter draft saved; do not call this merely flaky or UX bug without trace/DB evidence.
 - Updated only E2E synchronization: await numeric persisted /flights/<id> URL with timeout, then status and original SQL DRAFT assertion; keep implicit Enter non-certification guard. No production runtime/DB/flag/Training changes, no merge/deploy. QA for corrected SHA NOT RUN. Browser failure trace/screenshot on owner's local temp directory if repeated.
