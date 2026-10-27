@@ -128,3 +128,100 @@
 @media(forced-colors:active){
   .flight-f3-expenses > summary:focus-visible{outline:2px solid Highlight}
 }
+
+
+/* F3.2 — compact phone-only flight detail; preserve DOM, record actions and
+   desktop/tablet layout. No motion or extra controls. */
+@media screen and (max-width:700px){
+  .app-grid .shell-workspace > .flight-detail-header{
+    gap:10px;
+    padding:13px 14px 14px;
+    margin-bottom:12px;
+  }
+  .flight-detail-header > .flight-f3-identity{gap:6px}
+  .flight-detail-header .flight-f3-heading{
+    flex-direction:row;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px 10px;
+  }
+  .flight-detail-header .flight-f3-heading h1{
+    font-size:clamp(1.5rem,6.3vw,1.9rem);
+    line-height:1.14;
+  }
+  .flight-detail-header .flight-detail-navigation{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:stretch;
+    gap:7px;
+  }
+  /* Back, previous, next, then More remain in keyboard/DOM reading order. */
+  .flight-detail-header .flight-detail-back{grid-column:1/-1}
+  .flight-detail-header .flight-detail-step-group{
+    grid-column:1;
+    min-width:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  .flight-detail-header .flight-detail-more{
+    grid-column:2;
+    justify-self:stretch;
+    min-width:0;
+  }
+  .flight-detail-header .flight-detail-more > summary{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:44px;
+  }
+  .flight-detail-workspace .flight-workflow{
+    gap:8px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .flight-detail-workspace .flight-workflow > header{
+    gap:8px;
+  }
+  .flight-detail-workspace .flight-workflow h2{margin:0 0 2px}
+  .flight-detail-workspace .flight-workflow p{line-height:1.36}
+  .flight-detail-workspace .flight-workflow-steps{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:5px;
+  }
+  .flight-detail-workspace .flight-workflow-step{
+    flex-direction:row;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    min-height:44px;
+    padding:6px 4px;
+  }
+  .flight-detail-workspace .flight-workflow-step > span{
+    flex:0 0 16px;
+    width:16px;
+    height:16px;
+  }
+  .flight-detail-workspace .flight-workflow-step strong{
+    font-size:.7rem;
+    overflow-wrap:anywhere;
+  }
+  /* Existing mobile shell offset remains authoritative. Opaque tabs prevent
+     scrolling cards showing through the sticky navigation on Safari/PWA. */
+  .flight-detail-workspace .detail-tabs{
+    background:var(--panel);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    isolation:isolate;
+    border-color:var(--line);
+  }
+  .flight-detail-workspace .detail-tab-content{
+    scroll-margin-top:calc(var(--mobile-shell-height,64px) + env(safe-area-inset-top) + 80px);
+  }
+}
+@media screen and (max-width:360px){
+  .flight-detail-workspace .flight-workflow-step{
+    flex-direction:column;
+    gap:3px;
+  }
+  .flight-detail-workspace .flight-workflow-step strong{font-size:.66rem}
+}
