@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-27 — F3 manual production visual-review deployment
+- Owner explicitly authorized production deployment **without merge**. Vercel `logbook` deployment `dpl_BZ83qHTm5JZWveKoFLVxSzjwiNRX` READY on `fly-tally.com`, Git SHA `223ffc2d594bc4a3be0b8f8a0d0093f4b35eb572`; former `dpl_8ePTCJZrUZUeACo67WBwAuSsdzgi` is no longer the active alias. Application/UI runtime tree matches exact QA-PASS SHA `6381b5aacdd54913f1074a8096910071aa78dcea`; no F3 flight logic changes after full QA.
+- Corrected `tooling/vercel-ignore-build.mjs` so an explicitly targeted manual **production** build of a non-main ref cannot be incorrectly skipped merely because its last commit is docs-only. Added isolated `tests/vercel-ignore-build.test.ts` regression; automatic Git deployments remain disabled, previews skipped, normal main filtering preserved. Real production Next.js build PASS; canonical risk test for new guard SHA NOT RUN; four local Node22 logic checks PASS but not a full repo test.
+- Production Neon schema read-only verified v21 registry (21 rows, exact name), 12 expected columns and four validated constraints. No schema/data/flags changed. Production login/anonymous auth-boundary HTTP smoke PASS, authenticated F3 owner visual NOT RUN. PR #422 OPEN/DRAFT, no merge.
+
+
 ## Unreleased — 2026-10-27 — F3 Flight Detail exact-candidate verification PASS
 - Verified via owner Windows Node 24.19.0 on `6381b5aacdd54913f1074a8096910071aa78dcea`, candidate `db31680e660f015ca2e7c33f23f7ad3524579f9954555344e030d18806f2a67e`: targeted F3 5, repaired regressions 39, source 261, flight-domain 19, full Node 1733, TypeScript, Next.js build, six disposable PostgreSQL16 partitions 164 and authorized Chromium risk-browser 11 desktop + 10 mobile all PASS, no retry, `release_status=PASS` and blocked evidence none. Currency v20/v21 schema-first complete on fresh local browser fixture; Enter default persists an uncertified Draft as required.
 - No application logic updates during final QA; test-only browser synchronization in prior changes. Advisory UI source scan retains six pre-existing review findings. F3 actual rendered UI/UX approval, physical iPhone/iPad Safari and VoiceOver remain NOT RUN; PR #422 Draft/unmerged and F3 not deployed. No production database, migration or flag change.
