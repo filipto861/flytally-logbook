@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-27T14:21:24.211Z — F3/F3.1/F3.2 MERGED; production already READY, remaining device-functional checks
+- Canonical main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, PR #422 squash MERGED (source work `246771f4529120610f697452a1fcde1586273176`, base `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`). This docs-only checkpoint branch `docs/logbook-f3-merged-checkpoint-20261027` starts at exact merged main. No further runtime code or tests.
+- F3.2 source Node24 targeted44/full1740, TS/build, PG16 164, Chromium 11 desktop/10 mobile PASS at `f6a88b39e524f0a04da3c38e2db7b331b7bf3b77`, matched runtime/test file blobs on merged main. Aggregate Windows release_status NOT RUN; real iPhone dark visual PARTIAL, not full functional Safari/a11y PASS.
+- Production READY `dpl_GxGKV6dexcrjhtaNwqhxTrrc36jT` and `fly-tally.com` unchanged after merge, Git source `343e675c489424bf7eddb2a40ae7caf6372dc47b` pre-merge with only later Markdown changes. No new deploy, migration, DB, flag, Training or unrelated PR operations. Actual prod DB/flag readback UNKNOWN; no write attempted.
+- **ONE NEXT STEP:** manual owner iPhone interaction smoke (tabs, More, scroll/focus) to record physical functional acceptance; keep optional more-compact first screen deferred pending a new decision.
+
+
 ## 2026-10-27T14:12:15Z — F3.2 owner iPhone screenshots visually reviewed; owner acceptance pending
 - **Identity:** main `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`; Draft PR #422 work branch `feat/logbook-flight-detail-f3-20261026`. Production F3.2 deployed READY `dpl_GxGKV6dexcrjhtaNwqhxTrrc36jT` from code/docs Git `343e675c489424bf7eddb2a40ae7caf6372dc47b`; current follow-up commits documentation-only. Owner sent three genuine iPhone dark Flight Detail screenshots, stored ONLY in conversation (no flight/PII screenshot exports to repo).
 - **Visual QA PARTIAL:** two-row navigation and all four workflow stages displayed; sticky tabs opaque and legible while content scrolls; BLOCK/AIR/facts readable in visible region; no obvious horizontal clipping. Minor/nonblocking: large header/workflow first viewport and repeated certified revision text; any redesigned hierarchy requires separate scope decision. Screenshot cannot prove tab/touch/focus/VoiceOver/light or iPad; actual device functional PASS not claimed. Existing Node/PG/Chromium results only at exact `f6a88b39e524f0a04da3c38e2db7b331b7bf3b77`. No new code/test/DB/flags/deploy/merge action in screenshot review.
