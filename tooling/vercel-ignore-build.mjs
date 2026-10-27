@@ -86,6 +86,16 @@ if (!isProductionBuild()) {
   process.exit(0);
 }
 
+// Explicit production deployment from a feature branch has a different baseline
+// from its immediate parent (which may only contain handoff documentation).
+// Automatic Git deployments remain disabled in vercel.json; when an authorized
+// operator targets production directly, never let this partial diff skip the build.
+if(currentGitRef()!==PRODUCTION_BRANCH
+  &&(process.env.VERCEL_ENV==="production"||process.env.VERCEL_TARGET_ENV==="production")){
+  console.log(`Vercel production build required: explicitly selected non-main ref ${currentGitRef()}.`);
+  process.exit(1);
+}
+
 const argumentFiles = filesFromArguments(process.argv.slice(2));
 const files = argumentFiles ?? changedFilesFromGit();
 
