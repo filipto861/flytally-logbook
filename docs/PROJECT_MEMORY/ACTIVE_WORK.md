@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-27 — F3 third owner Windows QA: currency v21 ready, Enter draft browser case unresolved
+- Work branch `feat/logbook-flight-detail-f3-20261026`, Draft PR #422, base/main `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c` unchanged. Owner Windows log on `42588d4a541403dc3cfc17f5d5bcd3c823f655cc`: v21-only test DB provision PASS, source/domain/typecheck/aggregate/build/PG reused from same exact commit, 164/164 owned PG16 prior PASS; browser desktop 8/9 PASS, one test at manual Enter-to-draft timeout after 5s awaiting toast, mobile NOT RUN. Canonical `release_status=FAIL` / browser PARTIAL. Unproven whether Enter draft saved; do not call this merely flaky or UX bug without trace/DB evidence.
+- Updated only E2E synchronization: await numeric persisted /flights/<id> URL with timeout, then status and original SQL DRAFT assertion; keep implicit Enter non-certification guard. No production runtime/DB/flag/Training changes, no merge/deploy. QA for corrected SHA NOT RUN. Browser failure trace/screenshot on owner's local temp directory if repeated.
+- **ONE NEXT STEP:** owner reruns exact new F3 head with risk browser currency v21 in isolated local PG16 and provides final release verdict; if fails upload redacted Playwright error context/trace.
+
+
 ## 2026-10-27 — F3 QA failure triaged, source/test reconciliation committed, rerun pending
 - Canonical main/base `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`, work branch `feat/logbook-flight-detail-f3-20261026`, Draft PR #422. Owner intentionally waived independent AI reviewer and asked all tests after implementation.
 - Windows log (first run at `08882faf840aaed53828c9efc20d2ba8b7debca5`): Node24.19, target 5/5, source 115/115, domain 19/19, TypeScript PASS; full Node 1730/1733, **3 FAIL**; `release_status=FAIL`, build/owned PG16/Playwright NOT RUN. No remote DB accessed. Missing or stale source expectations identified; working files fixed: `tooling/development-modules.json`, `tests/v300-u4-flight-workflow.test.ts`, `tests/v366-flight-entry-e14-certified-legacy-task.test.ts`. Existing canonical flight runtime retained.
