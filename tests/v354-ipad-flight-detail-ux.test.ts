@@ -116,3 +116,50 @@ test("F3.1 improves small flight-detail labels with scoped CSS and unchanged BLO
   assert.match(overview,/blockKnown\?formatDuration\(blockMinutes\):"—"/);
   assert.match(overview,/airKnown\?formatDuration\(airMinutes\):"—"/);
 });
+
+
+test("F3.2 compacts phone navigation without changing desktop layout, action order or tap sizes",()=>{
+  const css=read("app/flight-detail-f3.css");
+  const page=read("app/(protected)/flights/[id]/page.tsx");
+  const layout=read("app/layout.tsx");
+  const scoped=css.slice(css.indexOf("/* F3.2 — compact phone-only"));
+  assert.match(scoped,/@media screen and \(max-width:700px\)\{/);
+  assert.match(scoped,/\.app-grid \.shell-workspace > \.flight-detail-header\{[\s\S]*?padding:13px 14px 14px/);
+  assert.match(scoped,/\.flight-detail-header \.flight-detail-navigation\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.match(scoped,/\.flight-detail-header \.flight-detail-back\{grid-column:1\/-1\}/);
+  assert.match(scoped,/\.flight-detail-header \.flight-detail-step-group\{[\s\S]*?grid-column:1;/);
+  assert.match(scoped,/\.flight-detail-header \.flight-detail-more\{[\s\S]*?grid-column:2;/);
+  assert.match(scoped,/\.flight-detail-header \.flight-detail-more > summary\{[\s\S]*?min-height:44px/);
+  const back=page.indexOf('className="secondary-button flight-detail-back"');
+  const previous=page.indexOf('className="secondary-button flight-detail-step"');
+  const more=page.indexOf('className="flight-detail-more"');
+  assert.ok(back>=0&&previous>back&&more>previous,"DOM/tab focus order stays Back, previous/next, More");
+  assert.ok(layout.indexOf('import "./flight-detail-f3.css"')>layout.indexOf('import "./ui-system.css"'));
+  assert.doesNotMatch(scoped,/(?:display:none|visibility:hidden|position:fixed|transition:all)/);
+});
+
+test("F3.2 retains Saved/Review/Certify/Share semantics with compact mobile workflow",()=>{
+  const css=read("app/flight-detail-f3.css");
+  const workflow=read("components/flight-workflow-progress.tsx");
+  const scoped=css.slice(css.indexOf("/* F3.2 — compact phone-only"));
+  assert.match(scoped,/\.flight-detail-workspace \.flight-workflow-steps\{[\s\S]*?grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(scoped,/\.flight-detail-workspace \.flight-workflow-step\{[\s\S]*?flex-direction:row;[\s\S]*?min-height:44px/);
+  assert.match(scoped,/@media screen and \(max-width:360px\)\{[\s\S]*?\.flight-detail-workspace \.flight-workflow-step\{[\s\S]*?flex-direction:column/);
+  for(const stage of ["Saved","Review","Certify","Share"])assert.ok(workflow.includes('stage("'+stage+'"'),stage);
+  assert.match(workflow,/state\.certified\?<Link className="primary-button" href=\{state\.shareHref\}>Share flight<\/Link>/);
+  assert.match(workflow,/certificationBlocked=draft&&\(state\.locked\|\|state\.blockers>0\)/);
+});
+
+test("F3.2 opaque sticky tabs preserve shell safe-area offset, focus and anchored tab content",()=>{
+  const css=read("app/flight-detail-f3.css");
+  const globals=read("app/globals.css");
+  const detail=read("components/flight-detail-workspace.tsx");
+  const scoped=css.slice(css.indexOf("/* F3.2 — compact phone-only"));
+  assert.match(scoped,/\.flight-detail-workspace \.detail-tabs\{[\s\S]*?background:var\(--panel\);[\s\S]*?backdrop-filter:none;[\s\S]*?-webkit-backdrop-filter:none;/);
+  assert.match(scoped,/\.flight-detail-workspace \.detail-tab-content\{[\s\S]*?scroll-margin-top:calc\(var\(--mobile-shell-height,64px\) \+ env\(safe-area-inset-top\) \+ 80px\)/);
+  assert.match(globals,/\.detail-tabs\{top:calc\(var\(--mobile-shell-height\) \+ env\(safe-area-inset-top\) \+ 6px\)\}/);
+  assert.match(detail,/role="tablist"/);
+  assert.match(detail,/aria-selected=\{tab===value\}/);
+  assert.match(detail,/role="tabpanel"/);
+  assert.match(css,/\.flight-detail-workspace \.detail-tabs button:focus-visible/);
+});
