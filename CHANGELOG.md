@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-27T13:18:31.834Z — F3.1 owner-authorized manual production deployment
+- Production Vercel Logbook deployment `dpl_S26AoroLiywVkqhWVvv4angAdLjJ` READY on `https://fly-tally.com`, exact Git SHA `2f22f49e4dc3425536c0657cce77f35d2a3d5d80` from Draft PR #422 work branch; no merge to main. The SHA changed from tested `8491cfedf61225f5fe4b21cc562412494d5a73ae` in **four Markdown files only**. Manual non-main production build guard required build, Vercel Next.js/Node24 build PASS.
+- Production schema check READ ONLY confirmed 21 schema migrations, v21 registry/12 nullable exact-money columns/4 validated CHECKs on previously verified Neon production branch. No migrations, data writes, flags or restoration/deletion. HTTP login 200; anonymous protected flight detail presented login, no leaked details; alias matched deployment and route-scoped runtime error scan empty.
+- Test provenance unchanged: 48 F3.1 target, 1737 Node, 19 domain, TypeScript/build/source, 164 physically isolated local PostgreSQL16 partition tests and desktop11/mobile10 Chromium PASS; Windows-only canonical `verify:release:risk` wrapper NOT RUN. Real owner authenticated F3.1 visual review, physical Safari/iPad/iPhone/VoiceOver NOT RUN. No Training changes.
+
+
 ## Unreleased — 2026-10-27T13:09:41.471Z — F3.1 exact-SHA testing evidence
 - At `8491cfedf61225f5fe4b21cc562412494d5a73ae`, Node24.22.1 ephemeral isolated test checkout: `npm ci` PASS, F3.1/expenses/workflow/development-scopes targeted **48/48 PASS**, Node full **1737/1737 PASS**, TS typecheck PASS, Next.js build PASS, risk source PASS, domain unit **19/19 PASS**, risk plan PASS (blocked_evidence=none).
 - Isolated owned local PostgreSQL16.15: six separately provisioned localhost clusters, registry-validated strict TAP partitions **124+8+5+19+6+2=164/164 PASS**; runner labels these `VALIDATED-ONLY`, NOT the Windows-only canonical owned-six-PG16 release ledger. Authenticated Playwright risk Chromium desktop **11/11 PASS**, mobile **10/10 PASS** on seventh ephemeral loopback DB with disposable schema-first currency v21 (1 registry/12 columns/4 CHECK). Browser host Ubuntu26.04 ran Playwright's Ubuntu24.04-compatible Chromium override; native Safari NOT RUN. `npm run audit:design` exit 0 with six existing advisory scanner findings, not an accessibility certification.
