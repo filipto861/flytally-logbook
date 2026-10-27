@@ -1,5 +1,13 @@
 # Flight Detail F3 — UI/UX audit, implementation and acceptance
 
+## F3.1 addendum — 2026-10-27T12:39:30.054Z — owner-approved screenshot findings and scoped fixes
+- **Observed on owner-provided authenticated production desktop screenshot:** primary F3 BLOCK/AIR hierarchy readable; optional Flight expenses consumed much of first viewport even without additional expenses, pushing Record status below fold; old personal-expense totals gave misleading aircraft-rate currency warning despite separately source-backed aircraft cost; metadata/secondary fact type sizes appeared comparatively small. Screenshot is visual evidence only; do not import real flight data/PII to code/fixtures.
+- **Approved F3.1 implementation (Draft PR #422):** place always-visible Record status after FlightDetailOverview and before conditional locked-only FlightExpensesStandalone; wrap the standalone form in keyboard/touch native details with an explicit summary/count, retained form action plus pending/success/error feedback and auto-expand on server result; drop the raw numeric aircraftCost prop *only* from this standalone editor so it displays grouped personal expense totals without claiming aircraft-rate currency; refine narrowly scoped secondary typography in `app/flight-detail-f3.css`, no motion.
+- **Explicit preservation:** no source flight clock changes, no aircraft price calculation/FX conversion/reinterpretation, no expenses persistence/parser changes, no certification/void/correction/sharing/flight audit route change, no new library/brand alteration. Existing `FlightExpensesEditor` for other flows keeps its prior contract.
+- **Verification:** exact work source checks 18/18 PASS, three source-contract tests added to existing F3 suite but actual Node24 test execution NOT RUN; Next/TS/owned PG16/auth desktop+mobile Chromium/native Safari/light/dark/keyboard screen reader NOT RUN for F3.1. Current production remains pre-F3.1 F3 deployed at Git SHA `223ffc2d594bc4a3be0b8f8a0d0093f4b35eb572`. Approval to implement is NOT authorization to merge/deploy.
+- **ONE NEXT STEP:** perform strict candidate-bound Node24 isolated local release QA and screenshot audit on final F3.1 HEAD, then obtain separate owner consent for production rollout.
+
+
 Date: 2026-10-26. Repository: `filipto861/flytally-logbook`. Canonical baseline: `main@4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`.
 Work branch: `feat/logbook-flight-detail-f3-20261026`. This document describes a **proposed unreleased candidate**, not production UX acceptance.
 
