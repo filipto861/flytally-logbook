@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-27 — F3 QA failure triaged, source/test reconciliation committed, rerun pending
+- Canonical main/base `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`, work branch `feat/logbook-flight-detail-f3-20261026`, Draft PR #422. Owner intentionally waived independent AI reviewer and asked all tests after implementation.
+- Windows log (first run at `08882faf840aaed53828c9efc20d2ba8b7debca5`): Node24.19, target 5/5, source 115/115, domain 19/19, TypeScript PASS; full Node 1730/1733, **3 FAIL**; `release_status=FAIL`, build/owned PG16/Playwright NOT RUN. No remote DB accessed. Missing or stale source expectations identified; working files fixed: `tooling/development-modules.json`, `tests/v300-u4-flight-workflow.test.ts`, `tests/v366-flight-entry-e14-certified-legacy-task.test.ts`. Existing canonical flight runtime retained.
+- Current corrected files source-reconciled (10/10 read-only checks); Node/typecheck/build/PG/browser for corrected commit **NOT RUN**. Prod remains previous F2.1; DB/flags UNKNOWN and unchanged by this work. No merge/deploy permission.
+- **ONE NEXT STEP:** run pinned local Windows F3 QA against exact corrected current PR HEAD and inspect Node/PG/browser release verdict, then assess actual responsive visuals. Keep PR Draft until verified.
+
+
 ## 2026-10-26 — ACTIVE F3 Flight Detail implementation candidate; final tests pending
 - Branch `feat/logbook-flight-detail-f3-20261026` from verified `main@4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`; owner approved whole opened-flight UI/UX batch with independent AI review omitted, tests at end only. Prior F2.1 list merged in main as #421; F3 affects ONLY `/flights/[id]` and shared detail-specific components/styles. Main continues canonical until separately approved merge.
 - Added route-first flight identity, source-aware BLOCK/AIR time ledger, secondary GPS/cost/landings, compact workflow CTA, keyboard focus protection for canceled unsaved tab switch, new late-import scoped CSS, source regression assertions and `docs/product/LOGBOOK_FLIGHT_DETAIL_F3_UX_2026-10-26.md`.
