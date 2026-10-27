@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-27T14:12:15Z — F3.2 owner iPhone screenshots visually reviewed; owner acceptance pending
+- **Identity:** main `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`; Draft PR #422 work branch `feat/logbook-flight-detail-f3-20261026`. Production F3.2 deployed READY `dpl_GxGKV6dexcrjhtaNwqhxTrrc36jT` from code/docs Git `343e675c489424bf7eddb2a40ae7caf6372dc47b`; current follow-up commits documentation-only. Owner sent three genuine iPhone dark Flight Detail screenshots, stored ONLY in conversation (no flight/PII screenshot exports to repo).
+- **Visual QA PARTIAL:** two-row navigation and all four workflow stages displayed; sticky tabs opaque and legible while content scrolls; BLOCK/AIR/facts readable in visible region; no obvious horizontal clipping. Minor/nonblocking: large header/workflow first viewport and repeated certified revision text; any redesigned hierarchy requires separate scope decision. Screenshot cannot prove tab/touch/focus/VoiceOver/light or iPad; actual device functional PASS not claimed. Existing Node/PG/Chromium results only at exact `f6a88b39e524f0a04da3c38e2db7b331b7bf3b77`. No new code/test/DB/flags/deploy/merge action in screenshot review.
+- **ONE NEXT STEP:** owner explicitly accepts current F3.2 visual/interaction experience or selects minor follow-up adjustments before separate permission for PR #422 merge.
+
+
 ## 2026-10-27 — F3.2 production READY, real-iPhone acceptance next
 - Owner explicitly authorized manual production deploy only for F3.2 from Draft PR #422, not merge/DB/migrations/flags/Training. Main/base `4aa4f2aba72c3ec71e9c0eeb83ee2b7ac8854e6c`; deploy candidate work `343e675c489424bf7eddb2a40ae7caf6372dc47b`; test SHA `f6a88b39e524f0a04da3c38e2db7b331b7bf3b77` differs by five Markdown files only. F3.2 tests at test SHA: target44, Node1740, TS/build/domain19, PG16 164, Chromium desktop11/mobile10 PASS; canonical Windows release_status and real Safari NOT RUN.
 - Vercel Logbook production `dpl_GxGKV6dexcrjhtaNwqhxTrrc36jT` READY, exact commit `343e675c489424bf7eddb2a40ae7caf6372dc47b`, domain alias `fly-tally.com` verified; previous F3.1 `dpl_S26AoroLiywVkqhWVvv4angAdLjJ`. Scoped 30m runtime errors none observed; authenticated smoke NOT RUN. No DB or flags action; production readback UNKNOWN. Work PR #422 remains Draft, no merge.
