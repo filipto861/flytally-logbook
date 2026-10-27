@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## Unreleased — 2026-10-27 — F3 Flight Detail exact-candidate verification PASS
+- Verified via owner Windows Node 24.19.0 on `6381b5aacdd54913f1074a8096910071aa78dcea`, candidate `db31680e660f015ca2e7c33f23f7ad3524579f9954555344e030d18806f2a67e`: targeted F3 5, repaired regressions 39, source 261, flight-domain 19, full Node 1733, TypeScript, Next.js build, six disposable PostgreSQL16 partitions 164 and authorized Chromium risk-browser 11 desktop + 10 mobile all PASS, no retry, `release_status=PASS` and blocked evidence none. Currency v20/v21 schema-first complete on fresh local browser fixture; Enter default persists an uncertified Draft as required.
+- No application logic updates during final QA; test-only browser synchronization in prior changes. Advisory UI source scan retains six pre-existing review findings. F3 actual rendered UI/UX approval, physical iPhone/iPad Safari and VoiceOver remain NOT RUN; PR #422 Draft/unmerged and F3 not deployed. No production database, migration or flag change.
+
+
+
 ## Unreleased — 2026-10-27 — F3 QA Round 3 browser redirect synchronization
 - Candidate `42588d4a541403dc3cfc17f5d5bcd3c823f655cc` Windows release runner reused previous valid source/domain/TypeScript/Node/build/PG16 PASS and correctly applied disposable currency schema v21. Desktop Chromium: 8/9 PASS, one Enter-to-draft test timed out before post-submit URL/DB assertions, mobile NOT RUN. Canonical release FAIL / browser PARTIAL; no app behavior claim.
 - Tightened `e2e/manual-authority-certification.spec.mjs`: explicitly await new numeric saved-flight URL before asserting visible Draft completion and database-level DRAFT. Preserve no implicit certification; no flight runtime/database model/production change. New exact-head full test run required, previous verified evidence belongs only to prior candidate SHA.
