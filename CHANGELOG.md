@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## Unreleased visual correction — 2026-10-28: Sidebar V4.2 Compact button centering
+- Owner production screenshots reveal left-offset toggle SVG due to inherited `justify-content:flex-start` despite grid `place-items:center`, and visually missing idle Compact frames. Scoped CSS and source tests fix centered glyph, common 48px neutral box styling for navigation, More, footer Notifications and Sign Out, hidden label occupancy and pointer/keyboard states; no business logic changes.
+- Tested source `23e46b6f7147b655b98a77379bcd8e3a01e62011` on PR #425: UI138/138, Node1758/1758, TypeScript/build PASS, Chromium synthetic geometry/hover 5/5 PASS (not authenticated app/native Safari). Detailed note `docs/product/LOGBOOK_SIDEBAR_V42_COMPACT_ALIGNMENT_FIX_2026-10-28.md`. **NOT DEPLOYED**; production remains original V4.2 `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3`. No merge, DB/flags, Training changes.
+
+
 ## Production visual trial — 2026-10-28: Adaptive Sidebar V4.2 Quiet Header (PR #425 still Draft)
 - Owner approved implementing V4.2 and expressly authorized manual production deployment. Desktop single-row brand/toggle header replaces the V3 footer toggle; Compact centers 48px route/More controls; Notifications is in desktop bottom utility area while a single live bell remains in the mobile top bar. Existing navigation persistence, role-gated More, mobile drawer, screen reader labels, flight status rails and iPad BLOCK/AIR list correction were preserved.
 - Runtime/test SHA `7b45a9295c2e031a581adb65b49c66ea17e93446` QA: Node24 focused V3/V4 11/11 PASS; full Node 1755/1755 at executable-identical predecessor; UI group 135/135 PASS at tested SHA; TypeScript and Next production build PASS. Synthetic Chromium final CSS layout geometry 10/10 viewport/theme states PASS, but authenticated app browser and physical iPad Safari/VoiceOver NOT RUN. Risk browser gate NOT RUN, not overall release PASS.
