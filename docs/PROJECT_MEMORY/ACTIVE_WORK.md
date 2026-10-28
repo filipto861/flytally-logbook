@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28 — Adaptive Sidebar V4.2 production visual trial READY; owner acceptance pending
+- **Verified:** main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, work `feat/adaptive-sidebar-v3-20261028` (Draft PR #425, base Draft PR #424 at `a79e8d44df89d52bfd4363adf42050a4fb0c3319`). Source QA SHA `7b45a9295c2e031a581adb65b49c66ea17e93446`, live deployed SHA `b590e8750b9c4f9302e5e85bd2351a3dc23dca48` (docs-only difference), Vercel `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` READY alias `fly-tally.com`.
+- **Scope:** owner-approved V4.2 top integrated 44px control, 78/218 Compact/Slim, coherent 48px icon cells and bottom desktop Notifications (one polling component; phone bell top), unchanged role-gated More/mobile drawer and flight data. No merge, production DB/migration/flags or Training.
+- **QA:** 11 focused Node PASS, full Node 1755/1755 PASS executable-identical source, 135 UI group, TypeScript and build PASS; 10 synthetic Chromium CSS geometry states PASS, not authenticated app browser acceptance. Physical Safari/VoiceOver and authenticated browser NOT RUN; provider grouped error readback UNKNOWN. Production DB/flags readback UNKNOWN. Anonymous login/protected route HTTP smoke PASS.
+- **ONE NEXT STEP:** owner visually tests authenticated V4.2 on desktop/physical iPad and sends screenshots or defects before separate PR merge decision. Detailed `docs/PROJECT_MEMORY/SIDEBAR_V42_PRODUCTION_CLOSEOUT_20261028.md`.
+
+
 ## 2026-10-28 — V4.2 refined sidebar visual prototype pending owner choice
 - **Refs:** main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work `feat/adaptive-sidebar-v3-20261028@04c08321edd513378dfbaf02e44c730d8d91a719` before docs checkpoint, Draft PR #425 stacked on Draft #424. Current production remains V3 READY `dpl_129w49urPKA4W6M3Kb5i3GsSLen5` @ `09814685067b9ce153b8ee0d8ffa6b933f628c6f` (Vercel read-only verified).
 - **Owner:** asked for better visual than V4.1. New self-contained synthetic standalone V4.2 HTML in conversation adds single-row Slim brand/toggle, stacked compact logo/toggle, moves notification to footer (phone bell stays top), Soft/Outline button alternatives. Proposal details in `docs/product/LOGBOOK_SIDEBAR_V4_UX_ANALYSIS_2026-10-28.md`; no app runtime edits or preview deployment.
