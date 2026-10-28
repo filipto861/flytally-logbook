@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28 — PR #424/#425 owner-PC tests PASS; risk-browser evidence pending
+- Owner Windows `Node 24.19.0`, local `RESULTS.md` run 2026-10-28 21:39+01:00 on exact `#424@a79e8d44df89d52bfd4363adf42050a4fb0c3319` and `#425@5a4a664e3ce50c2cfe86ce99953bf1d57f10e6fa`, reports **17/17 commands PASS** including targeted #424 tests, #425 full Node/UI, both TypeScript/build. Detailed test logs not supplied; this is owner-run summary rather than independently inspected TAP.
+- GitHub current main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work `feat/adaptive-sidebar-v3-20261028@cc59c116b9476f91be70eee3f461c3ddd1fd7dcd` before docs-only checkpoint. Draft PR #425 stacked on Draft #424; no merge. Production unchanged READY `dpl_isy3ZVcV3pN9H7gwLpBDku9iYhHU` SHA `f8d412171a8cbb12cdfcae88d9c23735938fcb53`.
+- Source registry projection indicates browser acceptance required for both PRs and full Node for #424 as exact candidate; these, plus canonical release gate, remain NOT RUN. PostgreSQL acceptance not selected by preliminary scope; browser fixture needs an isolated localhost PG instance only if browser acceptance is executed. 701–760 CSS breakpoint (720px check) remains unverified. No cloud tests or DB/flag/migration/Training actions; production DB/flags readback UNKNOWN.
+- **ONE NEXT STEP:** owner provides the two saved scope logs (classifier lines only) for precise risk reconciliation and safe PC-only next test plan.
+
+
 ## 2026-10-28 — V4.2 Compact owner desktop visual feedback POSITIVE; real iPad still unverified
 - Owner supplied live authenticated `fly-tally.com/dashboard` screenshot of corrected Compact and wrote `no to je mnohem lepsi`. Visual framed 48px nav/More/footers and center-aligned toggle now appear consistent; screenshot only, not functional or native device certification.
 - Main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, work `feat/adaptive-sidebar-v3-20261028@992c02a746eb04ac7849cee6c293352457780ddc` before this docs-only checkpoint. Draft PR #425 stacked on #424 Draft. Vercel `dpl_isy3ZVcV3pN9H7gwLpBDku9iYhHU` READY, source `f8d412171a8cbb12cdfcae88d9c23735938fcb53`, exact `fly-tally.com` alias verified. Earlier source tests: UI138, Node1758, TS/build, synthetic Chromium5 PASS; no new tests this screenshot turn; physical Safari/VoiceOver/functional authentication NOT RUN.
