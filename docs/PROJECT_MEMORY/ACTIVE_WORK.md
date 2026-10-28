@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28 — V4.2 refined sidebar visual prototype pending owner choice
+- **Refs:** main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work `feat/adaptive-sidebar-v3-20261028@04c08321edd513378dfbaf02e44c730d8d91a719` before docs checkpoint, Draft PR #425 stacked on Draft #424. Current production remains V3 READY `dpl_129w49urPKA4W6M3Kb5i3GsSLen5` @ `09814685067b9ce153b8ee0d8ffa6b933f628c6f` (Vercel read-only verified).
+- **Owner:** asked for better visual than V4.1. New self-contained synthetic standalone V4.2 HTML in conversation adds single-row Slim brand/toggle, stacked compact logo/toggle, moves notification to footer (phone bell stays top), Soft/Outline button alternatives. Proposal details in `docs/product/LOGBOOK_SIDEBAR_V4_UX_ANALYSIS_2026-10-28.md`; no app runtime edits or preview deployment.
+- **Prototype checks:** Chromium 7/7 states and 8/8 narrow width overflow PASS, More/Escape/mobile drawer/centering PASS. Authenticated Logbook/native Safari/build/PG NOT RUN. DB/flags state UNKNOWN, no changes. Training untouched. Notifications placement is not owner-approved.
+- **ONE NEXT STEP:** owner selects V4.2 concept or gives specific visual feedback; require explicit implementation and separate production approval afterward.
+
+
 ## 2026-10-28 — V3 owner visual acceptance REJECTED; V4 sidebar UX proposal pending owner review
 - **Current:** main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, Draft PR #425 branch `feat/adaptive-sidebar-v3-20261028@bfa19c6fdb4757de45d88b084f09104e0d58323f` (before docs checkpoint) stacked on still Draft #424 base `a79e8d44df89d52bfd4363adf42050a4fb0c3319`. Production remains existing V3 READY `dpl_129w49urPKA4W6M3Kb5i3GsSLen5` at `09814685067b9ce153b8ee0d8ffa6b933f628c6f` (read-only alias verified).
 - **Owner screenshot feedback:** toggle at bottom is not acceptable, Compact icons/button layout not centered/consistent. Source indicates static footer override and mixed inherited button geometry. V4 analysis/spec proposed in `docs/product/LOGBOOK_SIDEBAR_V4_UX_ANALYSIS_2026-10-28.md`: restore near-header rail-edge toggle desktop, protect existing center-height iPad coarse handle, normalize compact control X-axis/48px boxes; no code changes or implementation approval.
