@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## Production visual trial — 2026-10-28T15:48:19.525Z — Flights Balanced Glassless V2 manually deployed; unmerged
+- Owner approved PRODUCTION visual trial of Glassless V2 with uniform navy surface family and original source-backed green certified/gray draft/amber correction/blue locked row indicators. Vercel `dpl_9ZcvYYpEMstKFeekXH4NvFkDcNe1` source `bcd2e3ac3d1a0fcd4741a9a9df018ea49c16c575` READY on `fly-tally.com`; previous V1 `dpl_4nA4sdVWWyDY31p9hia62BBSCuok` preserved rollback ref. Draft PR #424 NOT merged.
+- Node24 focused source contracts 3/3 PASS at code/test identical SHA `d8bb19d1c92c7fa36193c634f5b1dcb441d4fbce`, Vercel Next/TS/build PASS exact deployed SHA. Authenticated Chromium, full Node/PG and native Safari NOT RUN. No database/migration/feature-flag actions or Training changes. Owner visual/functional signoff pending.
+
 ## Draft only — 2026-10-28T15:35:46.921Z — Flights Balanced Glassless V2 coherent neutral hierarchy and record-status restoration (NOT deployed)
 - After owner screenshot feedback, reworked V1 /flights surface hierarchy from blue Filters/green Overview/dark Records to quiet tones of existing FlyTally semantic surfaces, with rounded layers and subtle depth. Restored original visual certified/draft/correction/locked row indicators previously accidentally masked by V1 CSS; decorative section edge rails still excluded. No flight data, JSX, API, auth, cost, schema, global tokens or motion changes.
 - Node24 exact source mirror 3/3 PASS after updating stale V1 test contract, full app QA NOT RUN. Still Draft PR #424; production running Glassless V1 `dpl_4nA4sdVWWyDY31p9hia62BBSCuok`; V2 not merged or deployed. No DB or flags activity.
