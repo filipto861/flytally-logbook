@@ -81,3 +81,11 @@ test("Every Compact destination, More, notification and Sign out uses the same 4
   assert.match(css,/\.sidebar\.collapsed nav>a \.notification-badge\{[\s\S]*?position:absolute;/);
   assert.match(css,/\.sidebar nav a\.active\{[\s\S]*?background:var\(--accent-soft\);/);
 });
+
+test("Compact neutral frames retain clear hover and keyboard focus affordances",()=>{
+  const css=read("app/sidebar-adaptive-v42.css");
+  assert.match(css,/\.sidebar\.collapsed nav>a:not\(\.active\):is\(:hover,:focus-visible\)\{[\s\S]*?background:var\(--surface-hover\);/);
+  assert.match(css,/\.sidebar\.collapsed \.sidebar-utility>a\[aria-label\^="Notifications"\]:is\(:hover,:focus-visible\)/);
+  assert.match(css,/\.sidebar\.collapsed \.sidebar-utility \.desktop-signout \.ghost-button:is\(:hover,:focus-visible\)/);
+  assert.match(css,/border-color:var\(--line-strong\);/);
+});

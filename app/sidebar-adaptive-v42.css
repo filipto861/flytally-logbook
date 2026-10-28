@@ -146,6 +146,10 @@
     border:1px solid var(--line-soft);
   }
   /* Opacity alone leaves hidden labels in the flex layout and offsets icons. */
+  .app-grid .sidebar.collapsed nav>a:not(.active):is(:hover,:focus-visible){
+    background:var(--surface-hover);
+    border-color:var(--line-strong);
+  }
   .app-grid .sidebar.collapsed nav>a>span{
     display:none;
   }
@@ -279,6 +283,11 @@
     border:1px solid var(--line-soft);
     border-radius:11px;
     background:var(--surface);
+  }
+  .app-grid .sidebar.collapsed .sidebar-utility>a[aria-label^="Notifications"]:is(:hover,:focus-visible),
+  .app-grid .sidebar.collapsed .sidebar-utility .desktop-signout .ghost-button:is(:hover,:focus-visible){
+    background:var(--surface-hover);
+    border-color:var(--line-strong);
   }
   .app-grid .sidebar.collapsed .sidebar-utility .desktop-signout .ghost-button span{
     display:none;
