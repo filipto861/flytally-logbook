@@ -125,9 +125,6 @@
     height:46px;
     justify-content:center;
   }
-  .app-grid .sidebar.collapsed nav a[class*="primaryAction"]{
-    margin:3px 0 11px!important;
-  }
   .app-grid .sidebar nav a.active{
     background:var(--accent-soft);
     border-color:color-mix(in srgb,var(--accent-strong) 26%,var(--line));
