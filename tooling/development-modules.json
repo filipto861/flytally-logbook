@@ -304,7 +304,6 @@
         "lib/display-format"
       ],
       "files": [
-        "app/flights-balanced-glassless.css",
         "components/entry-review-summary.tsx"
       ],
       "risks": [
@@ -831,6 +830,7 @@
         "app/(protected)/print/print.module.css",
         "app/dashboard-customization.css",
         "app/flight-detail-f3.css",
+        "app/flights-balanced-glassless.css",
         "app/globals.css",
         "app/light-interactions.css",
         "app/theme.css",
