@@ -100,6 +100,8 @@ export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role
       ? pathname===href||pathname.startsWith("/flights/")||pathname==="/fstd"
       : pathname===href||pathname.startsWith(`${href}/`);
 
+  const moreActive=recordLinks.some(link=>activeFor(link.href))||(role==="admin"&&pathname.startsWith("/admin"));
+
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
     <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div className={styles.brandCopy}><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><span className={styles.headerActions}><NotificationBell initialCount={notificationCount} onNavigate={()=>setMobile(false)}/><button ref={toggleRef} className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></span></div>
     <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>{setMobile(false);requestAnimationFrame(()=>toggleRef.current?.focus())}}/>
@@ -113,7 +115,7 @@ export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role
         return <Link key={link.href} className={active?"active":""} href={link.href} title={link.label} aria-label={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span>{flights&&attentionCount>0?<b className="notification-badge" aria-label={`${attentionCount} flights need attention`}>{Math.min(attentionCount,99)}</b>:null}</Link>
       })}
 
-      <button ref={moreRef} type="button" className="sidebar-more-trigger" onClick={toggleMore} title="More — Pilot & records" aria-label="More navigation — Pilot & records" aria-expanded={moreOpen} aria-controls="sidebar-more-panel"><NavIcon name="manage"/></button>
+      <button ref={moreRef} type="button" className={`sidebar-more-trigger${moreActive?" is-current":""}`} onClick={toggleMore} title="More — Pilot & records" aria-label="More navigation — Pilot & records" aria-expanded={moreOpen} aria-controls="sidebar-more-panel"><NavIcon name="manage"/></button>
 
       <div className={styles.group}>
         <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Pilot & records</span></div>
