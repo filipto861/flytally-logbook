@@ -1,0 +1,84 @@
+/* Flights Balanced Glassless trial — list route only.
+   Matte, token-derived surfaces define hierarchy without colored edge rails,
+   translucency, new motion, or changes to flight data and interactions. */
+.ui-page-stack[data-n2-layout="flights"]{
+  --flights-filter-surface:color-mix(in srgb,var(--surface) 90%,var(--accent2) 10%);
+  --flights-overview-surface:color-mix(in srgb,var(--surface) 91%,var(--accent) 9%);
+  --flights-records-surface:color-mix(in srgb,var(--surface) 84%,var(--surface-muted) 16%);
+  --flights-metric-surface:color-mix(in srgb,var(--surface) 90%,var(--surface-raised) 10%);
+}
+
+/* Find and filters: gently elevated blue-toned workspace. */
+.ui-page-stack[data-n2-layout="flights"] > .flight-finder{
+  min-width:0;
+  padding:var(--ui-card-padding);
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--flights-filter-surface);
+  box-shadow:var(--shadow-soft);
+}
+.ui-page-stack[data-n2-layout="flights"] > .period-control{
+  border-radius:var(--ui-radius-control);
+  background:var(--flights-filter-surface);
+}
+
+/* Overview: one rounded teal-toned surface around the existing five metrics.
+   Retain the existing grid rules and source-backed numbers unchanged. */
+.app-grid .shell-workspace > .ui-page-stack[data-n2-layout="flights"] > .flight-summary{
+  min-width:0;
+  padding:var(--ui-card-padding-mobile);
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--flights-overview-surface);
+  box-shadow:var(--shadow-soft);
+}
+.app-grid .shell-workspace > .ui-page-stack[data-n2-layout="flights"] > .flight-summary > div{
+  border-radius:14px;
+  background:var(--flights-metric-surface);
+  box-shadow:none;
+}
+
+/* Flight records: quiet, grounded list surface; keep dense table and its links. */
+.ui-page-stack[data-n2-layout="flights"] > .flights-table{
+  border:1px solid var(--line);
+  border-radius:var(--ui-radius-card);
+  background:var(--flights-records-surface);
+  box-shadow:var(--shadow-soft);
+}
+.ui-page-stack[data-n2-layout="flights"] > .flights-table > .list-toolbar{
+  background:var(--flights-records-surface);
+}
+.ui-page-stack[data-n2-layout="flights"] > .flights-table th{
+  background:var(--surface-raised);
+}
+/* Record-state labels remain explicit; avoid additional decorative status rails. */
+.ui-page-stack[data-n2-layout="flights"] .flights-table .flight-list-row{
+  box-shadow:none;
+}
+
+@media(max-width:760px){
+  /* Existing mobile table-to-card transformation is retained. */
+  .ui-page-stack[data-n2-layout="flights"] > .flight-finder{
+    padding:var(--ui-card-padding-mobile);
+  }
+  .ui-page-stack[data-n2-layout="flights"] > .flights-table{
+    overflow:visible;
+    border:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  .ui-page-stack[data-n2-layout="flights"] .flights-table .flight-list-row{
+    background:var(--flights-records-surface);
+    border-inline-start:1px solid var(--line);
+  }
+  .ui-page-stack[data-n2-layout="flights"] > .flights-table > :where(.list-toolbar,.pagination){
+    border-radius:var(--ui-radius-control);
+    background:var(--flights-records-surface);
+  }
+}
+@media print{
+  .ui-page-stack[data-n2-layout="flights"] > :where(.flight-finder,.flights-table),
+  .app-grid .shell-workspace > .ui-page-stack[data-n2-layout="flights"] > .flight-summary{
+    box-shadow:none;
+  }
+}
