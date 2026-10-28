@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28T15:53:02.548Z — Owner chooses to KEEP deployed Glassless V2 appearance (provisional visual acceptance)
+- Owner: `jo takhle to asi nechame`. Keep present neutral navy, rounded /flights V2 and preserved certified/draft/correction/locked record-state rails; no further CSS change requested. Visual acceptance is provisional and does NOT imply merge approval or full native/browser QA.
+- Verified main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, Draft PR #424 branch `feat/flights-balanced-glassless-trial-20261028` unmerged. Production `fly-tally.com` READY on Vercel `dpl_9ZcvYYpEMstKFeekXH4NvFkDcNe1`, Git `bcd2e3ac3d1a0fcd4741a9a9df018ea49c16c575`; no new deploy. Prior code-focused tests 3/3 Node24 PASS and Next/TS/build PASS on deployed candidate; full Node/PG/auth browser/native Safari V2 NOT RUN. DB/flags readback UNKNOWN, no operations.
+- **ONE NEXT STEP:** preserve V2 production; if owner asks for merge/closure separately, run risk-selected verification and request explicit PR #424 merge authorization.
+
 ## 2026-10-28T15:48:19.525Z — Flights Balanced Glassless V2 READY in production; owner visual acceptance pending
 - Owner explicitly authorized V2 manual PRODUCTION visual trial, NOT merge/DB/flags/Training. Canonical main/base `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, Draft PR #424 work `feat/flights-balanced-glassless-trial-20261028`, exact deployed Git `bcd2e3ac3d1a0fcd4741a9a9df018ea49c16c575` code identical to test SHA `d8bb19d1c92c7fa36193c634f5b1dcb441d4fbce` except Markdown.
 - Vercel `logbook` `dpl_9ZcvYYpEMstKFeekXH4NvFkDcNe1` READY; `fly-tally.com` independently resolves exact deployment/SHA. V1 rollback ref `dpl_4nA4sdVWWyDY31p9hia62BBSCuok`, F3.2 rollback ref `dpl_GxGKV6dexcrjhtaNwqhxTrrc36jT`. Targeted Node24 3/3 PASS (exact code), Next/TS/build PASS at deployed SHA, 30m /flights,/login runtime error groups none; full Node/PG/auth browser/native mobile NOT RUN. No migration/DB/flags action; current provider flags/DB UNKNOWN.
