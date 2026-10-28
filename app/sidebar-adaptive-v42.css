@@ -45,6 +45,8 @@
     transform:none;
     display:grid;
     place-items:center;
+    place-content:center;
+    justify-content:center;
     flex:0 0 44px;
     width:44px;
     min-width:44px;
@@ -135,6 +137,23 @@
     justify-content:center;
     border-radius:11px;
     gap:0;
+    position:relative;
+  }
+  /* V4.2 owner screenshot correction: idle routes keep the same quiet
+     framed hit surface as the selected route, without inheriting a left rail. */
+  .app-grid .sidebar.collapsed nav>a:not(.active){
+    background:var(--surface);
+    border:1px solid var(--line-soft);
+  }
+  /* Opacity alone leaves hidden labels in the flex layout and offsets icons. */
+  .app-grid .sidebar.collapsed nav>a>span{
+    display:none;
+  }
+  .app-grid .sidebar.collapsed nav>a .notification-badge{
+    position:absolute;
+    top:2px;
+    right:2px;
+    margin:0;
   }
   .app-grid .sidebar.collapsed nav a i{
     flex:0 0 20px;
@@ -160,9 +179,15 @@
     padding:0;
     margin:9px auto 0;
     border-radius:11px;
-    border:1px solid transparent;
-    background:transparent;
+    border:1px solid var(--line-soft);
+    background:var(--surface);
     color:var(--text-soft);
+  }
+  .app-grid .sidebar.collapsed nav .sidebar-more-trigger .nav-icon{
+    display:block;
+    width:20px;
+    height:20px;
+    margin:auto;
   }
   .app-grid .sidebar.collapsed nav .sidebar-more-trigger.is-current{
     background:var(--accent-soft);
@@ -251,6 +276,25 @@
     min-height:48px;
     padding:0;
     margin:0;
+    border:1px solid var(--line-soft);
+    border-radius:11px;
+    background:var(--surface);
+  }
+  .app-grid .sidebar.collapsed .sidebar-utility .desktop-signout .ghost-button span{
+    display:none;
+  }
+  .app-grid .sidebar.collapsed .sidebar-utility .desktop-signout .ghost-button i{
+    flex:0 0 20px;
+    width:20px;
+    height:20px;
+    display:grid;
+    place-items:center;
+    margin:0;
+  }
+  .app-grid .sidebar.collapsed .sidebar-utility .desktop-signout .ghost-button i .nav-icon{
+    display:block;
+    width:20px;
+    height:20px;
   }
   .app-grid .sidebar.collapsed .sidebar-utility>a[aria-label^="Notifications"]::after{
     content:none;

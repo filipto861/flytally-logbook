@@ -59,3 +59,25 @@ test("V4.2 does not modify meaningful flight rails, time source or auth routes",
   assert.doesNotMatch(css,/\.flight-(?:summary|list-row|finder)|\.flights-table/);
   assert.match(read("app/flights-balanced-glassless.css"),/min-inline-size:1220px/);
 });
+
+test("Owner V4.2 visual correction centers the toggle glyph instead of inheriting V3 left-aligned grid tracks",()=>{
+  const css=read("app/sidebar-adaptive-v42.css");
+  const rule=css.match(/\.sidebar-brand \.sidebar-layout-controls \.sidebar-toggle\{([^}]+)\}/)?.[1]??"";
+  assert.match(rule,/display:grid;/);
+  assert.match(rule,/place-content:center;/);
+  assert.match(rule,/justify-content:center;/);
+  assert.match(rule,/place-items:center;/);
+  assert.match(rule,/width:44px;/);
+});
+test("Every Compact destination, More, notification and Sign out uses the same 48px frame and centered icon",()=>{
+  const css=read("app/sidebar-adaptive-v42.css");
+  assert.match(css,/\.sidebar\.collapsed nav>a:not\(\.active\)\{\s*background:var\(--surface\);\s*border:1px solid var\(--line-soft\);/);
+  assert.match(css,/\.sidebar\.collapsed nav>a>span\{\s*display:none;/);
+  assert.match(css,/\.sidebar\.collapsed nav a i\{[\s\S]*?place-items:center;/);
+  assert.match(css,/\.sidebar\.collapsed nav \.sidebar-more-trigger\{[\s\S]*?width:48px;[\s\S]*?border:1px solid var\(--line-soft\);[\s\S]*?background:var\(--surface\);/);
+  assert.match(css,/\.sidebar\.collapsed \.sidebar-utility>a\[aria-label\^="Notifications"\],[\s\S]*?\.sidebar\.collapsed \.sidebar-utility \.desktop-signout \.ghost-button\{[\s\S]*?width:48px;[\s\S]*?border:1px solid var\(--line-soft\);/);
+  assert.match(css,/\.sidebar\.collapsed \.sidebar-utility \.desktop-signout \.ghost-button span\{\s*display:none;/);
+  assert.match(css,/\.sidebar\.collapsed \.sidebar-utility \.desktop-signout \.ghost-button i\{[\s\S]*?place-items:center;/);
+  assert.match(css,/\.sidebar\.collapsed nav>a \.notification-badge\{[\s\S]*?position:absolute;/);
+  assert.match(css,/\.sidebar nav a\.active\{[\s\S]*?background:var\(--accent-soft\);/);
+});
