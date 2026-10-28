@@ -1,5 +1,10 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28T16:01:55.776Z — Flights iPad BLOCK/AIR clock overlap fixed in PR #424 branch; deployment pending permission
+- User-provided native iPad screenshot exposes nowrap BLOCK/AIR time provenance colliding across dense Flights list columns; underlying times correct. Canonical main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, exact changed CSS/test candidate `22b4709bcd7d9d4025912cf471d84688df64f1a7` on `feat/flights-balanced-glassless-trial-20261028`; PR #424 OPEN DRAFT. Scoped CSS >=701px ensures eight-column table minimum 1220px and BLOCK/AIR min cell width 124px with scroll only inside table; <=700 phone cards, neutral Glassless palette and certified/draft semantic rails preserved. No data/JS changes.
+- Node24 isolated source mirror 4/4 PASS; six synthetic Chromium widths PASS for geometry; authenticated app and native Safari NOT RUN. No new prod deploy: previous V2 `dpl_9ZcvYYpEMstKFeekXH4NvFkDcNe1` READY at `fly-tally.com`, Git `bcd2e3ac3d1a0fcd4741a9a9df018ea49c16c575`. No DB/migrations/flags writes, state UNKNOWN.
+- **ONE NEXT STEP:** obtain explicit approval for manual production test of iPad-only visual fix after remaining candidate QA; no merge implied.
+
 ## 2026-10-28T15:53:02.548Z — Owner chooses to KEEP deployed Glassless V2 appearance (provisional visual acceptance)
 - Owner: `jo takhle to asi nechame`. Keep present neutral navy, rounded /flights V2 and preserved certified/draft/correction/locked record-state rails; no further CSS change requested. Visual acceptance is provisional and does NOT imply merge approval or full native/browser QA.
 - Verified main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, Draft PR #424 branch `feat/flights-balanced-glassless-trial-20261028` unmerged. Production `fly-tally.com` READY on Vercel `dpl_9ZcvYYpEMstKFeekXH4NvFkDcNe1`, Git `bcd2e3ac3d1a0fcd4741a9a9df018ea49c16c575`; no new deploy. Prior code-focused tests 3/3 Node24 PASS and Next/TS/build PASS on deployed candidate; full Node/PG/auth browser/native Safari V2 NOT RUN. DB/flags readback UNKNOWN, no operations.
