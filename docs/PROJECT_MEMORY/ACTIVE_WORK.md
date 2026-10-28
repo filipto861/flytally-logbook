@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28 — V4.2 compact centering/frame defect patched on work branch, NOT LIVE
+- Production screenshot showed left-aligned collapse SVG and unframed inactive Compact controls. Source fix in `app/sidebar-adaptive-v42.css` plus `tests/sidebar-adaptive-v42.test.ts` corrects inherited grid `justify-content:flex-start`, hides inactive text from icon flex calculations and gives all idle 48px controls a quiet framed surface including More/Notifications/Sign Out, hover/focus retained.
+- Main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, tested source `23e46b6f7147b655b98a77379bcd8e3a01e62011` on Draft PR #425 stacked on Draft #424; last checkpoint docs-only. QA UI138/138, full Node1758/1758, TS and build PASS; synthetic Chromium latest 5/5 center/frame/hover PASS, native/real authenticated app NOT RUN. Scope planner no DB/browser/full aggregate required but extra tests run. Production still V4.2 `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` at `b590e8750b9c4f9302e5e85bd2351a3dc23dca48` (original owner screenshot deployment).
+- No merge, deploy, DB/migration/flag/Training action. DB/flags state UNKNOWN. Full evidence: `docs/product/LOGBOOK_SIDEBAR_V42_COMPACT_ALIGNMENT_FIX_2026-10-28.md`.
+- **ONE NEXT STEP:** request owner go-ahead to deploy new scoped sidebar CSS candidate to Logbook production; re-check work/target before release.
+
+
 ## 2026-10-28 — Adaptive Sidebar V4.2 production visual trial READY; owner acceptance pending
 - **Verified:** main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, work `feat/adaptive-sidebar-v3-20261028` (Draft PR #425, base Draft PR #424 at `a79e8d44df89d52bfd4363adf42050a4fb0c3319`). Source QA SHA `7b45a9295c2e031a581adb65b49c66ea17e93446`, live deployed SHA `b590e8750b9c4f9302e5e85bd2351a3dc23dca48` (docs-only difference), Vercel `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` READY alias `fly-tally.com`.
 - **Scope:** owner-approved V4.2 top integrated 44px control, 78/218 Compact/Slim, coherent 48px icon cells and bottom desktop Notifications (one polling component; phone bell top), unchanged role-gated More/mobile drawer and flight data. No merge, production DB/migration/flags or Training.
