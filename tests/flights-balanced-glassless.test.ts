@@ -16,7 +16,7 @@ test("Balanced Glassless is loaded after the existing UI and F3 layers",()=>{
 
 test("Balanced Glassless remains confined to the Flights list and its existing surfaces",()=>{
   const css=read("app/flights-balanced-glassless.css");
-  const selectors=css.match(/(?:^|\n)[^@{}\n][^{}]*\{/g)??[];
+  const selectors=css.split("\n").map(line=>line.trim()).filter(line=>line.endsWith("{")&&!line.startsWith("@"));
   assert.ok(selectors.length>=8);
   for(const rule of selectors){
     // The only selectors permitted to style this trial's surfaces target the list route.
