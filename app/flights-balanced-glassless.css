@@ -1,14 +1,14 @@
-/* Flights Balanced Glassless trial — list route only.
-   Matte, token-derived surfaces define hierarchy without colored edge rails,
-   translucency, new motion, or changes to flight data and interactions. */
+/* Flights Balanced Glassless refinement — list route only.
+   One neutral navy surface family, subtly tiered depth, and preserved
+   meaningful record-state rails. No translucency, motion or data changes. */
 .ui-page-stack[data-n2-layout="flights"]{
-  --flights-filter-surface:color-mix(in srgb,var(--surface) 90%,var(--accent2) 10%);
-  --flights-overview-surface:color-mix(in srgb,var(--surface) 91%,var(--accent) 9%);
-  --flights-records-surface:color-mix(in srgb,var(--surface) 84%,var(--surface-muted) 16%);
-  --flights-metric-surface:color-mix(in srgb,var(--surface) 90%,var(--surface-raised) 10%);
+  --flights-filter-surface:color-mix(in srgb,var(--surface) 85%,var(--surface-raised) 15%);
+  --flights-overview-surface:var(--surface);
+  --flights-records-surface:color-mix(in srgb,var(--surface) 97%,var(--surface-muted) 3%);
+  --flights-metric-surface:color-mix(in srgb,var(--surface) 68%,var(--surface-muted) 32%);
 }
 
-/* Find and filters: gently elevated blue-toned workspace. */
+/* Find and filters: the same navy family, with a small elevation step. */
 .ui-page-stack[data-n2-layout="flights"] > .flight-finder{
   min-width:0;
   padding:var(--ui-card-padding);
@@ -22,7 +22,7 @@
   background:var(--flights-filter-surface);
 }
 
-/* Overview: one rounded teal-toned surface around the existing five metrics.
+/* Overview: a cohesive navy surface around the existing five metric tiles.
    Retain the existing grid rules and source-backed numbers unchanged. */
 .app-grid .shell-workspace > .ui-page-stack[data-n2-layout="flights"] > .flight-summary{
   min-width:0;
@@ -38,7 +38,7 @@
   box-shadow:none;
 }
 
-/* Flight records: quiet, grounded list surface; keep dense table and its links. */
+/* Flight records: a grounded navy list surface; preserve dense table and links. */
 .ui-page-stack[data-n2-layout="flights"] > .flights-table{
   border:1px solid var(--line);
   border-radius:var(--ui-radius-card);
@@ -51,10 +51,9 @@
 .ui-page-stack[data-n2-layout="flights"] > .flights-table th{
   background:var(--surface-raised);
 }
-/* Record-state labels remain explicit; avoid additional decorative status rails. */
-.ui-page-stack[data-n2-layout="flights"] .flights-table .flight-list-row{
-  box-shadow:none;
-}
+/* Original 3px record-state rails remain meaningful operational indicators:
+   Certified = green, Draft = neutral gray, Correction = amber, Locked = blue.
+   They come from v140-flights.css; do not flatten their inset box shadows. */
 
 @media(max-width:760px){
   /* Existing mobile table-to-card transformation is retained. */
@@ -69,7 +68,6 @@
   }
   .ui-page-stack[data-n2-layout="flights"] .flights-table .flight-list-row{
     background:var(--flights-records-surface);
-    border-inline-start:1px solid var(--line);
   }
   .ui-page-stack[data-n2-layout="flights"] > .flights-table > :where(.list-toolbar,.pagination){
     border-radius:var(--ui-radius-control);
