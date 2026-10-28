@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28 — Sidebar V4.2 Compact fix DEPLOYED; owner live visual check pending
+- Owner explicitly authorized production deployment for centered header toggle SVG and uniform 48px framed compact controls; still no permission to merge #425/#424 or touch DB/flags/Training.
+- Canonical main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; Draft PR #425 branch `feat/adaptive-sidebar-v3-20261028` stacked on #424 `a79e8d44df89d52bfd4363adf42050a4fb0c3319`. Tested source/test `23e46b6f7147b655b98a77379bcd8e3a01e62011`, deployed `f8d412171a8cbb12cdfcae88d9c23735938fcb53` differs only in Markdown. Vercel `dpl_isy3ZVcV3pN9H7gwLpBDku9iYhHU` READY and `fly-tally.com` alias/Git independently verified. Previous V4.2 `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` rollback reference.
+- Test evidence: 1758 full Node, 138 UI tests, TS/build all PASS; synthetic Chromium geometry/hover 5/5 PASS; production Vercel TS/build PASS. Authenticated app and physical Safari NOT RUN; public HTTP route smoke NOT VERIFIED due environment DNS access; runtime error/fatal filtered list empty but not full app acceptance.
+- No database, migrations, feature flags or Training changes. Production DB/flags readback UNKNOWN. Detailed evidence: `docs/PROJECT_MEMORY/SIDEBAR_V42_COMPACT_ALIGNMENT_PROD_20261028.md`.
+- **ONE NEXT STEP:** owner tests new live Compact nav and sends screenshot, followed by physical iPad touch/scroll check; PRs stay Draft.
+
+
 ## 2026-10-28 — V4.2 compact centering/frame defect patched on work branch, NOT LIVE
 - Production screenshot showed left-aligned collapse SVG and unframed inactive Compact controls. Source fix in `app/sidebar-adaptive-v42.css` plus `tests/sidebar-adaptive-v42.test.ts` corrects inherited grid `justify-content:flex-start`, hides inactive text from icon flex calculations and gives all idle 48px controls a quiet framed surface including More/Notifications/Sign Out, hover/focus retained.
 - Main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, tested source `23e46b6f7147b655b98a77379bcd8e3a01e62011` on Draft PR #425 stacked on Draft #424; last checkpoint docs-only. QA UI138/138, full Node1758/1758, TS and build PASS; synthetic Chromium latest 5/5 center/frame/hover PASS, native/real authenticated app NOT RUN. Scope planner no DB/browser/full aggregate required but extra tests run. Production still V4.2 `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` at `b590e8750b9c4f9302e5e85bd2351a3dc23dca48` (original owner screenshot deployment).
