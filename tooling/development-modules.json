@@ -104,7 +104,8 @@
         "tests/v328-aircraft-library-ux.test.ts",
         "tests/v329-actions-budget.test.ts",
         "tests/v330-add-flight-simplicity.test.ts",
-        "tests/v332-flights-workflow-simplicity.test.ts"
+        "tests/v332-flights-workflow-simplicity.test.ts",
+        "tests/flights-balanced-glassless.test.ts"
       ]
     },
     "development-pipeline": {
@@ -303,6 +304,7 @@
         "lib/display-format"
       ],
       "files": [
+        "app/flights-balanced-glassless.css",
         "components/entry-review-summary.tsx"
       ],
       "risks": [
@@ -933,7 +935,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 413,
+    "auditedTotal": 414,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
