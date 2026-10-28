@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 2026-10-28 — Sidebar V4.2 Compact corrective release on fly-tally.com
+- Owner explicitly approved production deployment of the visual defect correction from authenticated desktop screenshots. Toggle SVG now inherits explicit grid content centering; all Compact inactive destinations/More/Notifications/Sign Out use consistent 48px rounded framed surfaces with corrected icon axis and preserved hover/focus.
+- Tested runtime/test SHA `23e46b6f7147b655b98a77379bcd8e3a01e62011`: UI 138/138, full Node 1758/1758, TS/build PASS; representative synthetic Chromium final geometry/hover 5/5 PASS (not native/authenticated app).
+- Logbook Vercel production `dpl_isy3ZVcV3pN9H7gwLpBDku9iYhHU` READY at Git `f8d412171a8cbb12cdfcae88d9c23735938fcb53` (diff from tested SHA Markdown-only). Vercel `fly-tally.com` alias independently confirmed, compilation/TS PASS. No PR merge or DB/flags/Training changes. Actual owner screenshot acceptance and native iPad Safari NOT RUN. Full closeout: `docs/PROJECT_MEMORY/SIDEBAR_V42_COMPACT_ALIGNMENT_PROD_20261028.md`.
+
+
 ## Unreleased visual correction — 2026-10-28: Sidebar V4.2 Compact button centering
 - Owner production screenshots reveal left-offset toggle SVG due to inherited `justify-content:flex-start` despite grid `place-items:center`, and visually missing idle Compact frames. Scoped CSS and source tests fix centered glyph, common 48px neutral box styling for navigation, More, footer Notifications and Sign Out, hidden label occupancy and pointer/keyboard states; no business logic changes.
 - Tested source `23e46b6f7147b655b98a77379bcd8e3a01e62011` on PR #425: UI138/138, Node1758/1758, TypeScript/build PASS, Chromium synthetic geometry/hover 5/5 PASS (not authenticated app/native Safari). Detailed note `docs/product/LOGBOOK_SIDEBAR_V42_COMPACT_ALIGNMENT_FIX_2026-10-28.md`. **NOT DEPLOYED**; production remains original V4.2 `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3`. No merge, DB/flags, Training changes.
