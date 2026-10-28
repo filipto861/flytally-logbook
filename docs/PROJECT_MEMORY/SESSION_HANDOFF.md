@@ -1,5 +1,13 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-28T09:24:12.003Z — Glassless visual trial Draft PR #424 created (no deployment)
+- **GitHub:** main base `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, work `feat/flights-balanced-glassless-trial-20261028@eadcb9a0bd9bc1e7a71b3e65b56bf09844ee5fb1` **before this docs-only checkpoint**. Draft PR #424 targets main, unmerged. Compare main→work: 8 paths only (new `app/flights-balanced-glassless.css`, one `app/layout.tsx` CSS import, new `tests/flights-balanced-glassless.test.ts`, selected design document and four canonical/memory docs). No flight JSX/server logic change.
+- **Owner boundary:** approved only local trial implementation and visual examination. DO NOT merge PR #424 or deploy preview/production, modify DB/migrations/flags, or Training, without fresh approval. No runtime app/DB/flags action undertaken.
+- **Evidence:** 3/3 targeted Node24 source-contract tests PASS on four exact GitHub source files mirrored to network-denied ephemeral sandbox; stopped. 8/8 JS readback PASS; synthetic Chromium fixture 6 viewports/theme pairs computed colors/rounded corners/overflow PASS, but full repo build, actual signed-in Flights/browser suite, real native Safari and a11y NOT RUN. Synthetic HTML and screenshots remain attached to chat, not Git.
+- **Vercel:** last read `fly-tally.com` READY `dpl_GxGKV6dexcrjhtaNwqhxTrrc36jT`, git source `343e675c489424bf7eddb2a40ae7caf6372dc47b`; product production unchanged by this work, provider DB/flag readback UNKNOWN.
+- **ONE NEXT STEP:** owner reviews HTML/sample CSS renders and decides whether to request refinements or specifically authorize a safe preview deployment after full candidate-bound verification.
+
+
 ## 2026-10-28T09:23:00.027Z — Flights Balanced Glassless trial code on feature branch (pre-PR checkpoint)
 - **Owner approval:** visual trial only: `zkus to na zkousku implementovat a podivame se jak to bude vypadat`. Selected Balanced Glassless reference. Strict scope `/flights` LIST surface hierarchy; preserve current rounded cards, matte solids, blue-tinted Find/Filters, gentle green Overview, neutral Records, no colored edge rails or vertical separators. No new library/brand/motion (NONE), no flight-data/URL filtering/summary/status/certification changes.
 - **Verified identity:** `filipto861/flytally-logbook` main/full base SHA `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work `feat/flights-balanced-glassless-trial-20261028` created at that SHA. Code committed through `d00be9d54dbf1bfe30a2e42b2043c9fd9476a3fa`; later docs-only commits to be read back. Separate PR #420 Flights audit open draft, NOT integrated; #423 unrelated docs; no branch conflicts assumed.
