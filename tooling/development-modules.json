@@ -303,6 +303,7 @@
         "lib/display-format"
       ],
       "files": [
+        "app/flights-balanced-glassless.css",
         "components/entry-review-summary.tsx"
       ],
       "risks": [
@@ -828,6 +829,8 @@
         "app/(protected)/notifications/notifications.module.css",
         "app/(protected)/print/print.module.css",
         "app/dashboard-customization.css",
+        "app/sidebar-adaptive-v3.css",
+        "app/sidebar-adaptive-v42.css",
         "app/flight-detail-f3.css",
         "app/globals.css",
         "app/light-interactions.css",
@@ -933,7 +936,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 413,
+    "auditedTotal": 416,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },

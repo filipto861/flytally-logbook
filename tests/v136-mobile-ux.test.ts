@@ -13,7 +13,7 @@ test("v1.36.2 iOS status-area safeguards remain supported by later releases",()=
   assert.doesNotMatch(manager,/querySelectorAll<HTMLMetaElement>|apple-mobile-web-app-status-bar-style|removeAttribute\("media"\)/);
   assert.match(css,/html:has\(\.app-grid\[data-appearance="light"\]\)/);assert.match(css,/safe-area-inset-top/);assert.match(css,/pointer-events:none/);
   assert.doesNotMatch(css,/mobile-nav-backdrop|sidebar nav|mobile-toggle|safe-area-inset-left|safe-area-inset-right/);
-  assert.match(sidebar,/onClick=\{\(\)=>setMobile\(false\)\}/);assert.match(sidebar,/setMobile\(false\)\},\[pathname\]\)/);
+  assert.match(sidebar,/onClick=\{\(\)=>setMobile\(false\)\}/);assert.match(sidebar,/setMobile\(false\);setMoreOpen\(false\)\},\[pathname\]\)/);
 });
 
 test("v1.36 compact mobile recency remains supported without changing the engine",()=>{
