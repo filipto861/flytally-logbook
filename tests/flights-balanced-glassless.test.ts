@@ -26,7 +26,7 @@ test("Balanced Glassless remains confined to the Flights list and its existing s
   assert.match(css,/\.flight-summary\s*\{/);
   assert.match(css,/\.flights-table\s*\{/);
   assert.match(css,/--flights-filter-surface:color-mix\(/);
-  assert.match(css,/--flights-overview-surface:color-mix\(/);
+  assert.match(css,/--flights-overview-surface:var\(--surface\);/,"overview must reuse canonical neutral surface, not introduce a hue");
   assert.match(css,/--flights-records-surface:color-mix\(/);
   assert.doesNotMatch(css,/#[\da-f]{3,8}\b/i,"new hardcoded palette must not be introduced");
   assert.doesNotMatch(css,/\b(?:opacity|backdrop-filter|animation|transition)\s*:/,"no glass or motion");
