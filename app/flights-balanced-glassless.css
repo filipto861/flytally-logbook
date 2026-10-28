@@ -51,6 +51,24 @@
 .ui-page-stack[data-n2-layout="flights"] > .flights-table th{
   background:var(--surface-raised);
 }
+/* iPad / narrow desktop: the BLOCK and AIR source clock pairs must not
+   paint into adjacent table cells. Preserve complete times, rather than clip
+   or wrap HH:MM values. The existing .table-scroll is the scroll container;
+   on phones <=700px the established flight cards remain unchanged. */
+@media(min-width:701px){
+  .ui-page-stack[data-n2-layout="flights"] > .flights-table > .table-scroll{
+    max-inline-size:100%;
+    overflow-x:auto;
+  }
+  .ui-page-stack[data-n2-layout="flights"] > .flights-table > .table-scroll > table{
+    min-inline-size:1220px;
+  }
+  .ui-page-stack[data-n2-layout="flights"] .flight-list-row > td[data-label="BLOCK"],
+  .ui-page-stack[data-n2-layout="flights"] .flight-list-row > td[data-label="AIR"]{
+    min-inline-size:124px;
+  }
+}
+
 /* Original 3px record-state rails remain meaningful operational indicators:
    Certified = green, Draft = neutral gray, Correction = amber, Locked = blue.
    They come from v140-flights.css; do not flatten their inset box shadows. */
