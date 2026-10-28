@@ -47,3 +47,22 @@ test("Glassless preserves rounded cards and original source-backed record-state 
   const page=read("app/(protected)/flights/page.tsx");
   for(const existing of ['data-n2-layout="flights"','className="flight-finder"','className="flight-summary"','className="table-panel flights-table"','data-label="BLOCK"','data-label="AIR"'])assert.ok(page.includes(existing),existing);
 });
+
+test("iPad Flights BLOCK/AIR clocks keep readable cell widths without changing phone cards",()=>{
+  const css=read("app/flights-balanced-glassless.css");
+  const page=read("app/(protected)/flights/page.tsx");
+  const base=read("app/ui-system.css");
+  assert.match(base,/\.flight-time-ledger > small\{[\s\S]*?white-space:nowrap;/);
+  assert.match(css,/@media\(min-width:701px\)\{/);
+  assert.match(css,/\.flights-table > \.table-scroll > table\{\s*min-inline-size:1220px;/);
+  for(const label of ["BLOCK","AIR"]){
+    assert.ok(css.includes(`td[data-label="${label}"]`),label);
+    assert.ok(page.includes(`data-label="${label}"`),label);
+  }
+  assert.match(css,/min-inline-size:124px;/);
+  assert.match(css,/\.flights-table > \.table-scroll\{\s*max-inline-size:100%;\s*overflow-x:auto;/);
+  // The 700px and narrower scan-card modes remain the canonical mobile layout.
+  assert.match(base,/@media\(max-width:700px\)\{[\s\S]*?\.flights-table \.flight-list-row/);
+  assert.match(page,/hasCompleteClockPair\(f\.off_block,f\.on_block\)/);
+  assert.match(page,/hasCompleteClockPair\(f\.takeoff,f\.landing\)/);
+});
