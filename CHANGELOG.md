@@ -1,5 +1,10 @@
 # FlyTally changelog
 
+## Draft only — 2026-10-28T09:23:00.027Z — Flights Balanced Glassless CSS trial (unmerged/unreleased)
+- Owner-chosen Balanced Glassless visual reference applied ONLY to `/flights` on branch `feat/flights-balanced-glassless-trial-20261028`: new route-scoped `app/flights-balanced-glassless.css` imported after existing CSS, plus 3 source-contract regressions. Matte token-derived Filter/Overview/Records surfaces and soft depth preserve rounded cards, controls, source-backed times and all data behavior. Mobile colored edge highlights removed but explicit status badges retained. No JS/DB/flag/dependency change, no motion.
+- Validation: targeted Node24 on exact 4-file GitHub mirror 3/3 PASS (not full app test); 8/8 readback source checks PASS; six synthetic Chromium theme/viewport checks PASS, not authenticated production or native Safari. Full Node/typecheck/Next build/PG/browser release gate NOT RUN. Not merged or deployed. Production remains the previous F3.2 READY release.
+
+
 ## Unreleased — 2026-10-27T13:56:28.544Z — F3.2 iPhone-only Flight Detail refinements (Draft PR #422)
 - Based on owner-provided real iPhone dark screenshots, reduced vertical density of Flight Detail header and record workflow under 700 CSS px. Mobile nav uses two visual rows without changing DOM focus order, labels or action availability: Back above previous/next + More; four certification workflow stages remain visible with >=44px touch height and a <=360px fallback for label fitting. Existing desktop/tablet layout unchanged.
 - Replaced the semi-transparent mobile sticky tab background with the existing opaque panel token; disabled backdrop translucency, retained mobile shell/safe-area positioning and added anchored panel scroll margin. Motion NONE; no new package, aviation-state, money, GPS, record/certification or server-action changes.
