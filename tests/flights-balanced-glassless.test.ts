@@ -33,12 +33,15 @@ test("Balanced Glassless remains confined to the Flights list and its existing s
   assert.doesNotMatch(css,/!important/,"do not override core data/mobile rules");
 });
 
-test("Glassless preserves rounded cards and removes only decorative state rails on mobile",()=>{
+test("Glassless preserves rounded cards and original source-backed record-state rails",()=>{
   const css=read("app/flights-balanced-glassless.css");
   assert.match(css,/border-radius:var\(--ui-radius-card\)/);
   assert.match(css,/\.flight-summary\s*>\s*div\s*\{[\s\S]*?border-radius:14px/);
   assert.match(css,/@media\(max-width:760px\)\{/);
-  assert.match(css,/border-inline-start:1px solid var\(--line\)/);
+  assert.doesNotMatch(css,/border-inline-start:1px solid var\(--line\)/,"do not erase original certified/draft mobile rails");
+  assert.doesNotMatch(css,/\.flights-table \.flight-list-row\s*\{\s*box-shadow:none/,"do not erase desktop record-status rails");
+  const original=read("app/v140-flights.css");
+  for(const state of ["certified","draft","correction","locked"])assert.ok(original.includes(`[data-record-state="${state}"]`),state);
   assert.doesNotMatch(css,/border-(?:left|right|top|bottom)\s*:\s*[234]px\s+solid/);
   assert.match(css,/@media print\{/);
   const page=read("app/(protected)/flights/page.tsx");
