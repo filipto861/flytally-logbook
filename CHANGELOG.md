@@ -1,5 +1,9 @@
 # FlyTally changelog
 
+## Draft only — 2026-10-28T16:01:55.776Z — Flights iPad clock interval containment (not deployed)
+- Reproduced overlapping BLOCK/AIR source clock intervals from user-supplied real iPad Glassless V2 screenshot (kept chat-only). At tablet widths the dense eight-column table can shrink below the minimum needed for nowrap provenance times. New scoped >=701px `table-scroll` and minimum table/time-cell widths preserve complete HH:MM–HH:MM pairs with local horizontal table scrolling; existing mobile cards and meaningful colored row-state rails untouched. CSS in `app/flights-balanced-glassless.css`; one targeted regression added in `tests/flights-balanced-glassless.test.ts`.
+- Node24 targeted source-mirror tests 4/4 PASS on candidate `22b4709bcd7d9d4025912cf471d84688df64f1a7`; six synthetic Chromium tablet/desktop geometry checks PASS, no full-app authenticated test or native Safari yet. Still Draft PR #424, no merge or deployment, production remains prior Glassless V2 `dpl_9ZcvYYpEMstKFeekXH4NvFkDcNe1`. No DB, migrations or flags operations.
+
 ## Production visual trial — 2026-10-28T15:48:19.525Z — Flights Balanced Glassless V2 manually deployed; unmerged
 - Owner approved PRODUCTION visual trial of Glassless V2 with uniform navy surface family and original source-backed green certified/gray draft/amber correction/blue locked row indicators. Vercel `dpl_9ZcvYYpEMstKFeekXH4NvFkDcNe1` source `bcd2e3ac3d1a0fcd4741a9a9df018ea49c16c575` READY on `fly-tally.com`; previous V1 `dpl_4nA4sdVWWyDY31p9hia62BBSCuok` preserved rollback ref. Draft PR #424 NOT merged.
 - Node24 focused source contracts 3/3 PASS at code/test identical SHA `d8bb19d1c92c7fa36193c634f5b1dcb441d4fbce`, Vercel Next/TS/build PASS exact deployed SHA. Authenticated Chromium, full Node/PG and native Safari NOT RUN. No database/migration/feature-flag actions or Training changes. Owner visual/functional signoff pending.
