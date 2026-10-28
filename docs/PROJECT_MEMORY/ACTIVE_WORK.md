@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work pointers
 
+## 2026-10-28 — V4.2 Compact owner desktop visual feedback POSITIVE; real iPad still unverified
+- Owner supplied live authenticated `fly-tally.com/dashboard` screenshot of corrected Compact and wrote `no to je mnohem lepsi`. Visual framed 48px nav/More/footers and center-aligned toggle now appear consistent; screenshot only, not functional or native device certification.
+- Main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`, work `feat/adaptive-sidebar-v3-20261028@992c02a746eb04ac7849cee6c293352457780ddc` before this docs-only checkpoint. Draft PR #425 stacked on #424 Draft. Vercel `dpl_isy3ZVcV3pN9H7gwLpBDku9iYhHU` READY, source `f8d412171a8cbb12cdfcae88d9c23735938fcb53`, exact `fly-tally.com` alias verified. Earlier source tests: UI138, Node1758, TS/build, synthetic Chromium5 PASS; no new tests this screenshot turn; physical Safari/VoiceOver/functional authentication NOT RUN.
+- Scope: Project Memory docs only, no code, merge, new deployment, production DB/migration/flags or Training. Current production DB/flags readback UNKNOWN. No additional visual redesign needed absent new defects.
+- **ONE NEXT STEP:** owner tests on actual iPad including Compact/Slim toggle, More, footer notification access and scrolling; then decide next PR stage separately.
+
+
 ## 2026-10-28 — Sidebar V4.2 Compact fix DEPLOYED; owner live visual check pending
 - Owner explicitly authorized production deployment for centered header toggle SVG and uniform 48px framed compact controls; still no permission to merge #425/#424 or touch DB/flags/Training.
 - Canonical main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; Draft PR #425 branch `feat/adaptive-sidebar-v3-20261028` stacked on #424 `a79e8d44df89d52bfd4363adf42050a4fb0c3319`. Tested source/test `23e46b6f7147b655b98a77379bcd8e3a01e62011`, deployed `f8d412171a8cbb12cdfcae88d9c23735938fcb53` differs only in Markdown. Vercel `dpl_isy3ZVcV3pN9H7gwLpBDku9iYhHU` READY and `fly-tally.com` alias/Git independently verified. Previous V4.2 `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` rollback reference.
