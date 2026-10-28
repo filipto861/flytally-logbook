@@ -34,7 +34,10 @@ test("V4.2 Compact has a shared 48px geometry, legible More and nonoverlay 44px 
   assert.match(css,/\.sidebar\.collapsed nav a\{[\s\S]*?width:48px;[\s\S]*?min-height:48px;/);
   assert.match(css,/\.sidebar\.collapsed nav \.sidebar-more-trigger\{[\s\S]*?width:48px;/);
   assert.match(css,/\.sidebar-brand \.sidebar-layout-controls \.sidebar-toggle\{[\s\S]*?position:static;[\s\S]*?width:44px;/);
-  assert.doesNotMatch(css,/\b(?:left|right):\s*-\d+px/);
+  const toggleRule=css.match(/\.sidebar-brand \.sidebar-layout-controls \.sidebar-toggle\{([^}]+)\}/)?.[1]??"";
+  assert.match(toggleRule,/position:static;/);
+  assert.match(toggleRule,/inset:auto;/);
+  assert.doesNotMatch(toggleRule,/\b(?:left|right):\s*-\d+px/);
   assert.doesNotMatch(css,/\b(?:border-inline-start|border-left)\s*:/);
 });
 test("Notification is bottom desktop but still in mobile header; no duplicate fetching",()=>{
