@@ -1,5 +1,14 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-28 — V4.2 Compact icon frames and toggle SVG alignment FIX, candidate ready, NOT DEPLOYED
+- **Owner evidence:** authenticated desktop screenshots of live V4.2: collapse glyph visibly left within header control, inactive Compact controls missing framed buttons, icons inconsistent. Existing V4.2 visual direction maintained; no new deployment authorization.
+- **Verified main and release:** `main@484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work branch `feat/adaptive-sidebar-v3-20261028`, Draft PR #425 on Draft #424 `a79e8d44df89d52bfd4363adf42050a4fb0c3319`; tested executable/test SHA `23e46b6f7147b655b98a77379bcd8e3a01e62011`, docs-checkpoint head `8a6b37f83f93f8eef3f6368d637c57a768f14bc5`. Production is still prior READY V4.2 `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` Git `b590e8750b9c4f9302e5e85bd2351a3dc23dca48`; **NOT deployed**.
+- **Changes:** only `app/sidebar-adaptive-v42.css` and `tests/sidebar-adaptive-v42.test.ts`. Verified computed CSS root: legacy `justify-content:flex-start` left SVG despite `place-items:center`; fixed by grid content centering. Compact idle nav/More/footer now consistent 48px quiet background+border, hidden labels removed from layout, attention badge absolute, hover/focus preserved. No route, data, auth, aviation, brand, dependencies or Training change.
+- **QA exact runtime SHA:** UI group **138/138 PASS**; aggregate Node **1758/1758 PASS**; TypeScript PASS; production build PASS; final synthetic Chromium CSS/DOM geometry 5/5 PASS, previous intermediate viewport/theme geometry 11/11 PASS, NOT actual authenticated app or native hardware PASS. Candidate planner: browser false, PostgreSQL false, full Node false required; tests exceeded requirements. Authenticated actual Playwright and physical Safari/VoiceOver NOT RUN. DB/migrations N/A/no changes; production flags readback UNKNOWN; no deployment/merge.
+- **DO NOT:** merge #425/#424, deploy production, modify DB/flags/Training, claim live fix or hardware validation without separate permission. Full detail in `docs/product/LOGBOOK_SIDEBAR_V42_COMPACT_ALIGNMENT_FIX_2026-10-28.md`.
+- **ONE NEXT STEP:** obtain owner authorization for this scoped V4.2 alignment fix production deployment, then verify target SHA/alias and test signed-in desktop/iPad views.
+
+
 ## 2026-10-28 — Sidebar V4.2 owner-authorized production READY; hardware review pending
 - **Owner:** explicitly requested V4.2 implementation and production after accepting quiet single-row header and desktop Notifications in bottom utility group. No merge/DB/flags/migration/Training authorization.
 - **Git:** main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work `feat/adaptive-sidebar-v3-20261028`, Draft PR #425, stacked base Draft PR #424 `a79e8d44df89d52bfd4363adf42050a4fb0c3319`; tested runtime/test SHA `7b45a9295c2e031a581adb65b49c66ea17e93446`; deployed `b590e8750b9c4f9302e5e85bd2351a3dc23dca48`, docs-only difference.
