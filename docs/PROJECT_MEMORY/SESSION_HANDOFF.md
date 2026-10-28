@@ -1,5 +1,15 @@
 # FlyTally Logbook — rolling session handoff
 
+## 2026-10-28 — Sidebar V4.2 owner-authorized production READY; hardware review pending
+- **Owner:** explicitly requested V4.2 implementation and production after accepting quiet single-row header and desktop Notifications in bottom utility group. No merge/DB/flags/migration/Training authorization.
+- **Git:** main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work `feat/adaptive-sidebar-v3-20261028`, Draft PR #425, stacked base Draft PR #424 `a79e8d44df89d52bfd4363adf42050a4fb0c3319`; tested runtime/test SHA `7b45a9295c2e031a581adb65b49c66ea17e93446`; deployed `b590e8750b9c4f9302e5e85bd2351a3dc23dca48`, docs-only difference.
+- **Files:** `components/sidebar.tsx`, `components/sidebar.module.css`, `components/nav-icon.tsx`, `app/layout.tsx`, new `app/sidebar-adaptive-v42.css`, new `tests/sidebar-adaptive-v42.test.ts`, `tests/v136-mobile-ux.test.ts`, `tests/v300-sidebar-polish.test.ts`, `tooling/development-modules.json`. Approved Flights record indicator and iPad BLOCK/AIR layout unchanged.
+- **Evidence:** focused Node11/11 PASS; full Node1755/1755 PASS on executable-identical predecessor; UI group135/135, TS, build and advisory design audit PASS on tested SHA. Synthetic final-CSS Chromium 10/10 layout states PASS but PARTIAL relative to authenticated Next app; browser risk suite and native iPad/VoiceOver NOT RUN. Risk PostgreSQL N/A. Current prod DB/flags readback UNKNOWN, no changes.
+- **Production:** `dpl_J6Npxj6JDW3saSakz2YmtZKYSPL3` READY, exact source `b590e8750b9c4f9302e5e85bd2351a3dc23dca48` verified aliased to `fly-tally.com`, live compile/TS PASS. Anonymous `/login` 200, `/dashboard` and `/flights` resolve to login. Deployment fatal/error filtered logs none, aggregate provider error query UNKNOWN. Rollback previous V3 `dpl_129w49urPKA4W6M3Kb5i3GsSLen5`.
+- **DO NOT:** merge #425/#424, modify production DB/flags/Training, claim authenticated browser/mobile Safari PASS or alter prod without new owner direction. Full release closeout in `docs/PROJECT_MEMORY/SIDEBAR_V42_PRODUCTION_CLOSEOUT_20261028.md`.
+- **ONE NEXT STEP:** owner checks V4.2 on signed-in desktop and physical iPad (toggle position, notifications footer, More, Flights table) and provides visual feedback before any merge.
+
+
 ## 2026-10-28 — Sidebar V4.2 single-row-header concept review (prototype only)
 - **Owner:** V4.1 design improved but wants a more refined solution. This is authorization for design exploration only, not Logbook app implementation, PR merge or deployment.
 - **Git:** verified main `484d84c33f34c5049a30a28aecc0a957bc6d9d07`; work `feat/adaptive-sidebar-v3-20261028@e62c2873461b6c8296027cd1d77bad83cd7eed39` before docs-only checkpoint; #425 OPEN DRAFT base `feat/flights-balanced-glassless-trial-20261028@a79e8d44df89d52bfd4363adf42050a4fb0c3319` (#424 OPEN DRAFT). Only `docs/product/LOGBOOK_SIDEBAR_V4_UX_ANALYSIS_2026-10-28.md` updated in previous step; prototype HTML/screenshots are downloadable conversation-local files, not repo.
