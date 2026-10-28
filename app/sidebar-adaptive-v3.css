@@ -59,6 +59,11 @@
     cursor:pointer;
     position:relative;
   }
+  .app-grid .sidebar.collapsed nav .sidebar-more-trigger.is-current{
+    background:var(--accent-soft);
+    border-color:color-mix(in srgb,var(--accent-strong) 26%,var(--line));
+    color:var(--text);
+  }
   .app-grid .sidebar.collapsed nav .sidebar-more-trigger[aria-expanded="true"],
   .app-grid .sidebar.collapsed nav .sidebar-more-trigger:hover{
     background:var(--surface-hover);
