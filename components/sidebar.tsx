@@ -103,7 +103,7 @@ export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role
   const moreActive=recordLinks.some(link=>activeFor(link.href))||(role==="admin"&&pathname.startsWith("/admin"));
 
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
-    <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div className={styles.brandCopy}><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><span className={styles.headerActions}><NotificationBell initialCount={notificationCount} onNavigate={()=>setMobile(false)}/><button ref={toggleRef} className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></span></div>
+    <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div className={styles.brandCopy}><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><span className="sidebar-layout-controls"><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"} aria-expanded={!collapsed} title={collapsed?"Expand sidebar":"Collapse sidebar"}><NavIcon name={collapsed?"sidebar-expand":"sidebar-collapse"}/><span>{collapsed?"Expand sidebar":"Collapse sidebar"}</span></button></span><span className={styles.headerActions}><button ref={toggleRef} className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></span></div>
     <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>{setMobile(false);requestAnimationFrame(()=>toggleRef.current?.focus())}}/>
     <nav ref={menuRef} id="primary-navigation" aria-label="Main navigation">
       <Link className={styles.primaryAction} href="/flights/new" title="Add flight" onClick={()=>setMobile(false)}><i><NavIcon name="add"/></i><span>Add flight</span></Link>
@@ -115,7 +115,7 @@ export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role
         return <Link key={link.href} className={active?"active":""} href={link.href} title={link.label} aria-label={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span>{flights&&attentionCount>0?<b className="notification-badge" aria-label={`${attentionCount} flights need attention`}>{Math.min(attentionCount,99)}</b>:null}</Link>
       })}
 
-      <button ref={moreRef} type="button" className={`sidebar-more-trigger${moreActive?" is-current":""}`} onClick={toggleMore} title="More — Pilot & records" aria-label="More navigation — Pilot & records" aria-expanded={moreOpen} aria-controls="sidebar-more-panel"><NavIcon name="manage"/></button>
+      <button ref={moreRef} type="button" className={`sidebar-more-trigger${moreActive?" is-current":""}`} onClick={toggleMore} title="More — Pilot & records" aria-label="More navigation — Pilot & records" aria-expanded={moreOpen} aria-controls="sidebar-more-panel"><NavIcon name="more"/></button>
 
       <div className={styles.group}>
         <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Pilot & records</span></div>
@@ -130,7 +130,6 @@ export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role
       {recordLinks.map(link=><Link key={link.href} href={link.href} aria-current={activeFor(link.href)?"page":undefined} onClick={()=>setMoreOpen(false)}><NavIcon name={link.icon}/>{link.label}</Link>)}
       {role==="admin"?<Link href="/admin" aria-current={pathname.startsWith("/admin")?"page":undefined} onClick={()=>setMoreOpen(false)}><NavIcon name="admin"/>Administration</Link>:null}
     </div>:null}
-    <div className="sidebar-layout-controls"><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"} aria-expanded={!collapsed} title={collapsed?"Expand sidebar":"Collapse sidebar"}><NavIcon name={collapsed?"sidebar-expand":"sidebar-collapse"}/><span>{collapsed?"Expand sidebar":"Collapse sidebar"}</span></button></div>
-    <form action={logout} className="desktop-signout"><button className="ghost-button" title="Sign out"><i><NavIcon name="signout"/></i><span>Sign out</span></button></form>
+    <div className="sidebar-utility"><NotificationBell initialCount={notificationCount} onNavigate={()=>setMobile(false)}/><form action={logout} className="desktop-signout"><button className="ghost-button" title="Sign out"><i><NavIcon name="signout"/></i><span>Sign out</span></button></form></div>
   </aside>;
 }

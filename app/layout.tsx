@@ -46,6 +46,7 @@ import "./ui-system.css";
 import "./flight-detail-f3.css";
 import "./flights-balanced-glassless.css";
 import "./sidebar-adaptive-v3.css";
+import "./sidebar-adaptive-v42.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
