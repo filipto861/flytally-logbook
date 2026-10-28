@@ -89,6 +89,10 @@
         "build": false
       },
       "tests": [
+        "tests/sidebar-adaptive-v3.test.ts",
+        "tests/sidebar-adaptive-v42.test.ts",
+        "tests/v136-mobile-ux.test.ts",
+        "tests/v300-sidebar-polish.test.ts",
         "tests/v121-ui-simplification.test.ts",
         "tests/v1342-ui-polish.test.ts",
         "tests/v156-mobile-layout-audit.test.ts",
