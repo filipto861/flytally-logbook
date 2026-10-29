@@ -1,6 +1,6 @@
 # DATA-1D — synthetic offline transport-size profile (source-only)
 
-Status: staged in a Draft PR; NOT RUN; no measurement evidence. The script has no DB driver, network requests, application imports, filesystem writes or HMAC secrets. It explicitly requires an offline-only command and refuses inherited database/CI/deployment environments. The generated data is fabricated and does not contain customer GPS/flight records.
+Status: offline synthetic-only CLI profiles measured on 2026-10-29T19:34:07.433Z; source unit tests and provider/PG runs NOT RUN. See [measurement evidence](2026-10-29-data1d-offline-measurement-evidence.md). The script has no DB driver, network requests, application imports, filesystem writes or HMAC secrets. It explicitly requires an offline-only command and refuses inherited database/CI/deployment environments. The generated data is fabricated and does not contain customer GPS/flight records.
 
 Future locally authorized use: node tooling/data1-synthetic-transport-size.mjs --synthetic-only --preset=small
 Other synthetic profiles: medium, large (bounded source generation to 40 MiB synthetic text).

@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T19:34:07.433Z — DATA-1D offline measurement evidence captured; DATA-1 still on HOLD
+
+- [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) `chore/logbook-data1d-offline-size-envelope-20261029` pre-evidence `36041613c7d4f314ae723b1a91db6d4b501c1d6f` on main `807f281e5870164b794d001480ecc84e0b45aea5`, stacked on #437→#436→#435→#434. Exact source blob matched assistant offline copy. 3 synthetic-only CLI profiles PASS (40, 500, 4000 flights); largest simulated psql output 34.6MB > local adapter 16MiB cap; gzip17.9MB/Base6423.9MB; [integer-byte evidence](../../docs/maintenance/2026-10-29-data1d-offline-measurement-evidence.md). Node22 assistant container, not Node24; no tests/build/Neon/DB/browser/CI. No merge/deploy/DB/flags/Training. Cannot infer Neon HTTP provider limit or real account capacity, DATA-1 release BLOCKED.
+- **ONE NEXT STEP:** owner decision on isolated synthetic Neon transport measurement; no remote database operation without it.
+
+
 ## 2026-10-29T19:26:55.629Z — DATA-1D-2 offline synthetic envelope Draft #438
 
 - Verified Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`, branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `d94c1a79219669e0fcc688ad9d7304390130ced3`, [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438), stacked on #437 (then #436/#435/#434). Source-only no-DB synthetic size profiler plus future standalone source tests and maintenance protocol; runnable only with explicit offline flag and benign environment; no runtime integration. Test, profiler, typecheck, build, PostgreSQL, Neon, browser, CI **NOT RUN**. No production data, merge/deploy, migration/flags/Training. HTTP vendor ceiling UNKNOWN and large-account transfer remains blocking for DATA-1 release.
