@@ -1,5 +1,16 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29 — SEC-1 dependency manifests pushed (verification PENDING)
+
+- **Verified base:** `main@807f281e5870164b794d001480ecc84e0b45aea5`; **work branch** `fix/logbook-sec1-dependency-remediation-20261029` at pinned package commit `d2021d7ceb1944501293fab3eec4340170cd7c77`, Draft PR [#432](https://github.com/filipto861/flytally-logbook/pull/432) base main. This docs checkpoint advances work HEAD; verify current remote full SHA before tests.
+- **Owner scope:** ChatGPT directly, SEC-1 dependency security only, no merge, production deploy, production DB/migrations/restore/delete, production flags, unrelated app features, or Training. Next milestones DATA-1, AUTH-1, PREF-1, conditional CRON-1, FLIGHTS-1 remain queued in ROADMAP.
+- **Changed files since previous handoff:** `package.json`, `package-lock.json` from user Node24 Windows npm resolver; exact `source` GitHub commit had only these two paths. Previous docs: `ROADMAP.md`, `docs/maintenance/2026-10-29-sec1-dependency-security-preflight.md`; this checkpoint updates two rolling Project Memory files. ZIP manifest contents match pushed blobs after Git Windows CRLF normalization (`package.json` blob `ca092c9a51116ca323c834436cff8238d329047b`, `package-lock.json` `8a8c004352a10b26be3d2e9bfd0001ef6d8bed17`).
+- **Dependency evidence:** Next 16.3.2→16.4.3, sharp 0.35.3→0.35.5, source-map-js 1.2.1→1.2.2. React 19.2.8 and locked Playwright 1.55.0 unchanged. GitHub diff and metadata PASS; user Windows `git diff --check`, commit and push reported PASS and remotely verified. Advisory patched ranges source-backed. Lock integrity changed for unchanged `@img/colour` and platform optional packages; require fresh `npm ci` to verify actual install.
+- **Gate status for current candidate:** Windows helper initially prepared lock with Node24/npm11; **fresh `npm ci`, `npm audit --omit=dev`, `npm run typecheck`, `npm test`, `npm run build`, isolated PostgreSQL/browser tests, risk release gate and native Safari: NOT RUN.** Previous audit 82/82 PASS was older baseline, not current candidate. Dependency upgrade NOT YET verified/released.
+- **Provider:** latest read-only alias `fly-tally.com` still `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`, source `55c8076e1eb8104c14392e15b272b33e0eb29607`; prod DB/schema/flags UNKNOWN, nothing changed.
+- **ONE next step:** run verified Node24 Windows `npm ci`, fresh `npm audit --omit=dev`, typecheck, Node regression suite and build on current Draft head, capture exit codes and logs; do not run PG/browser against unverified DB and do not merge or deploy.
+
+
 ## 2026-10-29T15:12:38.529Z — SEC-1 ChatGPT remediation roadmap + preflight BLOCKED
 
 - **GitHub baseline:** `main@807f281e5870164b794d001480ecc84e0b45aea5` verified, branch `fix/logbook-sec1-dependency-remediation-20261029` pre-checkpoint HEAD `9c56fd22975429febf4e18bfeb0337e994ef0e7d`, Draft PR [#432](https://github.com/filipto861/flytally-logbook/pull/432) based on main. Branch head after this checkpoint must be reverified from GitHub. DOC-6 merge PR #431 already on main, 0 other PRs at start.
