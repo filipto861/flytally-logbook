@@ -211,7 +211,7 @@ export function validateVoidHistoryRelationships(backup:PortableBackup){
   return{tombstones:tombstones.length,revisions:revisions.length,verifications:verifications.length,items:items.length,provenance:provenance.length};
 }
 
-async function validateVoidHistoryDigests(backup:PortableBackup){
+export async function validateVoidHistoryDigests(backup:PortableBackup){
   if(Number(backup.version)<13)return;
   const check=async(value:unknown,expected:unknown,label:string)=>{
     const stored=String(expected??"").trim(),actual=await portableBackupDigest(canonicalEvidenceJson(value));
@@ -223,7 +223,7 @@ async function validateVoidHistoryDigests(backup:PortableBackup){
   for(const row of backup.voided_flight_archive_items??[])await check(row.source_data,row.source_sha256,`Voided archive item ${String(row.id??"?")}`);
 }
 
-function validateOwnership(payload:Record<string,unknown>){
+export function validateOwnership(payload:Record<string,unknown>){
   const sourceUserId=Number((payload.profile as BackupRow|undefined)?.id||0);if(!Number.isSafeInteger(sourceUserId)||sourceUserId<=0)throw new Error("Version 6 backup profile has no valid source account identifier.");
   for(const key of v6Arrays)for(const row of payload[key] as BackupRow[])if("user_id" in row&&Number(row.user_id)!==sourceUserId)throw new Error(`Backup section ${key} contains a record from another account.`);
   if(Number(payload.version||0)>=7){
