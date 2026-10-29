@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T15:12:38.529Z — SEC-1 ChatGPT remediation roadmap + preflight BLOCKED
+
+- **GitHub baseline:** `main@807f281e5870164b794d001480ecc84e0b45aea5` verified, branch `fix/logbook-sec1-dependency-remediation-20261029` pre-checkpoint HEAD `9c56fd22975429febf4e18bfeb0337e994ef0e7d`, Draft PR [#432](https://github.com/filipto861/flytally-logbook/pull/432) based on main. Branch head after this checkpoint must be reverified from GitHub. DOC-6 merge PR #431 already on main, 0 other PRs at start.
+- **Owner scope:** order SEC-1 → DATA-1 → AUTH-1 → PREF-1 → conditional CRON-1 → FLIGHTS-1 through ChatGPT; **work branch / Draft only**. No merge, deploy, production DB/migration/restore/delete/flag, Training changes, automatic reopening/branch recreation or aviation logic change.
+- **Files changed:** `ROADMAP.md`, `docs/maintenance/2026-10-29-sec1-dependency-security-preflight.md`, plus this current Project Memory checkpoint (and ACTIVE_WORK). Baseline lockfile: `next@16.3.2`, `sharp@0.35.3`, `source-map-js@1.2.1`. Upstream advisories verified; patched Next candidate 16.4.3 and sharp>=0.35.5/source-map-js>=1.2.2 **NOT INSTALLED**.
+- **Evidence for current source:** GitHub base/head/diff PASS (docs-only); local Node22/npm10 seen; `npm view next@16.4.3` **BLOCKED / EAI_AGAIN** due to npm registry DNS. `npm ci`, lockfile regeneration, fresh audit, Node app tests, typecheck, build, real PostgreSQL acceptance, browser and native device tests **NOT RUN** on any SEC-1 dependency candidate because none exists. Audit synthetic 82/82 targeted PASS is historical only, at `main@807f281e5870164b794d001480ecc84e0b45aea5`.
+- **Runtime:** read-only Vercel `fly-tally.com` alias READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` (deployed app SHA `55c8076e1eb8104c14392e15b272b33e0eb29607`); no deploy. Prod DB/schema/flags UNKNOWN. No migration/flag operation performed.
+- **Blocker / ONE next step:** obtain permitted Node24 + npm registry execution to generate a valid dependency+lockfile candidate on the existing work branch and run selected tests; **do not merge Draft PR #432 as a security fix**.
+
 Verify GitHub and provider state independently. [Complete checkpoint archive](SESSION_HANDOFF_ARCHIVE_2026-10-29.md) preserves every earlier entry; [manifest](ARCHIVE_MANIFEST_2026-10-29.md) pins original blobs.
 
 ## 2026-10-29 — owner-directed PR closure and documentation reset
