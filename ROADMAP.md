@@ -1,5 +1,12 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-29T20:12:59Z — DATA-1D actual Neon HTTP driver / Node24 synthetic proof; CLEANUP VERIFIED
+
+- **Real driver evidence** in [DATA-1D Node24 HTTP proof](docs/maintenance/2026-10-29-data1d-neon-http-driver-evidence.md). New independently empty PG16 Neon project `cold-shape-74578425` + nonpersistent Node24 Vercel sandbox, exact `@neondatabase/serverless@1.1.0`; 3 batches of 32 results (30 SELECTs + 2 probes) in one `READ ONLY REPEATABLE READ` transaction passed with identical snapshots. HTTP response 20,834 B (40 synthetic rows), 4,108,924 B (500), 16,414,454 B (4000); separate parameterized upload/echo 1/4/12 MiB PASS. All 6 cases HTTP200, **no production SQL or real account data**.
+- **CLEANUP:** test Neon project delete success and absent in fresh list (3 original projects remain); Vercel session STOPPED and `persistent=false`, no active sandbox compute. Vendor maximum payload bound still UNKNOWN; exact app `buildAccountBackup`/stored Base64 INSERT+SELECT/restore, unit, typecheck, build, CI/browser/risk-release **NOT RUN**. No merge/deploy/prod DB/flags/Training.
+- **ONE NEXT STEP:** candidate-bound DATA-1 Node24 unit/typecheck on exact PR stack, followed by isolated synthetic full backup-storage transport/restore gate before any size policy or release; do not substitute the vendor experiment for application acceptance.
+
+
 ## 2026-10-29T19:45:29.629Z — DATA-1D disposable Neon synthetic SQL probe complete + cleanup VERIFIED
 
 - Owner authorized independently empty test project + cleanup. Created separate project `odd-recipe-81483357` (PG16, blank database, `public_tables=0`), executed read-only `REPEATABLE READ` transaction with 30 synthetic `generate_series` aggregates, and verified results 40→10,240B, 500→128,000B, 4,000→1,024,000B. Observed first server MVCC probe `repeatable read`/`on`, but equality with final probe was **not independently captured**. [Detailed evidence](docs/maintenance/2026-10-29-data1d-neon-ephemeral-evidence.md).

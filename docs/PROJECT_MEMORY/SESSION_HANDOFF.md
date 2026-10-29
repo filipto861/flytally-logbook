@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T20:12:59Z — DATA-1D HTTP driver proof PASS, ephemeral Neon + Vercel compute CLEANED
+
+- **Source identity:** Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`, working `chore/logbook-data1d-offline-size-envelope-20261029` pre-evidence `dc5d8a095cd7d9872d691d27c7b80f4a44d38f8d`, [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438), stacked #437→#436→#435→#434; separate design #433, SEC-1 #432, all Draft/unmerged. **No release change**.
+- **Actual measurements:** Newly created empty Neon `cold-shape-74578425`, PG16.15/zero tables, + nonpersistent Vercel sandbox Node24.22.1, exact `@neondatabase/serverless@1.1.0`. Six synthetic HTTP driver cases PASS with HTTP200; 32 sections, initial/final `READ ONLY REPEATABLE READ` probes, exact matching MVCC snapshot across 40/500/4000 generated row cases; response sizes 20,834/4,108,924/16,414,454B. Separate read-only parameterized upload/echo at 1/4/12MiB PASS. Details in [full evidence](../../docs/maintenance/2026-10-29-data1d-neon-http-driver-evidence.md). **NOT** app full backup, BASE64 archive INSERT/SELECT, provider max-size discovery or production data proof.
+- **Cleanup verified:** exact-ID test Neon project deletion, later list_projects only 3 original projects; Vercel sandbox session `sbx_HurBRhodoJCpJ7JC4QsTDAzJ3sKT` stopped, persistent=false. Named stopped sandbox metadata persists, no running session. Training and Logbook Shadow untouched. No production DB SQL/schema/migration/flags/merge/deploy. Production last observed READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` from `55c8076e1eb8104c14392e15b272b33e0eb29607`; live DB/schema/flags UNKNOWN.
+- **Verification ledger:** actual isolated synthetic HTTP driver **PASS**, stored backup end-to-end/real v13 **NOT RUN**, source tests/TS/build/PG/Playwright/CI/release **NOT RUN**. Precise Neon HTTP hard max UNKNOWN. No second Claude prompt, owner asked quota economy.
+- **ONE NEXT STEP:** run candidate-bound Node24 DATA-1 unit/typecheck on frozen exact Draft stack, then plan only necessary bounded synthetic storage integration in separate disposable environment; do not merge/deploy until verified & owner approves.
+
+
 ## 2026-10-29T19:45:29.629Z — DATA-1D ephemeral synthetic Neon project created, probed, DELETED VERIFIED
 
 - **Canonical repo:** `filipto861/flytally-logbook` `main@807f281e5870164b794d001480ecc84e0b45aea5`; work branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `d7d08f8d80311918cdd26f2c27a2cb2facd5cc16`, [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) base Draft #437 (`d81634dd8ac1a05b47da0fec2cf108e60bd29d37`), upstream #436/#435/#434; design #433, SEC-1 #432 separate. No merges.

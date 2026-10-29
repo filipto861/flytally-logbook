@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T20:12:59Z — DATA-1D real Node24 Neon HTTP test + cleanup VERIFIED
+
+- [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438) `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `dc5d8a095cd7d9872d691d27c7b80f4a44d38f8d` stacked on #437/#436/#435/#434; main `807f281e5870164b794d001480ecc84e0b45aea5`. Created **separate clean PG16 Neon project** and nonpersistent Node24 sandbox. Actual `@neondatabase/serverless@1.1.0`: 3 read-only REPEATABLE READ 32-response query batches, both snapshot probes identical, 40/500/4000 synthetic row cases PASS (20,834/4,108,924/16,414,454 response bytes), 1/4/12MiB parameter echo PASS. No real flight/GPS or DB writes. **NEON PROJECT DELETED, SANDBOX STOPPED and verified**, original three projects untouched. [Measured details](../../docs/maintenance/2026-10-29-data1d-neon-http-driver-evidence.md). Cannot claim vendor max size or full signed-v13 backup acceptance; all source unit/typecheck/build/PG/CI/browser tests NOT RUN, no merge/deploy/flags/Training.
+- **ONE NEXT STEP:** exact frozen DATA-1 stacked candidate Node24 targeted unit/typecheck, then bounded synthetic storage/restore proof if needed.
+
+
 ## 2026-10-29T19:45:29.629Z — DATA-1D isolated synthetic Neon query proof + verified cleanup
 
 - Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`; working Draft PR #438 pre-checkpoint `d7d08f8d80311918cdd26f2c27a2cb2facd5cc16`. Created independent empty Neon project `odd-recipe-81483357`, confirmed PG16/0 user tables, ran single transaction 30 read-only synthetic SELECT summaries + MVCC probes; aggregate rows 40/500/4000 PASS. **Deleted project and independently verified absence**; three original Neon projects untouched, Training excluded. Exact last MVCC snapshot match not separately asserted; Neon HTTP app driver/real wire throughput and size still NOT RUN. [Evidence](../../docs/maintenance/2026-10-29-data1d-neon-ephemeral-evidence.md). Unit/typecheck/build/PG full/browser/CI/release NOT RUN; no merge/deploy/prod DB/migrations/flags. DATA-1 release BLOCKED.
