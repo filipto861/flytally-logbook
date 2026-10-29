@@ -1,6 +1,6 @@
 import "server-only";
 import { spawnSync } from "node:child_process";
-import { applyLocalPostgresTransactionOptions, type LocalReadOnlySnapshotOptions } from "./local-postgres-transaction";
+import { applyLocalPostgresTransactionOptions, parseLocalPostgresTransactionResults, type LocalReadOnlySnapshotOptions } from "./local-postgres-transaction";
 
 const LOCAL_HOSTS=new Set(["127.0.0.1","localhost","::1","[::1]"]);
 
@@ -121,18 +121,7 @@ SELECT ${quote(`${marker}[]`)}`;
   });
   const legacyScript=`BEGIN;\n${chunks.join(";\n")};\nCOMMIT;`;
   const output=spawn(applyLocalPostgresTransactionOptions(legacyScript,options));
-  const results=statements.map(()=>[] as Array<Record<string,unknown>>);
-  for(const line of output.split(/\r?\n/)){
-    if(!line.startsWith(TRANSACTION_RESULT_PREFIX))continue;
-    const separator=line.indexOf(":");
-    const index=Number(line.slice(TRANSACTION_RESULT_PREFIX.length,separator));
-    if(!Number.isSafeInteger(index)||index<0||index>=results.length)continue;
-    const payload=line.slice(separator+1);
-    const parsed=JSON.parse(payload);
-    if(!Array.isArray(parsed))throw new Error("Local PostgreSQL transaction returned malformed row data.");
-    results[index]=parsed as Array<Record<string,unknown>>;
-  }
-  return results;
+  return parseLocalPostgresTransactionResults(output,statements.length);
 }
 
 type Rows=Array<Record<string,unknown>>;
