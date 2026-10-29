@@ -1,5 +1,22 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1D transport/restore source correction — 2026-10-29T19:11:48.769Z (DESIGN ONLY; NEEDS REVIEW)
+
+- **Verified source correction:** `app/(protected)/export/actions.ts` routes `version >= 6` to `executeExactAccountRestore`, which executes one `sql.transaction(queries)` under `EXACT_RESTORE_STATEMENT_LIMIT=1000`; current signed **v13 exact restore does NOT commit one chunk at a time**. The legacy **<6** `restoreLegacy` uses multiple transactions and individual row writes, a separate historical risk. This supersedes the older general C5 wording in [Claude review reconciliation](docs/maintenance/2026-10-29-data1-backup-snapshot-design.md) and prior memory; historical review text retained as evidence. [DATA-1D frozen analysis](docs/maintenance/2026-10-29-data1d-transport-and-restore-design.md).
+- **Unresolved scale:** common HTTP export batch aggregates 32 responses; `createStoredBackup` accepts gzip to 50 MiB but Base64 expands the one-INSERT payload; `loadStoredBackup` reads one large Base64 field; local `psql` maxBuffer=16 MiB; cron serial up to 500 users/`maxDuration=300`. Precise vendor HTTP request/response limits **UNVERIFIED**. Preferred D1 fail-closed HTTP with synthetic provider envelope, conditional D2 WebSocket single-session snapshot only if required; no release until evidence. DATA-1A/B/C Draft #434/#435/#436 still **UNTESTED / UNMERGED**. No code, DB/schema/flags, Training or production change for D1D. **Next:** updated independent read-only review on corrected design, then smallest owner-scoped runtime slice.
+
+
+## DATA-1 second-AI review — 2026-10-29T18:50:29.823Z (APPROVE WITH CHANGES / NOT RELEASED)
+
+- Owner-provided Claude read-only review at frozen [DATA-1 design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433) SHA `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65` has been reconciled into the [design document](docs/maintenance/2026-10-29-data1-backup-snapshot-design.md). C1 size/latency, C2 isolation probes, C3 local adapter, C4 profile, C5 multi-batch restore consistency, C6 NOW() accepted. Explicitly reject signing known-invalid backups in shadow mode. WebSocket Plan B requires separate size evidence.
+- First implementation slice A [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434) updates the local PostgreSQL adapter to honor allowlisted read-only RepeatableRead transactions, preserving legacy default script. Tests **added but NOT RUN**; no coherent backup export implementation yet. Next: guarded PR-B exporter only after settling batch-size fail-closed behavior. No merges, deployment, prod DB/flags, or Training changes.
+
+
+## DATA-1 design gate — 2026-10-29T18:28:31.043Z (unimplemented, source review complete)
+
+- Owner directed continuation per approved remediation order **without running tests**. DATA-1 backup coherence discovery identifies 30 independent Promise.all SQL reads in `lib/account-backup.ts`; a signed v13 archive can mix MVCC snapshots when rows change concurrently. Technical design and independent reviewer questions: [DATA-1 design](docs/maintenance/2026-10-29-data1-backup-snapshot-design.md). The proposed single read-only REPEATABLE READ transaction is **NOT IMPLEMENTED**. Local `psql` adapter currently ignores isolation options, and Neon HTTP payload bounds need review. Test/typecheck/build/PG/browser **NOT RUN** for DATA-1. This separate docs-only branch starts from `main@807f281e5870164b794d001480ecc84e0b45aea5`, not SEC-1 PR #432. No merge/deploy/prod DB/flags/Training authorization. **Next step:** independent read-only security/data review before code.
+
+
 ## Current work status — 2026-10-29, documentation reset
 
 - **Main:** `eb98982d9ce7cb166c32ba77c9262683989570f8`; application version `3.8.1`. Older release-order tables below are dated history, not current instructions.

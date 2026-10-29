@@ -1,5 +1,39 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T19:11:48.769Z — DATA-1D corrected restore atomicity and large-account design (NO CODE)
+
+- **Verified GitHub source:** Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`, design branch `docs/logbook-data1-snapshot-design-20261029` pre-checkpoint HEAD `9e80c1c80c32a2ae01de001c505fdde7f1f74f82` [Draft PR #433](https://github.com/filipto861/flytally-logbook/pull/433). Data-1A [#434](https://github.com/filipto861/flytally-logbook/pull/434) @`e933c39fec76f2836870ab7d41e09dfb397a8ac2`, B [#435](https://github.com/filipto861/flytally-logbook/pull/435) @`90b017c54b6299a77dad9dc6d6fc59019707e75f`, C [#436](https://github.com/filipto861/flytally-logbook/pull/436) @`3997a5ef2093e50ee9b791f205c6a75b397ae299` Draft/unmerged stacked; SEC-1 [#432](https://github.com/filipto861/flytally-logbook/pull/432) separate.
+- **Material correction:** exact restore `version>=6` is ONE `sql.transaction(queries)`, capped at 1000 statements in `lib/recovery-scale.ts`, not a multi-commit writer. The multiple transactions are only the legacy `version<6` path in `restoreLegacy`. [DATA-1D design](docs/maintenance/2026-10-29-data1d-transport-and-restore-design.md) corrects Claude C5; previously copied assertions about v13 partial-restore commits are SUPERSEDED.
+- **Scale inventory:** existing gzip<=50 MiB can Base64-expand beyond possible HTTP request limit; 32-response MVCC batch, one Base64 INSERT and one Base64 SELECT are distinct limits; local psql 16MiB fixture buffer, serial cron 500/300s. Vendor exact threshold, account sizes and runtime resource limits UNKNOWN. Preferred fail-closed behavior; conditional WebSocket read transaction deferred until separate evidence and review. No arbitrary cutoff encoded.
+- **Evidence:** DATA-1D code/tests/build/PG/Neon/CI/browser **NOT RUN**, no runtime code changed. Existing PR-A/B/C untested. Production Vercel READY at `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` from `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags **UNKNOWN**. No merge/deploy/prod DB/flags/schema/Training change.
+- **ONE NEXT STEP:** obtain independent SHA-bound read-only review of corrected DATA-1D transport design before any DATA-1D runtime implementation.
+
+
+## 2026-10-29T18:50:29.823Z — Claude DATA-1 review reconciled; PR-A implemented separately but NOT RUN
+
+- **GitHub baseline:** `main@807f281e5870164b794d001480ecc84e0b45aea5`, design branch `docs/logbook-data1-snapshot-design-20261029` pre-checkpoint `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65`, open [Draft PR #433](https://github.com/filipto861/flytally-logbook/pull/433). SEC-1 Draft #432 remains independent; local adapter source slice A is separate [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434) at `e0814e9b5f795a141e014c44a85359bcfbad3d7d`; no PR merged.
+- **Second-AI review:** owner supplied exact Claude review of design commit `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65`. Verdict **APPROVE WITH CHANGES**. Reconciled C1..C6 in `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md`. Required before release: Neon response-size envelope, independently checked REPEATABLE READ/READ ONLY same-snapshot probes, exact result/profile checks, local adapter enforcement, legacy validator compatibility and multi-batch restore boundary. Reject shadow mode that signs known-invalid data. WebSocket Plan B/deletion UX separately deferred.
+- **Verification:** PR-A source + 4 tests written but **NONE EXECUTED**; DATA-1 typecheck, Node, build, PG, browser, candidate release, CI **NOT RUN**. Actual coherent snapshot builder not changed; no DATA-1 integrity fix in main or production. No repo remote DB/SQL accessed, no migrations/flag/deploy/Training changes. Production `fly-tally.com` last read-only READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` on source `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** prepare PR-B coherent backup builder with strict snapshot probes and fail-closed size/error behavior, but DO NOT merge/ship without measurement and appropriate later owner-authorized risk evidence.
+
+
+## 2026-10-29T18:28:31.043Z — DATA-1 design-only Draft PR #433 opened, second-AI review PENDING
+
+- **Source:** GitHub `main@807f281e5870164b794d001480ecc84e0b45aea5`; work branch `docs/logbook-data1-snapshot-design-20261029` at pre-checkpoint head `03e58fbe20d54fcbc5303a6c91c934ac99fdc31c`, [Draft PR #433](https://github.com/filipto861/flytally-logbook/pull/433), base main. Independent SEC-1 [Draft PR #432](https://github.com/filipto861/flytally-logbook/pull/432) remains open/unmerged at last read `b5d3aa7add94c72f8c4c416287da43b4c763ff02`. No branch stacking, no runtime code edit.
+- **Design work:** `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md` freezes current export implementation (30 independently scheduled SQL reads) and proposed single read-only REPEATABLE READ snapshot, local adapter compatibility changes, inherited v13 authenticity/ownership invariants and large-response constraints. `ROADMAP.md` and `SESSION_HANDOFF.md` updated on this branch. Independent Claude/DeepSeek read-only review not yet performed; future source code implementation NOT STARTED.
+- **Testing:** DATA-1 typecheck, Node, build, PostgreSQL, browser, risk-release, CI **NOT RUN** by explicit owner instruction. No claims that the coherent backup issue is corrected.
+- **Safety:** no merges, deployment, schema or production DB/flags/restore/delete, no Training changes. Production read-only provider last verified READY `fly-tally.com` deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` at `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** obtain a single independent read-only second-AI assessment of PR #433's frozen DATA-1 architecture and reconcile any findings before implementing a minimal source batch. Do not run tests unless user later changes the instruction.
+
+
+## 2026-10-29T18:28:31.043Z — DATA-1 read-only design review staged; tests deliberately NOT RUN
+
+- **Verified main:** `807f281e5870164b794d001480ecc84e0b45aea5`; DATA-1 design branch `docs/logbook-data1-snapshot-design-20261029` begins from main; [SEC-1 Draft PR #432](https://github.com/filipto861/flytally-logbook/pull/432) remains separate, unmerged. Proposed design document `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md` is the current scope; no runtime code changes, no tests, no DB operations.
+- **Discovery:** `lib/account-backup.ts` Promise.all performs 30 separate reads before signing v13 backup; one REPEATABLE READ read-only transaction is supported by locked Neon serverless v1.1.0, but local `lib/local-postgres.ts` transaction ignores options. All export, stored backup, cron and pre-restore/delete paths share the builder. Larger-than-buffer SQL response and legacy integrity validation risks require independent review.
+- **Gates:** DATA-1 Node/TypeScript/build/source/PG/browser/CI **NOT RUN** by owner direction; no PASS inferred. Production existing `fly-tally.com` deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` READY from `55c8076e1eb8104c14392e15b272b33e0eb29607` read-only verified; prod DB/schema/flags **UNKNOWN**.
+- **DO NOT:** merge, deploy, production DB/migrations/flags, Training change or code implementation before independent read-only design review. **ONE NEXT STEP:** seek independent SHA-frozen DATA-1 architecture/data-integrity review, reconcile response and then implement first small source batch without running tests until permitted.
+
+
 Verify GitHub and provider state independently. [Complete checkpoint archive](SESSION_HANDOFF_ARCHIVE_2026-10-29.md) preserves every earlier entry; [manifest](ARCHIVE_MANIFEST_2026-10-29.md) pins original blobs.
 
 ## 2026-10-29 — owner-directed PR closure and documentation reset
