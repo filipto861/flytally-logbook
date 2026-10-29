@@ -37,6 +37,11 @@ export async function validateAccountBackupBeforeSigning(
     ||payload.format!=="pilot-logbook-portable"){
     throw new AccountBackupPreSignError("UNRESTORABLE_SOURCE");
   }
+  // Reject malformed sections before accessing .length. In particular,
+  // an absent track array must return a typed error rather than TypeError.
+  if(!Array.isArray(payload.flights)||!Array.isArray(payload.flight_tracks)){
+    throw new AccountBackupPreSignError("UNRESTORABLE_SOURCE");
+  }
   // Match the parser's existing limits. The reader must not produce a
   // successfully signed archive that recovery immediately refuses.
   if(payload.flights.length>20_000||payload.flight_tracks.length>30_000){
