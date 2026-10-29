@@ -1,5 +1,10 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1B snapshot builder staged — 2026-10-29T18:58:22.448Z (UNTESTED / NOT RELEASED)
+
+- [Draft PR #435](https://github.com/filipto861/flytally-logbook/pull/435), stacked on local adapter [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434), preserves all 30 exported `SELECT` queries, v13 payload and signing while requiring one read-only `RepeatableRead` transaction, two SQL MVCC probes, exact 32 result sections and one owned account row. **No fallback** to independent reads; failure before signing prevents creating a partial backup. New focused tests were written but **NOT RUN**. Neon HTTP/psql response capacity and sequential latency remain unverified; multi-batch restore logical consistency, pre-sign structural certification and large-account policy remain blockers before any release. The owner instructed no test execution, and no DB/merge/deploy/Training changes were made. **ONE NEXT STEP:** prepare separate data integrity PR-C after checking legacy and shared validator behavior.
+
+
 ## DATA-1 local adapter slice A — 2026-10-29T18:50:08.815Z (Draft #434, NOT TESTED/NOT RELEASED)
 
 - Following Claude read-only **APPROVE WITH CHANGES** review on frozen design SHA `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65` (reconciliation in separate [Draft PR #433](https://github.com/filipto861/flytally-logbook/pull/433)), isolated [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434) changes only local PostgreSQL transaction-option enforcement: allowlist `RepeatableRead` + `readOnly:true`, preserving default mutation BEGIN/COMMIT byte-for-byte. Four focused tests added but **NOT RUN** as requested; `buildAccountBackup` remains unchanged and DATA-1 is **NOT FIXED**. Next: guard larger transaction response/restore consistency and implement validated builder separately. No merge/deploy/prod DB/flags/Training.
