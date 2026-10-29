@@ -1,0 +1,52 @@
+name: DATA-1 full checkout verification (temporary)
+
+on:
+  push:
+    branches:
+      - chore/logbook-data1-full-ci-20261029
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data1-full-checkout-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Node24 complete-repository diagnostic (NO DB / NO DEPLOY)
+    if: github.repository == 'filipto861/flytally-logbook'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      DATABASE_URL: ""
+      NEON_DATABASE_URL: ""
+      FLYTALLY_LOCAL_POSTGRES: ""
+      NEXT_TELEMETRY_DISABLED: "1"
+      CI: "true"
+    steps:
+      - name: Exact private repository checkout (read-only credential)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Pin Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Record verified source identity
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node --version
+          git rev-parse HEAD
+      - name: Install lockfile dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Plan affected data-integrity scope (read only)
+        run: npm run scope:changed -- lib/local-postgres.ts lib/local-postgres-transaction.ts lib/account-backup.ts lib/account-backup-snapshot.ts lib/account-backup-presign.ts lib/portable-backup.ts
+      - name: Full repository TypeScript check
+        run: npm run typecheck
+      - name: Full Node unit and regression tests
+        run: npm test
+      - name: Production build diagnostic (NOT a deployment)
+        run: npm run build
