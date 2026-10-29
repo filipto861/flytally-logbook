@@ -124,11 +124,11 @@ test("Node and Playwright versions are repository-pinned to the production toolc
   const lock=JSON.parse(read("package-lock.json"));
   assert.equal(pkg.engines.node,"24.x");
   assert.equal(read(".nvmrc").trim(),"24");
-  assert.equal(pkg.devDependencies["@playwright/test"],"1.55.0");
-  assert.equal(lock.packages[""].devDependencies["@playwright/test"],"1.55.0");
-  assert.equal(lock.packages["node_modules/@playwright/test"].version,"1.55.0");
-  assert.equal(lock.packages["node_modules/playwright"].version,"1.55.0");
-  assert.equal(lock.packages["node_modules/playwright-core"].version,"1.55.0");
+  assert.equal(pkg.devDependencies["@playwright/test"],"1.56.0");
+  assert.equal(lock.packages[""].devDependencies["@playwright/test"],"1.56.0");
+  assert.equal(lock.packages["node_modules/@playwright/test"].version,"1.56.0");
+  assert.equal(lock.packages["node_modules/playwright"].version,"1.56.0");
+  assert.equal(lock.packages["node_modules/playwright-core"].version,"1.56.0");
 });
 
 test("manual cloud verification mirrors the local-first release policy without automatic PR runs",()=>{
