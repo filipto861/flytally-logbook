@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29 — SEC-1 pending Playwright 1.56.0 npm lock update
+
+- Draft [#432](https://github.com/filipto861/flytally-logbook/pull/432), canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`. Windows Node24 verification for tested SEC-1 SHA `ececbad251499b9a53004fa066d66db2afe3fbf8`: `npm ci`, typecheck, full 1759/1759 Node, build PASS; `npm audit --omit=dev` FAIL (2 HIGH: Playwright 1.55.0 + `@playwright/test`, one advisory). Current branch has documentation/test pin changes not covered by those historical passes.
+- Playwright 1.56.0 chosen conservatively to address both upstream advisory ranges. Two version-pin test contracts and DEVELOPMENT.md updated without relaxing checks; **npm package/lock not yet regenerated**. Pending fresh audit, Node/build, and actual browser release evidence; isolated PostgreSQL/browser/native device NOT RUN. Production unchanged and DB/flags UNKNOWN.
+- **Next action:** owner Node24 `npm install --save-dev --save-exact @playwright/test@1.56.0`, verify package+lock, push changes to same Draft; no merge/deploy/production DB/flags/Training.
+
 ## 2026-10-29 — SEC-1 dependency update staged in Draft PR #432
 
 - `main@807f281e5870164b794d001480ecc84e0b45aea5`, dependency source commit `d2021d7ceb1944501293fab3eec4340170cd7c77` on `fix/logbook-sec1-dependency-remediation-20261029`, Draft [#432](https://github.com/filipto861/flytally-logbook/pull/432). Current work branch full SHA may include newer documentation checkpoint; reverify before tests.
