@@ -1,6 +1,6 @@
 # FlyTally Logbook — current session handoff
 
-## 2026-10-29T18:58:00Z — Claude DATA-1 review reconciled; PR-A implemented separately but NOT RUN
+## 2026-10-29T18:50:29.823Z — Claude DATA-1 review reconciled; PR-A implemented separately but NOT RUN
 
 - **GitHub baseline:** `main@807f281e5870164b794d001480ecc84e0b45aea5`, design branch `docs/logbook-data1-snapshot-design-20261029` pre-checkpoint `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65`, open [Draft PR #433](https://github.com/filipto861/flytally-logbook/pull/433). SEC-1 Draft #432 remains independent; local adapter source slice A is separate [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434) at `e0814e9b5f795a141e014c44a85359bcfbad3d7d`; no PR merged.
 - **Second-AI review:** owner supplied exact Claude review of design commit `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65`. Verdict **APPROVE WITH CHANGES**. Reconciled C1..C6 in `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md`. Required before release: Neon response-size envelope, independently checked REPEATABLE READ/READ ONLY same-snapshot probes, exact result/profile checks, local adapter enforcement, legacy validator compatibility and multi-batch restore boundary. Reject shadow mode that signs known-invalid data. WebSocket Plan B/deletion UX separately deferred.

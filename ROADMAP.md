@@ -1,6 +1,6 @@
 # FlyTally Logbook — ROADMAP
 
-## DATA-1 second-AI review — 2026-10-29T18:58:00Z (APPROVE WITH CHANGES / NOT RELEASED)
+## DATA-1 second-AI review — 2026-10-29T18:50:29.823Z (APPROVE WITH CHANGES / NOT RELEASED)
 
 - Owner-provided Claude read-only review at frozen [DATA-1 design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433) SHA `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65` has been reconciled into the [design document](docs/maintenance/2026-10-29-data1-backup-snapshot-design.md). C1 size/latency, C2 isolation probes, C3 local adapter, C4 profile, C5 multi-batch restore consistency, C6 NOW() accepted. Explicitly reject signing known-invalid backups in shadow mode. WebSocket Plan B requires separate size evidence.
 - First implementation slice A [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434) updates the local PostgreSQL adapter to honor allowlisted read-only RepeatableRead transactions, preserving legacy default script. Tests **added but NOT RUN**; no coherent backup export implementation yet. Next: guarded PR-B exporter only after settling batch-size fail-closed behavior. No merges, deployment, prod DB/flags, or Training changes.

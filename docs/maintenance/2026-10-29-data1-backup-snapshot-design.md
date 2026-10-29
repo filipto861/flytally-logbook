@@ -38,7 +38,7 @@
 - Exact candidate-bound source/typecheck/build and risk-selected backup/restore/PG evidence **NOT RUN**. No automated tests, `npm ci`, build or SQL were executed in this design-only milestone, as explicitly requested.
 - Security review with reviewer verdict (APPROVE / APPROVE WITH CHANGES / BLOCK), source-specific findings and lead reconciliation **PENDING**.
 
-## Independent second-AI review reconciliation — Claude, 2026-10-29T18:58:00Z
+## Independent second-AI review reconciliation — Claude, 2026-10-29T18:50:29.823Z
 
 **External reviewer verdict: APPROVE WITH CHANGES.** Claude reviewed frozen proposal at `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65` in detached checkout. Review text supplied by owner on 2026-10-29; independently reconciled against `main@807f281e5870164b794d001480ecc84e0b45aea5`, particularly `lib/account-backup.ts`, `lib/local-postgres.ts`, `lib/backup-center.ts`, `lib/portable-backup.ts`, `lib/backup-certification.ts`, export/restore actions and `tests/v325-transaction-mutations.test.ts`. Reviewer did **not** run tests or access private databases. This design remains UNRELEASED, and source change is a separate Draft PR.
 
