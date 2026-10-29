@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T21:02:30.499Z — full Node24 GitHub Actions DATA-1 evidence stored; temporary CI workflow removed
+
+- `main@807f281e5870164b794d001480ecc84e0b45aea5`, working Draft [#440](https://github.com/filipto861/flytally-logbook/pull/440) pre-checkpoint tested SHA `087d19b2c108ccbe0d11311e598ac4d915d12bc2`, stacked on #439→#438→#437→#436→#435→#434; SEC-1 #432, design #433 independent. Audited runtime inventory `419` aligns three new stable-owned source files. GitHub Actions [#40953266033](https://github.com/filipto861/flytally-logbook/actions/runs/40953266033) full repo Node24 `typecheck` PASS, **1775/1775 Node PASS**, build PASS, isolated PG core **119 PASS/32 SKIP/0 FAIL = PARTIAL**, bounded signed-v13 recovery desktop+mobile **2/2 PASS, zero retries**. Both local PG fixtures stopped/removed, job cleanup PASS. Temporary push-triggered CI workflow **removed** on working branch; original manual-only workflows remain. [Complete evidence](../../docs/maintenance/2026-10-29-data1-full-github-actions-verification.md). No new Neon branch/project, production DB/flags, deployment, merge or Training changes. DATA-1 release blocked on PG skipped acceptance and large stored archive transport.
+- **ONE NEXT STEP:** classify and close 32 PostgreSQL skips using an independently verified local disposable fixture and the canonical acceptance contract.
+
+
 ## 2026-10-29T20:26:05.483Z — DATA-1 targeted tests PASS; new compatibility Draft #439, release BLOCKED
 
 - `main@807f281e5870164b794d001480ecc84e0b45aea5`, work `fix/logbook-data1-node24-strip-types-20261029` pre-checkpoint `e45fde930b305ed4b5e25be3522423cc21c0d53a`, [Draft #439](https://github.com/filipto861/flytally-logbook/pull/439) stacked on #438→#437→#436→#435→#434. Actual **Vercel Sandbox Node24.22.1** first uncovered Node strip loader FAIL and focused TypeScript TS2352 FAIL; both narrow fixes committed. Final 16/16 A/B/C/D tests PASS, 2/2 profiler tests PASS, **focused** `tsc --noEmit` PASS; source file subset only, **full repository** typecheck/build/Node suite/PG/CI/browser/release **NOT RUN**. No new Neon DB, sandbox STOPPED/verified, no merge/deploy/production DB/flags/Training. Full metrics in [verification evidence](../../docs/maintenance/2026-10-29-data1-targeted-node24-verification.md).

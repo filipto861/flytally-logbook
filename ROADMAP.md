@@ -1,5 +1,12 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-29T21:02:30.499Z — DATA-1 full GitHub Node24 + v13 browser evidence, original CI restored
+
+- Draft #440, work `chore/logbook-data1-full-ci-20261029` pre-checkpoint tested SHA `087d19b2c108ccbe0d11311e598ac4d915d12bc2` based on #439→#438→#437→#436→#435→#434. Added three runtime helpers earlier; `tooling/development-modules.json` audited count fixed **416→419** (real path ownership, no changed test assertions). Exact [GitHub Actions #40953266033](https://github.com/filipto861/flytally-logbook/actions/runs/40953266033): full private checkout, `npm ci`, full `npm run typecheck`, `npm test` **1,775/1,775 PASS**, `npm run build` PASS. Isolated loopback PG16 core **119 PASS, 32 SKIP**, thus **PARTIAL** despite CI job success; desktop and mobile signed portable v13 backup/restore risk browser **1/1 PASS each, no retries**, with schema-first v20/v21. Previous FAIL and CANCELLED diagnostics retained. [Exact SHA evidence](docs/maintenance/2026-10-29-data1-full-github-actions-verification.md).
+- CI PG processes stopped and directories removed (both jobs PASS); **temporary push-triggered workflow removed from branch** in same checkpoint; only existing manual workflows retained. No new Neon environment, production DB/migrations/flags, Training, merge or deploy. DATA-1 **NOT RELEASE-READY** because 32 PG SKIPs, no authoritative candidate release ledger and large Base64 stored archive limits unknown.
+- **ONE NEXT STEP:** isolate and classify the 32 PG SKIPs via contract-valid acceptance before any release/merge decision.
+
+
 ## 2026-10-29T20:26:05.483Z — DATA-1 Node24 targeted acceptance (Vercel Sandbox PASS; full release gates PENDING)
 
 - **New small compatibility [Draft PR #439](https://github.com/filipto861/flytally-logbook/pull/439)** stacked on #438→#437→#436→#435→#434. Source candidate `e45fde930b305ed4b5e25be3522423cc21c0d53a`, main `807f281e5870164b794d001480ecc84e0b45aea5`. Node24 `--experimental-strip-types` initially **FAIL** on `AccountBackupSnapshotError` parameter property (12 pass / 1 fail); modified to explicit readonly assignment (no validation changes). Focused TypeScript initially **FAIL TS2352** on runtime-generated test fixture; explicit dynamic cast (no test weakening). **Re-run PASS: 16/16 targeted DATA-1 tests, 2/2 profiler tests, focused TypeScript noEmit exit 0** in a real Vercel nonpersistent Node24 sandbox. [SHA-bound evidence](docs/maintenance/2026-10-29-data1-targeted-node24-verification.md).
