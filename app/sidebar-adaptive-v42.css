@@ -341,10 +341,10 @@
   .app-grid .sidebar .sidebar-utility{
     position:absolute;
     z-index:2;
-    top:15px;
+    top:11px;
     right:68px;
-    width:36px;
-    height:36px;
+    width:44px;
+    height:44px;
     display:flex;
     align-items:center;
     padding:0;
@@ -355,10 +355,10 @@
   .app-grid .sidebar .sidebar-utility>a[aria-label^="Notifications"]{
     display:grid;
     place-items:center;
-    width:36px;
-    height:36px;
-    min-width:36px;
-    min-height:36px;
+    width:44px;
+    height:44px;
+    min-width:44px;
+    min-height:44px;
     margin:0;
     padding:0;
     background:var(--panel2);

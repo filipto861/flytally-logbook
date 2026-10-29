@@ -45,10 +45,24 @@ test("Notification is bottom desktop but still in mobile header; no duplicate fe
   assert.match(css,/\.sidebar \.sidebar-utility\{[\s\S]*?display:grid;/);
   assert.match(css,/\.sidebar \.sidebar-utility>a\[aria-label\^="Notifications"\]::after\{\s*content:"Notifications";/);
   assert.match(css,/@media screen and \(max-width:820px\)\{/);
-  assert.match(css,/top:15px;\s*right:68px;/);
+  assert.match(css,/top:11px;\s*right:68px;/);
   assert.match(css,/\.sidebar \.sidebar-utility \.desktop-signout\{\s*display:none;/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
+test("V4.2 mobile notification keeps an actual 44px hit target beside the menu",()=>{
+  const css=read("app/sidebar-adaptive-v42.css");
+  const fallback=read("components/sidebar.module.css");
+  const mobile=css.slice(css.lastIndexOf("@media screen and (max-width:820px){"));
+  const utility=mobile.match(/\.app-grid \.sidebar \.sidebar-utility\{([^}]+)\}/)?.[1]??"";
+  const bell=mobile.match(/\.app-grid \.sidebar \.sidebar-utility>a\[aria-label\^="Notifications"\]\{([^}]+)\}/)?.[1]??"";
+  assert.match(utility,/top:11px;\s*right:68px;/);
+  assert.match(utility,/width:44px;\s*height:44px;/);
+  for(const property of ["width","height","min-width","min-height"]){
+    assert.ok(bell.includes(property+":44px;"),property);
+  }
+  assert.match(fallback,/@media\(max-width:820px\)\{[\s\S]*?\.notificationBell\{width:44px;height:44px;flex-basis:44px;/);
+});
+
 test("V4.2 does not modify meaningful flight rails, time source or auth routes",()=>{
   const s=read("components/sidebar.tsx");
   const css=read("app/sidebar-adaptive-v42.css");

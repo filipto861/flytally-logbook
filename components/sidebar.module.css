@@ -35,7 +35,7 @@
   .adminLink{margin-top:9px!important;height:52px!important;padding-top:8px!important}
   .headerActions{margin-left:auto;display:flex;align-items:center;gap:8px}
   .headerActions :global(.mobile-toggle){margin-left:0}
-  .notificationBell{width:36px;height:36px;flex-basis:36px;margin-left:0}
+  .notificationBell{width:44px;height:44px;flex-basis:44px;margin-left:0}
 }
 
 /* N1 V2: preserve the hierarchy in desktop compact mode and mobile drawer. */

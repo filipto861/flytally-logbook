@@ -66,7 +66,7 @@ test("V4.2 preserves accessible mobile notification next to the menu while using
   assert.match(css,/\.headerActions\{[^}]*display:flex[^}]*gap:8px/s);
   assert.match(css,/@media\(max-width:820px\)[\s\S]*\.headerActions :global\(\.mobile-toggle\)\{margin-left:0\}/s);
   assert.match(quiet,/@media screen and \(max-width:820px\)\{/);
-  assert.match(quiet,/top:15px;\s*right:68px;/);
+  assert.match(quiet,/top:11px;\s*right:68px;/);
   assert.match(quiet,/\.sidebar \.sidebar-utility \.desktop-signout\{\s*display:none;/);
   assert.match(quiet,/\.sidebar \.sidebar-utility>a\[aria-label\^="Notifications"\]::after\{\s*content:"Notifications";/);
 });
