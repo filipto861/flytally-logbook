@@ -21,7 +21,7 @@ const emptyPayload=():Payload=>{
     exported_at:"2026-10-29T18:00:00.000Z",
     profile:{id:userId},
     counts,
-  } as Payload;
+  } as unknown as Payload;
 };
 const withRow=(payload:Payload,section:keyof Payload,row:Record<string,unknown>)=>{
   const rows=payload[section] as Record<string,unknown>[];

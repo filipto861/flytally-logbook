@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T20:26:05.483Z — DATA-1 targeted tests PASS; new compatibility Draft #439, release BLOCKED
+
+- `main@807f281e5870164b794d001480ecc84e0b45aea5`, work `fix/logbook-data1-node24-strip-types-20261029` pre-checkpoint `e45fde930b305ed4b5e25be3522423cc21c0d53a`, [Draft #439](https://github.com/filipto861/flytally-logbook/pull/439) stacked on #438→#437→#436→#435→#434. Actual **Vercel Sandbox Node24.22.1** first uncovered Node strip loader FAIL and focused TypeScript TS2352 FAIL; both narrow fixes committed. Final 16/16 A/B/C/D tests PASS, 2/2 profiler tests PASS, **focused** `tsc --noEmit` PASS; source file subset only, **full repository** typecheck/build/Node suite/PG/CI/browser/release **NOT RUN**. No new Neon DB, sandbox STOPPED/verified, no merge/deploy/production DB/flags/Training. Full metrics in [verification evidence](../../docs/maintenance/2026-10-29-data1-targeted-node24-verification.md).
+- **ONE NEXT STEP:** obtain full SHA-bound private checkout in isolated Node24 then run full typecheck and risk-selected release tests, preserving production no-action hold.
+
+
 ## 2026-10-29T20:12:59Z — DATA-1D real Node24 Neon HTTP test + cleanup VERIFIED
 
 - [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438) `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `dc5d8a095cd7d9872d691d27c7b80f4a44d38f8d` stacked on #437/#436/#435/#434; main `807f281e5870164b794d001480ecc84e0b45aea5`. Created **separate clean PG16 Neon project** and nonpersistent Node24 sandbox. Actual `@neondatabase/serverless@1.1.0`: 3 read-only REPEATABLE READ 32-response query batches, both snapshot probes identical, 40/500/4000 synthetic row cases PASS (20,834/4,108,924/16,414,454 response bytes), 1/4/12MiB parameter echo PASS. No real flight/GPS or DB writes. **NEON PROJECT DELETED, SANDBOX STOPPED and verified**, original three projects untouched. [Measured details](../../docs/maintenance/2026-10-29-data1d-neon-http-driver-evidence.md). Cannot claim vendor max size or full signed-v13 backup acceptance; all source unit/typecheck/build/PG/CI/browser tests NOT RUN, no merge/deploy/flags/Training.
