@@ -14,8 +14,10 @@ export type AccountBackupSnapshotErrorCode=
   |"MISSING_PROFILE";
 
 export class AccountBackupSnapshotError extends Error{
-  constructor(public readonly code:AccountBackupSnapshotErrorCode,message:string){
+  readonly code:AccountBackupSnapshotErrorCode;
+  constructor(code:AccountBackupSnapshotErrorCode,message:string){
     super(message);
+    this.code=code;
     this.name="AccountBackupSnapshotError";
   }
 }
