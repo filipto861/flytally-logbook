@@ -1,5 +1,35 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T20:12:59Z — DATA-1D real Node24 Neon HTTP test + cleanup VERIFIED
+
+- [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438) `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `dc5d8a095cd7d9872d691d27c7b80f4a44d38f8d` stacked on #437/#436/#435/#434; main `807f281e5870164b794d001480ecc84e0b45aea5`. Created **separate clean PG16 Neon project** and nonpersistent Node24 sandbox. Actual `@neondatabase/serverless@1.1.0`: 3 read-only REPEATABLE READ 32-response query batches, both snapshot probes identical, 40/500/4000 synthetic row cases PASS (20,834/4,108,924/16,414,454 response bytes), 1/4/12MiB parameter echo PASS. No real flight/GPS or DB writes. **NEON PROJECT DELETED, SANDBOX STOPPED and verified**, original three projects untouched. [Measured details](../../docs/maintenance/2026-10-29-data1d-neon-http-driver-evidence.md). Cannot claim vendor max size or full signed-v13 backup acceptance; all source unit/typecheck/build/PG/CI/browser tests NOT RUN, no merge/deploy/flags/Training.
+- **ONE NEXT STEP:** exact frozen DATA-1 stacked candidate Node24 targeted unit/typecheck, then bounded synthetic storage/restore proof if needed.
+
+
+## 2026-10-29T19:45:29.629Z — DATA-1D isolated synthetic Neon query proof + verified cleanup
+
+- Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`; working Draft PR #438 pre-checkpoint `d7d08f8d80311918cdd26f2c27a2cb2facd5cc16`. Created independent empty Neon project `odd-recipe-81483357`, confirmed PG16/0 user tables, ran single transaction 30 read-only synthetic SELECT summaries + MVCC probes; aggregate rows 40/500/4000 PASS. **Deleted project and independently verified absence**; three original Neon projects untouched, Training excluded. Exact last MVCC snapshot match not separately asserted; Neon HTTP app driver/real wire throughput and size still NOT RUN. [Evidence](../../docs/maintenance/2026-10-29-data1d-neon-ephemeral-evidence.md). Unit/typecheck/build/PG full/browser/CI/release NOT RUN; no merge/deploy/prod DB/migrations/flags. DATA-1 release BLOCKED.
+- **ONE NEXT STEP:** source-backed actual locked Neon HTTP/Node24 transport test design with guaranteed ephemeral project cleanup; no new vendor cap guess.
+
+
+## 2026-10-29T19:39:08.007Z — DATA-1D safety preflight (metadata only)
+
+- Draft #438 `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `a9f8d072a53bf124e2144abd922af4f49c97c295`, canonical main `807f281e5870164b794d001480ecc84e0b45aea5`; local offline 3-profile evidence rechecked, Git blob matching GitHub. Neon project metadata read-only: Logbook Shadow only active `production` branch, other branches archived with inherited data, no verified empty synthetic Logbook test environment. Training projects isolated/out of scope. **NO SQL, DB access, branch creation, tests/build/PG/Neon acceptance/CI/browser, merge/deploy/flags/Training.** Further evidence and instruction in [DATA-1D environment preflight](../../docs/maintenance/2026-10-29-data1d-environment-preflight.md). DATA-1 cannot release, HTTP payload limits UNKNOWN.
+- **ONE NEXT STEP:** obtain explicit approval for new independently empty Logbook Neon project or owned local PG16, then bounded synthetic-only measurements, not production operations.
+
+
+## 2026-10-29T19:34:07.433Z — DATA-1D offline measurement evidence captured; DATA-1 still on HOLD
+
+- [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) `chore/logbook-data1d-offline-size-envelope-20261029` pre-evidence `36041613c7d4f314ae723b1a91db6d4b501c1d6f` on main `807f281e5870164b794d001480ecc84e0b45aea5`, stacked on #437→#436→#435→#434. Exact source blob matched assistant offline copy. 3 synthetic-only CLI profiles PASS (40, 500, 4000 flights); largest simulated psql output 34.6MB > local adapter 16MiB cap; gzip17.9MB/Base6423.9MB; [integer-byte evidence](../../docs/maintenance/2026-10-29-data1d-offline-measurement-evidence.md). Node22 assistant container, not Node24; no tests/build/Neon/DB/browser/CI. No merge/deploy/DB/flags/Training. Cannot infer Neon HTTP provider limit or real account capacity, DATA-1 release BLOCKED.
+- **ONE NEXT STEP:** owner decision on isolated synthetic Neon transport measurement; no remote database operation without it.
+
+
+## 2026-10-29T19:26:55.629Z — DATA-1D-2 offline synthetic envelope Draft #438
+
+- Verified Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`, branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `d94c1a79219669e0fcc688ad9d7304390130ced3`, [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438), stacked on #437 (then #436/#435/#434). Source-only no-DB synthetic size profiler plus future standalone source tests and maintenance protocol; runnable only with explicit offline flag and benign environment; no runtime integration. Test, profiler, typecheck, build, PostgreSQL, Neon, browser, CI **NOT RUN**. No production data, merge/deploy, migration/flags/Training. HTTP vendor ceiling UNKNOWN and large-account transfer remains blocking for DATA-1 release.
+- **ONE NEXT STEP:** owner-authorized offline synthetic-only execution, then isolated provider evidence and a source-backed size policy; no new Claude request unless architecture materially changes.
+
+
 ## 2026-10-29T19:20:18.809Z — DATA-1D-1 staged in Draft #437, UNTESTED
 
 - Source `main@807f281e5870164b794d001480ecc84e0b45aea5` and `fix/logbook-data1d-local-transport-integrity-20261029` pre-checkpoint `a16c0cc493124b59f465678fce5cc5bb383405c3`; [Draft #437](https://github.com/filipto861/flytally-logbook/pull/437) stacked on #436 → #435 → #434. Strict `psql` result marker cardinality parser rejects missing/duplicate/malformed output; former silent empty-array substitution removed. 3 synthetic cases added, **NOT RUN**. No change to SQL/Neon HTTP, v13, DB/flags, production deployment or Training. Previous Claude review C2/C3 covered this narrow class; no new Claude request. Large-account Neon request/response limit and Base64 storage capacity unverified, **DATA-1 NOT RELEASE-READY**.

@@ -1,5 +1,37 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-29T20:12:59Z — DATA-1D actual Neon HTTP driver / Node24 synthetic proof; CLEANUP VERIFIED
+
+- **Real driver evidence** in [DATA-1D Node24 HTTP proof](docs/maintenance/2026-10-29-data1d-neon-http-driver-evidence.md). New independently empty PG16 Neon project `cold-shape-74578425` + nonpersistent Node24 Vercel sandbox, exact `@neondatabase/serverless@1.1.0`; 3 batches of 32 results (30 SELECTs + 2 probes) in one `READ ONLY REPEATABLE READ` transaction passed with identical snapshots. HTTP response 20,834 B (40 synthetic rows), 4,108,924 B (500), 16,414,454 B (4000); separate parameterized upload/echo 1/4/12 MiB PASS. All 6 cases HTTP200, **no production SQL or real account data**.
+- **CLEANUP:** test Neon project delete success and absent in fresh list (3 original projects remain); Vercel session STOPPED and `persistent=false`, no active sandbox compute. Vendor maximum payload bound still UNKNOWN; exact app `buildAccountBackup`/stored Base64 INSERT+SELECT/restore, unit, typecheck, build, CI/browser/risk-release **NOT RUN**. No merge/deploy/prod DB/flags/Training.
+- **ONE NEXT STEP:** candidate-bound DATA-1 Node24 unit/typecheck on exact PR stack, followed by isolated synthetic full backup-storage transport/restore gate before any size policy or release; do not substitute the vendor experiment for application acceptance.
+
+
+## 2026-10-29T19:45:29.629Z — DATA-1D disposable Neon synthetic SQL probe complete + cleanup VERIFIED
+
+- Owner authorized independently empty test project + cleanup. Created separate project `odd-recipe-81483357` (PG16, blank database, `public_tables=0`), executed read-only `REPEATABLE READ` transaction with 30 synthetic `generate_series` aggregates, and verified results 40→10,240B, 500→128,000B, 4,000→1,024,000B. Observed first server MVCC probe `repeatable read`/`on`, but equality with final probe was **not independently captured**. [Detailed evidence](docs/maintenance/2026-10-29-data1d-neon-ephemeral-evidence.md).
+- **Test project was DELETED** using its exact ID; provider `list_projects` shows 3 original projects, no test project. No application/runtime, production DB/flags, migration, Training, merge or deploy changed. **Not a Neon HTTP driver size test** (provider connector only); vendor limit UNKNOWN. Node/TS/build/PG full/CI/browser/risk release **NOT RUN**. DATA-1 still **BLOCKED FOR RELEASE**.
+- **ONE NEXT STEP:** plan actual locked `@neondatabase/serverless@1.1.0`/Node24 HTTP synthetic transport test with guaranteed cleanup and exact snapshot comparison, only with positive isolation evidence; otherwise no size policy.
+
+
+## DATA-1D execution-location and Neon metadata preflight — 2026-10-29T19:39:08.007Z (NO SQL / NO NEW TESTS)
+
+- Local ChatGPT Linux Node22 offline result files physically rechecked; script Git blob `70dedadf6bc2667b3dc083517d09015fbe2cc308` matches GitHub Draft #438 source exactly; prior three fabricated measurements remain the only DATA-1D measurement evidence. [Environment record](docs/maintenance/2026-10-29-data1d-environment-preflight.md).
+- Read-only Neon inventory finds Logbook Shadow's active `production` branch plus archived parent-data copies, **no verified independent empty synthetic acceptance branch**. Training Production/Acceptance databases are off limits. No Neon SQL, branch/compute creation, connection strings, DB reads/writes, secrets or migrations. **Do not run on Shadow production or clone it.** No additional tests/build/CI/PG/Neon/browser run. Node24 not executed; large-account provider HTTP envelope remains UNKNOWN; DATA-1 release hold remains.
+- **ONE NEXT STEP:** explicit owner choice to provision an independently empty Logbook-specific Neon test project or disposable local PG16, then narrowly scoped synthetic-only transport evidence before any merge/deploy.
+
+
+## DATA-1D offline measurement — 2026-10-29T19:34:07.433Z (synthetic-only CLI PASS, release BLOCKED)
+
+- Three offline synthetic profiles ran from **byte-identical Git script blob `70dedadf6bc2667b3dc083517d09015fbe2cc308`**, [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438) pre-evidence HEAD `36041613c7d4f314ae723b1a91db6d4b501c1d6f`, in isolated assistant Linux Node **22.16.0** (repo requires Node24). **40/40** flight/track snapshot 23,885B → gzip 7,410B → Base64 9,880B; **500/500** snapshot 4,264,429B → gzip 2,230,526B → Base64 2,974,036B; **4,000/8,000** snapshot 34,594,826B → gzip 17,892,516B → Base64 23,856,688B. Large simulated `psql` output 34,595,583B exceeds local adapter `maxBuffer` 16,777,216B, **not a tested PG failure**. [Full measured evidence](docs/maintenance/2026-10-29-data1d-offline-measurement-evidence.md).
+- **No unit tests/typecheck/build/PG/Neon/CI/browser run.** No real SQL, network, GPS, production or customer data. Provider HTTP wire size and published limit UNKNOWN; 50MiB gzip cap ≠ HTTP Base64 allowance. DATA-1A/B/C/D remain **unmerged and NOT release-ready**. No merge/deployment/DB/flags/Training. **ONE NEXT STEP:** only after owner separately approves an **isolated synthetic Neon** environment, measure real HTTP batch/insert/select envelopes and time, then decide evidence-backed safety limits.
+
+
+## DATA-1D-2 offline measurement preparation — 2026-10-29T19:26:55.629Z (Draft #438, NOT RUN)
+
+- [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438), branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `d94c1a79219669e0fcc688ad9d7304390130ced3`, stacked on #437 → #436 → #435 → #434 (separate SEC-1 #432), stages only `tooling/data1-synthetic-transport-size.mjs`, its standalone test and a short maintenance note. Offline-only, Node built-ins, explicit `--synthetic-only` and bounded small/medium/large fabricated accounts; computes fabricated 32-row-array JSON size, local marker stdout bytes, pretty archive/gzip/Base64 bytes. **No tool/test was executed**, no actual Neon transport bytes, RSS, runtime or vendor payload threshold measured. 50MiB gzip / 16MiB local stdout numbers are existing code references; Neon HTTP cap UNKNOWN and remains a release blocker. No runtime change, new package, backup format change, DB/flags, Training, merge or deploy. **ONE NEXT STEP:** request owner decision on *offline synthetic-only* execution, then independently validate current vendor limit and isolated real-driver envelope before proposing a transport cutoff.
+
+
 ## 2026-10-29T19:20:18.809Z — DATA-1D-1 strict local PostgreSQL batch result contract (Draft #437, NOT TESTED)
 
 - After source correction in [DATA-1D design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433), a small reviewed-scope safety slice is staged as [Draft PR #437](https://github.com/filipto861/flytally-logbook/pull/437), stacked on DATA-1C #436 → DATA-1B #435 → DATA-1A #434; canonical main `807f281e5870164b794d001480ecc84e0b45aea5` unchanged. The local `psql` transaction adapter previously accepted missing result markers as empty arrays; PR #437 now requires exactly one in-range marker per statement and rejects duplicate/missing/malformed/non-row output **before any result is returned**. Transaction SQL and existing 16 MiB local buffer unchanged; three future synthetic tests staged but **NOT RUN**. No new dependencies, migration or v13 changes.
