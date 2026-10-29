@@ -1,5 +1,13 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T18:45:00Z — DATA-1 read-only design review staged; tests deliberately NOT RUN
+
+- **Verified main:** `807f281e5870164b794d001480ecc84e0b45aea5`; DATA-1 design branch `docs/logbook-data1-snapshot-design-20261029` begins from main; [SEC-1 Draft PR #432](https://github.com/filipto861/flytally-logbook/pull/432) remains separate, unmerged. Proposed design document `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md` is the current scope; no runtime code changes, no tests, no DB operations.
+- **Discovery:** `lib/account-backup.ts` Promise.all performs 30 separate reads before signing v13 backup; one REPEATABLE READ read-only transaction is supported by locked Neon serverless v1.1.0, but local `lib/local-postgres.ts` transaction ignores options. All export, stored backup, cron and pre-restore/delete paths share the builder. Larger-than-buffer SQL response and legacy integrity validation risks require independent review.
+- **Gates:** DATA-1 Node/TypeScript/build/source/PG/browser/CI **NOT RUN** by owner direction; no PASS inferred. Production existing `fly-tally.com` deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` READY from `55c8076e1eb8104c14392e15b272b33e0eb29607` read-only verified; prod DB/schema/flags **UNKNOWN**.
+- **DO NOT:** merge, deploy, production DB/migrations/flags, Training change or code implementation before independent read-only design review. **ONE NEXT STEP:** seek independent SHA-frozen DATA-1 architecture/data-integrity review, reconcile response and then implement first small source batch without running tests until permitted.
+
+
 Verify GitHub and provider state independently. [Complete checkpoint archive](SESSION_HANDOFF_ARCHIVE_2026-10-29.md) preserves every earlier entry; [manifest](ARCHIVE_MANIFEST_2026-10-29.md) pins original blobs.
 
 ## 2026-10-29 — owner-directed PR closure and documentation reset
