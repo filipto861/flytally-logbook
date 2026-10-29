@@ -52,27 +52,15 @@ jobs:
         run: npm run build
 
   postgres:
-    name: Disposable loopback PostgreSQL16 acceptance (NO NEON)
+    name: Isolated host-loopback PG16 core acceptance (NO NEON)
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 16
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: flytally
-          POSTGRES_PASSWORD: flytally
-          POSTGRES_DB: flytally_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U flytally -d flytally_test"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
     env:
-      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_test
+      DATABASE_URL: postgresql://flytally@127.0.0.1:55432/flytally_currency_test
       FLYTALLY_LOCAL_POSTGRES: "1"
+      FLYTALLY_POSTGRES_INTEGRATION: "1"
+      FLYTALLY_D2_FULL_V20_DISPOSABLE: "1"
       AUTH_SECRET: flytally-ci-auth-secret-not-for-production
       SIGNING_SECRET: flytally-ci-signing-secret-not-for-production
       CI: "true"
@@ -86,17 +74,35 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Verify strict loopback target before fixture use
+      - name: Bootstrap separate host-loopback PG16 at port 55432
+        shell: bash
         run: |
-          test "$DATABASE_URL" = "postgresql://flytally:flytally@127.0.0.1:5432/flytally_test"
-          npm run scope:changed -- lib/account-backup.ts lib/local-postgres.ts
-      - name: PostgreSQL core acceptance on disposable service
+          set -euo pipefail
+          bin=/usr/lib/postgresql/16/bin
+          test -x "$bin/initdb"
+          test -x "$bin/pg_ctl"
+          sudo install -d -o postgres -g postgres -m 0700 /tmp/flytally-data1-pg16
+          sudo -u postgres "$bin/initdb" -D /tmp/flytally-data1-pg16 -U flytally --auth-host=trust --auth-local=trust --no-instructions >/dev/null
+          sudo -u postgres "$bin/pg_ctl" -D /tmp/flytally-data1-pg16 -o "-h 127.0.0.1 -p 55432 -k /tmp" -l /tmp/flytally-data1-pg16.log -w start
+          "$bin/createdb" -h 127.0.0.1 -p 55432 -U flytally flytally_currency_test
+          "$bin/psql" -d "$DATABASE_URL" -Atqc "SELECT current_database()||'|'||host(inet_server_addr())||'|'||inet_server_port()"
+      - name: PostgreSQL core acceptance on exact disposable host-loopback target
         run: npm run test:postgres
+      - name: Stop and clean isolated PostgreSQL process
+        if: always()
+        shell: bash
+        run: |
+          if test -f /tmp/flytally-data1-pg16/postmaster.pid; then
+            sudo -u postgres /usr/lib/postgresql/16/bin/pg_ctl -D /tmp/flytally-data1-pg16 -m immediate -w stop
+          fi
+          if test -d /tmp/flytally-data1-pg16; then
+            sudo rm -rf /tmp/flytally-data1-pg16
+          fi
 
   browser:
     name: Disposable authenticated Chromium smoke (NO NEON)
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 18
     services:
       postgres:
