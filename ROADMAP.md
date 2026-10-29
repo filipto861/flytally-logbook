@@ -1,5 +1,10 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1D restore atomicity correction — 2026-10-29T19:13:06.396Z (reconciled source; DOCS ONLY)
+
+- Current exact recovery `version>=6` uses one `sql.transaction(queries)` limited to 1000 statements, so earlier claims that v13 exact restore can commit half its batches are incorrect. Legacy `version<6` recovery is multi-transaction and remains a separately scoped risk. [DATA-1D corrected design](docs/maintenance/2026-10-29-data1d-transport-and-restore-design.md) exists on independent [design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433), not this code PR. DATA-1A/B/C source code remains **UNTESTED / UNMERGED**. Next: updated read-only design review on transport/size envelope, not an unwarranted exact-restore rewrite.
+
+
 ## DATA-1C pre-sign export integrity — 2026-10-29T19:05:42.874Z (Draft #436; NOT TESTED / NOT RELEASED)
 
 - [Draft PR #436](https://github.com/filipto861/flytally-logbook/pull/436) stacked on DATA-1B #435 and DATA-1A #434, preserves v13 signed schema while validating source payload before digest/signature: owner-scoped sections, GPS/expense relationships, certification and FSTD revisions/fingerprints, void/tombstone SHA evidence and monetary provenance via existing restore/parser validators. Missing section/count, orphan, invalid historic evidence and parser limits **fail closed**, never create a signed invalid backup; legacy `track_points:[]` is an ephemeral validator-only normalization. The stronger checks can refuse some historically invalid backups; compatibility and rollback are unverified. Five focused tests staged but **NOT RUN** by owner instruction; TypeScript/build/PG/Neon/scale/browser **NOT RUN**, no deployment, DB/flag changes or Training. **ONE NEXT STEP:** inspect unresolved multi-batch restore and large-account export limitations as DATA-1D before any owner release decision.

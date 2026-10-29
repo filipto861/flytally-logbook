@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T19:13:06.396Z — DATA-1D correction carried onto staged DATA-1C PR #436
+
+- DATA-1C source unchanged on `fix/logbook-data1-presign-integrity-20261029` pre-checkpoint `3997a5ef2093e50ee9b791f205c6a75b397ae299`, Draft #436 stacked on #435/#434. Design PR #433 now documents exact `version>=6` restore single transaction vs legacy `<6` multi-batch. Prior handoff entries claiming multi-transaction v13 exact restore are **SUPERSEDED**. Runtime gates all NOT RUN. No merge, deployment, DB/flags/Training changes.
+- **ONE NEXT STEP:** read-only second-AI review of DATA-1D size/transport design before next runtime slice.
+
+
 ## 2026-10-29T19:05:42.874Z — DATA-1C staged, Draft PR #436 (verification NOT RUN)
 
 - `main@807f281e5870164b794d001480ecc84e0b45aea5`; [Draft PR #436](https://github.com/filipto861/flytally-logbook/pull/436) branch `fix/logbook-data1-presign-integrity-20261029` pre-checkpoint `95c77473cdb29e3b43dabd4e43d018ff714de55f` stacked on DATA-1B [Draft #435](https://github.com/filipto861/flytally-logbook/pull/435) then DATA-1A [Draft #434](https://github.com/filipto861/flytally-logbook/pull/434); design/Claude review [Draft #433](https://github.com/filipto861/flytally-logbook/pull/433); SEC-1 [Draft #432](https://github.com/filipto861/flytally-logbook/pull/432) separate. New `lib/account-backup-presign.ts` validates original v13 payload before signature via existing parser/restore logic (ownership, relationships, certification, void archive digests, currency); `track_points:[]` only in validator view, never in exported JSON. Original v13 signing preserved. 5 staged unit tests **NOT RUN** and no typecheck/build/PG/Neon/browser/risk release. No merge/deploy/schema/DB/flags/Training. Production DB/flags UNKNOWN.

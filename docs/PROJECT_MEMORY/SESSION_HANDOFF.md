@@ -1,5 +1,12 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T19:13:06.396Z — DATA-1D source correction carried onto DATA-1C stacked branch (DOCS ONLY)
+
+- **Verified main:** `807f281e5870164b794d001480ecc84e0b45aea5`, DATA-1C `fix/logbook-data1-presign-integrity-20261029` pre-checkpoint `3997a5ef2093e50ee9b791f205c6a75b397ae299`, [Draft PR #436](https://github.com/filipto861/flytally-logbook/pull/436), base [Draft #435](https://github.com/filipto861/flytally-logbook/pull/435). Source audit on [DATA-1D design PR #433](https://github.com/filipto861/flytally-logbook/pull/433) corrects older C5 assumption: `version >= 6` exact restore uses **one** `sql.transaction(queries)` with 1000-statement cap, NOT multiple commits. Only `version<6` `restoreLegacy` has multiple committed batches; historical memory below that calls v13 restore partially committed is superseded. DATA-1C runtime unchanged; not yet verified.
+- **Evidence:** docs-only correction. DATA-1A/B/C tests/TS/build/PG/Neon/browser/CI **NOT RUN**, DATA-1D design tests N/A, prod DB/flags UNKNOWN, no merge/deployment/DB/migration/flags/Training. Production last verified READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` from `55c8076e1eb8104c14392e15b272b33e0eb29607`.
+- **ONE NEXT STEP:** updated independent read-only review of corrected DATA-1D transport design, with no test execution or release.
+
+
 ## 2026-10-29T19:05:42.874Z — DATA-1C pre-sign v13 restore integrity staged in Draft PR #436; NOT TESTED
 
 - **GitHub source:** canonical Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`; working `fix/logbook-data1-presign-integrity-20261029` pre-checkpoint HEAD `95c77473cdb29e3b43dabd4e43d018ff714de55f`; [Draft PR #436](https://github.com/filipto861/flytally-logbook/pull/436) OPEN/DRAFT, base `fix/logbook-data1-snapshot-builder-20261029@90b017c54b6299a77dad9dc6d6fc59019707e75f` ([PR #435](https://github.com/filipto861/flytally-logbook/pull/435)). Its required upstream PR-B is stacked on [PR-A #434](https://github.com/filipto861/flytally-logbook/pull/434); read-only Claude review/design [PR #433](https://github.com/filipto861/flytally-logbook/pull/433). Independent SEC-1 [PR #432](https://github.com/filipto861/flytally-logbook/pull/432) untouched. No merge or branch retargeting.
