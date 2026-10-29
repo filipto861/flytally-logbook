@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T17:39:08Z — SEC-1 npm audit clear; Draft #432 ready for isolated browser verification
+
+- Verified main `807f281e5870164b794d001480ecc84e0b45aea5`; work branch pre-checkpoint `79d37103006d24c1c98c2b97c66b6815069cac99` on Draft PR #432 (open/unmerged; checkpoint changes only docs). Owner pushed only `package.json`/`package-lock.json` for exact Playwright 1.56.0; GitHub confirmed.
+- Windows Node24/npm11 ZIP SHA-256 `983c25fab1230d84da33f04aea26bb695a777a04c745ac272a55154c5a1f3f5a`: npm ci, production+full audits (0 vulnerabilities), typecheck, 1759/1759 Node and Next 16.4.3 build all PASS on pre-commit working tree with identical package-file hashes; direct committed-SHA rerun NOT RUN. Browser, local PG16 and risk-release ledger NOT RUN. Production Vercel READY unchanged; production DB/schema/flags UNKNOWN. SEC-1 NOT RELEASED.
+- **ONE NEXT STEP:** safe authenticated desktop/mobile browser acceptance using a NEW owned verified empty local PG16 fixture and pinned committed source; no merge/deploy/prod DB/flags/Training.
+
+
 ## 2026-10-29 — SEC-1 pending Playwright 1.56.0 npm lock update
 
 - Draft [#432](https://github.com/filipto861/flytally-logbook/pull/432), canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`. Windows Node24 verification for tested SEC-1 SHA `ececbad251499b9a53004fa066d66db2afe3fbf8`: `npm ci`, typecheck, full 1759/1759 Node, build PASS; `npm audit --omit=dev` FAIL (2 HIGH: Playwright 1.55.0 + `@playwright/test`, one advisory). Current branch has documentation/test pin changes not covered by those historical passes.
