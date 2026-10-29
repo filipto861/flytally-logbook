@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T18:28:31.043Z — DATA-1 design-only Draft PR #433 opened, second-AI review PENDING
+
+- **Source:** GitHub `main@807f281e5870164b794d001480ecc84e0b45aea5`; work branch `docs/logbook-data1-snapshot-design-20261029` at pre-checkpoint head `03e58fbe20d54fcbc5303a6c91c934ac99fdc31c`, [Draft PR #433](https://github.com/filipto861/flytally-logbook/pull/433), base main. Independent SEC-1 [Draft PR #432](https://github.com/filipto861/flytally-logbook/pull/432) remains open/unmerged at last read `b5d3aa7add94c72f8c4c416287da43b4c763ff02`. No branch stacking, no runtime code edit.
+- **Design work:** `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md` freezes current export implementation (30 independently scheduled SQL reads) and proposed single read-only REPEATABLE READ snapshot, local adapter compatibility changes, inherited v13 authenticity/ownership invariants and large-response constraints. `ROADMAP.md` and `SESSION_HANDOFF.md` updated on this branch. Independent Claude/DeepSeek read-only review not yet performed; future source code implementation NOT STARTED.
+- **Testing:** DATA-1 typecheck, Node, build, PostgreSQL, browser, risk-release, CI **NOT RUN** by explicit owner instruction. No claims that the coherent backup issue is corrected.
+- **Safety:** no merges, deployment, schema or production DB/flags/restore/delete, no Training changes. Production read-only provider last verified READY `fly-tally.com` deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` at `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** obtain a single independent read-only second-AI assessment of PR #433's frozen DATA-1 architecture and reconcile any findings before implementing a minimal source batch. Do not run tests unless user later changes the instruction.
+
+
 ## 2026-10-29T18:45:00Z — DATA-1 read-only design review staged; tests deliberately NOT RUN
 
 - **Verified main:** `807f281e5870164b794d001480ecc84e0b45aea5`; DATA-1 design branch `docs/logbook-data1-snapshot-design-20261029` begins from main; [SEC-1 Draft PR #432](https://github.com/filipto861/flytally-logbook/pull/432) remains separate, unmerged. Proposed design document `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md` is the current scope; no runtime code changes, no tests, no DB operations.
