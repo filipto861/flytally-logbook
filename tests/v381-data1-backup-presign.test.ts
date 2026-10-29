@@ -34,7 +34,10 @@ const rejected=async(payload:Payload,code:AccountBackupPreSignError["code"]="UNR
 };
 
 test("DATA-1C: empty v13 backup uses existing parser/restore validation and legacy-null evidence",async()=>{
-  await validateAccountBackupBeforeSigning(emptyPayload(),userId);
+  const current=emptyPayload();
+  assert.equal(Object.prototype.hasOwnProperty.call(current,"track_points"),false);
+  await validateAccountBackupBeforeSigning(current,userId);
+  assert.equal(Object.prototype.hasOwnProperty.call(current,"track_points"),false);
   const legacy=emptyPayload();
   withRow(legacy,"rates",{id:17,user_id:userId,registration:"OK-TEST",
     currency_code:null,currency_minor_units:null,price_per_hour_decimal:null});

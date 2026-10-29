@@ -54,15 +54,19 @@ export async function validateAccountBackupBeforeSigning(
     // These are the same source ownership and structural rules applied by
     // parsePortableBackup. Shared counterpart records are checked against
     // their relevant participant/actor fields, not assigned to this account.
-    validateOwnership(payload as Record<string,unknown>);
-    validateBackupRelationships(payload);
-    validateBackupArchiveRelationships(payload);
+    // The v13 payload intentionally omits the deprecated track_points array.
+    // The existing parser normalizes it to [] before ownership checks. Do
+    // exactly the same in a temporary validator-only view; never add it to
+    // the signed v13 payload or its declared counts.
+    const view:PortableBackup={...payload,track_points:[],integrity:{
+      algorithm:"SHA-256",payload_sha256:"",
+    }};
+    validateOwnership(view as unknown as Record<string,unknown>);
+    validateBackupRelationships(view);
+    validateBackupArchiveRelationships(view);
 
     // An unsigned in-memory view only: no digest, signature or JSON emitted.
     // These validators do not read the integrity field.
-    const view:PortableBackup={...payload,integrity:{
-      algorithm:"SHA-256",payload_sha256:"",
-    }};
     validateVoidHistoryRelationships(view);
     await validateVoidHistoryDigests(view);
     validateBackupCertificationHistory(view,userId);
