@@ -13,8 +13,8 @@ test("v3.2 U3 browser smoke is manual-only and repository-pinned",()=>{
   assert.match(workflow,/workflow_dispatch:/);
   assert.doesNotMatch(workflow,/\n\s*pull_request:/);
   assert.doesNotMatch(workflow,/\n\s*schedule:/);
-  assert.equal(pkg.devDependencies["@playwright/test"],"1.55.0");
-  assert.equal(lock.packages["node_modules/@playwright/test"].version,"1.55.0");
+  assert.equal(pkg.devDependencies["@playwright/test"],"1.56.0");
+  assert.equal(lock.packages["node_modules/@playwright/test"].version,"1.56.0");
   assert.match(workflow,/npx --no-install playwright install --with-deps chromium/);
   assert.match(workflow,/npm run test:browser/);
   assert.doesNotMatch(workflow,/npm install --no-save --package-lock=false @playwright\/test/);
