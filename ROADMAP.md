@@ -1,5 +1,10 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1D-2 offline measurement preparation — 2026-10-29T19:26:55.629Z (Draft #438, NOT RUN)
+
+- [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438), branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `d94c1a79219669e0fcc688ad9d7304390130ced3`, stacked on #437 → #436 → #435 → #434 (separate SEC-1 #432), stages only `tooling/data1-synthetic-transport-size.mjs`, its standalone test and a short maintenance note. Offline-only, Node built-ins, explicit `--synthetic-only` and bounded small/medium/large fabricated accounts; computes fabricated 32-row-array JSON size, local marker stdout bytes, pretty archive/gzip/Base64 bytes. **No tool/test was executed**, no actual Neon transport bytes, RSS, runtime or vendor payload threshold measured. 50MiB gzip / 16MiB local stdout numbers are existing code references; Neon HTTP cap UNKNOWN and remains a release blocker. No runtime change, new package, backup format change, DB/flags, Training, merge or deploy. **ONE NEXT STEP:** request owner decision on *offline synthetic-only* execution, then independently validate current vendor limit and isolated real-driver envelope before proposing a transport cutoff.
+
+
 ## 2026-10-29T19:20:18.809Z — DATA-1D-1 strict local PostgreSQL batch result contract (Draft #437, NOT TESTED)
 
 - After source correction in [DATA-1D design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433), a small reviewed-scope safety slice is staged as [Draft PR #437](https://github.com/filipto861/flytally-logbook/pull/437), stacked on DATA-1C #436 → DATA-1B #435 → DATA-1A #434; canonical main `807f281e5870164b794d001480ecc84e0b45aea5` unchanged. The local `psql` transaction adapter previously accepted missing result markers as empty arrays; PR #437 now requires exactly one in-range marker per statement and rejects duplicate/missing/malformed/non-row output **before any result is returned**. Transaction SQL and existing 16 MiB local buffer unchanged; three future synthetic tests staged but **NOT RUN**. No new dependencies, migration or v13 changes.

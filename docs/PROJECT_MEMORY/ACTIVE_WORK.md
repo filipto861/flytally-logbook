@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T19:26:55.629Z — DATA-1D-2 offline synthetic envelope Draft #438
+
+- Verified Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`, branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `d94c1a79219669e0fcc688ad9d7304390130ced3`, [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438), stacked on #437 (then #436/#435/#434). Source-only no-DB synthetic size profiler plus future standalone source tests and maintenance protocol; runnable only with explicit offline flag and benign environment; no runtime integration. Test, profiler, typecheck, build, PostgreSQL, Neon, browser, CI **NOT RUN**. No production data, merge/deploy, migration/flags/Training. HTTP vendor ceiling UNKNOWN and large-account transfer remains blocking for DATA-1 release.
+- **ONE NEXT STEP:** owner-authorized offline synthetic-only execution, then isolated provider evidence and a source-backed size policy; no new Claude request unless architecture materially changes.
+
+
 ## 2026-10-29T19:20:18.809Z — DATA-1D-1 staged in Draft #437, UNTESTED
 
 - Source `main@807f281e5870164b794d001480ecc84e0b45aea5` and `fix/logbook-data1d-local-transport-integrity-20261029` pre-checkpoint `a16c0cc493124b59f465678fce5cc5bb383405c3`; [Draft #437](https://github.com/filipto861/flytally-logbook/pull/437) stacked on #436 → #435 → #434. Strict `psql` result marker cardinality parser rejects missing/duplicate/malformed output; former silent empty-array substitution removed. 3 synthetic cases added, **NOT RUN**. No change to SQL/Neon HTTP, v13, DB/flags, production deployment or Training. Previous Claude review C2/C3 covered this narrow class; no new Claude request. Large-account Neon request/response limit and Base64 storage capacity unverified, **DATA-1 NOT RELEASE-READY**.
