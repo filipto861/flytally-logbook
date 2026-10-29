@@ -1,5 +1,6 @@
 import "server-only";
 import { spawnSync } from "node:child_process";
+import { applyLocalPostgresTransactionOptions, type LocalReadOnlySnapshotOptions } from "./local-postgres-transaction";
 
 const LOCAL_HOSTS=new Set(["127.0.0.1","localhost","::1","[::1]"]);
 
@@ -111,14 +112,15 @@ function captureRows(statement:string,marker:string){
   return `WITH __flytally_local_tx_result AS (${statement}) ${aggregate}`;
 }
 
-function executeLocalTransaction(statements:string[]){
+function executeLocalTransaction(statements:string[],options?:LocalReadOnlySnapshotOptions){
   const chunks=statements.map((statement,index)=>{
     const marker=`${TRANSACTION_RESULT_PREFIX}${index}:`;
     if(rowProducing(statement))return captureRows(statement,marker);
     return `${statement};
 SELECT ${quote(`${marker}[]`)}`;
   });
-  const output=spawn(`BEGIN;\n${chunks.join(";\n")};\nCOMMIT;`);
+  const legacyScript=`BEGIN;\n${chunks.join(";\n")};\nCOMMIT;`;
+  const output=spawn(applyLocalPostgresTransactionOptions(legacyScript,options));
   const results=statements.map(()=>[] as Array<Record<string,unknown>>);
   for(const line of output.split(/\r?\n/)){
     if(!line.startsWith(TRANSACTION_RESULT_PREFIX))continue;
@@ -142,7 +144,7 @@ type DeferredLocalQuery=Promise<Rows>&{
   __flytallyLocalReject:(error:unknown)=>void;
 };
 type LocalPostgresQuery=((strings:TemplateStringsArray,...values:unknown[])=>Promise<Rows>)&{
-  transaction:(queries:unknown[])=>Promise<Rows[]>;
+  transaction:(queries:unknown[],options?:LocalReadOnlySnapshotOptions)=>Promise<Rows[]>;
 };
 
 function deferredQuery(statement:string):DeferredLocalQuery{
@@ -172,12 +174,12 @@ function asDeferredLocalQuery(value:unknown):DeferredLocalQuery{
 
 export function createLocalPostgresQuery(){
   const query=((strings:TemplateStringsArray,...values:unknown[])=>deferredQuery(render(strings,values))) as unknown as LocalPostgresQuery;
-  query.transaction=async(queries:unknown[])=>{
+  query.transaction=async(queries:unknown[],options?:LocalReadOnlySnapshotOptions)=>{
     const localQueries=queries.map(asDeferredLocalQuery);
     if(localQueries.some(item=>item.__flytallyLocalStarted))throw new Error("Local PostgreSQL transaction queries must be created inline.");
     for(const item of localQueries)item.__flytallyLocalClaimed=true;
     try{
-      const results=await Promise.resolve().then(()=>executeLocalTransaction(localQueries.map(item=>item.__flytallyLocalStatement)));
+      const results=await Promise.resolve().then(()=>executeLocalTransaction(localQueries.map(item=>item.__flytallyLocalStatement),options));
       localQueries.forEach((item,index)=>item.__flytallyLocalResolve(results[index]??[]));
       return results;
     }catch(error){

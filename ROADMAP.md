@@ -1,5 +1,10 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1 local adapter slice A — 2026-10-29T18:50:08.815Z (Draft #434, NOT TESTED/NOT RELEASED)
+
+- Following Claude read-only **APPROVE WITH CHANGES** review on frozen design SHA `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65` (reconciliation in separate [Draft PR #433](https://github.com/filipto861/flytally-logbook/pull/433)), isolated [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434) changes only local PostgreSQL transaction-option enforcement: allowlist `RepeatableRead` + `readOnly:true`, preserving default mutation BEGIN/COMMIT byte-for-byte. Four focused tests added but **NOT RUN** as requested; `buildAccountBackup` remains unchanged and DATA-1 is **NOT FIXED**. Next: guard larger transaction response/restore consistency and implement validated builder separately. No merge/deploy/prod DB/flags/Training.
+
+
 ## Current work status — 2026-10-29, documentation reset
 
 - **Main:** `eb98982d9ce7cb166c32ba77c9262683989570f8`; application version `3.8.1`. Older release-order tables below are dated history, not current instructions.

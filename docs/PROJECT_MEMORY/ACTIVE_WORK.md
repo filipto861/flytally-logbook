@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T18:50:08.815Z — DATA-1 source slice A staged in Draft PR #434 (UNTESTED)
+
+- `main@807f281e5870164b794d001480ecc84e0b45aea5`; local adapter branch `fix/logbook-data1-local-snapshot-adapter-20261029` pre-checkpoint `e0814e9b5f795a141e014c44a85359bcfbad3d7d`, [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434), separate from reviewed [design/reconciliation Draft #433](https://github.com/filipto861/flytally-logbook/pull/433) and SEC-1 Draft #432. Only code files `lib/local-postgres.ts`, `lib/local-postgres-transaction.ts`; 4 future tests staged but **NOT RUN**; no source exporter change. Claude APPROVE WITH CHANGES review reconciled in #433. Project incomplete/UNRELEASED, no merge/deploy/DB/schema/flags/Training changes. Production and local DB writes NOT ATTEMPTED.
+- **ONE NEXT STEP:** prepare next small fail-closed backup builder PR-B, taking Neon response limits and multi-batch restore invariants into account before any release claim.
+
+
 Current owner decisions live in [ROADMAP](../../ROADMAP.md). [Archived prior ledger](ACTIVE_WORK_ARCHIVE_2026-10-29.md) and [manifest](ARCHIVE_MANIFEST_2026-10-29.md) preserve previous checkpoints.
 
 ## 2026-10-29 — documentation reset
