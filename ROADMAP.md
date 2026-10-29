@@ -1,5 +1,11 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1D transport/restore source correction — 2026-10-29T19:11:48.769Z (DESIGN ONLY; NEEDS REVIEW)
+
+- **Verified source correction:** `app/(protected)/export/actions.ts` routes `version >= 6` to `executeExactAccountRestore`, which executes one `sql.transaction(queries)` under `EXACT_RESTORE_STATEMENT_LIMIT=1000`; current signed **v13 exact restore does NOT commit one chunk at a time**. The legacy **<6** `restoreLegacy` uses multiple transactions and individual row writes, a separate historical risk. This supersedes the older general C5 wording in [Claude review reconciliation](docs/maintenance/2026-10-29-data1-backup-snapshot-design.md) and prior memory; historical review text retained as evidence. [DATA-1D frozen analysis](docs/maintenance/2026-10-29-data1d-transport-and-restore-design.md).
+- **Unresolved scale:** common HTTP export batch aggregates 32 responses; `createStoredBackup` accepts gzip to 50 MiB but Base64 expands the one-INSERT payload; `loadStoredBackup` reads one large Base64 field; local `psql` maxBuffer=16 MiB; cron serial up to 500 users/`maxDuration=300`. Precise vendor HTTP request/response limits **UNVERIFIED**. Preferred D1 fail-closed HTTP with synthetic provider envelope, conditional D2 WebSocket single-session snapshot only if required; no release until evidence. DATA-1A/B/C Draft #434/#435/#436 still **UNTESTED / UNMERGED**. No code, DB/schema/flags, Training or production change for D1D. **Next:** updated independent read-only review on corrected design, then smallest owner-scoped runtime slice.
+
+
 ## DATA-1 second-AI review — 2026-10-29T18:50:29.823Z (APPROVE WITH CHANGES / NOT RELEASED)
 
 - Owner-provided Claude read-only review at frozen [DATA-1 design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433) SHA `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65` has been reconciled into the [design document](docs/maintenance/2026-10-29-data1-backup-snapshot-design.md). C1 size/latency, C2 isolation probes, C3 local adapter, C4 profile, C5 multi-batch restore consistency, C6 NOW() accepted. Explicitly reject signing known-invalid backups in shadow mode. WebSocket Plan B requires separate size evidence.
