@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T15:12:38.529Z — active SEC-1 dependency security milestone
+
+- Base `main@807f281e5870164b794d001480ecc84e0b45aea5`, work branch `fix/logbook-sec1-dependency-remediation-20261029`, Draft PR [#432](https://github.com/filipto861/flytally-logbook/pull/432). Current branch HEAD always check GitHub; prior SEC-1 pre-checkpoint `9c56fd22975429febf4e18bfeb0337e994ef0e7d`.
+- Owner-approved order in ROADMAP: SEC-1 → DATA-1 → AUTH-1 → PREF-1 → conditional CRON-1 → FLIGHTS-1. User requires ChatGPT implementation, not Codex.
+- SEC-1 **BLOCKED**, not remediated: Node24 npm registry toolchain unavailable here, npm `EAI_AGAIN`; package files untouched. No runtime test/build/PG/browser PASS, production DB/flags UNKNOWN, alias unchanged.
+- **Next action:** generate vetted Next/sharp/source-map-js lockfile with Node24 registry-capable executor; then candidate-bound verification. No merge/deploy/production DB/flags authorized.
+
 Current owner decisions live in [ROADMAP](../../ROADMAP.md). [Archived prior ledger](ACTIVE_WORK_ARCHIVE_2026-10-29.md) and [manifest](ARCHIVE_MANIFEST_2026-10-29.md) preserve previous checkpoints.
 
 ## 2026-10-29 — documentation reset
