@@ -1,8 +1,8 @@
 # FlyTally Logbook — PR closure inventory (2026-10-29)
 
-Owner requested closing all open Draft PRs and retaining branch/history. `main@eb98982d9ce7cb166c32ba77c9262683989570f8` was verified before closure. GitHub returned `closed` for all 33 listed PRs; a subsequent open-PR search returned zero. None was merged or had its branch deleted. These refs are historical sources, not current product approval.
+Owner requested closing all open Draft PRs without merge and subsequently intentionally deleted their original branches. `main@eb98982d9ce7cb166c32ba77c9262683989570f8` was verified before closure. GitHub returned `closed` for all 33 listed PRs; a subsequent open-PR search returned zero. A current remote-head check found none of the 33 historical branch names. The names and head SHAs below are audit evidence, not claims that those branch refs still exist. Closed PR discussions remain accessible; their historical head SHAs do not authorize current product work.
 
-| PR | Title | Head branch | Head SHA | Base branch |
+| PR | Title | Historical head branch name (deleted) | Recorded head SHA | Historical base branch |
 |---:|---|---|---|---|
 | [#430](https://github.com/filipto861/flytally-logbook/pull/430) | docs(logbook): DOC-6B archive and compact Project Memory | `docs/logbook-doc6b-memory-archive` | `3ea22208ebff49bff09a2ca90326e0e54586a8de` | `docs/logbook-doc-hygiene-doc6a-20261029` |
 | [#429](https://github.com/filipto861/flytally-logbook/pull/429) | docs(logbook): DOC-6A safe navigation and documentation hygiene | `docs/logbook-doc-hygiene-doc6a-20261029` | `d20d1933d0c2e3fb99ee28d904b7fb9a76c5a70a` | `main` |

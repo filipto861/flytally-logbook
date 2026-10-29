@@ -4,7 +4,7 @@
 
 - **Main:** `eb98982d9ce7cb166c32ba77c9262683989570f8`; application version `3.8.1`. Older release-order tables below are dated history, not current instructions.
 - **Production:** `fly-tally.com` is READY at `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`, built from application SHA `55c8076e1eb8104c14392e15b272b33e0eb29607`. Later main commits are documentation-only. Signed-in functional feedback was owner-reported; native Safari/VoiceOver NOT RUN. Production DB/flags readback UNKNOWN.
-- **Owner decision:** close all 33 open Draft PRs without merge and retain their branches/history. GitHub now reports zero open PRs. [Closure snapshot](docs/maintenance/2026-10-29-pr-closure-inventory.md) pins each head SHA. No proposal in a closed PR becomes current application scope.
+- **Owner decision:** close all 33 open Draft PRs without merge, then intentionally delete their original branches. GitHub reports zero open PRs; a remote-head check found none of the 33 original branch names. [Closure snapshot](docs/maintenance/2026-10-29-pr-closure-inventory.md) preserves their historical names and head SHAs as audit evidence, not as existing refs. No proposal in a closed PR becomes current application scope.
 - **Current priority:** finish one scoped documentation cleanup from main. [Project Memory](docs/PROJECT_MEMORY/README.md) now uses short active pointers and complete archives. Existing historical decisions and failed/NOT RUN evidence remain recoverable.
 - **Next action:** review the documentation-reset candidate; after a separate merge decision, choose the next product milestone from present code and owner priorities.
 ---
