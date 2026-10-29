@@ -1,5 +1,13 @@
 # SEC-1 — dependency security preflight (2026-10-29)
 
+## Latest checkpoint — Playwright mitigation underway (supersedes initial preflight blocker)
+
+At candidate `ececbad251499b9a53004fa066d66db2afe3fbf8`, the owner executed isolated Windows Node24/npm11 verification and provided `SEC1_VERIFY_LOGS.zip`. Parsed native PowerShell UTF-16 logs show: `npm ci` **PASS** (exit 0), `npm run typecheck` **PASS** (0), `npm test` **PASS** (1,759 tests, 0 fail/skip, exit 0), `npm run build` **PASS** (Next.js 16.4.3, exit 0), changed-scope classifier **PASS** (0; typecheck=true, postgres=false, scale=false, browser=false, full_tests=true, build=true).
+
+`npm audit --omit=dev --json` **FAIL** (exit 1, 2 HIGH/0 CRITICAL): `playwright@1.55.0` and direct `@playwright/test@1.55.0`, same `GHSA-7mvr-c777-76hp` transitive advisory; this does not mean two distinct exploits or a confirmed production exposure. Compare the [GitHub advisory](https://github.com/advisories/GHSA-7mvr-c777-76hp) with the [reporter's more conservative advisory](https://github.com/SocketDev/security-research/security/advisories/GHSA-qxm8-4v54-964r): GitHub patched range starts 1.55.1, reporter's separate patched range starts 1.56.0. Choose minimal fully covered **Playwright Test 1.56.0**. Its release changes browser revisions (Chromium 141) and deprecates `backgroundpage`; repository code search found no matching backgroundpage use, but actual browser acceptance still NOT RUN.
+
+Repository-pinned tests in `tests/development-pipeline.test.ts` and `tests/v322-browser-smoke.test.ts` and `DEVELOPMENT.md` updated to **assert** the new exact 1.56.0 version (not weakened or removed). **NEXT REQUIRED:** owner's Node24 npm resolver `npm install --save-dev --save-exact @playwright/test@1.56.0`, regenerate lockfile, commit/push package files, rerun targeted and full tests/build/audit on final candidate. Until then, the branch is deliberately transitional and tests will fail due to version-pin mismatch. Post-package-change test gates, PostgreSQL/browser/natural devices NOT RUN, production DB/flags UNKNOWN. Keep this as a historical preflight + dated later status, not a security PASS.
+
 **Status: INVESTIGATION / LOCKFILE UPDATE BLOCKED, NOT FIXED.** This is a scoped evidence and reproducibility record, **not** a release acceptance or a security clearance.
 
 ## Authority / source
