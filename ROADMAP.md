@@ -1,5 +1,12 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-29T19:45:29.629Z — DATA-1D disposable Neon synthetic SQL probe complete + cleanup VERIFIED
+
+- Owner authorized independently empty test project + cleanup. Created separate project `odd-recipe-81483357` (PG16, blank database, `public_tables=0`), executed read-only `REPEATABLE READ` transaction with 30 synthetic `generate_series` aggregates, and verified results 40→10,240B, 500→128,000B, 4,000→1,024,000B. Observed first server MVCC probe `repeatable read`/`on`, but equality with final probe was **not independently captured**. [Detailed evidence](docs/maintenance/2026-10-29-data1d-neon-ephemeral-evidence.md).
+- **Test project was DELETED** using its exact ID; provider `list_projects` shows 3 original projects, no test project. No application/runtime, production DB/flags, migration, Training, merge or deploy changed. **Not a Neon HTTP driver size test** (provider connector only); vendor limit UNKNOWN. Node/TS/build/PG full/CI/browser/risk release **NOT RUN**. DATA-1 still **BLOCKED FOR RELEASE**.
+- **ONE NEXT STEP:** plan actual locked `@neondatabase/serverless@1.1.0`/Node24 HTTP synthetic transport test with guaranteed cleanup and exact snapshot comparison, only with positive isolation evidence; otherwise no size policy.
+
+
 ## DATA-1D execution-location and Neon metadata preflight — 2026-10-29T19:39:08.007Z (NO SQL / NO NEW TESTS)
 
 - Local ChatGPT Linux Node22 offline result files physically rechecked; script Git blob `70dedadf6bc2667b3dc083517d09015fbe2cc308` matches GitHub Draft #438 source exactly; prior three fabricated measurements remain the only DATA-1D measurement evidence. [Environment record](docs/maintenance/2026-10-29-data1d-environment-preflight.md).

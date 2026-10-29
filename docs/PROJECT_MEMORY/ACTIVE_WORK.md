@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T19:45:29.629Z — DATA-1D isolated synthetic Neon query proof + verified cleanup
+
+- Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`; working Draft PR #438 pre-checkpoint `d7d08f8d80311918cdd26f2c27a2cb2facd5cc16`. Created independent empty Neon project `odd-recipe-81483357`, confirmed PG16/0 user tables, ran single transaction 30 read-only synthetic SELECT summaries + MVCC probes; aggregate rows 40/500/4000 PASS. **Deleted project and independently verified absence**; three original Neon projects untouched, Training excluded. Exact last MVCC snapshot match not separately asserted; Neon HTTP app driver/real wire throughput and size still NOT RUN. [Evidence](../../docs/maintenance/2026-10-29-data1d-neon-ephemeral-evidence.md). Unit/typecheck/build/PG full/browser/CI/release NOT RUN; no merge/deploy/prod DB/migrations/flags. DATA-1 release BLOCKED.
+- **ONE NEXT STEP:** source-backed actual locked Neon HTTP/Node24 transport test design with guaranteed ephemeral project cleanup; no new vendor cap guess.
+
+
 ## 2026-10-29T19:39:08.007Z — DATA-1D safety preflight (metadata only)
 
 - Draft #438 `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `a9f8d072a53bf124e2144abd922af4f49c97c295`, canonical main `807f281e5870164b794d001480ecc84e0b45aea5`; local offline 3-profile evidence rechecked, Git blob matching GitHub. Neon project metadata read-only: Logbook Shadow only active `production` branch, other branches archived with inherited data, no verified empty synthetic Logbook test environment. Training projects isolated/out of scope. **NO SQL, DB access, branch creation, tests/build/PG/Neon acceptance/CI/browser, merge/deploy/flags/Training.** Further evidence and instruction in [DATA-1D environment preflight](../../docs/maintenance/2026-10-29-data1d-environment-preflight.md). DATA-1 cannot release, HTTP payload limits UNKNOWN.

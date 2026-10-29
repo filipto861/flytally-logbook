@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T19:45:29.629Z — DATA-1D ephemeral synthetic Neon project created, probed, DELETED VERIFIED
+
+- **Canonical repo:** `filipto861/flytally-logbook` `main@807f281e5870164b794d001480ecc84e0b45aea5`; work branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `d7d08f8d80311918cdd26f2c27a2cb2facd5cc16`, [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) base Draft #437 (`d81634dd8ac1a05b47da0fec2cf108e60bd29d37`), upstream #436/#435/#434; design #433, SEC-1 #432 separate. No merges.
+- **Owner scope:** owner approved new independently empty Logbook-only Neon synthetic test project and insisted on cleanup. Created `odd-recipe-81483357` / branch `br-steep-mud-b9ld9k4g` (parent null) / DB `synthetic_data1`, PostgreSQL16.15, initial `public_tables=0`. All SQL SELECT-only, except `SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY`; 30 synthetic SELECT aggregates and two probes in one connector transaction. First isolation probe `repeatable read`/`on`; 40/500/4000 row byte sums 10,240/128,000/1,024,000B; connector elapsed ~3,019ms. Exact two-probe snapshot equality was **not separately asserted**. No SQL writes, raw data or secrets.
+- **Cleanup PASS:** `delete_project(odd-recipe-81483357)` success; `list_projects` verified only original 3 projects remain. **No lingering test resource**. [Full result and limitations](../../docs/maintenance/2026-10-29-data1d-neon-ephemeral-evidence.md).
+- **Verification:** isolated synthetic provider SQL probes **PARTIAL/PASS as scoped**; actual app Neon HTTP v1.1.0 driver, HTTP size envelope, full snapshot identity, DB integration, unit tests, typecheck, build, Playwright, CI and release **NOT RUN**. Current production last observed Vercel READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` on `55c8076e1eb8104c14392e15b272b33e0eb29607`; prod DB/schema/flags UNKNOWN, no production DB, migration/restore/delete, flag, merge or deploy. Training untouched. Large-account DATA-1 release risk remains BLOCKED.
+- **ONE NEXT STEP:** prove actual Node24 plus pinned Neon HTTP v1.1.0 transport and both MVCC probes with a newly approved, disposable, clean resource or keep production size policy uncommitted.
+
+
 ## 2026-10-29T19:39:08.007Z — DATA-1D environment provenance and Neon metadata-only safety gate
 
 - **Verified GitHub:** Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`; work branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `a9f8d072a53bf124e2144abd922af4f49c97c295`, [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) stacked on #437→#436→#435→#434; design #433, SEC-1 #432 separate. All Draft/unmerged. Last observed Vercel READY deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` from `55c8076e1eb8104c14392e15b272b33e0eb29607`, production DB/flags UNKNOWN.
