@@ -53,7 +53,7 @@ test("iPad Flights BLOCK/AIR clocks keep readable cell widths without changing p
   const page=read("app/(protected)/flights/page.tsx");
   const base=read("app/ui-system.css");
   assert.match(base,/\.flight-time-ledger > small\{[\s\S]*?white-space:nowrap;/);
-  assert.match(css,/@media\(min-width:701px\)\{/);
+  assert.match(css,/@media\(min-width:761px\)\{/);
   assert.match(css,/\.flights-table > \.table-scroll > table\{\s*min-inline-size:1220px;/);
   for(const label of ["BLOCK","AIR"]){
     assert.ok(css.includes(`td[data-label="${label}"]`),label);
@@ -61,7 +61,9 @@ test("iPad Flights BLOCK/AIR clocks keep readable cell widths without changing p
   }
   assert.match(css,/min-inline-size:124px;/);
   assert.match(css,/\.flights-table > \.table-scroll\{\s*max-inline-size:100%;\s*overflow-x:auto;/);
-  // The 700px and narrower scan-card modes remain the canonical mobile layout.
+  // The <=760px card mode remains the canonical flight-list layout; wide scrolling starts at 761px.
+  assert.match(css,/@media\(max-width:760px\)\{/);
+  assert.doesNotMatch(css,/@media\(min-width:70[1-9]px\)\{/);
   assert.match(base,/@media\(max-width:700px\)\{[\s\S]*?\.flights-table \.flight-list-row/);
   assert.match(page,/hasCompleteClockPair\(f\.off_block,f\.on_block\)/);
   assert.match(page,/hasCompleteClockPair\(f\.takeoff,f\.landing\)/);

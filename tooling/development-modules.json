@@ -105,7 +105,11 @@
         "tests/v329-actions-budget.test.ts",
         "tests/v330-add-flight-simplicity.test.ts",
         "tests/v332-flights-workflow-simplicity.test.ts",
-        "tests/flights-balanced-glassless.test.ts"
+        "tests/flights-balanced-glassless.test.ts",
+        "tests/sidebar-adaptive-v3.test.ts",
+        "tests/sidebar-adaptive-v42.test.ts",
+        "tests/v136-mobile-ux.test.ts",
+        "tests/v300-sidebar-polish.test.ts"
       ]
     },
     "development-pipeline": {
@@ -453,7 +457,7 @@
           "tests/v168-pilot-insights.test.ts",
           "tests/d1-v11-credential-overview.test.ts",
           "tests/d1-v11-passenger-recency.test.ts",
-        "tests/d1-v11-lapl-status.test.ts"
+          "tests/d1-v11-lapl-status.test.ts"
         ]
       }
     },
@@ -871,7 +875,9 @@
         "app/v300-u4-flight-workflow.css",
         "app/v300-u6-acceptance.css",
         "app/v301-public-flight-viewer.css",
-        "components/sidebar.module.css"
+        "components/sidebar.module.css",
+        "app/sidebar-adaptive-v3.css",
+        "app/sidebar-adaptive-v42.css"
       ],
       "risks": [
         "ui-presentation",
@@ -935,7 +941,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 414,
+    "auditedTotal": 416,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },

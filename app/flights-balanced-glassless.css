@@ -54,8 +54,8 @@
 /* iPad / narrow desktop: the BLOCK and AIR source clock pairs must not
    paint into adjacent table cells. Preserve complete times, rather than clip
    or wrap HH:MM values. The existing .table-scroll is the scroll container;
-   on phones <=700px the established flight cards remain unchanged. */
-@media(min-width:701px){
+   at <=760px the established flight cards remain unchanged. */
+@media(min-width:761px){
   .ui-page-stack[data-n2-layout="flights"] > .flights-table > .table-scroll{
     max-inline-size:100%;
     overflow-x:auto;
