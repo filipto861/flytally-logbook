@@ -37,7 +37,7 @@ Dark capture heights agree with Light for all matched cases. Numerical heights a
 
 ### Follow-up approved: header scroll/focus verification only
 
-The owner reported the mobile FlyTally shell bar in the *middle* of a stitched dark full-page comparison and approved an independent runtime/viewport-only scroll and focus investigation before any CSS edits. This is not evidence that the header actually jumps at runtime, and not final approval of M2 visual density. Detailed [probe plan](docs/product/LOGBOOK_N3_M2_STICKY_SHELL_INTERACTION_PROBE_2026-10-23.md); execution **NOT RUN** at this checkpoint. Existing M2 screenshots remain evidence of the static hierarchy only.
+The owner reported the mobile FlyTally shell bar in the *middle* of a stitched dark full-page comparison and approved an independent runtime/viewport-only scroll and focus investigation before any CSS edits. This is not evidence that the header actually jumps at runtime, and not final approval of M2 visual density. Detailed [probe plan](LOGBOOK_N3_M2_STICKY_SHELL_INTERACTION_PROBE_2026-10-23.md); execution **NOT RUN** at this checkpoint. Existing M2 screenshots remain evidence of the static hierarchy only.
 
 ## Verification boundaries and next action
 

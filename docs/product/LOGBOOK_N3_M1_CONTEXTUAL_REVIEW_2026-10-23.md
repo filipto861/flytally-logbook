@@ -33,7 +33,7 @@ No GPS parser, date/time math, split algorithm, certification, RoleCrew persiste
 
 ## M1 after-state audit (2026-10-23)
 
-Owner-provided new guarded local PG16 capture at `97f67c08b25312c9af07948a489b0a02e6167579`: synthetic visual 90/90 (9 states × five widths × Light/Dark) and Chromium capture 1/1 PASS, 0 manifest failures or horizontal overflow, after-state screenshot archive retained in chat, not repository. Full analysis and M2 bounded recommendation: [N3-M1 visual after-state review](docs/product/LOGBOOK_N3_M1_VISUAL_AFTERSTATE_REVIEW_2026-10-23.md). This new capture **does not complete the 22 selected release browser targets, native Safari or owner visual acceptance**. UI observation: GPS 0 points still says 1 suggested flight, and Manual no-outstanding copy can coexist with blank times; neither alone establishes server-side invalid save. M2/M3 changes remain separately gated.
+Owner-provided new guarded local PG16 capture at `97f67c08b25312c9af07948a489b0a02e6167579`: synthetic visual 90/90 (9 states × five widths × Light/Dark) and Chromium capture 1/1 PASS, 0 manifest failures or horizontal overflow, after-state screenshot archive retained in chat, not repository. Full analysis and M2 bounded recommendation: [N3-M1 visual after-state review](LOGBOOK_N3_M1_VISUAL_AFTERSTATE_REVIEW_2026-10-23.md). This new capture **does not complete the 22 selected release browser targets, native Safari or owner visual acceptance**. UI observation: GPS 0 points still says 1 suggested flight, and Manual no-outstanding copy can coexist with blank times; neither alone establishes server-side invalid save. M2/M3 changes remain separately gated.
 
 ## Tests / evidence
 
