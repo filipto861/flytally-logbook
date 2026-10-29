@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T17:52:00Z — SEC-1 public Playwright 6/6 PASS; authenticated DB-backed acceptance next
+
+- Draft PR #432, `main@807f281e5870164b794d001480ecc84e0b45aea5`, pre-checkpoint work HEAD `92020f8ac35ad6b31376900de6e41e8916c9b7f6`, application/package SHA `79d37103006d24c1c98c2b97c66b6815069cac99`.
+- User Windows ZIP `SEC1_PUBLIC_BROWSER_20261029-184848.zip` SHA-256 `4d6defbf6a802208c10dbf4d66fe83d51381607ef2978bd5f23eca5f8c2129bb`: exact public Playwright `e2e/public-shell.spec.mjs` desktop+mobile **6/6 PASS**, 1 worker/0 failures, npm ci/build/Chromium install PASS; **no DB**. Previous Node24/npm11 audit **0**, typecheck, **1759/1759 Node PASS**. Browser authentication/PG16/risk release still **NOT RUN**. Production Vercel READY unchanged, prod DB/flags UNKNOWN, no merge/deploy.
+- **ONE NEXT STEP:** read-only local PG16 executable/service discovery, then construct freshly owned disposable cluster for authenticated browser gates. Protect all preexisting databases.
+
+
 ## 2026-10-29T17:39:08Z — SEC-1 npm audit clear; Draft #432 ready for isolated browser verification
 
 - Verified main `807f281e5870164b794d001480ecc84e0b45aea5`; work branch pre-checkpoint `79d37103006d24c1c98c2b97c66b6815069cac99` on Draft PR #432 (open/unmerged; checkpoint changes only docs). Owner pushed only `package.json`/`package-lock.json` for exact Playwright 1.56.0; GitHub confirmed.
