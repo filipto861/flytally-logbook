@@ -1,6 +1,10 @@
 # FlyTally Logbook — documentation index
 
-**Reviewed:** 11 October 2026. **Scope:** `flytally-logbook` only. `flytally-training` has separate code and governance.
+**Navigation updated:** 2026-10-29 documentation reset. **Scope:** `flytally-logbook` only. `flytally-training` has separate code and governance.
+
+## First read: current source-of-truth and dated evidence
+
+Use the [current ROADMAP status header](../ROADMAP.md) for the **latest independently verified release and owner priority**; the historical release-order table near its end is an earlier plan, not the active queue. Use the [29 October documentation inventory and cleanup plan](maintenance/2026-10-29-documentation-hygiene-audit.md) for the exact cleanup scope and preserved-history rules. For current runtime, inspect GitHub main and Vercel: a historical paragraph saying PENDING or NEXT does not override subsequently merged/deployed evidence. The content in this index is navigation, **not a second release-status authority**.
 
 ## Canonical current sources
 
@@ -28,14 +32,14 @@
 - [Documentation consistency report (optional)](scripts/README.md) — read-only Node command and isolated fixtures; not a merge gate, CI PASS or replacement for source/UX/DB evidence.
 
 
-## Agent Skills V1 (proposed; GitHub branch until merged)
+## Agent Skills V1 (active in main, after merged PR #388)
 
 - [Task-specific Agent Skills registry](../.agents/skills/README.md) — mandatory routing from AGENTS.md, with nine focused procedures for aviation integrity, regulatory, UI, mobile, security, testing and release.
 - [Design inspiration attribution](skills/THIRD_PARTY_SOURCES.md) — MIT source and safe adaptation boundaries.
 - [ChatGPT Project Instructions addendum](skills/CHATGPT_PROJECT_INSTRUCTIONS_ADDENDUM.md) — manually paste after owner-approved merge; GitHub does not update Project settings.
 - [Validation plan](skills/VALIDATION.md) — documentation-only acceptance and status vocabulary.
 
-## 3.7.0 completed release / retained technical acceptance
+## Historical 3.7.0 release / retained technical acceptance
 
 - [3.7.0 production/owner-acceptance closeout](product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) — release `39ee01b7`, Vercel READY and alias assigned, owner-reported functional signoff, explicitly unverified external rights; version release is NOT provider/commercial clearance.
 - [Maps and Aviation Layers design/source contract](product/3_7_0_MAPS_AVIATION_LAYERS.md) — **historical phase-0/phase-1 architecture with some stale in-document status**; current release status is in ROADMAP.
@@ -47,7 +51,7 @@
 - [A2F zoom/menu acceptance](product/3_7_0_A2F_MAP_OVERLAY_ZOOM_POLISH_ACCEPTANCE.md) — merged z14 native/z18 display behavior, test and production evidence.
 - [Maps review handoff](product/3_7_0_MAPS_REVIEW_HANDOFF.md) — **dated reviewer questions**, not an instruction to repeat already settled design decisions.
 
-**Product release:** `3.7.0` is **DONE / PRODUCTION** as of 11 October (version, Vercel READY, target alias and owner UX acceptance). Direct post-release browser/HTTP smoke was unavailable here, and third-party map-provider rights/coverage/quotas remain separately unverified; do not infer external permissions from product version or functional acceptance.
+**Historical product release:** `3.7.0` was **DONE / PRODUCTION** as of 11 October (version, Vercel READY, target alias and owner UX acceptance). Direct post-release browser/HTTP smoke was unavailable here, and third-party map-provider rights/coverage/quotas remain separately unverified; do not infer external permissions from product version or functional acceptance.
 
 ## Active cross-cutting contracts
 
