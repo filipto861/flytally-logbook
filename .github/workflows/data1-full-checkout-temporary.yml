@@ -100,28 +100,17 @@ jobs:
           fi
 
   browser:
-    name: Disposable authenticated Chromium smoke (NO NEON)
+    name: Bounded v13 signed-backup desktop and mobile risk smoke (NO NEON)
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: flytally
-          POSTGRES_PASSWORD: flytally
-          POSTGRES_DB: flytally_browser
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U flytally -d flytally_browser"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
+    timeout-minutes: 16
     env:
-      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_browser
+      DATABASE_URL: postgresql://flytally@127.0.0.1:55433/flytally_currency_test
       FLYTALLY_LOCAL_POSTGRES: "1"
       FLYTALLY_AUTH_BROWSER: "1"
+      FLYTALLY_CURRENCY_V21_BROWSER: "1"
+      FLYTALLY_V21_RISK_BROWSER: "1"
+      FLYTALLY_BROWSER_EVIDENCE_FILE: data1-browser-evidence.json
       FLYTALLY_BROWSER_PASSWORD: FlyTally-Synthetic-CI-2026!
       SESSION_SECRET: flytally-browser-session-secret-not-production
       SIGNING_SECRET: flytally-browser-signing-secret-not-production
@@ -136,9 +125,41 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Install repository-pinned Chromium
+      - name: Bootstrap purpose-owned host-loopback PG16 on port 55433
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin=/usr/lib/postgresql/16/bin
+          test -x "$bin/initdb"
+          sudo install -d -o postgres -g postgres -m 0700 /tmp/flytally-data1-browser-pg16
+          sudo -u postgres "$bin/initdb" -D /tmp/flytally-data1-browser-pg16 -U flytally --auth-local=trust --auth-host=trust --no-instructions >/dev/null
+          sudo -u postgres "$bin/pg_ctl" -D /tmp/flytally-data1-browser-pg16 -o "-h 127.0.0.1 -p 55433 -k /tmp" -l /tmp/flytally-data1-browser-pg16.log -w start
+          "$bin/createdb" -h 127.0.0.1 -p 55433 -U flytally flytally_currency_test
+      - name: Install repository-pinned Chromium for supported Ubuntu 24.04
         run: npx --no-install playwright install --with-deps chromium
-      - name: Browser fixture production build (diagnostic)
+      - name: Diagnostic Next.js build (NO DEPLOY)
         run: npm run build
-      - name: Legacy full authenticated browser acceptance (diagnostic)
-        run: npm run test:browser
+      - name: Signed v13 backup and restore - desktop, one test, no retries
+        run: >
+          node tooling/run-auth-browser.mjs
+          --currency-v21-risk e2e/trash-integrity.spec.mjs
+          --project=desktop-chromium
+          --grep='Currency 3.8 browser: signed portable v13 restores exact flight and expense currency'
+          --retries=0 --workers=1
+      - name: Signed v13 backup and restore - mobile, one test, no retries
+        run: >
+          node tooling/run-auth-browser.mjs
+          --currency-v21-risk e2e/trash-integrity.spec.mjs
+          --project=mobile-chromium
+          --grep='Currency 3.8 browser: signed portable v13 restores exact flight and expense currency'
+          --retries=0 --workers=1
+      - name: Remove isolated browser database files and stop PG process
+        if: always()
+        shell: bash
+        run: |
+          if test -f /tmp/flytally-data1-browser-pg16/postmaster.pid; then
+            sudo -u postgres /usr/lib/postgresql/16/bin/pg_ctl -D /tmp/flytally-data1-browser-pg16 -m immediate -w stop
+          fi
+          if test -d /tmp/flytally-data1-browser-pg16; then
+            sudo rm -rf /tmp/flytally-data1-browser-pg16
+          fi
