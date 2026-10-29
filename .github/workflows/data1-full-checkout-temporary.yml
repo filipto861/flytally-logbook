@@ -50,3 +50,89 @@ jobs:
         run: npm test
       - name: Production build diagnostic (NOT a deployment)
         run: npm run build
+
+  postgres:
+    name: Disposable loopback PostgreSQL16 acceptance (NO NEON)
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_test
+      FLYTALLY_LOCAL_POSTGRES: "1"
+      AUTH_SECRET: flytally-ci-auth-secret-not-for-production
+      SIGNING_SECRET: flytally-ci-signing-secret-not-for-production
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Verify strict loopback target before fixture use
+        run: |
+          test "$DATABASE_URL" = "postgresql://flytally:flytally@127.0.0.1:5432/flytally_test"
+          npm run scope:changed -- lib/account-backup.ts lib/local-postgres.ts
+      - name: PostgreSQL core acceptance on disposable service
+        run: npm run test:postgres
+
+  browser:
+    name: Disposable authenticated Chromium smoke (NO NEON)
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_browser
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_browser"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_browser
+      FLYTALLY_LOCAL_POSTGRES: "1"
+      FLYTALLY_AUTH_BROWSER: "1"
+      FLYTALLY_BROWSER_PASSWORD: FlyTally-Synthetic-CI-2026!
+      SESSION_SECRET: flytally-browser-session-secret-not-production
+      SIGNING_SECRET: flytally-browser-signing-secret-not-production
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Install repository-pinned Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Browser fixture production build (diagnostic)
+        run: npm run build
+      - name: Legacy full authenticated browser acceptance (diagnostic)
+        run: npm run test:browser
