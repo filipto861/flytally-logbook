@@ -1,5 +1,11 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-29T19:20:18.809Z — DATA-1D-1 strict local PostgreSQL batch result contract (Draft #437, NOT TESTED)
+
+- After source correction in [DATA-1D design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433), a small reviewed-scope safety slice is staged as [Draft PR #437](https://github.com/filipto861/flytally-logbook/pull/437), stacked on DATA-1C #436 → DATA-1B #435 → DATA-1A #434; canonical main `807f281e5870164b794d001480ecc84e0b45aea5` unchanged. The local `psql` transaction adapter previously accepted missing result markers as empty arrays; PR #437 now requires exactly one in-range marker per statement and rejects duplicate/missing/malformed/non-row output **before any result is returned**. Transaction SQL and existing 16 MiB local buffer unchanged; three future synthetic tests staged but **NOT RUN**. No new dependencies, migration or v13 changes.
+- **DATA-1 large-account release blocker remains:** no verified Neon HTTP request/response limit or Vercel synthetic size envelope; existing 50 MiB gzip Base64 storage INSERT/SELECT and 32-result HTTP transaction may exceed vendor constraints. Do not fabricate size caps or fall back to incoherent reads. Current `version>=6` exact restore is one 1000-statement-bounded transaction; `version<6` legacy restore is separate multi-commit scope. No merge, deployment, prod DB/flags, Training. **ONE NEXT STEP:** prepare size-envelope source instrumentation/spec and a short bounded vendor question, then request separately authorized synthetic-only verification before any release.
+
+
 ## DATA-1D restore atomicity correction — 2026-10-29T19:13:06.396Z (reconciled source; DOCS ONLY)
 
 - Current exact recovery `version>=6` uses one `sql.transaction(queries)` limited to 1000 statements, so earlier claims that v13 exact restore can commit half its batches are incorrect. Legacy `version<6` recovery is multi-transaction and remains a separately scoped risk. [DATA-1D corrected design](docs/maintenance/2026-10-29-data1d-transport-and-restore-design.md) exists on independent [design Draft #433](https://github.com/filipto861/flytally-logbook/pull/433), not this code PR. DATA-1A/B/C source code remains **UNTESTED / UNMERGED**. Next: updated read-only design review on transport/size envelope, not an unwarranted exact-restore rewrite.

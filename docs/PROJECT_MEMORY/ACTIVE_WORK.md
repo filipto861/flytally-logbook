@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T19:20:18.809Z — DATA-1D-1 staged in Draft #437, UNTESTED
+
+- Source `main@807f281e5870164b794d001480ecc84e0b45aea5` and `fix/logbook-data1d-local-transport-integrity-20261029` pre-checkpoint `a16c0cc493124b59f465678fce5cc5bb383405c3`; [Draft #437](https://github.com/filipto861/flytally-logbook/pull/437) stacked on #436 → #435 → #434. Strict `psql` result marker cardinality parser rejects missing/duplicate/malformed output; former silent empty-array substitution removed. 3 synthetic cases added, **NOT RUN**. No change to SQL/Neon HTTP, v13, DB/flags, production deployment or Training. Previous Claude review C2/C3 covered this narrow class; no new Claude request. Large-account Neon request/response limit and Base64 storage capacity unverified, **DATA-1 NOT RELEASE-READY**.
+- **ONE NEXT STEP:** prepare short synthetic-only transport-size measurement and source instrumentation proposal; keep tests NOT RUN until user separately permits.
+
+
 ## 2026-10-29T19:13:06.396Z — DATA-1D correction carried onto staged DATA-1C PR #436
 
 - DATA-1C source unchanged on `fix/logbook-data1-presign-integrity-20261029` pre-checkpoint `3997a5ef2093e50ee9b791f205c6a75b397ae299`, Draft #436 stacked on #435/#434. Design PR #433 now documents exact `version>=6` restore single transaction vs legacy `<6` multi-batch. Prior handoff entries claiming multi-transaction v13 exact restore are **SUPERSEDED**. Runtime gates all NOT RUN. No merge, deployment, DB/flags/Training changes.
