@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29 — SEC-1 dependency update staged in Draft PR #432
+
+- `main@807f281e5870164b794d001480ecc84e0b45aea5`, dependency source commit `d2021d7ceb1944501293fab3eec4340170cd7c77` on `fix/logbook-sec1-dependency-remediation-20261029`, Draft [#432](https://github.com/filipto861/flytally-logbook/pull/432). Current work branch full SHA may include newer documentation checkpoint; reverify before tests.
+- Next `16.4.3`, sharp `0.35.5`, source-map-js `1.2.2` confirmed in pushed lock and CRLF-normalized ZIP. This is a dependency candidate, **not** a security remediation PASS. Executable gates NOT RUN, production DB/flags UNKNOWN, Vercel alias unchanged.
+- **Next action:** fresh Node24 `npm ci` / audit / typecheck / Node tests / build; then browser/PG plan on safe isolated target. No merge/deploy authorization.
+
+
 ## 2026-10-29T15:12:38.529Z — active SEC-1 dependency security milestone
 
 - Base `main@807f281e5870164b794d001480ecc84e0b45aea5`, work branch `fix/logbook-sec1-dependency-remediation-20261029`, Draft PR [#432](https://github.com/filipto861/flytally-logbook/pull/432). Current branch HEAD always check GitHub; prior SEC-1 pre-checkpoint `9c56fd22975429febf4e18bfeb0337e994ef0e7d`.
