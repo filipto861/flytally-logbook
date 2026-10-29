@@ -1,6 +1,6 @@
 # DATA-1 — coherent signed account backups: source reconstruction and frozen review proposal
 
-**Milestone:** DATA-1 (P1) after SEC-1; **DESIGN / REVIEW PENDING; implementation NOT STARTED**.
+**Milestone:** DATA-1 (P1) after SEC-1; **REVIEWED / APPROVE WITH CHANGES; PR-A STAGED UNTESTED; SNAPSHOT BUILDER NOT IMPLEMENTED**.
 **Verified Logbook baseline:** `main@807f281e5870164b794d001480ecc84e0b45aea5` (2026-10-29); DATA-1 work branch `docs/logbook-data1-snapshot-design-20261029` based directly on main, not SEC-1's work branch.
 **Owner instruction:** continue planned development **without running tests**. No merge, deployment, production migrations/DB/flags, remote DB access, or changes to `flytally-training`.
 **Related dependency candidate:** SEC-1 Draft [PR #432](https://github.com/filipto861/flytally-logbook/pull/432), not merged into main. DATA-1 must be reconciled against main after SEC-1's independent owner decision; never implicitly depend on its packages.
@@ -37,6 +37,38 @@
 - Portable v13 existing parser and restore compatibility (including signatures, revision chain, voided and shared evidence), and large synthetic account at current size caps; proof of behavior for both Neon HTTP driver and local adapter.
 - Exact candidate-bound source/typecheck/build and risk-selected backup/restore/PG evidence **NOT RUN**. No automated tests, `npm ci`, build or SQL were executed in this design-only milestone, as explicitly requested.
 - Security review with reviewer verdict (APPROVE / APPROVE WITH CHANGES / BLOCK), source-specific findings and lead reconciliation **PENDING**.
+
+## Independent second-AI review reconciliation — Claude, 2026-10-29T18:58:00Z
+
+**External reviewer verdict: APPROVE WITH CHANGES.** Claude reviewed frozen proposal at `cf4c06340c3ab64fc73ac0a694026ecf84cdcb65` in detached checkout. Review text supplied by owner on 2026-10-29; independently reconciled against `main@807f281e5870164b794d001480ecc84e0b45aea5`, particularly `lib/account-backup.ts`, `lib/local-postgres.ts`, `lib/backup-center.ts`, `lib/portable-backup.ts`, `lib/backup-certification.ts`, export/restore actions and `tests/v325-transaction-mutations.test.ts`. Reviewer did **not** run tests or access private databases. This design remains UNRELEASED, and source change is a separate Draft PR.
+
+| Finding | Reconciliation | Required action before release |
+| --- | --- | --- |
+| **C1 HIGH** Neon HTTP response ceiling and sequential 30-query batch | **ACCEPT**. Current `flight_tracks.coordinates_json` can be large; one batch response may have a different ceiling from separate queries. Exact 64 MB/provider limit, response representation, runtime memory and real account sizes **not verified in this project**; base64 storage request may exceed the 50 MiB compressed cap, adjacent issue. | No production fallback to unordered reads. Establish synthetic per-account size envelope on **isolated** Neon branch and explicit backup UNAVAILABLE on oversize; benchmark duration and memory. WebSocket single-session transaction is a conditional design only, not approved/implemented. Consider separate stored-backup base64 cap after measurements. |
+| **C2 HIGH** missing transaction proof | **ACCEPT**. Driver headers are not independent evidence that server enforced transaction options. | Both ends of the batch must include `current_setting('transaction_isolation')`, `current_setting('transaction_read_only')`, `pg_current_snapshot()::text`. Require `repeatable read`, `on`, identical snapshot tokens and exact length/shape of all result arrays before signature. PostgreSQL version applicability and Neon behavior require actual controlled evidence later. |
+| **C3 HIGH** local adapter ignores options and 16 MiB response cap | **ACCEPT**. `lib/local-postgres.ts` currently hardcodes legacy `BEGIN;…COMMIT;`, lacks an options arg, defaults 16 MiB `spawnSync` buffer, and requires same-tick deferred transactions. | Dedicated DATA-1 implementation slice A **STAGED UNTESTED** in [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434) (head `e0814e9b5f795a141e014c44a85359bcfbad3d7d`): one allowlisted mode, pure script transform, default script unchanged, four future tests. Physical local PG acceptance NOT RUN. Buffer limit still open. |
+| **C4 MEDIUM** signed empty profile/counts self-consistency | **ACCEPT**. `user[0]??{}` is a direct source match. Self-generated counts don't show cross-table coherence. | Strict one-row owned-profile precondition, typed fail-closed error and exact section count/array checks before signing. |
+| **C5 MEDIUM** application invariants vs MVCC | **ACCEPT, separate dependency**. Snapshot guarantees one *committed* database state but not application-level atomicity of writers spanning many SQL transactions (exact restore uses batches). | Document backup during partial restore as an unresolved writer-boundary risk; do not advertise full logical consistency until multi-batch restore/backup interaction is resolved. Changes to restore transaction strategy require separate reviewed scope. |
+| **C6 LOW** `NOW()` stabilized across snapshot | **ACCEPT**. Stable time in one PostgreSQL transaction is desirable, preserves current query predicate. | No special code. |
+
+### Reviewer suggestions with limits
+
+- **ACCEPT:** explicit errors for invalid/missing user, unsupported isolation, malformed result and oversize; no signature or stored archive after failure. Keep portable **v13** unchanged and `exported_at` as timestamp assigned after reading (`source snapshot ≤ exported_at`, not exact snapshot time).
+- **ACCEPT with compatibility gate:** reuse `validateBackupRelationships`, `validateBackupArchiveRelationships`, `validateVoidHistoryRelationships` and `validateBackupCertificationHistory` as appropriate; existing parser/certification logic must be checked for legacy and cross-user evidence to avoid rejecting valid backups.
+- **REJECT shadow mode if it would sign/store a known structurally invalid backup.** Do not merely log a known integrity failure and proceed. Diagnostic-only evaluation of *unproven additional* historical constraints may be studied before enforcement, but it is not proof of backup correctness.
+- **DEFER:** WebSocket `Pool/Client` alternative until a size/runtime gate on an isolated provider branch. Neither built-in Node24 WebSocket nor Vercel execution compatibility is claimed as tested.
+- **DEFER separate scope:** `deleteTrack` currently catches and silently returns on failed pre-delete backup; surface a useful user-facing failure in a small future action/API change (will be a Logbook UI task requiring full Apple Design skill/playbook). Avoid mixing this into transaction adapter PR.
+- **ACCEPT:** non-sensitive metrics can include section counts, response size, duration (without raw customer/flight data), preserving authorization, no production reads.
+
+### Revised staged delivery and acceptance
+
+1. **PR-A** local adapter exact-mode script with pure testable helper, keep legacy write transactions byte-identical. [Draft #434](https://github.com/filipto861/flytally-logbook/pull/434) is **implemented but NOT TESTED and NOT RELEASED**.
+2. **PR-B** shared `buildAccountBackup` snapshot probes, strict result/profile checks, typed errors; preserve original SELECTs, v13 and existing callers; prepare explicit over-limit failure strategy. Do not merge until size/adapter/provider evidence exists.
+3. **PR-C** existing restore-side structural validators and signed archive reject semantics, only after assessing legacy cases. No mixed-state fallbacks, no unsupported regulatory assertions.
+4. **PR-D conditional** large-account interactive snapshot strategy or explicit unavailable state; separate error feedback for safety delete. Not authorized by this design alone.
+5. **Future verification only (owner says NO TESTS NOW):** synthetic concurrent old/new row commits, short/malformed result, missing profile, local PG strict read-only/legacy-write, official Neon HTTP 1.1.0 branch, v13 parser/restore and signed certified/voided evidence, >64MB response/16MiB local buffer, cron `maxDuration=300`, RESTORE mid-export, accounts with 20k flights/30k tracks. None executed.
+
+**ONE NEXT STEP:** implement PR-B only after deciding an explicit safe size envelope and failure mode; status remains PARTIAL / NOT RELEASED without testing, merge, deployment or production DB/flags.
 
 ## DO NOT / release authority
 
