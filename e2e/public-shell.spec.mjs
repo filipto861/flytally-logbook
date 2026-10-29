@@ -125,6 +125,21 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   expect(session).toBeTruthy();
   expect(session?.httpOnly).toBeTruthy();
 
+  // V4.2 Compact secondary navigation: real authenticated keyboard/focus semantics.
+  await page.setViewportSize({width:1440,height:900});
+  await page.getByRole("button",{name:"Collapse navigation"}).click();
+  const moreTrigger=page.getByRole("button",{name:"More navigation — Pilot & records"});
+  await moreTrigger.press("Enter");
+  await expect(moreTrigger).toHaveAttribute("aria-expanded","true");
+  const moreNav=page.getByRole("navigation",{name:"Pilot and records navigation"});
+  await expect(moreNav).toBeVisible();
+  await expect(moreNav.getByRole("link",{name:"Licences & recency"})).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(moreNav).toHaveCount(0);
+  await expect(moreTrigger).toBeFocused();
+  await page.getByRole("button",{name:"Expand navigation"}).click();
+  if(originalViewport)await page.setViewportSize(originalViewport);
+
   await navigateMain(page,"Flights");
   await expect(page).toHaveURL(/\/flights$/);
   await expectAuthenticatedRoute(page,"Flights");
@@ -155,9 +170,10 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   const originalFlightsViewport=page.viewportSize();
   const blockLedger=baselineFlightRow.locator('td[data-label="BLOCK"] .flight-time-ledger');
   const airLedger=baselineFlightRow.locator('td[data-label="AIR"] .flight-time-ledger');
-  for(const width of [320,390,768,1024,1440]){
+  for(const width of [320,390,720,768,1024,1440]){
     await page.setViewportSize({width,height:900});
     await expectNoHorizontalOverflow(page);
+    if(width===720)await expect(baselineFlightRow).toHaveCSS("display","grid");
     await expect(blockLedger).toBeVisible();
     await expect(airLedger).toBeVisible();
     for(const ledger of [blockLedger,airLedger]){

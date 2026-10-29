@@ -56,11 +56,17 @@ test("v3.0 U1.3 keeps Administration visually separate from Pilot & records",()=
 });
 
 
-test("v3.0 U1.3 groups the mobile notification bell directly with the menu control",()=>{
+test("V4.2 preserves accessible mobile notification next to the menu while using one footer instance",()=>{
   const sidebar=read("components/sidebar.tsx");
   const css=read("components/sidebar.module.css");
-  assert.match(sidebar,/className=\{styles\.headerActions\}[\s\S]*NotificationBell[\s\S]*mobile-toggle/);
+  const quiet=read("app/sidebar-adaptive-v42.css");
+  assert.match(sidebar,/className=\{styles\.headerActions\}><button ref=\{toggleRef\} className="mobile-toggle"/);
+  assert.match(sidebar,/className="sidebar-utility"><NotificationBell initialCount=\{notificationCount\}/);
+  assert.equal((sidebar.match(/<NotificationBell /g)??[]).length,1);
   assert.match(css,/\.headerActions\{[^}]*display:flex[^}]*gap:8px/s);
   assert.match(css,/@media\(max-width:820px\)[\s\S]*\.headerActions :global\(\.mobile-toggle\)\{margin-left:0\}/s);
-  assert.match(css,/\.notificationBell\{[^}]*margin-left:0/s);
+  assert.match(quiet,/@media screen and \(max-width:820px\)\{/);
+  assert.match(quiet,/top:11px;\s*right:68px;/);
+  assert.match(quiet,/\.sidebar \.sidebar-utility \.desktop-signout\{\s*display:none;/);
+  assert.match(quiet,/\.sidebar \.sidebar-utility>a\[aria-label\^="Notifications"\]::after\{\s*content:"Notifications";/);
 });

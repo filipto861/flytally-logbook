@@ -12,7 +12,7 @@
 .recordLink:hover{color:var(--text)!important}
 .recordLink:global(.active){color:var(--text)!important;font-weight:750!important}
 .adminLink{margin-top:9px!important;padding-top:7px!important;height:51px!important;border-top:1px solid var(--line)!important;border-radius:0!important}
-:global(.sidebar.collapsed) .primaryAction{margin:4px 0 8px!important}
+:global(.sidebar.collapsed) .primaryAction{margin:4px auto 8px!important}
 :global(.sidebar.collapsed) .adminLink{margin-top:0!important;padding-top:0!important;height:44px!important;border-top:0!important}
 :global(.sidebar.collapsed) .group{margin-top:0;padding-top:0;border-top:0}
 :global(.sidebar.collapsed) .groupTitle{display:none}
@@ -35,7 +35,7 @@
   .adminLink{margin-top:9px!important;height:52px!important;padding-top:8px!important}
   .headerActions{margin-left:auto;display:flex;align-items:center;gap:8px}
   .headerActions :global(.mobile-toggle){margin-left:0}
-  .notificationBell{width:36px;height:36px;flex-basis:36px;margin-left:0}
+  .notificationBell{width:44px;height:44px;flex-basis:44px;margin-left:0}
 }
 
 /* N1 V2: preserve the hierarchy in desktop compact mode and mobile drawer. */
