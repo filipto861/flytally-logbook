@@ -1,6 +1,6 @@
 # DATA-1 — coherent signed account backups: source reconstruction and frozen review proposal
 
-**Milestone:** DATA-1 (P1) after SEC-1; **REVIEWED / APPROVE WITH CHANGES; PR-A STAGED UNTESTED; SNAPSHOT BUILDER NOT IMPLEMENTED**.
+**Milestone:** DATA-1 (P1) after SEC-1; **REVIEWED WITH CHANGES; PR-A/B/C STAGED BUT UNTESTED/UNMERGED; DATA-1D DESIGN REVIEW PENDING**.
 **Verified Logbook baseline:** `main@807f281e5870164b794d001480ecc84e0b45aea5` (2026-10-29); DATA-1 work branch `docs/logbook-data1-snapshot-design-20261029` based directly on main, not SEC-1's work branch.
 **Owner instruction:** continue planned development **without running tests**. No merge, deployment, production migrations/DB/flags, remote DB access, or changes to `flytally-training`.
 **Related dependency candidate:** SEC-1 Draft [PR #432](https://github.com/filipto861/flytally-logbook/pull/432), not merged into main. DATA-1 must be reconciled against main after SEC-1's independent owner decision; never implicitly depend on its packages.
@@ -37,6 +37,10 @@
 - Portable v13 existing parser and restore compatibility (including signatures, revision chain, voided and shared evidence), and large synthetic account at current size caps; proof of behavior for both Neon HTTP driver and local adapter.
 - Exact candidate-bound source/typecheck/build and risk-selected backup/restore/PG evidence **NOT RUN**. No automated tests, `npm ci`, build or SQL were executed in this design-only milestone, as explicitly requested.
 - Security review with reviewer verdict (APPROVE / APPROVE WITH CHANGES / BLOCK), source-specific findings and lead reconciliation **PENDING**.
+
+## Later source correction: DATA-1D (2026-10-29)
+
+The **prior reviewer C5 assumption was overbroad**. The source-backed correction is documented in [DATA-1D transport and restore audit](2026-10-29-data1d-transport-and-restore-design.md): current-format `version >= 6` exact restore runs **one** SQL transaction with 1,000-statement cap, while only **legacy version < 6** restore uses multiple transactions. No data was queried or changed to verify live behavior; source only. The review's historical original wording below is retained as the received review and **must not be used as the present implementation contract**. Similarly the older “PR-B not implemented” action below is historical; Draft #435/#436 now contain staged **unverified** code. DATA-1D no-code design checkpoint is newer.
 
 ## Independent second-AI review reconciliation — Claude, 2026-10-29T18:50:29.823Z
 
