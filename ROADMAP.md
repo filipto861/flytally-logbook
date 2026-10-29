@@ -1,5 +1,11 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-29T20:26:05.483Z — DATA-1 Node24 targeted acceptance (Vercel Sandbox PASS; full release gates PENDING)
+
+- **New small compatibility [Draft PR #439](https://github.com/filipto861/flytally-logbook/pull/439)** stacked on #438→#437→#436→#435→#434. Source candidate `e45fde930b305ed4b5e25be3522423cc21c0d53a`, main `807f281e5870164b794d001480ecc84e0b45aea5`. Node24 `--experimental-strip-types` initially **FAIL** on `AccountBackupSnapshotError` parameter property (12 pass / 1 fail); modified to explicit readonly assignment (no validation changes). Focused TypeScript initially **FAIL TS2352** on runtime-generated test fixture; explicit dynamic cast (no test weakening). **Re-run PASS: 16/16 targeted DATA-1 tests, 2/2 profiler tests, focused TypeScript noEmit exit 0** in a real Vercel nonpersistent Node24 sandbox. [SHA-bound evidence](docs/maintenance/2026-10-29-data1-targeted-node24-verification.md).
+- **Cleanup:** temporary Vercel session `sbx_qDuLyjbPspR4D55yAwBR0hbPfEJH` stopped verified; no Neon project created; source files were copied into a **minimal subset**, **not** a full private-repo checkout. Therefore full repo `npm run typecheck`, Next build, PostgreSQL, full tests/CI/browser/release **NOT RUN**; signed v13 backup/restore/large stored Base64 unresolved. No merge/deploy/production DB/flags/Training. **ONE NEXT STEP:** acquire complete exact-SHA checkout in isolated Node24 executor for full typecheck/risk gate before release consideration.
+
+
 ## 2026-10-29T20:12:59Z — DATA-1D actual Neon HTTP driver / Node24 synthetic proof; CLEANUP VERIFIED
 
 - **Real driver evidence** in [DATA-1D Node24 HTTP proof](docs/maintenance/2026-10-29-data1d-neon-http-driver-evidence.md). New independently empty PG16 Neon project `cold-shape-74578425` + nonpersistent Node24 Vercel sandbox, exact `@neondatabase/serverless@1.1.0`; 3 batches of 32 results (30 SELECTs + 2 probes) in one `READ ONLY REPEATABLE READ` transaction passed with identical snapshots. HTTP response 20,834 B (40 synthetic rows), 4,108,924 B (500), 16,414,454 B (4000); separate parameterized upload/echo 1/4/12 MiB PASS. All 6 cases HTTP200, **no production SQL or real account data**.

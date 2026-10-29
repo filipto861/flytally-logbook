@@ -1,5 +1,13 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T20:26:05.483Z — DATA-1 Node24 focused source tests/typecheck on Vercel, sandbox STOPPED
+
+- **Verified source:** Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`, `fix/logbook-data1-node24-strip-types-20261029` pre-checkpoint HEAD `e45fde930b305ed4b5e25be3522423cc21c0d53a`, new open [Draft #439](https://github.com/filipto861/flytally-logbook/pull/439) base `chore/logbook-data1d-offline-size-envelope-20261029@c32815588b7d34fceb4362f811741c89f0afcab6` ([Draft #438](https://github.com/filipto861/flytally-logbook/pull/438)), upstream #437→#436→#435→#434; design #433; unrelated SEC-1 #432. Two changed code/test paths `lib/account-backup-snapshot.ts` and `tests/v381-data1-backup-presign.test.ts` plus this documentation checkpoint. No merges/deploys.
+- **Actual Vercel executor:** nonpersistent `flytally-data1-unit-20261029` Node v24.22.1; selected GitHub source files at exact SHA copied to minimal workspace, **NOT full checkout**. Initial Node24 runner FAIL 12/13 on unsupported parameter property, then fix. Initial focused `tsc` FAIL TS2352 dynamic test fixture, then fix. At `e45fde930b305ed4b5e25be3522423cc21c0d53a`: Node24 A/B/C/D local/parser **PASS 16/16**, profiler **PASS 2/2**, focused TypeScript **PASS exit 0**. [Detailed source/evidence](../../docs/maintenance/2026-10-29-data1-targeted-node24-verification.md). Full project typecheck/build/Node suite, PG/Neon real archive restore, browser/CI/risk-release **NOT RUN**. Data integrity/transport release still blocked.
+- **Cleanup:** sandbox `sbx_qDuLyjbPspR4D55yAwBR0hbPfEJH` **STOPPED** confirmed with `get_session`; no DB project created and Neon list still exactly three old projects. Production Vercel last independently verified READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` from `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags UNKNOWN and untouched. No SQL/migrations/flags/merge/deploy/Training.
+- **ONE NEXT STEP:** full private Logbook repo checkout + `npm run typecheck`/risk-selected build/tests on frozen exact candidate in isolated Node24, then synthetic storage integration only if needed. No automatic merge/deploy.
+
+
 ## 2026-10-29T20:12:59Z — DATA-1D HTTP driver proof PASS, ephemeral Neon + Vercel compute CLEANED
 
 - **Source identity:** Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`, working `chore/logbook-data1d-offline-size-envelope-20261029` pre-evidence `dc5d8a095cd7d9872d691d27c7b80f4a44d38f8d`, [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438), stacked #437→#436→#435→#434; separate design #433, SEC-1 #432, all Draft/unmerged. **No release change**.
