@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-29T19:39:08.007Z — DATA-1D safety preflight (metadata only)
+
+- Draft #438 `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `a9f8d072a53bf124e2144abd922af4f49c97c295`, canonical main `807f281e5870164b794d001480ecc84e0b45aea5`; local offline 3-profile evidence rechecked, Git blob matching GitHub. Neon project metadata read-only: Logbook Shadow only active `production` branch, other branches archived with inherited data, no verified empty synthetic Logbook test environment. Training projects isolated/out of scope. **NO SQL, DB access, branch creation, tests/build/PG/Neon acceptance/CI/browser, merge/deploy/flags/Training.** Further evidence and instruction in [DATA-1D environment preflight](../../docs/maintenance/2026-10-29-data1d-environment-preflight.md). DATA-1 cannot release, HTTP payload limits UNKNOWN.
+- **ONE NEXT STEP:** obtain explicit approval for new independently empty Logbook Neon project or owned local PG16, then bounded synthetic-only measurements, not production operations.
+
+
 ## 2026-10-29T19:34:07.433Z — DATA-1D offline measurement evidence captured; DATA-1 still on HOLD
 
 - [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) `chore/logbook-data1d-offline-size-envelope-20261029` pre-evidence `36041613c7d4f314ae723b1a91db6d4b501c1d6f` on main `807f281e5870164b794d001480ecc84e0b45aea5`, stacked on #437→#436→#435→#434. Exact source blob matched assistant offline copy. 3 synthetic-only CLI profiles PASS (40, 500, 4000 flights); largest simulated psql output 34.6MB > local adapter 16MiB cap; gzip17.9MB/Base6423.9MB; [integer-byte evidence](../../docs/maintenance/2026-10-29-data1d-offline-measurement-evidence.md). Node22 assistant container, not Node24; no tests/build/Neon/DB/browser/CI. No merge/deploy/DB/flags/Training. Cannot infer Neon HTTP provider limit or real account capacity, DATA-1 release BLOCKED.

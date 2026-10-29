@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-29T19:39:08.007Z — DATA-1D environment provenance and Neon metadata-only safety gate
+
+- **Verified GitHub:** Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`; work branch `chore/logbook-data1d-offline-size-envelope-20261029` pre-checkpoint `a9f8d072a53bf124e2144abd922af4f49c97c295`, [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) stacked on #437→#436→#435→#434; design #433, SEC-1 #432 separate. All Draft/unmerged. Last observed Vercel READY deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` from `55c8076e1eb8104c14392e15b272b33e0eb29607`, production DB/flags UNKNOWN.
+- **Local evidence location:** assistant isolated Linux container `/mnt/data/data1d_offline/` with `small.json`, `medium.json`, `large.json`; actual local source Git blob `70dedadf6bc2667b3dc083517d09015fbe2cc308` agrees with GitHub Draft #438, Node v22.16.0 (repo Node24). These are synthetic offline measurements only (three prior CLI PASS), **no application/DB tests, TS/build, CI, browser, Neon or PG run** in this turn.
+- **Neon metadata inspected, no SQL:** `Logbook Shadow` has only one ready active branch named `production`, remaining listed branches archived and cloned from existing parent data; separate Training Production/Acceptance out-of-scope. No verified isolated empty Logbook synthetic environment. Must **NOT** run load, injection, test writes or remote acceptance on these branches, nor clone live data just to test. See [preflight evidence](../../docs/maintenance/2026-10-29-data1d-environment-preflight.md).
+- **DO NOT:** merge/deploy, production DB/migrations/restore/delete/flags, remote destructive tests, Training changes, claims of verified Neon HTTP response max or real backup correctness. No new Claude requested.
+- **ONE NEXT STEP:** owner explicitly chooses/provisions *independent empty* Logbook synthetic Neon project or verified disposable loopback local PG16; only then measure safe transport under separate scope. Candidate still PARTIAL / BLOCKED.
+
+
 ## 2026-10-29T19:34:07.433Z — DATA-1D offline synthetic size profiles measured; NO database/test release gate
 
 - **GitHub:** canonical Logbook `main@807f281e5870164b794d001480ecc84e0b45aea5`. Working `chore/logbook-data1d-offline-size-envelope-20261029` pre-evidence HEAD `36041613c7d4f314ae723b1a91db6d4b501c1d6f`; [Draft PR #438](https://github.com/filipto861/flytally-logbook/pull/438) base `fix/logbook-data1d-local-transport-integrity-20261029@d81634dd8ac1a05b47da0fec2cf108e60bd29d37`, stacked on #437→#436→#435→#434; design #433, unrelated SEC-1 #432. All open/Draft/unmerged. Changed evidence file `docs/maintenance/2026-10-29-data1d-offline-measurement-evidence.md`, tool note, ROADMAP and Project Memory; no runtime changes in this checkpoint.

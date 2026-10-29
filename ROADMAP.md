@@ -1,5 +1,12 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1D execution-location and Neon metadata preflight — 2026-10-29T19:39:08.007Z (NO SQL / NO NEW TESTS)
+
+- Local ChatGPT Linux Node22 offline result files physically rechecked; script Git blob `70dedadf6bc2667b3dc083517d09015fbe2cc308` matches GitHub Draft #438 source exactly; prior three fabricated measurements remain the only DATA-1D measurement evidence. [Environment record](docs/maintenance/2026-10-29-data1d-environment-preflight.md).
+- Read-only Neon inventory finds Logbook Shadow's active `production` branch plus archived parent-data copies, **no verified independent empty synthetic acceptance branch**. Training Production/Acceptance databases are off limits. No Neon SQL, branch/compute creation, connection strings, DB reads/writes, secrets or migrations. **Do not run on Shadow production or clone it.** No additional tests/build/CI/PG/Neon/browser run. Node24 not executed; large-account provider HTTP envelope remains UNKNOWN; DATA-1 release hold remains.
+- **ONE NEXT STEP:** explicit owner choice to provision an independently empty Logbook-specific Neon test project or disposable local PG16, then narrowly scoped synthetic-only transport evidence before any merge/deploy.
+
+
 ## DATA-1D offline measurement — 2026-10-29T19:34:07.433Z (synthetic-only CLI PASS, release BLOCKED)
 
 - Three offline synthetic profiles ran from **byte-identical Git script blob `70dedadf6bc2667b3dc083517d09015fbe2cc308`**, [Draft #438](https://github.com/filipto861/flytally-logbook/pull/438) pre-evidence HEAD `36041613c7d4f314ae723b1a91db6d4b501c1d6f`, in isolated assistant Linux Node **22.16.0** (repo requires Node24). **40/40** flight/track snapshot 23,885B → gzip 7,410B → Base64 9,880B; **500/500** snapshot 4,264,429B → gzip 2,230,526B → Base64 2,974,036B; **4,000/8,000** snapshot 34,594,826B → gzip 17,892,516B → Base64 23,856,688B. Large simulated `psql` output 34,595,583B exceeds local adapter `maxBuffer` 16,777,216B, **not a tested PG failure**. [Full measured evidence](docs/maintenance/2026-10-29-data1d-offline-measurement-evidence.md).
