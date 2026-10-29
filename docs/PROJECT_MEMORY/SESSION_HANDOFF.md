@@ -9,7 +9,7 @@
 - **ONE NEXT STEP:** obtain a single independent read-only second-AI assessment of PR #433's frozen DATA-1 architecture and reconcile any findings before implementing a minimal source batch. Do not run tests unless user later changes the instruction.
 
 
-## 2026-10-29T18:45:00Z — DATA-1 read-only design review staged; tests deliberately NOT RUN
+## 2026-10-29T18:28:31.043Z — DATA-1 read-only design review staged; tests deliberately NOT RUN
 
 - **Verified main:** `807f281e5870164b794d001480ecc84e0b45aea5`; DATA-1 design branch `docs/logbook-data1-snapshot-design-20261029` begins from main; [SEC-1 Draft PR #432](https://github.com/filipto861/flytally-logbook/pull/432) remains separate, unmerged. Proposed design document `docs/maintenance/2026-10-29-data1-backup-snapshot-design.md` is the current scope; no runtime code changes, no tests, no DB operations.
 - **Discovery:** `lib/account-backup.ts` Promise.all performs 30 separate reads before signing v13 backup; one REPEATABLE READ read-only transaction is supported by locked Neon serverless v1.1.0, but local `lib/local-postgres.ts` transaction ignores options. All export, stored backup, cron and pre-restore/delete paths share the builder. Larger-than-buffer SQL response and legacy integrity validation risks require independent review.
