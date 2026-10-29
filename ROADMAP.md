@@ -1,5 +1,10 @@
 # FlyTally Logbook — ROADMAP
 
+## DATA-1C pre-sign export integrity — 2026-10-29T19:05:42.874Z (Draft #436; NOT TESTED / NOT RELEASED)
+
+- [Draft PR #436](https://github.com/filipto861/flytally-logbook/pull/436) stacked on DATA-1B #435 and DATA-1A #434, preserves v13 signed schema while validating source payload before digest/signature: owner-scoped sections, GPS/expense relationships, certification and FSTD revisions/fingerprints, void/tombstone SHA evidence and monetary provenance via existing restore/parser validators. Missing section/count, orphan, invalid historic evidence and parser limits **fail closed**, never create a signed invalid backup; legacy `track_points:[]` is an ephemeral validator-only normalization. The stronger checks can refuse some historically invalid backups; compatibility and rollback are unverified. Five focused tests staged but **NOT RUN** by owner instruction; TypeScript/build/PG/Neon/scale/browser **NOT RUN**, no deployment, DB/flag changes or Training. **ONE NEXT STEP:** inspect unresolved multi-batch restore and large-account export limitations as DATA-1D before any owner release decision.
+
+
 ## DATA-1B snapshot builder staged — 2026-10-29T18:58:22.448Z (UNTESTED / NOT RELEASED)
 
 - [Draft PR #435](https://github.com/filipto861/flytally-logbook/pull/435), stacked on local adapter [Draft PR #434](https://github.com/filipto861/flytally-logbook/pull/434), preserves all 30 exported `SELECT` queries, v13 payload and signing while requiring one read-only `RepeatableRead` transaction, two SQL MVCC probes, exact 32 result sections and one owned account row. **No fallback** to independent reads; failure before signing prevents creating a partial backup. New focused tests were written but **NOT RUN**. Neon HTTP/psql response capacity and sequential latency remain unverified; multi-batch restore logical consistency, pre-sign structural certification and large-account policy remain blockers before any release. The owner instructed no test execution, and no DB/merge/deploy/Training changes were made. **ONE NEXT STEP:** prepare separate data integrity PR-C after checking legacy and shared validator behavior.
