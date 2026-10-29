@@ -1,5 +1,30 @@
 # FlyTally Logbook — ROADMAP
 
+## Current work — 2026-10-29: evidence-based remediation after engineering audit
+
+- **Verified baseline:** `main@807f281e5870164b794d001480ecc84e0b45aea5`, FlyTally Logbook 3.8.1; 0 open PRs at kickoff. The documentation reset was squash-merged in PR #431. Previous “documentation reset pending” section below is a retained historical checkpoint, **not** the active queue.
+- **Production (read-only):** `fly-tally.com` continues to point to READY deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`, built from app commit `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB, current schema and feature flags UNKNOWN. Merge approval does not imply deployment.
+- **Owner decision:** conduct the following fixes **through ChatGPT**, not Codex, as small isolated milestones. Approval authorizes investigation and staging safe changes on work branches, **not** merge, production deploy, production DB/migration/restore/delete, or production flag changes. FlyTally Training stays separate.
+- **Audit provenance:** owner-provided `FlyTally-engineering-audit-2026-10-29.md` and `FlyTally-audit-evidence.json`, audit SHA `807f281e5870164b794d001480ecc84e0b45aea5`. Five defect scenarios were reproduced using real repository functions with controlled synthetic PostgreSQL/PGlite adapters; that does **not** establish a production incident or native PostgreSQL acceptance. Targeted 82 tests PASS in audit only, not a release gate for proposed fixes.
+
+### Approved remediation order (each milestone isolated; no blanket refactor)
+
+| Milestone | Priority | Scope / required outcome | Acceptance, boundaries and risk |
+| --- | --- | --- | --- |
+| **SEC-1 — dependency security** **ACTIVE** | P1 | Resolve applicable Next.js / Sharp / `source-map-js` advisories with a vetted compatible stable release and regenerated lockfile, no feature redesign. Confirm actual transitive tree and residual advisories. | `npm ci`, fresh `npm audit --omit=dev`, candidate-bound typecheck, full or selected Node tests, build, auth/Server Actions, certification, backup/restore and browser gate per `DEVELOPMENT.md` on exact SHA. Never blindly `npm audit fix --force`. Platform and environment limitations explicitly NOT RUN/BLOCKED; no merge until release criteria verified. |
+| **DATA-1 — coherent account backups** | P1 | Prevent signed but internally inconsistent portable exports under concurrent flight / GPS / evidence mutations. Choose read-consistent snapshot compatible with Neon transaction semantics, and verify parser before success. | Deterministic concurrent old/new-state tests, isolated PostgreSQL real-schema restore, certification history, signatures, large synthetic account. No production backup or restoration experiments. Security/architecture independent read-only review before code. |
+| **AUTH-1 — credential throttle isolation** | P2 | A different account's successful login must not reset failures for another account on a shared IP. Preserve both account and IP limits and generic error responses. | Same IP/different account concurrency and NAT fairness, expired window behavior, real isolated auth tests. No unauthorised session policy weakening. |
+| **PREF-1 — atomic preference updates** | P2 | Cron and user edits must not overwrite one another's unrelated `preferences_json` keys. Preserve legacy/unknown keys and distinguish unset/null/value. | Deterministic concurrent writes, recency snapshot/evidence, server authorization, isolated DB and relevant UI behavior; minimize touched writers and no silent defaults. |
+| **CRON-1 — bounded complete scheduler coverage** | Conditional P1/P2 | Remove persistent skip of eligible accounts after first 500 in backup and recency cron. Actual production eligible-account count is UNKNOWN; elevate to P1 if the threshold is reached. | Synthetic 501/1001 users, restart/idempotency, bounded runtime, errors and progress; no production data enumeration/mutation without authorization. |
+| **FLIGHTS-1 — true totals and reachable pages** | P2 | Correct empty/out-of-range pagination summary and misleading `All` cap of 5000 while keeping every eligible flight accessible. | 0/1/25/26/5000/5001, filters, stale URL, keyboard/mobile and representative query cost; do not load an unbounded flight list. UI Apple Design skill/playbook mandatory. |
+
+**Execution discipline:** Before each implementation, re-verify main/PR/deploy, read relevant repository skills, freeze scope/acceptance/DO NOT, check the real SQL/schema/contracts and ask for independent read-only review on high-risk designs. `DEVELOPMENT.md` candidate-bound gates are authoritative; missing runs remain NOT RUN. Every completed batch gets source SHA, test/evidence status, short Project Memory checkpoint, and Draft PR. Only owner may approve subsequent merge/deploy/DB/flag steps.
+
+**SEC-1 immediate next step:** inspect current locked dependencies and upstream advisories, regenerate a valid lockfile with an authenticated npm-registry-capable Node 24 environment, then run candidate-bound tests. If registry access is unavailable, explicitly record BLOCKED and do not hand-edit a speculative lockfile.
+
+---
+
+
 ## Current work status — 2026-10-29, documentation reset
 
 - **Main:** `eb98982d9ce7cb166c32ba77c9262683989570f8`; application version `3.8.1`. Older release-order tables below are dated history, not current instructions.
