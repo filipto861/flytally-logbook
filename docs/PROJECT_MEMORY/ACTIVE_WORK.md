@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — DeepSeek A2 audit reviewed/reconciled, owner D-A2 product choice pending
+
+- User provided 282-line read-only DeepSeek A2 review `APPROVE WITH CHANGES (DESIGN ONLY)` for executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Eight findings and original source independently reconciled in [D-A2 decision document](../maintenance/2026-10-30-data1e3-d4-a2-deepseek-review-reconciliation-and-decision.md). F9 broad DELETE proved by earlier synthetic source SQL; global BIGSERIAL archived same ID silent skip and preview same-owner ID-only match source-confirmed, full canonical/Neon/app runtime NOT RUN. Reviewer's “all nonempty targets fail” overstates (only actual collisions), and deleting real transaction-owned trigger events conflicts with owner-frozen retention; **not allowed**.
+- Docs-only [Draft #450](https://github.com/filipto861/flytally-logbook/pull/450) branch `docs/logbook-data1e3-d4-a2-audit-provenance-20261030`, base #449 `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, main `807f281e5870164b794d001480ecc84e0b45aea5`; A1 owner local selected-source 4/4 and four two-session SQL PASS unchanged. No new A2 SQL/schema/test runs; #450 remains Draft.
+- **D-A2 owner decision REQUIRED:** 1 restrict recovery to globally nonconflicting historic IDs (fail closed otherwise, valid backups may not restore), or **2 recommended** design-only provenance/immutable source audit ledger or additive columns, with separate owner approval for future schema/migration and v13/legacy/Neon compatibility. No authorized DB/flags/merge/deploy/Training actions. **ONE NEXT STEP:** owner chooses option 1 or option 2 as product direction; freeze design acceptance before code.
+
+
 ## 2026-10-30T16:50:42.632Z — A2 independent review package built/verified; second AI report pending
 
 - Docs-only [Draft #450](https://github.com/filipto861/flytally-logbook/pull/450), base #449 at `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; main `807f281e5870164b794d001480ecc84e0b45aea5`. A1 previous owner isolated PG16 baseline4/4 plus 4 two-session SQL race cases PASS at executable `0891ae0fb5f1a1c99a6982f55e7f701411bee001`, not full canonical v21/app.
