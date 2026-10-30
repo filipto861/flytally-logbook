@@ -1,5 +1,12 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-30T08:55:08.713Z — DATA-1D transport acceptance paused at owner-local execution gate (Draft #443)
+
+- Independently confirmed GitHub main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) from #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`, and existing READY production deploy `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` from `55c8076e1eb8104c14392e15b272b33e0eb29607`. Neon inventory: only three preexisting Logbook Shadow/Training projects; no disposable target remains.
+- Corrected owner-side **executable, quoted PowerShell commands and precise repo/Node24/project identity/cleanup steps** in `docs/maintenance/2026-10-30-data1-credential-local-http-executor.md`. The previous sample commands used unquoted angle-bracket placeholders, unsuitable for direct PowerShell use. Scope **Markdown-only**; no source, test, DB/schema, flags or deploy actions. No new candidate tests executed; older offline mock 10/10 and hosted Windows offline 4/4 remain bound to their original exact SHAs. Live remote stored HTTP 1/4/12MiB, signed-v13 GET, provider cap and release-risk gate remain NOT RUN/UNKNOWN; DATA-1 BLOCKED.
+- **ONE NEXT STEP:** owner operates the prepared local Node24 PowerShell `Probe` and confirmed `Execute` against a separately authorized, **new independently empty** disposable Neon PG16 project (credentials entered locally only), then returns **sanitized** actual HTTP evidence and exact-ID cleanup result; never try to forward Neon credentials across connectors or run against existing projects.
+
+
 ## 2026-10-30T08:46:30Z — DATA-1D actual Windows PowerShell offline wrapper 4/4 PASS; real Neon remote HTTP NOT RUN
 
 - Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, work [Draft #443](https://github.com/filipto861/flytally-logbook/pull/443) base Draft #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`. Source `tooling/data1-neon-http-store-local.ps1` unchanged; added offline `tooling/data1-neon-http-store-local.windows.test.ps1` to test real hosted Windows 2022 PowerShell using a locally fabricated URI and fake `node.cmd` with no Neon connection.
