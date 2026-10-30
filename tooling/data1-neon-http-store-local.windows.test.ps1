@@ -48,6 +48,7 @@ if "%~1"=="--version" (
   echo v24.22.1
   exit /b 0
 )
+if exist "%~dp0fail.flag" exit /b 31
 if not "%DATABASE_URL%"=="postgresql://synthetic_data1_owner:FAKE_NOT_REAL@ep-fake.eu-central-1.aws.neon.tech/synthetic_data1" exit /b 21
 if not "%DATA1_SYNTHETIC_ONLY%"=="1" exit /b 22
 if not "%DATA1_EXPECTED_PROJECT_ID%"=="clean-fixture-12345678" exit /b 23
@@ -92,6 +93,7 @@ exit /b 32
 
     $failFlag = Join-Path $mockDirectory 'fail.flag'
     [IO.File]::WriteAllText($failFlag, '1', [Text.Encoding]::ASCII)
+    if (-not (Test-Path -LiteralPath $failFlag)) { throw 'Mock fail flag was not created' }
     try {
         & $launcher -Mode Execute -ProjectId $project -BranchId $branch -ConfirmToken $token -AllowSyntheticWrites
         throw 'Expected fake node failure was not propagated'
