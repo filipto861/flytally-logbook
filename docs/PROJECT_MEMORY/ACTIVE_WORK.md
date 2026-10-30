@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T12:13:39.840Z — D4 owner PG16 source-SQL unsafe behavior reproduced; docs-only reviewer handoff #447
+
+- Owner's verified test source `#446@cf2332d3814fd5f97096608680dffdb1d457c5df`, Windows Node24.19.0 newly disposable PG16: physical local preflight PASS, existing PostgreSQL synthetic security/restore tests **4/4 PASS**, extracted real source SQL synthetic collision: **flight certification overwritten, FSTD certification overwritten, unrelated audit row deleted** ⇒ `D4_SAFETY_FAIL`, expected exit 1. Owned local cleanup reported PASS; no independent OS inspection, no two actual concurrent sessions/complete signed-v13 HTTP app restore or proof of production loss. [Full evidence](../maintenance/2026-10-30-data1e3-d4-confirmed-synthetic-sql-evidence.md).
+- New docs-only [Draft #447](https://github.com/filipto861/flytally-logbook/pull/447) `docs/logbook-data1e3-d4-confirmed-risk-design-20261030` based on Draft #446 exact source `cf2332d3814fd5f97096608680dffdb1d457c5df`, main `807f281e5870164b794d001480ecc84e0b45aea5`. [Frozen D4 candidate design](../maintenance/2026-10-30-data1e3-d4-fail-closed-hardening-design.md): fail closed on staged flight/FSTD ID conflict, audit append-only (trigger effects need independent investigation), real `RETURNING` counts, complete owner/void/legacy consistency; alternative inserted-only UPDATE approach, real two-session PG16 and whole-app acceptance. [Independent read-only reviewer brief](../maintenance/2026-10-30-data1e3-d4-independent-readonly-review-brief.md) READY; reviewer **NOT RUN**.
+- Product SQL not changed; D4 still FAILED/NOT FIXED, D2 limits still unmeasured, D1/D3 unmerged. No new executable tests for docs-only #447; production/Neon/Training/flags/migrations/merge/deploy untouched, prod DB/schema/flags UNKNOWN. **ONE NEXT STEP:** independent AI review frozen design, reconcile findings and owner decisions before D4 implementation.
+
+
 ## 2026-10-30T11:52:07.904Z — third D4 local Windows start reached physical process CommandLine validation; still no SQL
 
 - Owner clean checkout `a0923434cdd8af0181864bd942eb3a55cac48ac0`, Node24.19.0; Probe PASS; Execute **FAIL** at `physicalPid()` commandline data-dir match, with baseline and F3/F9 SQL **NOT RUN**, isolation NOT VERIFIED. Runner reports owned stop and disposal PASS, final exit 1; actual Windows process string not sent and should not be shared. [Full evidence](../maintenance/2026-10-30-data1e3-d4-third-windows-process-cli-path-fix.md).
