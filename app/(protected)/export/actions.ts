@@ -94,7 +94,7 @@ export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<
     return{error:"Stored version 13 backup failed server signature verification. Existing data is unchanged."};
   }
   return restoreParsedBackup(userId,stored,form,{
-    trustedSharedState:Number(stored.backup.version)>=13,
+    trustedSharedState:true,
     authenticity:Number(stored.backup.version)>=13?"verified":"stored",
   });
 }
