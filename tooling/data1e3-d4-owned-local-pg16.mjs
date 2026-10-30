@@ -68,8 +68,18 @@ function physicalPid(bins,pid,data){
   assert.equal(obj.ProcessId,pid,"PostgreSQL PID changed");
   assert.equal(normalizePath(obj.ExecutablePath),normalizePath(bins.postgres),
     "Unexpected postgres executable");
-  assert.ok(commandLineContainsExactDataDirectory(obj.CommandLine,data),
-    "PostgreSQL command line does not contain exact owned data dir after Windows path normalization (fail closed)");
+  if(!commandLineContainsExactDataDirectory(obj.CommandLine,data)){
+    // Only classification flags: never print OS username, full command line or data directory.
+    const line=typeof obj.CommandLine==="string"?obj.CommandLine:"";
+    console.error("D4_PG_CMDLINE_FORMAT_DIAGNOSTIC "+JSON.stringify({
+      commandLineAvailable:line.length>0,
+      containsDashD:/(?:^|\\s)[\"']?-d[\"']?(?:\\s|=)/i.test(line),
+      hasForwardSlash:line.includes("/"),
+      hasBackslash:line.includes("\\\\"),
+      failClosed:true
+    }));
+    throw new Error("PostgreSQL command line does not contain exact owned data dir after Windows path normalization (fail closed)");
+  }
 }
 function verifyIdentity(bins,pgEnv,url,data,port){
   const sql="SELECT row_to_json(t)::text FROM (SELECT current_database() AS db,"+
