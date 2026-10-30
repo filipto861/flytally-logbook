@@ -1,5 +1,13 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-30T10:44:01.345Z — DATA-1E3 D1/D3 Windows Node24 targeted 3/3 and typecheck PASS; temp CI removed
+
+- GitHub hosted [run #41042561314](https://github.com/filipto861/flytally-logbook/actions/runs/41042561314), actual **Windows 2022 / Node 24.22.1**, exact tested checkout `08121cd05f58348e2a8db20a98cc22cc7f4625b1`: `npm ci` PASS; `npm run test:target -- tests/v381-data1e3-stored-recovery-guards.test.ts` **3/3 PASS**; `npm run typecheck` **PASS**; `npm run scope:changed -- ...` classifier PASS. Temporary CI file deleted after test at `4761bcf1ed1e7a9b388faf4eb13d9e818ea0a1b1`. [Exact SHA/commands/results and limitations](docs/maintenance/2026-10-30-data1e3-windows-node24-targeted-typecheck-evidence.md).
+- Risk planner classifies `data-recovery`, asks for **full Node, PostgreSQL16 isolated, browser, build, source/domain and ui-contract** on eventual release candidate; `unowned-test` requires new test-group registry ownership review. All these still **NOT RUN**, not N/A. Real authenticated v13 GET/restore **NOT RUN**. D2 decompression bounds still unmeasured/unimplemented and D4 concurrent-flight/FSTD/audit SQL safety unimplemented. This limited PASS **does not mean release-ready**.
+- Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, stacked Draft PR #445 based on #444 HEAD `512bddf0405854f1c0fe5694b00ee09c8099cb5d`; no merge, deploy, schema/migration/flags, remote SQL or Training. Neon three protected original projects only, prior production Vercel READY at `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** review/approve exact local disposable PG16 acceptance protocol and risk registry ownership for the new test before D4 SQL implementation or destructive test; no new DB creation or restore on existing projects.
+
+
 ## 2026-10-30T10:37:43.310Z — DATA-1E3 owner approves D1–D4 direction; scoped D1/D3 code draft #445
 
 - Owner explicitly replied `SOUHLASIM` to the proposed D1–D4 recommendations after independent DeepSeek reconciliation. Frozen **direction**: D1 stored-v13 HMAC before preview/restore, D2 staged compressed/Base64/decompressed bounds **with values only after measurement**, D3 generic public load errors, D4 fail-closed stale-plan/transactional flight+FSTD/audit safety and actual inserted counts. This is **NOT** approval for new numeric limits, an untested SQL rewrite, remote test/restore, migration, merge, prod DB/flags or deploy.
