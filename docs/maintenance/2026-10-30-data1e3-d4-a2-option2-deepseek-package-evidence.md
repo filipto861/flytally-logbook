@@ -2,6 +2,10 @@
 
 **Date (UTC):** 2026-10-30T18:49:33.465Z. **Scope:** external independent read-only architectural reviewer package for the owner-approved Option 2 **design only**. Not permission for code, schema/migration/backup format activation, database access, flags, merge or deployment. The package is a **conversation attachment** rather than a Git-tracked binary; this Markdown is a durable ledger, not a claim that the ZIP is hosted in GitHub.
 
+## Final correction during package validation
+
+The ZIP was regenerated after clarifying the version-specific v12 signature gate. The earlier *intermediate* ZIP checksum `4c36bf06a23391b73aca01c8fa0aab6961b011686bb539bfa45f2b8a9e6cf819` (182545 bytes) is superseded and **must not** be supplied to reviewer; the final ZIP SHA-256 and size below are authoritative for this conversation attachment.
+
 ## Exact SHA ledger
 
 - Canonical main `807f281e5870164b794d001480ecc84e0b45aea5` (GitHub rechecked).
@@ -13,8 +17,8 @@
 ## Delivered local conversation artifact (verified on disk)
 
 - **Filename:** `FlyTally_D4_A2_Option2_DeepSeek_Review_Package_2026-10-30.zip`.
-- **Size:** 182,545 bytes.
-- **ZIP SHA-256:** `4c36bf06a23391b73aca01c8fa0aab6961b011686bb539bfa45f2b8a9e6cf819`.
+- **Size:** 182,660 bytes.
+- **ZIP SHA-256:** `382389005ca22c750c5d7725151c8f36b56153091e8e18cdacb4e54aa047cc25`.
 - **Contents:** 33 ZIP members, 32 in-package entries covered by `07_PACKAGE_MANIFEST.json`; ZIP CRC/integrity check PASS; member bytes+SHA256 match manifest 32/32.
 - Original GitHub Actions source artifact id `12994433879`, workflow run `41093177377`, prior downloaded ZIP SHA256 `ea5321b2045a509a4b36ff23861f74a43be4f63827ccf17fab417fc02dcdbcee`; included 16 exact raw source files (SHA256 **16/16 PASS**) and six full line-numbered volumes at the immutable executable SHA.
 - **New top-level files:** `00_START_HERE.md`, `01_DEEPSEEK_REVIEW_PROMPT.md`, `02_PROPOSED_OPTION2_ARCHITECTURE.md` (review-ready **reconstruction**, not byte-identical canonical design), `03_RISK_REGISTER_AND_SOURCE_NOTES.md`, `04_TEST_ACCEPTANCE_MATRIX.md` (20 proposed NOT RUN tests), `05_ADDITIONAL_SOURCE_URLS.md` (full canonical docs and unbundled supporting source at immutable SHAs), `06_RESPONSE_TEMPLATE.md`, `07_PACKAGE_MANIFEST.json`. Superseded discovery prompt is isolated under `FROZEN_SOURCE/OLD_DISCOVERY_REVIEW_PROMPT.md`.
