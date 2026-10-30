@@ -1,4 +1,4 @@
-name: DATA1E3 TEMP D4 A1 parent collision source checks (NO DB)
+name: DATA1E3 TEMP D4 A1 CRLF-safe retest on Windows (NO DB)
 on:
   push:
     branches:
