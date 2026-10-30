@@ -49,4 +49,7 @@ test("DATA-1E3 Windows PG process path: caller retains full PID/exe and SQL iden
   assert.match(src,/assert\.equal\(row\.port,port\)/);
   assert.match(src,/physicalPid\(bins,pid,data\)/);
   assert.match(src,/D4_CLEANUP_BLOCKED/);
+  assert.match(src,/D4_PG_CMDLINE_FORMAT_DIAGNOSTIC/);
+  assert.match(src,/failClosed:true/);
+  assert.doesNotMatch(src,/console\.error\([^\n]*obj\.CommandLine/);
 });
