@@ -1,4 +1,4 @@
-name: TEMP DATA1E3 D4 A1 no-DB safety validation
+name: TEMP DATA1E3 D4 A1 no-DB safety validation rerun
 on:
   push:
     branches:
