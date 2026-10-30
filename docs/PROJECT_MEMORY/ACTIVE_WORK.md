@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T08:46:45Z — DATA-1D native Windows wrapper OFFLINE PASS, remote HTTP acceptance pending
+
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`, [Draft PR #443](https://github.com/filipto861/flytally-logbook/pull/443) stacked on #442, base `bb60178bebdbb7b0242474bc7b0fedfd99268567`. New offline-only Windows test `tooling/data1-neon-http-store-local.windows.test.ps1` uses an entirely fake `node.cmd`, fake URI, fake `Read-Host`. The actual PowerShell launcher and Node/Neon driver are unchanged; no test triggers left after temp workflow removal.
+- GitHub Actions hosted `windows-2022` **run #41028595008 SUCCESS**, tested `dd5135acc633c506d2ec47e48c31ad7b69a9b5d1`, `Probe`, confirmed `Execute`, negative child exit + cleanup, and protected-project denylist **4/4 PASS**. Earlier 3 failed workflow attempts preserved with explanations, incl. stale PowerShell `LASTEXITCODE` after intentional child failure (fixed in *test harness* only). See [full evidence](../../docs/maintenance/2026-10-30-data1-windows-powershell-offline-evidence.md).
+- Cleanup: temporary `.github/workflows/data1-windows-http-wrapper-temporary.yml` deleted on work branch, no active automatic push workflow; runner completed. No new Neon project was created, three existing projects remained untouched. No real SQL, remote HTTP, credentials, merge/deployment/production DB/migrations/flags/Training. Provider remote 1/4/12MiB stored HTTP, signed v13 authenticated GET and canonical `verify:release:risk` **NOT RUN**, vendor max/production DB state **UNKNOWN**. DATA-1 release-blocked. Prior full Node24 source+wire mock evidence at older SHA is distinct.
+- **ONE NEXT STEP:** use owner-trusted Windows Node24 with an independently new disposable Neon PG16 project and locally entered URI to execute `tooling/data1-neon-http-store-local.ps1` Probe then Execute, collect real HTTP byte/digest proof and verify deletion by exact ID.
+
+
 ## 2026-10-30T08:37:27.092Z — DATA-1D pinned Neon HTTP wire-mock 10/10 PASS; remote acceptance still blocked
 
 - Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) stacked on #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`. Exact tested code SHA `561e0b362b78786f147899568e3e752eae8e4304`. Modified standalone `tooling/data1-neon-http-store-gate.mjs` to export injectable offline `runGate` while retaining default CLI/real fetch; new `tooling/data1-neon-http-wire-mock.test.mjs`. No runtime app/schema/flag/package modification.
