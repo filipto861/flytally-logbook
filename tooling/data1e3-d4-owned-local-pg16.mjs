@@ -128,7 +128,7 @@ async function main(){
       {env,timeout:90000});
     startAttempted=true;
     cmd(binaries.pg_ctl,["-D",data,"-l",path.join(parentReal,"postgres.log"),
-      "-o","-h 127.0.0.1 -p "+port,"-w","-t","45","start"],{env,timeout:90000});
+      "-o","-h 127.0.0.1 -p "+port,"-w","-t","45","start"],{env,timeout:90000,stdio:"ignore"});
     cmd(binaries.createdb,["-h","127.0.0.1","-p",String(port),"-U",role,database],{env});
     identity=verifyIdentity(binaries,env,url,data,port);
     initialVerified=true;
@@ -168,10 +168,11 @@ async function main(){
     if(startAttempted){
       try{
         cmd(binaries.pg_ctl,["-D",data,"-m","immediate","-w","-t","45","stop"],
-          {env,timeout:90000});
+          {env,timeout:90000,stdio:"ignore"});
         const status=spawnSync(binaries.pg_ctl,["-D",data,"status"],{
           encoding:"utf8",env,windowsHide:true,shell:false,timeout:20000});
-        assert.ok(status.status!==0,"Postgres server still running");
+        assert.ok(!status.error&&!status.signal&&status.status!==null&&status.status!==0,
+          "Postgres stopped state unverified");
         stoppedVerified=true;
       }catch(e){
         console.error("D4_WARNING_PG16_NOT_VERIFIED_STOPPED: owned directory retained "+parentReal);
