@@ -1,0 +1,38 @@
+name: DATA1E3 TEMP Windows Node24 pg_ctl inherited-pipe regression (NO DATABASE)
+on:
+  push:
+    branches:
+      - test/logbook-data1e3-d4-one-local-pg16-20261030
+    paths:
+      - .github/workflows/data1e3-pgctl-pipe-temporary.yml
+permissions:
+  contents: read
+jobs:
+  pgctl-simulated-nodb:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Record source and check syntax
+        shell: pwsh
+        run: |
+          Write-Host ('SHA=' + (git rev-parse HEAD))
+          Write-Host ('NODE=' + (node --version))
+          node --check tooling/data1e3-d4-owned-local-pg16.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'syntax failure' }
+          node --check tooling/data1e3-d4-pgctl-stdio.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'test syntax failure' }
+      - name: Reproduce inherited-pipe hang and verify fixed stream handling
+        shell: pwsh
+        run: |
+          node --test tooling/data1e3-d4-pgctl-stdio.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'D4 pg_ctl pipe regression failed' }
+      - name: No database actions
+        shell: pwsh
+        run: |
+          Write-Host 'NO PG16 INSTANCE, NO DATABASE, NO SQL, NO RESTORE, NO DEPLOY'
