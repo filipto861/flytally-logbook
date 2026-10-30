@@ -160,7 +160,7 @@ async function main(){
       note:"existing synthetic security/restore PostgreSQL tests; NOT full authenticated signed-v13 app restoration"}));
     const risk=spawnSync(process.execPath,["tooling/data1e3-d4-a1-source-sql-probe.mjs"],{
       cwd:repoRoot,env:{...env,DATABASE_URL:url,FLYTALLY_D4_A1_LOCAL_PROBE:"1",
-        FLYTALLY_D4_A1_OWNED_PGDATA:data},encoding:"utf8",shell:false,windowsHide:true,
+        FLYTALLY_D4_A1_OWNED_PGDATA:data,FLYTALLY_D4_A1_OWNERSHIP_TOKEN:ownershipToken},encoding:"utf8",shell:false,windowsHide:true,
       timeout:120000,maxBuffer:4*1024*1024});
     if(risk.stdout)process.stdout.write(risk.stdout);
     if(risk.stderr)process.stderr.write(risk.stderr);
