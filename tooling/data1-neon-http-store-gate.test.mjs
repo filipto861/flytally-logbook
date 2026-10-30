@@ -1,4 +1,5 @@
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import {
   MIB, PRESETS, parseArgs, checkTarget, makeSyntheticArchive,
@@ -86,4 +87,25 @@ test("DATA-1D: existing 50MiB gzip safety cap implies a larger Base64 field than
   assert.equal(gzipBytes,52428800);
   assert.equal(encoded,69905068);
   assert.ok(encoded>gzipBytes);
+});
+
+test("DATA-1D: local PowerShell helper has interactive secret handling and cleanup guards (source-only)", () => {
+  const ps=readFileSync(new URL("./data1-neon-http-store-local.ps1",import.meta.url),"utf8");
+  const requirements=[
+    /Read-Host[^\n]*-AsSecureString/,
+    /ZeroFreeBSTR/,
+    /SetEnvironmentVariable\('DATABASE_URL', \$plain, 'Process'\)/,
+    /SetEnvironmentVariable\(\$variable, \$null, 'Process'\)/,
+    /\$Mode -eq 'Execute'/,
+    /AllowSyntheticWrites/,
+    /ConfirmToken/,
+    /NODE_OPTIONS/,
+    /muddy-dust-14049657/,
+    /frosty-recipe-46458686/,
+    /dry-king-94424047/,
+    /DATA1_ALLOW_TEST_WRITES/,
+    /does not delete the test project/
+  ];
+  for(const pattern of requirements)assert.match(ps,pattern);
+  assert.doesNotMatch(ps,/Set-Content|Out-File|Start-Transcript|ConvertFrom-SecureString/);
 });
