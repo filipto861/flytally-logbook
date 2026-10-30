@@ -73,9 +73,9 @@ function physicalPid(bins,pid,data){
     const line=typeof obj.CommandLine==="string"?obj.CommandLine:"";
     console.error("D4_PG_CMDLINE_FORMAT_DIAGNOSTIC "+JSON.stringify({
       commandLineAvailable:line.length>0,
-      containsDashD:/(?:^|\\s)[\"']?-d[\"']?(?:\\s|=)/i.test(line),
+      containsDashD:/(?:^|\s)["']?-d["']?(?:\s|=)/i.test(line),
       hasForwardSlash:line.includes("/"),
-      hasBackslash:line.includes("\\\\"),
+      hasBackslash:line.includes("\\"),
       failClosed:true
     }));
     throw new Error("PostgreSQL command line does not contain exact owned data dir after Windows path normalization (fail closed)");
