@@ -211,8 +211,11 @@ jobs:
           observed=$("$bin/psql" -d "$DATABASE_URL" -X -Atqc "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||inet_server_port()||'|'||(current_setting('server_version_num')::int BETWEEN 160000 AND 169999)::text||'|'||(SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public')")
           test "$observed" = "flytally_currency_test|flytally|127.0.0.1|55438|true|0"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-      - name: Create canonical synthetic v20 catalog only in disposable localhost
-        run: node tooling/bootstrap-browser-smoke-db.mjs
+      - name: Apply canonical v20/v21 migration SQL to disposable browser baseline
+        shell: bash
+        run: |
+          node tooling/bootstrap-browser-smoke-db.mjs
+          FLYTALLY_AUTH_BROWSER=1 FLYTALLY_CURRENCY_V21_BROWSER=1 node tooling/apply-currency-v21-disposable.mjs
       - name: Run only quarantined d3b_catalog source tests (NO SKIP accepted)
         shell: bash
         run: |
