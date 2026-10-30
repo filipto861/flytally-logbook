@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T11:27:16.163Z — D4 local pg_ctl ETIMEDOUT diagnosed and narrow Windows-pipe fix staged
+
+- First owner-local PG16 `--execute` on `c9a0ffb97c559e4b7e1139217f4cd110a46e0a51`: Node24.19 probe PASS; startup wrapper failed `pg_ctl.exe exit=0 error=ETIMEDOUT`; baseline and F3/F9 SQL **NOT RUN**. Runner reported owned directory disposal PASS, exit 1; physical state not independently read from owner's machine. This is **tool startup FAIL**, not database integrity PASS/FAIL. [Evidence](../maintenance/2026-10-30-data1e3-d4-first-windows-timeout-and-pipe-fix.md).
+- Fixed **only D4 local executor** `tooling/data1e3-d4-owned-local-pg16.mjs`: pg_ctl start/stop `stdio:"ignore"`, safer checked stop-state; added mock process `tooling/data1e3-d4-pgctl-stdio.test.mjs`. Windows 2022 Node24.22.1 [Actions #41047852446](https://github.com/filipto861/flytally-logbook/actions/runs/41047852446) at `9cf5c8343ad9563b7010dfaee320658d3f292c86`: **2/2 PASS**, reproduces `exit 0 + ETIMEDOUT` and validates correction; actual PG16 **NOT RUN**, workflow removed `97109216425f921fadaae5729fd7d2b42504589e`. Updated Windows [runbook](../maintenance/2026-10-30-data1e3-d4-single-cluster-windows-runbook.md) for reusing existing clean checkout.
+- Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`; Draft #446 `test/logbook-data1e3-d4-one-local-pg16-20261030` based on Draft #445 `d77deeb2dfb0c9312adf3fe6e2cce0d2471f5e86`, no merge/deploy/DB migrations/Training/flags. Neon three original projects retained; production Vercel earlier READY, schema/flags UNKNOWN. D2 limits and actual D4 SQL mitigation still blocked.
+- **ONE NEXT STEP:** owner fast-forwards existing local branch to final exact #446 SHA, reruns probe and separately invokes new-cluster execute, shares sanitized statuses.
+
+
 ## 2026-10-30T11:12:38.012Z — DATA-1E3 D4 local single-cluster runner ready, owner execution PENDING
 
 - Owner approved precisely **one newly created disposable local Windows PG16** + synthetic D4 tests + safe exact-directory cleanup. Implemented tooling only in new stacked [Draft #446](https://github.com/filipto861/flytally-logbook/pull/446) `test/logbook-data1e3-d4-one-local-pg16-20261030` on parent Draft #445 `d77deeb2dfb0c9312adf3fe6e2cce0d2471f5e86`; main `807f281e5870164b794d001480ecc84e0b45aea5`.
