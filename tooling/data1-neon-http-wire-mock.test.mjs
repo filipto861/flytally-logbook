@@ -26,7 +26,7 @@ function fakeNeonHttp({ corruptAt=0 }={}) {
   let created=false;
   const fetchImpl=async (input, init)=>{
     const url=new URL(input);
-    assert.equal(url.hostname,"ep-mock.eu-central-1.aws.neon.tech");
+    assert.equal(url.hostname,"api.eu-central-1.aws.neon.tech");
     assert.equal(url.pathname,"/sql");
     assert.equal(init?.method,"POST");
     const payload=JSON.parse(init.body);
