@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T08:55:28.960Z — DATA-1D owner-local HTTP gate ready, real Neon execution still NOT RUN
+
+- Reverified canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, work Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) stacked on Draft #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`; production deployment prior READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`, app `55c8076e1eb8104c14392e15b272b33e0eb29607`. Neon list exactly three original projects `muddy-dust-14049657`, `frosty-recipe-46458686`, `dry-king-94424047`; no disposable database or new cloud tests performed.
+- Fixed non-executable unquoted `<placeholder>` usage in `docs/maintenance/2026-10-30-data1-credential-local-http-executor.md`; documented correct quoted PowerShell commands, private repo checkout, Node24, dedicated independently empty PG16 database/role, locally hidden URI input, manual identity comparison, test payload metrics, mandatory exact-ID owner-authorized deletion. Also updated ROADMAP. **Markdown-only**; executable/source/test files unchanged from last verified full Node/mock and hosted-Windows source SHA. No new tests executed: new gate **NOT RUN**, prior 10/10 offline HTTP mock and Windows 4/4 PASS are separate SHA-bound evidence.
+- **Blocker:** the current environment has no access to owner's local Windows console and prior cross-connector Neon URI handoff was security-blocked, not a reason to bypass safeguards. Genuine Neon HTTP 1/4/12MiB persisted INSERT/SELECT **NOT RUN**; provider maximum **UNKNOWN**, signed-v13 app GET/restore and exact release-risk ledger **NOT RUN**, DATA-1 not release-ready. No merge/deployment/prod DB/migrations/flags/Training changes, production DB schema/flags UNKNOWN.
+- **ONE NEXT STEP:** owner executes the new project-specific local Node24 PowerShell Probe and confirmed Execute using a freshly approved empty disposable Neon project and independently verifies its exact-ID deletion; provide only sanitized HTTP results for acceptance follow-up.
+
+
 ## 2026-10-30T08:46:45Z — DATA-1D native Windows wrapper OFFLINE PASS, remote HTTP acceptance pending
 
 - Main `807f281e5870164b794d001480ecc84e0b45aea5`, [Draft PR #443](https://github.com/filipto861/flytally-logbook/pull/443) stacked on #442, base `bb60178bebdbb7b0242474bc7b0fedfd99268567`. New offline-only Windows test `tooling/data1-neon-http-store-local.windows.test.ps1` uses an entirely fake `node.cmd`, fake URI, fake `Read-Host`. The actual PowerShell launcher and Node/Neon driver are unchanged; no test triggers left after temp workflow removal.
