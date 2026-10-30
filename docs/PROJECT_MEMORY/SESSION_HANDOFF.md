@@ -1,5 +1,15 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-30T10:02:20.340Z — DATA-1E2 DeepSeek builder V2 privacy fail-closed resolution, owner export still PENDING
+
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`, parent Draft #443 `16a94e051037b680f7b08e97e8880e7967ada062`, work Draft #444 on `docs/logbook-data1-v13-auth-acceptance-20261030`; before checkpoint work SHA `598b351d82576bddbb171b06b7024db248d17b3b`; verify post-commit SHA/push. Changed this milestone: new docs-only `docs/maintenance/2026-10-30-data1e-deepseek-builder-v2-failclosed-resolution.md` and this handoff. No app runtime edits, merge or deploy.
+- Owner Windows Node 24.19.0 successfully cloned private repository and verified two frozen commits, then original 45-file starter generator **FAIL CLOSED** on `DEVELOPMENT.md`; 0 source files exported; subsequent manual `Write-Host` success message is **not** a builder PASS. Exact GitHub doc contains two matching loopback-only database URL examples (lines 183,197). No passwords printed or passed along.
+- Created corrected V2 starter ZIP locally `FlyTally_DATA1E_DeepSeek_Builder_V2_20261030.zip`, SHA-256 `68c269ba37c55e4025ba05ceaf90182984e48850b0bac144a3c51b997e07925b`. Removed **entire** `DEVELOPMENT.md` from third-party export manifest (**44**, not 45); cryptographic Git blob pins preserved and credential scanner **not bypassed**; DeepSeek prompt marks that guide unavailable. 44 included source paths independently scanned with original patterns, no matches; not a complete forensic secret guarantee.
+- V2 builder syntax, ZIP CRC/selftest, two-file synthetic Git export preserving raw bytes and bad-credential fail-close **PASS in container Node22**; actual user Windows Node24 44-source full builder execution **NOT RUN**. No DeepSeek review yet. Actual signed-v13 app authenticated GET/restore, release risk and production schema/flags **NOT RUN/UNKNOWN**; historic Neon 1/4/12MiB transport **3/3 PASS** from earlier frozen executable SHA and owner-approved disposable project cleanup PASS. Three original Neon projects preserved; no DB/test resource creation or deletion this turn.
+- **DO NOT:** weaken scanner, include flagged guide without sanitation/owner decision, share private credentials, use live Flight/GPS data, touch prod/Training/Shadow, merge/deploy/migrate without separate approval.
+- **ONE NEXT STEP:** owner extracts V2, runs fixed script against existing Downloads repo and confirms JSON `status: PASS`, `actualSourceFiles: 44`; only then inspect for proprietary disclosure and optionally upload six Markdown volumes to DeepSeek.
+
+
 ## 2026-10-30T09:35:30.362Z — DATA-1E2 Claude independent read-only review packet READY, CLAUDE REVIEW NOT RUN
 
 - **Owner scope:** `TAK PRIPRAV PODKLADY PRO CLAUDE REIVEW` means draft and deliver complete self-contained read-only review request; **NOT** approval to execute Claude, code changes, DB operations, migrations, merges, deployment or production feature flags. Owner later chooses policy after external findings.
