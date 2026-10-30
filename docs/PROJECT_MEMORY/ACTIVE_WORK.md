@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — D4 A2-CONTRACT V1 drafted, L1/L2 owner product choice OPEN
+
+- Docs-only [source-bound contract](../maintenance/2026-10-30-data1e3-d4-a2-contract-v1.md) proposes initial **L1 account-level unattached imported audit** (recommended) vs **L2 verified only same-atomic-restore-created link**, strict v14 native/imported dual-ledger signed snapshots across all backup paths, clone safety, immutable event/source identity and PG16/Neon acceptance. The signed-v13 cross-snapshot **Option A is already owner-approved as design policy**; DO NOT reopen as undecided.
+- Current main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 work pre-contract `ee2384c4b01c1d27bbea454705a271b6fc3b98a2` stacked on #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, reviewed executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; production prior SHA READY, live prod DB/flags UNKNOWN. No schema/source, DB, migrations, flags, tests or deploy. A2-C01..C12 NOT RUN.
+- **ONE NEXT STEP:** owner chooses **L1 vs L2** as first implementation-scope direction; L1 recommended. This is not implementation approval.
+
+
 ## 2026-10-30 — D4 A2 owner chooses v13 policy A; next A2-CONTRACT design
 
 - **APPROVED, DESIGN ONLY:** strict fail-closed across different signed-v13 digests with overlapping `source_user_id + source_audit_id` **even if identical content**; exact-digest replay is idempotent only after full equality. The separate imported ledger is still a proposal, not deployed. [Decision record](../maintenance/2026-10-30-data1e3-d4-a2-v13-cross-snapshot-policy-proposal.md), [architecture](../maintenance/2026-10-30-data1e3-d4-a2-immutable-audit-provenance-architecture-v1.md).
