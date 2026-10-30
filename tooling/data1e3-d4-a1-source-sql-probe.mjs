@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import {spawn,spawnSync} from "node:child_process";
 import {randomUUID} from "node:crypto";
 import {readFileSync,realpathSync} from "node:fs";
+import {tmpdir} from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 
@@ -22,6 +23,14 @@ if(process.platform!=="win32"||!/^v24\./.test(process.version)||
   target.password||!target.port||["5432","55432"].includes(target.port)||
   target.searchParams.get("sslmode")!=="disable")stop("Require positive owned loopback target");
 const norm=(s)=>path.normalize(realpathSync(s)).toLowerCase().replace(/[\\/]$/,"");
+const ownedParent=path.dirname(realpathSync(data));
+const ownedToken=process.env.FLYTALLY_D4_A1_OWNERSHIP_TOKEN||"";
+assert.match(ownedToken,/^[a-f0-9-]{36}$/i);
+assert.equal(path.dirname(ownedParent).toLowerCase(),realpathSync(tmpdir()).toLowerCase(),
+  "A1 must only operate under newly owned OS temp");
+assert.ok(path.basename(ownedParent).startsWith("flytally-data1e3-d4-a1-"),
+  "A1 disposable prefix required");
+assert.equal(readFileSync(path.join(ownedParent,".data1e3-owned"),"utf8"),ownedToken);
 const result=(query)=>{
   const p=spawnSync("psql",["-d",urlString,"-X","-w","-qAt","-v","ON_ERROR_STOP=1","-c",query],
     {encoding:"utf8",windowsHide:true,shell:false,timeout:30000,maxBuffer:1024*1024});
