@@ -50,6 +50,7 @@ jobs:
           $risk = & node tooling/data1e3-d4-source-sql-risk-probe.mjs 2>&1
           if ($LASTEXITCODE -eq 0) { throw 'Source SQL probe ran without owned cluster purpose' }
           Write-Host 'SOURCE_SQL_UNAUTHORIZED_REFUSAL_PASS'
+          exit 0
       - name: Do not touch databases
         shell: pwsh
         run: |
