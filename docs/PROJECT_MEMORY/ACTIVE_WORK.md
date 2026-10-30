@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T10:54:53.872Z — D4 isolation plan and DATA-1E3 registry ownership verification DONE; actual PG16 NOT RUN
+
+- Work Draft [PR #445](https://github.com/filipto861/flytally-logbook/pull/445) `fix/logbook-data1e3-v13-security-gates-20261030` base Draft #444 `512bddf0405854f1c0fe5694b00ee09c8099cb5d`; main `807f281e5870164b794d001480ecc84e0b45aea5`. D1/D3 remains code candidate (signed stored v13 before restore, generic errors), D2 limits and D4 transactional/audit refactor remain OPEN.
+- New source-contract group `data-recovery-contract` now owns `tests/v381-data1e3-stored-recovery-guards.test.ts` in `tooling/development-modules.json`; `tests/development-scope.test.ts` asserts source-group inclusion, no `unowned-test`, postgres+browser+full Node+build remain required. Immutable 42-file/164-case/six-partition PG hash registry unchanged. [D4 positive local-PG16 process/PID/data dir/role/schema identity, v21, two-account concurrency/audit tests, cleanup and explicit authorization gate](../maintenance/2026-10-30-data1e3-d4-local-pg16-acceptance-gate.md) committed, **no DB started**.
+- [Actual Windows run #41043848019](https://github.com/filipto861/flytally-logbook/actions/runs/41043848019) on Node24.22.1 exact source `807d3d35129963cc67db69ff10882c3171846853`: registry + D1/D3 targeted **41/41 PASS**, dedicated group **3/3 PASS** (duplicate cases), scope planner PASS, typecheck PASS. Temporary workflow removed `c81e1d8e30a5bba2a54e3385cf704f17c24b7822`, not part of final PR diff. [Log](../maintenance/2026-10-30-data1e3-registry-windows-acceptance-evidence.md). Full Node/build/PG/browser/app restore/release-risk **NOT RUN**; no production change.
+- Prior Vercel prod deploy READY old SHA; Neon original three projects untouched, no disposable; prod DB/schema/flags UNKNOWN. **ONE NEXT STEP:** seek exact owner authorization for one newly isolated localhost PG16 test cluster and its destructive test/cleanup before any D4 SQL runtime test; no remote Neon, Training, merge/deploy/migration/flags.
+
+
 ## 2026-10-30T10:44:01.345Z — DATA-1E3 first batch Windows Node24 3/3 + typecheck PASS; release gates outstanding
 
 - [GitHub Actions #41042561314](https://github.com/filipto861/flytally-logbook/actions/runs/41042561314) on **Windows 2022**, Node `v24.22.1`, actual source checkout `08121cd05f58348e2a8db20a98cc22cc7f4625b1`, job `124018663235` completed SUCCESS: npm ci PASS; targeted synthetic HMAC + D1/D3 source-order regressions **3/3 PASS**; TypeScript typecheck PASS; scope planner PASS. [Full evidence](../maintenance/2026-10-30-data1e3-windows-node24-targeted-typecheck-evidence.md). Temporary push workflow deleted `4761bcf1ed1e7a9b388faf4eb13d9e818ea0a1b1`.
