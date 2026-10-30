@@ -20,21 +20,43 @@ The earlier Neon→Vercel cross-tool credential transfer was blocked. Do not cir
 - Log only safe aggregate counters, status and truncated error class; never print SQL parameters, credentials, raw payload, GPS, names or user data. Stop on first failure. HTTP vendor **maximum unknown**, even if all three sizes succeed. 50 MiB cap is offline math only; no 50 MiB automatic cloud upload.
 - **Mandatory cleanup is external, with explicit owner approval:** shut down any ephemeral compute, delete ONLY the newly created positively identified project ID, re-list original projects and verify the test ID absent. Preserve failure history. An executor script's successful completion does not prove cleanup.
 
-## Owner-side secure PowerShell launcher (Windows, Node 24)
+## Owner-side executable Windows / Node24 guide — real Neon HTTP gate, NOT RUN
 
-On a **new, independently created empty test project only**, the same-repository helper `tooling/data1-neon-http-store-local.ps1` can prompt for the disposable DB URI without writing it into the command history, chat, GitHub or a file. The URI exists temporarily as a plaintext *process environment variable* while the Node child runs, and the wrapper clears it in a `finally` block. A process administrator/debugger might still inspect process memory or environment; this is not a guarantee against a compromised workstation.
+**Prerequisite owner action, no connector-to-connector secret relay:** This phase can execute ONLY in a trusted Windows PowerShell session owned by the operator. The ChatGPT connector can read Neon project metadata but cannot operate the owner's Windows terminal, nor safely forward a Neon database password into a separate Vercel/GitHub runner. Do not create another idle cloud test project just to attempt an unavailable execution path.
 
-From the repository root in a fresh PowerShell window, after `npm ci`, use the verified **new** Neon project and branch IDs (non-secret) in these commands:
+**1. Prepare the disposable target first.** In the [Neon Console](https://console.neon.tech/), manually create one **independent new** PostgreSQL **16** project dedicated to this single synthetic test, with **no data imported or branch copied from another project**. Ensure the branch has dedicated database `synthetic_data1` and role `synthetic_data1_owner`, no pre-existing public user tables. Record the *new* exact **Project ID** (`word-word-digits`) and **Branch ID** (`br-...`) from the Neon Console and visually compare the selected project's endpoint, database and role with its connection dialog. The original Logbook Shadow and both Training projects are prohibited. Agree separately on **deletion of this exact new project ID**, and do not proceed without that authorization and an achievable cleanup plan. The current three original IDs are `muddy-dust-14049657`, `frosty-recipe-46458686`, `dry-king-94424047`; the launcher hard-rejects them. If PG16 / dedicated database and role cannot be set up, mark the test **BLOCKED**, not PASS.
+
+**2. Prepare a clean Windows Node 24 checkout.** In a *new interactive PowerShell session* (not CI, not a production deployment shell), with an authenticated GitHub account that can read the private Logbook repository:
 
 ```powershell
-.\tooling\data1-neon-http-store-local.ps1 -Mode Probe -ProjectId <new-test-project-id> -BranchId <new-test-branch-id>
-# Independently compare the read-only probe result with Neon Console and copy its 20-character proof.
-.\tooling\data1-neon-http-store-local.ps1 -Mode Execute -ProjectId <new-test-project-id> -BranchId <new-test-branch-id> -ConfirmToken <probe-proof> -AllowSyntheticWrites
+git clone --branch test/logbook-data1-local-http-executor-20261030 --single-branch https://github.com/filipto861/flytally-logbook.git
+Set-Location .\flytally-logbook
+git rev-parse HEAD
+node --version
+npm ci --ignore-scripts --no-audit --no-fund
 ```
 
-Both invocations **ask interactively** for the ephemeral test URI with a hidden prompt. The helper refuses inherited DATABASE_URL, NODE_OPTIONS, CI/Vercel context, old protected project IDs and unapproved write flags before requesting the secret. The execute step requires typing `EXECUTE` interactively. It cannot create or delete any Neon resource, and the token is not proof of Neon project ID without independent console verification.
+Verify that the SHA matches the **current unmerged Draft #443** on GitHub and that Node reports `v24.x`. The last independently verified native-Windows offline wrapper source was `dd5135acc633c506d2ec47e48c31ad7b69a9b5d1`; later commits are documentation-only and workflow removal. If the work branch has changed in executable files, stop and obtain new exact-SHA verification. Do not install arbitrary dependencies, use `main`, or use Training repository files.
 
-After test completion **or failure**, independently verify and delete only the newly created test project's exact ID using authorized Neon controls, re-list the pre-existing three projects, and document the cleanup. If a genuine new project is not available or deletion cannot be guaranteed, **do not run** the write stage.
+**3. Run read-only `Probe`.** Replace the **quoted sample strings** with the exact IDs of *your newly created test project* (the literal example IDs below are intentionally invalid and cannot be used). Leave the URI out of commands, chat, logs and repository files: the launcher asks for it interactively with hidden input.
+
+```powershell
+.\tooling\data1-neon-http-store-local.ps1 -Mode Probe -ProjectId 'REPLACE-with-new-project-id' -BranchId 'br-REPLACE-with-new-branch-id'
+```
+
+The script should print `READ_ONLY_PROBE`, database `synthetic_data1`, role `synthetic_data1_owner`, PG16 version, `tables=0`, and a **20-character hex proof**. **Crucial:** the Project and Branch IDs in this output are **operator assertions**, not independently proved by SQL. Cross-check them again in Neon Console. Any mismatch, unknown project identity, existing table, or failure means **STOP**.
+
+**4. Execute only after independently checking the probe and authorizing writes.** Use *the same brand-new disposable Project/Branch IDs*, replace the sample proof with the actual 20-hex value, and accept the separate interactive `EXECUTE` prompt. The URI is entered again locally and **must be the same verified test-project connection**; it never belongs in an argument or pasted transcript.
+
+```powershell
+.\tooling\data1-neon-http-store-local.ps1 -Mode Execute -ProjectId 'REPLACE-with-new-project-id' -BranchId 'br-REPLACE-with-new-branch-id' -ConfirmToken '0123456789abcdef0123' -AllowSyntheticWrites
+```
+
+The displayed `0123456789abcdef0123` is **not a valid token for this target**; substitute the fresh proof. Expected test cases are only **approximately 1, 4 and 12 MiB compressed** synthetic payloads (actual sizes measured); each uses the pinned real Neon driver for a parameterized remote HTTP INSERT and a **separate** full-field SELECT, comparing Base64 text, gzip bytes, raw JSON bytes and SHA-256. Record `STORED_NEON_HTTP` statuses, HTTP body byte counts and command exit code. A successful 12 MiB case **does not establish the provider's maximum**, and a synthetic archive is **not** a genuinely signed v13 restore.
+
+**5. Cleanup is mandatory, even on failure.** Using Neon Console or a separately authorized owner-controlled mechanism, select **only the exact new test Project ID**, confirm its identity once more, delete it with the owner's explicit project-specific approval, and refresh the project list: the test ID must be absent and the original three project IDs must remain. The script intentionally does not remove cloud projects. Clear terminal history **only if it inadvertently contains secrets**, and do not paste URI/password, full debug traces or account data into ChatGPT. Report only sanitized `Probe` identity/metadata, test sizes/status/byte counts, the SHA used, and the independent cleanup result.
+
+**Security limits:** The Windows helper keeps a plaintext URI briefly in its own process environment for the child Node process and clears it in `finally`. Privileged local processes or a compromised workstation may still observe it; this is **not** cryptographic secrecy against a local administrator. The stored HTTP gate remains **NOT RUN** until supported by an actual remote request/response log from this process and independently verified project cleanup.
 
 ### Original direct commands (for operators already using a secure local secret manager)
 
