@@ -12,6 +12,14 @@ It next executes tooling/data1e3-d4-source-sql-risk-probe.mjs, which performs a 
 
 The runner stops its owned server after tests and deletes only a token-confirmed newly created unique OS-temp directory when stop is independently verified. If process shutdown or deletion identity is uncertain, fail closed and retain the directory instead of force-deleting. No existing cluster, Windows service, Neon project or user account is changed.
 
+## 2026-10-30 owner first run: pg_ctl inherited-pipe timeout and corrected runner
+
+The first owner Windows Node24.19.0 checkout `c9a0ffb97c559e4b7e1139217f4cd110a46e0a51` passed `--probe` but stopped in `pg_ctl.exe start` with `exit=0 error=ETIMEDOUT` before isolated SQL identity/restore tests. The runner reported token-owned local cluster disposal PASS and final exit code 1; **baselineStatus and securityStatus both NOT RUN**. [Full incident + source fix + Windows no-DB evidence](2026-10-30-data1e3-d4-first-windows-timeout-and-pipe-fix.md).
+
+Revised runner starts and stops PostgreSQL with `stdio:"ignore"` to avoid inherited stdout pipe hangs, and refuses unsafe removal if stop status is not independently checked. [GitHub Actions #41047852446](https://github.com/filipto861/flytally-logbook/actions/runs/41047852446) on Windows Node24.22.1 **2/2 PASS** reproduced the exact `exit 0 + ETIMEDOUT` simulated mechanism and confirmed the corrected pipe handling. **This did not run PostgreSQL or owner-local DB tests**.
+
+Owner may reuse the existing clean checkout at `$HOME\flytally-data1e3-d4-local`; do not clone again. Update with `git fetch origin` and `git merge --ff-only origin/test/logbook-data1e3-d4-one-local-pg16-20261030`, then verify the **new exact 40-character HEAD** and clean worktree. Prior SHA is obsolete. The owner must consciously invoke execute again because it creates **a new, separate one-time local cluster**; never silently retry on failing preflight. See the actual final SHA supplied after checkpoint commits; do not guess from this dated paragraph.
+
 ## Owner Windows PowerShell: run against verified full PR #446 HEAD
 
 Node.js v24 and native PostgreSQL16 must already be installed. Use a new clone, never an existing data directory. Replace the SHA placeholder only with the full verified PR #446 HEAD supplied with this release of the runbook.
