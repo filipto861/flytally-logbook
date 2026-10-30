@@ -82,6 +82,21 @@ export async function restorePortableBackup(_:RestoreState,form:FormData):Promis
 
 export async function createManualBackup(){const {userId}=await requireUser();await createStoredBackup(userId,"manual");revalidatePath("/data");revalidatePath("/export")}
 
-export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<RestoreState>{const {userId}=await requireUser(),id=Number(form.get("backup_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a stored backup."};let stored;try{stored=await loadStoredBackup(userId,id)}catch(error){return{error:error instanceof Error?error.message:"Stored backup could not be read."}}return restoreParsedBackup(userId,stored,form,{trustedSharedState:true,authenticity:"stored"})}
+export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
+  const {userId}=await requireUser(),id=Number(form.get("backup_id"));
+  if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a stored backup."};
+  let stored:Awaited<ReturnType<typeof loadStoredBackup>>;
+  try{stored=await loadStoredBackup(userId,id)}catch(error){
+    console.error("stored-backup-load-failed",{error:error instanceof Error?error.name:"unknown"});
+    return{error:"Stored backup could not be read or verified."};
+  }
+  if(Number(stored.backup.version)>=13&&portableBackupAuthenticity(stored.backup,stored.digest)!=="verified"){
+    return{error:"Stored version 13 backup failed server signature verification. Existing data is unchanged."};
+  }
+  return restoreParsedBackup(userId,stored,form,{
+    trustedSharedState:true,
+    authenticity:Number(stored.backup.version)>=13?"verified":"stored",
+  });
+}
 
 export async function restoreDeletedFlight(_:TrashRestoreState,form:FormData):Promise<TrashRestoreState>{const {userId}=await requireUser(),id=Number(form.get("trash_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a deleted flight."};let result;try{result=await restoreDeletedFlightRecord(userId,id)}catch(error){console.error("flight-trash-restore-failed",error);return{error:"The flight could not be restored. Existing data is unchanged."}}if(result.error)return{error:result.error};revalidateRestore();return{success:`Flight restored as record ${result.flightId}.`}}
