@@ -127,3 +127,7 @@ exit /b 32
         Remove-Item -LiteralPath $mockDirectory -Recurse -Force
     }
 }
+
+# The intentional fake-node exit 31 is already asserted above; avoid leaking its
+# stale LASTEXITCODE as the overall runner outcome after all checks passed.
+exit 0
