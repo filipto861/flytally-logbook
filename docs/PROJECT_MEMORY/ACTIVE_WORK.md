@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T11:36:21.842Z — D4 owner local PostgreSQL IPv4 /32 assertion blocked preflight; strict host() fix staged
+
+- Owner-local second `--execute` at `7a2ffaaec4d9c3812d3a0c74071d714aa034895d`: SHA+Node24.19.0+native PG16 Probe PASS, server startup progressed, `verifyIdentity` rejected `127.0.0.1/32` mask mismatch. Baseline and F3/F9 source SQL **NOT RUN**, actual full identity **NOT VERIFIED**, owner-run wrapper disposal **PASS**, exit 1. [Incident](../maintenance/2026-10-30-data1e3-d4-second-windows-inet-preflight-and-fixture-fix.md).
+- Draft #446 `test/logbook-data1e3-d4-one-local-pg16-20261030` base Draft #445 `d77deeb2dfb0c9312adf3fe6e2cce0d2471f5e86`, `main@807f281e5870164b794d001480ecc84e0b45aea5`. Both tool scripts now use PostgreSQL `host(inet_server_addr())` and exact loopback assertion; risk-probe fixture timestamps now JSON null; dedicated no-DB static/source regression added. [GitHub Win24 #41048944489](https://github.com/filipto861/flytally-logbook/actions/runs/41048944489) exact SHA `ca8dd9486f6405234e54581a59df093d2c1a4ff9` **3/3 PASS**, no DB. Temp workflow deleted `be5751ed3dcc06378152fb745702dff20d1bdcf6`. No product D4 SQL fix, D2 size cap, remote DB, migrations, flags, merge, deploy or Training changes; prod DB/schema/flags UNKNOWN; DATA-1 not release ready.
+- **ONE NEXT STEP:** owner updates existing clone to final exact #446 SHA and runs Probe/new disposable Execute; return sanitized logs for source SQL findings and cleanup status.
+
+
 ## 2026-10-30T11:27:16.163Z — D4 local pg_ctl ETIMEDOUT diagnosed and narrow Windows-pipe fix staged
 
 - First owner-local PG16 `--execute` on `c9a0ffb97c559e4b7e1139217f4cd110a46e0a51`: Node24.19 probe PASS; startup wrapper failed `pg_ctl.exe exit=0 error=ETIMEDOUT`; baseline and F3/F9 SQL **NOT RUN**. Runner reported owned directory disposal PASS, exit 1; physical state not independently read from owner's machine. This is **tool startup FAIL**, not database integrity PASS/FAIL. [Evidence](../maintenance/2026-10-30-data1e3-d4-first-windows-timeout-and-pipe-fix.md).
