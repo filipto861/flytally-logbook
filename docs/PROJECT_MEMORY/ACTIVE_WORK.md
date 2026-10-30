@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — DATA-1E3 D4 A1 bounded actual PG16 two-session PASS; initiate A2 audit provenance design next
+
+- Fresh owner-local Windows Node24.19 PostgreSQL16.0.15 **frozen executable #449@0891ae0fb5f1a1c99a6982f55e7f701411bee001**: owned ephemeral PG16 preflight PASS, pinned registry 42 files/164 cases/6 partitions PASS, actual PG baseline 4/4 PASS, selected real source trigger functions PASS, **four true two-session SQL collision cases PASS** for flight/FSTD certified+draft (existing row/audit unchanged, marker transaction rollback), fresh-parent flight/FSTD+audit positive PASS, final testStatus/securityStatus/baselineStatus/isolation PASS, owned stop/disposal reported PASS, exit **0**. [Detailed evidence](../maintenance/2026-10-30-data1e3-d4-a1-owner-pg16-two-session-pass-evidence.md). Previous 3/4 AC-20 FAIL at older SHA retained; corrected strict replay tested.
+- **A1 selected SQL fixture ACCEPTED** at exact SHA only. Full v21/effectivity, full signed-v13 application HTTP/Neon restore and entire DATA-1 release **NOT VERIFIED**. F9 audit deletion A2, F8 committed counts A3, natural key/child protected A4, D2 cap still open. Current #449 Draft; `main@807f281e5870164b794d001480ecc84e0b45aea5`, #448 base unchanged. No remote/production/Shadow/Training database/flag/migration, merge or deploy. Original three protected Neon projects confirmed read-only; production schema/flags UNKNOWN.
+- **ONE NEXT STEP:** begin read-only A2 audit-source/trigger/provenance discovery on its own branch and freeze narrow regression contract before touching restore audit SQL.
+
+
 ## 2026-10-30T15:38:17.770Z — D4 A1 first owner PG16 baseline 3/4 FAIL; corrected strict AC-20 contract ready for new isolated run
 
 - [Draft #449](https://github.com/filipto861/flytally-logbook/pull/449) owner-local old SHA `5ac18ee02800b4cbb973ad4e0e561c9b1ce7b307`: Windows Node24.19/PG16.0.15, owned DB identity PASS, **3/4 PG baseline PASS (AC-20 second unplanned parent INSERT FAIL `flights_pkey`)**, new A1 four 2-session cases **NOT RUN**, PG stop/deletion **PASS as reported**, process exit 1, A1 DB gate FAIL/INCOMPLETE. Runner's prior `baselineStatus=NOT RUN` was inaccurate for this attempted baseline. [Evidence and resolution](../maintenance/2026-10-30-data1e3-d4-a1-first-owner-pg16-ac20-reconciliation.md).
