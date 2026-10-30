@@ -1,5 +1,14 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T11:12:38.012Z — DATA-1E3 D4 local single-cluster runner ready, owner execution PENDING
+
+- Owner approved precisely **one newly created disposable local Windows PG16** + synthetic D4 tests + safe exact-directory cleanup. Implemented tooling only in new stacked [Draft #446](https://github.com/filipto861/flytally-logbook/pull/446) `test/logbook-data1e3-d4-one-local-pg16-20261030` on parent Draft #445 `d77deeb2dfb0c9312adf3fe6e2cce0d2471f5e86`; main `807f281e5870164b794d001480ecc84e0b45aea5`.
+- `tooling/data1e3-d4-owned-local-pg16.mjs`: exact HEAD/origin/clean checkout/Windows Node24 PG16 binaries; no inherited credentials; single fresh owned OS-temp PG16 on 127.0.0.1 random port and SQL/OS PID+datadir verification; synthetic existing integration; source F3/FSTD/F9 deterministic SQL probe; shutdown and verified token-owned directory cleanup; refuse deletes on uncertain stop. `tooling/data1e3-d4-source-sql-risk-probe.mjs`: real source SQL snippets on synthetic collision/audit rows, unsafe result **D4_SAFETY_FAIL**, not 2-session actual app restore. [Operator instructions](../maintenance/2026-10-30-data1e3-d4-single-cluster-windows-runbook.md).
+- True hosted Windows 2022 Node24.22.1 [safety smoke #41046128147](https://github.com/filipto861/flytally-logbook/actions/runs/41046128147) exact SHA `f3e73f6fd0f9ad6ff886ab0b98e0faa6229f9683` **PASS** syntax2/2 + unsafe refusals5/5. Temporary CI removed `aa2632b3d0c979aa1a7b0b3e04c874928c0f1df5`. Original runner smoke #41046033334 failed due to PowerShell negative-test exit code, fixed workflow only. [Evidence](../maintenance/2026-10-30-data1e3-d4-local-runner-smoke-evidence.md). No owner-local PG process/SQL/restore run yet; no DB created via current tools.
+- D4 SQL fix and genuine concurrent app restore **NOT IMPLEMENTED / NOT RUN**, D2 cap **NOT FROZEN**, full Node/build/browser/release **NOT RUN**. No prod/Shadow/Training DB changes, migrations, feature flags, merge or deploy; Neon originals three unchanged; prod schema/flags UNKNOWN.
+- **ONE NEXT STEP:** owner runs the exact clean PR #446 SHA-pinned Probe then Execute locally and shares sanitized output; reconcile baseline and expected F3/F9 security FAIL before developing a safe SQL fix.
+
+
 ## 2026-10-30T10:54:53.872Z — D4 isolation plan and DATA-1E3 registry ownership verification DONE; actual PG16 NOT RUN
 
 - Work Draft [PR #445](https://github.com/filipto861/flytally-logbook/pull/445) `fix/logbook-data1e3-v13-security-gates-20261030` base Draft #444 `512bddf0405854f1c0fe5694b00ee09c8099cb5d`; main `807f281e5870164b794d001480ecc84e0b45aea5`. D1/D3 remains code candidate (signed stored v13 before restore, generic errors), D2 limits and D4 transactional/audit refactor remain OPEN.
