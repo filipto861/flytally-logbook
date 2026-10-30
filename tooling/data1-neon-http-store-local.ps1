@@ -27,6 +27,9 @@ if ($ProjectId -notmatch '^[a-z]+-[a-z]+-[0-9]{5,}$' -or
     $BranchId -notmatch '^br-[a-z0-9-]+$') {
     throw 'Refused: invalid disposable project/branch identifier.'
 }
+if ($ProjectId -in @('muddy-dust-14049657', 'frosty-recipe-46458686', 'dry-king-94424047')) {
+    throw 'Refused: this is an existing protected FlyTally project, not a disposable database.'
+}
 if ($Mode -eq 'Execute') {
     if (-not $AllowSyntheticWrites -or $ConfirmToken -notmatch '^[a-f0-9]{20}$') {
         throw 'Refused: Execute requires -AllowSyntheticWrites and a probe confirmation token.'
