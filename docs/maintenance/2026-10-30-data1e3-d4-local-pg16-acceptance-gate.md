@@ -59,7 +59,7 @@ All test content is synthetic; artificial user A/B, fictional flights and FSTD s
 
 ## 6. Status, blockers, one next step
 
-**Registry ownership:** changes staged, non-DB actual test outcome pending exact-SHA execution.  
+**Registry ownership:** **non-DB Windows Node24 registry 41/41 PASS, recovery group 3/3 PASS, typecheck PASS** at exact tested SHA `807d3d35129963cc67db69ff10882c3171846853` ([test evidence](2026-10-30-data1e3-registry-windows-acceptance-evidence.md)); no runtime PostgreSQL restore performed.  
 **D4 local PG16:** design READY, creation/restore/runtime **NOT RUN**.  
 **D2 gzip/archive cap:** size policy NOT FROZEN, NOT IMPLEMENTED; prior Neon 1/4/12MiB transport is not max-bound measurement or representative signed archive acceptance.  
 **DATA-1 release:** **BLOCKED**.  
