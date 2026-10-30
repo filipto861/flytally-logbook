@@ -6,7 +6,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $launcher = Join-Path $PSScriptRoot 'data1-neon-http-store-local.ps1'
-$fakeUri = 'postgresql://synthetic_data1_owner:FAKE_NOT_REAL@ep-fake.eu-central-1.aws.neon.tech/synthetic_data1'
+$global:data1FakeUri = 'postgresql://synthetic_data1_owner:FAKE_NOT_REAL@ep-fake.eu-central-1.aws.neon.tech/synthetic_data1'
 $project = 'clean-fixture-12345678'
 $branch = 'br-mock-123'
 $token = 'aaaaaaaaaaaaaaaaaaaa'
@@ -14,7 +14,7 @@ $originalPath = $env:PATH
 $originalCI = $env:CI
 $mockDirectory = Join-Path $env:RUNNER_TEMP ('data1-win-mock-' + [Guid]::NewGuid().ToString('N'))
 $mockNode = Join-Path $mockDirectory 'node.cmd'
-$script:readHostCalls = 0
+$global:readHostCalls = 0
 
 function Assert-Cleared {
     foreach ($key in @(
@@ -30,9 +30,9 @@ function Assert-Cleared {
 
 function global:Read-Host {
     param([string]$Prompt, [switch]$AsSecureString)
-    $script:readHostCalls++
+    $global:readHostCalls++
     if ($AsSecureString) {
-        return ConvertTo-SecureString -String $fakeUri -AsPlainText -Force
+        return ConvertTo-SecureString -String $global:data1FakeUri -AsPlainText -Force
     }
     if ($Prompt -like 'Type EXECUTE*') {
         return 'EXECUTE'
@@ -81,13 +81,13 @@ exit /b 32
     & $launcher -Mode Probe -ProjectId $project -BranchId $branch
     if ($LASTEXITCODE -ne 0) { throw 'Probe failed' }
     Assert-Cleared
-    if ($script:readHostCalls -ne 1) { throw 'Probe must ask for precisely one hidden URI' }
+    if ($global:readHostCalls -ne 1) { throw 'Probe must ask for precisely one hidden URI' }
     Write-Host 'WIN-PROBE: PASS (fake node, no network, cleaned environment)'
 
     & $launcher -Mode Execute -ProjectId $project -BranchId $branch -ConfirmToken $token -AllowSyntheticWrites
     if ($LASTEXITCODE -ne 0) { throw 'Execute failed' }
     Assert-Cleared
-    if ($script:readHostCalls -ne 3) { throw 'Execute must prompt for confirmation and hidden URI' }
+    if ($global:readHostCalls -ne 3) { throw 'Execute must prompt for confirmation and hidden URI' }
     Write-Host 'WIN-EXECUTE: PASS (fake node, no network, cleaned environment)'
 
     $env:DATA1_MOCK_FAIL = '1'
@@ -102,14 +102,14 @@ exit /b 32
     Assert-Cleared
     Write-Host 'WIN-FAILURE-CLEANUP: PASS'
 
-    $before = $script:readHostCalls
+    $before = $global:readHostCalls
     try {
         & $launcher -Mode Probe -ProjectId 'muddy-dust-14049657' -BranchId $branch
         throw 'Existing Neon project was not denied'
     } catch {
         if ($_.Exception.Message -notmatch 'protected FlyTally project') { throw }
     }
-    if ($script:readHostCalls -ne $before) { throw 'Forbidden target prompted for a password' }
+    if ($global:readHostCalls -ne $before) { throw 'Forbidden target prompted for a password' }
     Assert-Cleared
     Write-Host 'WIN-PROJECT-DENYLIST: PASS'
 
@@ -118,6 +118,8 @@ exit /b 32
     $env:PATH = $originalPath
     $env:CI = $originalCI
     $env:DATA1_MOCK_FAIL = $null
+    Remove-Variable -Name readHostCalls -Scope Global -ErrorAction SilentlyContinue
+    Remove-Variable -Name data1FakeUri -Scope Global -ErrorAction SilentlyContinue
     Remove-Item -Path Function:\Read-Host -Force -ErrorAction SilentlyContinue
     if (Test-Path -LiteralPath $mockDirectory) {
         Remove-Item -LiteralPath $mockDirectory -Recurse -Force
