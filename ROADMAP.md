@@ -1,5 +1,13 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-30 — D4 A2 independent-review step authorized, INTERNAL pre-review recorded; external second AI NOT RUN
+
+- Owner replied `souhlasim` to proceeding with the independent read-only architecture review, **not** implementation/DDL/migration/merge/deploy/flags. Actual callable external DeepSeek/Claude reviewer was unavailable; **do not mislabel** a GPT-6 source audit as an independent second-AI verdict.
+- Exact code `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; candidate design PR #451 baseline `406561bde68f9d2e6b073472146483fbd9545b5e`, stacked on #450; canonical main `807f281e5870164b794d001480ecc84e0b45aea5`. [Internal design pre-review](docs/maintenance/2026-10-30-data1e3-d4-a2-option2-source-pre-review.md) identifies **P1**: legacy identity/equivalence across signed snapshots, cross-ledger source vs target flight-id binding, event membership proof, v14 same-instance replay, complete v14 `pre_restore` snapshot/strict parser; **P2** two-session equality, actor truthfulness, immutability. Source-derived risk does not imply PostgreSQL reproduction or an implemented defect.
+- All new A2 technical gates NOT RUN; no SQL, schema/test code/flag/DB/deploy changes. Production Vercel READY on prior `55c8076e1eb8104c14392e15b272b33e0eb29607`; actual production DB/schema/flags UNKNOWN. Owner requires genuine independent review before any new schema/runtime approval.
+- **ONE NEXT STEP:** submit frozen PR #451 proposal and the source pre-review to an external read-only DeepSeek/Claude reviewer, reconcile the returned report against exact SHA before an implementation decision.
+
+
 ## 2026-10-30 — OWNER APPROVED D-A2 Option 2 for DESIGN ONLY; detailed provenance model Draft #451
 
 - **Owner decision:** explicit `souhlasim` to prior assistant's question: choose **D-A2 Option 2 as the direction for a detailed architectural proposal**, **NOT** approval of chosen schema/DDL, migration, runtime SQL/API, flag change, v14 format activation, merge or production deployment. Original frozen policy remains: retain every independent and genuine auto-generated audit event, immutable archived source evidence, no silent conflict/skip and no cross-tenant leakage. Need an explicit later owner choice for final data model and separate release authority.

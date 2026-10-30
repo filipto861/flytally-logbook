@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — D4 A2 read-only review approved; internal source pre-review completed, external independent review NOT RUN
+
+- Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`; design Draft #451 original `406561bde68f9d2e6b073472146483fbd9545b5e`, base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. New [source pre-review](../maintenance/2026-10-30-data1e3-d4-a2-option2-source-pre-review.md), NOT an independent second-AI finding.
+- P1 blockers for review: v13 cross-snapshot identity, verified source->target flight linkage (including archived/voided ID reuse), cryptographic event membership, native↔imported v14 roundtrip duplicates, export/pre_restore completeness with 32-result snapshot and v13-only pre-sign. P2: atomic equality under race, actor truthfulness, DB immutability. All new A2 tests NOT RUN. No code/DDL/DB/migrations/flags/deploy/merge.
+- **ONE NEXT STEP:** obtain independent DeepSeek/Claude read-only review of frozen PR #451 and reconcile exact-source findings before requesting any A2 implementation approval.
+
+
 ## 2026-10-30 — D-A2 Option 2 design-only owner approval; Draft #451 architecture prepared, independent review NOT RUN
 
 - Owner approved Option 2 solely as a direction to develop detailed provenance architecture. [Draft #451](https://github.com/filipto861/flytally-logbook/pull/451) work `docs/logbook-data1e3-d4-a2-provenance-model-20261030`, based #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, main `807f281e5870164b794d001480ecc84e0b45aea5`, executable unchanged `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. [New design](../maintenance/2026-10-30-data1e3-d4-a2-immutable-audit-provenance-architecture-v1.md) recommends separate append-only imported audit ledger; proposed v14 signed export and proposed v22 migration are **NOT AUTHORIZED/IMPLEMENTED**.
