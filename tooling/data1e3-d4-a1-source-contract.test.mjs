@@ -31,3 +31,15 @@ test("D4 A1 two-session coverage",()=>{
  assert.ok(src.includes("assert.equal(auditState(),audits,"),"assert.equal(auditState(),audits)");
  assert.ok(src.includes("assert.equal(markerCount(),0,"),"assert.equal(markerCount(),0)");
 });
+
+test("D4 A1 AC-20 retains positive certified evidence checks and rejects unplanned duplicate parent replay",()=>{
+ const integration=read("tests/integration/postgres-security-restore.test.ts");
+ assert.ok(integration.includes('test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participation and GPS"'));
+ assert.ok(integration.includes('verifyFlightCertification(restored,10).status,"verified"'));
+ assert.ok(integration.includes('verificationCryptographicStatus(verification),"verified"'));
+ assert.ok(integration.includes('assert.equal(String(track.coordinates_json),fixture.coordinates)'));
+ assert.ok(integration.includes('assert.throws(()=>apply(),/duplicate key value violates unique constraint "flights_pkey"/i)'));
+ assert.ok(integration.includes('assert.deepEqual(evidence(),firstRestoreEvidence'));
+ const launcher=read("tooling/data1e3-d4-a1-owned-local-pg16.mjs");
+ assert.ok(launcher.includes('baselineStatus="FAIL"'),"actually executed failing baseline must not appear NOT RUN");
+});
