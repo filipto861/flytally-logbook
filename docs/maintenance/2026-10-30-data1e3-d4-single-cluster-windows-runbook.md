@@ -20,6 +20,14 @@ Revised runner starts and stops PostgreSQL with `stdio:"ignore"` to avoid inheri
 
 Owner may reuse the existing clean checkout at `$HOME\flytally-data1e3-d4-local`; do not clone again. Update with `git fetch origin` and `git merge --ff-only origin/test/logbook-data1e3-d4-one-local-pg16-20261030`, then verify the **new exact 40-character HEAD** and clean worktree. Prior SHA is obsolete. The owner must consciously invoke execute again because it creates **a new, separate one-time local cluster**; never silently retry on failing preflight. See the actual final SHA supplied after checkpoint commits; do not guess from this dated paragraph.
 
+## Second owner attempt — PostgreSQL inet /32 identity output (2026-10-30)
+
+Owner fast-forwarded to `7a2ffaaec4d9c3812d3a0c74071d714aa034895d`, Probe PASS, and Execute successfully progressed beyond the old `pg_ctl` inherited-pipe problem. It stopped before tests at strict SQL identity comparison: PostgreSQL `inet_server_addr()::text` emitted `127.0.0.1/32` rather than expected `127.0.0.1`. Reported baseline and security test `NOT RUN`; owned cleanup `PASS`. [Full evidence](2026-10-30-data1e3-d4-second-windows-inet-preflight-and-fixture-fix.md).
+
+The launcher and its child risk probe now use `host(inet_server_addr())`, which yields the unmasked IPv4 address; both still demand **exact `127.0.0.1`**, matching database, role, data directory and PostgreSQL16 identity. Synthetic timestamp fields were also corrected from invalid `""` to `null` before attempting source SQL. **No application or security rule was loosened.** [Windows Node24 GitHub Actions #41048944489](https://github.com/filipto861/flytally-logbook/actions/runs/41048944489) 3/3 source-contract PASS at `ca8dd9486f6405234e54581a59df093d2c1a4ff9`, actual DB test still NOT RUN.
+
+Reuse the existing clean clone and follow the fast-forward workflow from the first incident note. The previously used SHA `7a2ffaaec4d9c3812d3a0c74071d714aa034895d` is **obsolete**; substitute the newly verified final 40-character PR #446 HEAD. Each Execute creates one new disposable test cluster and is an explicit owner action, never an automatic retry.
+
 ## Owner Windows PowerShell: run against verified full PR #446 HEAD
 
 Node.js v24 and native PostgreSQL16 must already be installed. Use a new clone, never an existing data directory. Replace the SHA placeholder only with the full verified PR #446 HEAD supplied with this release of the runbook.
