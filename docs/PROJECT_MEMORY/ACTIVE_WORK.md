@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T14:34:33.255Z — DATA-1E3 D4 A1 separate draft test harness #449 ready; local PG16 SQL NOT RUN
+
+- Owner A–D freeze unchanged. A1 implementation in Draft [#448](https://github.com/filipto861/flytally-logbook/pull/448) `55e3aac2f2a01c1670b0e1b238e45515e711b543`, A2–A4 not implemented, D2 limits open. New test-only [Draft #449](https://github.com/filipto861/flytally-logbook/pull/449) stacked on #448, work `test/logbook-data1e3-d4-a1-owned-pg16-20261030`. Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`. [One-time A1 physical PG16 runbook](../maintenance/2026-10-30-data1e3-d4-a1-pg16-two-session-runbook.md).
+- Test tooling: strictly bounded fresh Windows/Node24 physical PG16 owner, one-time sentinel and disposal, exact code SQL, selected source trigger definitions, four two-connection race fixtures incl. uncertified drafts, positive control, no remote DB. **Windows no-DB Actions #41072082996 PASS:** `1a7347c009866ec1fc3361e30cd7630bb9eb50ea`, syntax two files plus source guard 3/3; first run #41071774572 2/3 FAIL static check, corrected. Temporary workflow removed; no product SQL changed in #449.
+- Actual owner-machine PostgreSQL16 operation, two-session SQL, schema cleanup **NOT RUN**. D4 A1 DB gate open; full v21/app signed-v13, F9, F8, natural key, protected children, D2, release tests remain open. Vercel old production READY and main unchanged, prod schema/flags UNKNOWN. No merge/deploy/DB/Training/flags. **ONE NEXT STEP:** owner runs SHA-bound isolated `--probe` and `--execute` once, returns sanitized output to assess PASS/FAIL before A2.
+
+
 ## 2026-10-30T14:16:25.628Z — DATA-1E3 D4 A1 parent conflict in Draft #448, six Windows source tests PASS
 
 - Explicit owner approval of D4 **A–D policies** received: preserve independent/trigger audit, no new unique index now, strict parent/protected child rollback, actual counts/sanitized messages with retained safety backup. [Frozen rules](../maintenance/2026-10-30-data1e3-d4-a1-owner-frozen-parent-collision.md). Scope starts with **A1 only**; A2 audit, A3 true counts, A4 natural identity + protected children are NOT IMPLEMENTED.
