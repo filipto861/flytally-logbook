@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T11:52:07.904Z — third D4 local Windows start reached physical process CommandLine validation; still no SQL
+
+- Owner clean checkout `a0923434cdd8af0181864bd942eb3a55cac48ac0`, Node24.19.0; Probe PASS; Execute **FAIL** at `physicalPid()` commandline data-dir match, with baseline and F3/F9 SQL **NOT RUN**, isolation NOT VERIFIED. Runner reports owned stop and disposal PASS, final exit 1; actual Windows process string not sent and should not be shared. [Full evidence](../maintenance/2026-10-30-data1e3-d4-third-windows-process-cli-path-fix.md).
+- New pure `tooling/data1e3-d4-win-process-path.mjs` used by `tooling/data1e3-d4-owned-local-pg16.mjs` for strict whole-dir Windows path match with slash/case/Unicode normalization, reject foreign/prefix/partial/missing path. Includes safe boolean diagnostic on failure only; keeps unchanged PID/executable, PostgreSQL SQL datadir/version/user/port and token-owned stop/disposal gates. New no-DB regression `tooling/data1e3-d4-win-process-path.test.mjs`.
+- Windows 2022 Node24.22.1 [Actions #41050835559](https://github.com/filipto861/flytally-logbook/actions/runs/41050835559) exact test SHA `f96d859ad9e5d79c8379d499ccebc7793faecb1c`: 9/9 PASS, no PostgreSQL invoked. Temporary workflow removed. Draft #446 based on #445 `d77deeb2dfb0c9312adf3fe6e2cce0d2471f5e86`; main `807f281e5870164b794d001480ecc84e0b45aea5`. D4 SQL fix and D2 caps still NOT IMPLEMENTED; actual source F3/F9 SQL probe/PG application restore/release gate NOT RUN; prod DB/flags UNKNOWN; no merge/deploy/Training/remote DB change.
+- **ONE NEXT STEP:** exact-SHA owner local retry with safe process diagnostic if ambiguity persists, then evaluate actual SQL outcome without claiming premature D4 PASS.
+
+
 ## 2026-10-30T11:36:21.842Z — D4 owner local PostgreSQL IPv4 /32 assertion blocked preflight; strict host() fix staged
 
 - Owner-local second `--execute` at `7a2ffaaec4d9c3812d3a0c74071d714aa034895d`: SHA+Node24.19.0+native PG16 Probe PASS, server startup progressed, `verifyIdentity` rejected `127.0.0.1/32` mask mismatch. Baseline and F3/F9 source SQL **NOT RUN**, actual full identity **NOT VERIFIED**, owner-run wrapper disposal **PASS**, exit 1. [Incident](../maintenance/2026-10-30-data1e3-d4-second-windows-inet-preflight-and-fixture-fix.md).
