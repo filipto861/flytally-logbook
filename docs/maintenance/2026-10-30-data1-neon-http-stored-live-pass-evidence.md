@@ -1,5 +1,12 @@
 # DATA-1D — REAL Neon HTTP stored gzip/Base64 1/4/12MiB acceptance evidence
 
+## 2026-10-30T09:18:51.123Z — Owner-authorized disposable project deletion COMPLETED and verified
+
+**Current lifecycle status supersedes the earlier pending-cleanup statements below.** After the owner's specific reply `SOUHLASIM` to the immediate request to delete **only Neon project `purple-lab-22755259`**, the connector independently verified the project name `FlyTally DATA1D disposable HTTP test 20261030`, PG16 region `aws-eu-central-1`, sole branch `br-wild-dew-b9wsd6yq`, database `synthetic_data1`, role `synthetic_data1_owner`, and three synthetic persisted rows with 3 presets (min=1, max=12). It then executed precisely `delete_project(project_id='purple-lab-22755259')` once. Provider deletion returned the exact requested project ID/name. An **independent fresh list_projects** readback verified **deleted project absent** and **exactly three protected original projects present**: `muddy-dust-14049657` (Logbook Shadow), `frosty-recipe-46458686` (Training Production), `dry-king-94424047` (Training Acceptance). No other project was touched.
+
+**Cleanup outcome: PASS**. All three synthetic test rows were removed with their disposable project. No remaining DATA-1D test DB/resource. Real Neon HTTP 1/4/12MiB PASS evidence remains preserved in this document and in the owner-supplied sanitized terminal output; cleanup does not invalidate the transport result. No merge, deployment, production database migration, feature-flag change or change to Training. **Provider max still UNKNOWN** and **signed-v13 authenticated application GET/restore & exact release-risk verification NOT RUN**. **One next step:** independent read-only review/design of a genuinely source-backed authenticated signed-v13 app backup GET/restore acceptance plan and a fresh isolated app-test fixture without touching production.
+
+
 **Date (UTC documentation):** 2026-10-30T09:14:11.120Z  
 **Status:** **PASS 3/3 for actual owner-operated Neon HTTP INSERT and separate SELECT with exact byte-integrity verification**. This is transport acceptance only; it is **NOT** signed application v13 restore, not a provider maximum determination, not release authorization.
 
