@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T09:14:49.476Z — DATA-1D transport gate now **PASS on REAL Neon HTTP**; temporary project cleanup requires permission
+
+- **Verified live owner execution** against `purple-lab-22755259` (branch `br-wild-dew-b9wsd6yq`, `synthetic_data1`, PG16.15, `synthetic_data1_owner`). Owner local executable SHA `60affbabda8e377656c9a6ec82e63e227803929d`: first read-only Probe then confirmed Execute returned `EXECUTION_PREFLIGHT PASS`, `STORED_NEON_HTTP 1MiB PASS`, `4MiB PASS`, `12MiB PASS`, `COMPLETE passed=3`. Six HTTP request/response statuses 200. Largest actual INSERT body 16,804,937 bytes, SELECT HTTP response 16,805,336 bytes, integrity verified inside real local Node24 Neon driver. Independent Neon read-only SQL showed 3 distinct stored presets and exact reported raw/gzip/Base64 byte lengths. **Detailed source-bound evidence:** [2026-10-30-data1-neon-http-stored-live-pass-evidence.md](../maintenance/2026-10-30-data1-neon-http-stored-live-pass-evidence.md).
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) base Draft #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`; current changes docs only. Existing three protected projects untouched; Neon disposable `purple-lab-22755259` **still EXISTS, now has 3 synthetic stored rows**. Deletion **requires fresh explicit owner authorization**; not done. No merge/deployment/production migrations/DB/flags/Training.
+- **Acceptance distinction:** real Neon HTTP transport of tested 1/4/12MiB now **PASS**. Provider maximum **UNKNOWN**; authenticated signed-v13 application GET/restore and candidate `verify:release:risk` **NOT RUN**, DATA-1 **NOT RELEASE-READY**, prod DB/schema/flags UNKNOWN. Windows/driver offline mocks separate prior SHAs.
+- **ONE NEXT STEP:** obtain specific owner approval to delete **only** test project `purple-lab-22755259`; execute exact-ID deletion only after approval, verify absent and original three still present. Then plan subsequent application signed-v13 acceptance separately.
+
+
 ## 2026-10-30T09:01:50.558Z — DATA-1D isolated Neon test DB NOW EXISTS; owner-local HTTP execution pending
 
 - Owner authorized proceeding to actual tests. Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`; Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) base #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`.
