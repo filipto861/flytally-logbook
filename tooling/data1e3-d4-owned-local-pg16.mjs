@@ -72,7 +72,7 @@ function physicalPid(bins,pid,data){
 }
 function verifyIdentity(bins,pgEnv,url,data,port){
   const sql="SELECT row_to_json(t)::text FROM (SELECT current_database() AS db,"+
-    "current_user AS role,inet_server_addr()::text AS addr,inet_server_port() AS port,"+
+    "current_user AS role,host(inet_server_addr()) AS addr,inet_server_port() AS port,"+
     "current_setting('server_version_num') AS pgversion,"+
     "current_setting('data_directory') AS datadir,"+
     "current_setting('transaction_read_only') AS readonly) t";
