@@ -66,7 +66,15 @@ async function restoreParsedBackup(userId:number,parsed:ParsedPortableBackup,for
     if(intent!=="restore")return{preview:prepared.preview};
     if(String(form.get("preview_digest")||"")!==parsed.digest)return{error:"The file changed after preview. Validate it again."};if(String(form.get("confirm")||"").trim().toUpperCase()!=="RESTORE")return{error:"Type RESTORE to confirm.",preview:prepared.preview};
     try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-restore-backup-failed",error);return{error:"Restore was stopped because the safety backup could not be created. Existing data is unchanged.",preview:prepared.preview}}
-    try{const result=await executeExactAccountRestore(userId,parsed.backup,prepared);revalidateRestore();return{success:`Exact recovery completed atomically. Added ${result.added} missing records; existing records were not overwritten. Certification and revision fingerprints were preserved.`,preview:undefined}}catch(error){console.error("v6-exact-restore-failed",error);const code=String((error as {code?:unknown})?.code||"");return{error:`Exact recovery failed${code?` (database ${code})`:""}. The atomic transaction was rolled back; existing data is unchanged.`,preview:prepared.preview}}
+    try{const result=await executeExactAccountRestore(userId,parsed.backup,prepared);revalidateRestore();return{success:`Exact recovery completed atomically. Added ${result.added} missing records; existing records were not overwritten. Certification and revision fingerprints were preserved.`,preview:undefined}}catch(error){
+      const code=(error as {code?:unknown})?.code;
+      const conflict=code==="23505"||code==="23P01";
+      // Do not emit SQL, identifiers, raw adapter errors or flight/GPS evidence in the public response or logs.
+      console.error("v6-exact-restore-failed",{kind:conflict?"conflict":"transaction_failure"});
+      return{error:conflict
+        ?"Recovery was stopped because records changed or conflicted. The main restore was rolled back; your pre-restore safety backup was retained."
+        :"Recovery could not be completed. The main restore was rolled back; your pre-restore safety backup was retained.",preview:prepared.preview};
+    }
   }
   const preview=await buildPreview(userId,parsed.backup,parsed.digest);if(intent!=="restore")return{preview};if(String(form.get("preview_digest")||"")!==parsed.digest)return{error:"The file changed after preview. Validate it again."};if(String(form.get("confirm")||"").trim().toUpperCase()!=="RESTORE")return{error:"Type RESTORE to confirm.",preview};
   try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-restore-backup-failed",error);return{error:"Restore was stopped because the safety backup could not be created. Existing data is unchanged.",preview}}
