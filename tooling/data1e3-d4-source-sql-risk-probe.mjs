@@ -66,9 +66,9 @@ try{
   const floor=Number(sql("SET search_path TO "+schema+"; SELECT COALESCE(MAX(id),0)::bigint FROM flight_audit_log"));
   assert.equal(floor,1);
   const flight=[{id:1001,user_id:7,aircraft_make:"Synthetic",aircraft_model:"Test",
-    aircraft_variant:"",certified_at:"",certified_by_user_id:7,
-    certification_hash:"RESTORED_FLIGHT",certification_version:3,locked_at:"",locked_by_user_id:7}];
-  const fstd=[{id:2001,user_id:7,certified_at:"",certified_by_user_id:7,
+    aircraft_variant:"",certified_at:null,certified_by_user_id:7,
+    certification_hash:"RESTORED_FLIGHT",certification_version:3,locked_at:null,locked_by_user_id:7}];
+  const fstd=[{id:2001,user_id:7,certified_at:null,certified_by_user_id:7,
     certification_hash:"RESTORED_FSTD",certification_version:3}];
   const vars=a=>({userId:"7","JSON.stringify(batch)":JSON.stringify(a)});
   sql("SET search_path TO "+schema+";"+render(flightInsert,vars(flight))+";"+render(flightUpdate,vars(flight)));
