@@ -1,0 +1,27 @@
+name: DATA1 TEMPORARY Windows local HTTP wrapper acceptance
+on:
+  push:
+    branches:
+      - test/logbook-data1-local-http-executor-20261030
+    paths:
+      - .github/workflows/data1-windows-http-wrapper-temporary.yml
+permissions:
+  contents: read
+jobs:
+  offline-powershell-mock:
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Windows source and no cloud secrets
+        shell: pwsh
+        run: |
+          if ($env:RUNNER_OS -ne 'Windows') { throw 'Windows runner required' }
+          if ($env:DATA1_ALLOW_TEST_WRITES -or $env:DATABASE_URL) { throw 'Refuse inherited DB credentials' }
+          Write-Host ('WINDOWS RUNNER = ' + $env:RUNNER_OS)
+          Write-Host ('SOURCE SHA = ' + (git rev-parse HEAD))
+          Write-Host 'OFFLINE ONLY: fake node.cmd, fabricated URI, no remote DB client'
+      - name: Execute real Windows PowerShell wrapper with offline fake Node
+        shell: pwsh
+        run: |
+          & ./tooling/data1-neon-http-store-local.windows.test.ps1
