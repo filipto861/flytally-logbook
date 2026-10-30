@@ -20,6 +20,24 @@ The earlier Neon→Vercel cross-tool credential transfer was blocked. Do not cir
 - Log only safe aggregate counters, status and truncated error class; never print SQL parameters, credentials, raw payload, GPS, names or user data. Stop on first failure. HTTP vendor **maximum unknown**, even if all three sizes succeed. 50 MiB cap is offline math only; no 50 MiB automatic cloud upload.
 - **Mandatory cleanup is external, with explicit owner approval:** shut down any ephemeral compute, delete ONLY the newly created positively identified project ID, re-list original projects and verify the test ID absent. Preserve failure history. An executor script's successful completion does not prove cleanup.
 
+## Owner-side secure PowerShell launcher (Windows, Node 24)
+
+On a **new, independently created empty test project only**, the same-repository helper `tooling/data1-neon-http-store-local.ps1` can prompt for the disposable DB URI without writing it into the command history, chat, GitHub or a file. The URI exists temporarily as a plaintext *process environment variable* while the Node child runs, and the wrapper clears it in a `finally` block. A process administrator/debugger might still inspect process memory or environment; this is not a guarantee against a compromised workstation.
+
+From the repository root in a fresh PowerShell window, after `npm ci`, use the verified **new** Neon project and branch IDs (non-secret) in these commands:
+
+```powershell
+.\tooling\data1-neon-http-store-local.ps1 -Mode Probe -ProjectId <new-test-project-id> -BranchId <new-test-branch-id>
+# Independently compare the read-only probe result with Neon Console and copy its 20-character proof.
+.\tooling\data1-neon-http-store-local.ps1 -Mode Execute -ProjectId <new-test-project-id> -BranchId <new-test-branch-id> -ConfirmToken <probe-proof> -AllowSyntheticWrites
+```
+
+Both invocations **ask interactively** for the ephemeral test URI with a hidden prompt. The helper refuses inherited DATABASE_URL, NODE_OPTIONS, CI/Vercel context, old protected project IDs and unapproved write flags before requesting the secret. The execute step requires typing `EXECUTE` interactively. It cannot create or delete any Neon resource, and the token is not proof of Neon project ID without independent console verification.
+
+After test completion **or failure**, independently verify and delete only the newly created test project's exact ID using authorized Neon controls, re-list the pre-existing three projects, and document the cleanup. If a genuine new project is not available or deletion cannot be guaranteed, **do not run** the write stage.
+
+### Original direct commands (for operators already using a secure local secret manager)
+
 ## Owner-side commands (PowerShell with Node 24)
 
 The example intentionally omits entering a DATABASE_URL; use the owner's secure local environment / secret handling, **not shell command history, chat or GitHub**. Never use a connection string copied from an existing Logbook Shadow or Training project.
