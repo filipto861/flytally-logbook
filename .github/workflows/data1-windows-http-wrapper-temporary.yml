@@ -1,4 +1,5 @@
 name: DATA1 TEMPORARY Windows local HTTP wrapper acceptance
+# Attempt 2: deterministic marker-based fake-node negative exit test
 on:
   push:
     branches:
