@@ -1,0 +1,29 @@
+# DATA-1E3 D4 — owner policy freeze and A1 parent-collision hardening (first small batch)
+
+**Decision date:** 2026-10-30 (user explicit `souhlasím` to A/B/C/D recommendations).  
+**Work branch:** `fix/logbook-data1e3-d4-a1-parent-conflict-20261030`, originally branched from docs-only Draft #447 full SHA `10e1f7f485838b970534d86a3271f10ced615309`, itself stacked over executable #446 `cf2332d3814fd5f97096608680dffdb1d457c5df`, #445/#444/#443. Canonical main was `807f281e5870164b794d001480ecc84e0b45aea5` at this decision.
+
+## Frozen owner decisions (direction, not production authority)
+
+- **A Audit:** never delete unrelated existing audit events. Preserve genuine restore-generated trigger audit. If archived protected audit conflicts, fail closed rather than silently skip/delete; any alternative ID/provenance scheme requires exact trigger/schema proof and review. **No broad MAX(id)/floor deletion permitted in final D4**.
+- **B Natural flight identity:** do **not** add a unique index or schema migration automatically. Reuse canonical Create fingerprint/advisory lock with transaction-time recheck, abort on conflict. A cooperative advisory lock alone does not protect non-cooperating Create/Edit/import APIs; locate and close/explicitly mark these gaps. Duplicates' valid domain semantics remain an independent correctness question, not an invitation to invent a constraint.
+- **C Protected history:** parent and protected child ID/natural/hash conflicts must rollback the main restore rather than overwriting or silently omitting certification, revisions, verifications, voided or shared participant evidence. Legacy compatibility and existing exact evidence semantics remain.
+- **D Reporting:** only actual committed changes may be counted as restored; no raw SQL/errors/PII/GPS in user response or logs. Distinguish atomic rollback of the **main restore transaction** from a separately persisted `pre_restore` safety backup.
+
+## This batch A1 only (implementation on this work branch)
+
+**Changed runtime paths:**
+
+1. `lib/account-restore-v6.ts`: remove `ON CONFLICT DO NOTHING` **only** from staged parent INSERTs into `flights` and `fstd_sessions`; unique/PK conflict therefore aborts the existing `sql.transaction(queries)` before any certification-field UPDATE can commit. All other tables/queries remain unchanged, including the known unsafe broad audit deletion. No new schema/constraints/libraries.
+2. `app/(protected)/export/actions.ts`: replace public PostgreSQL-code interpolation and full raw caught Error logging on **exact** restore failure with generic conflict/generic transaction response; explicitly report the main transaction rollback and preserved `pre_restore` backup. No UI component/layout/style/motion changes (**motion: NONE**). Existing form confirmation, read-only preview, pending state and user flow unchanged.
+3. `tests/v381-data1e3-stored-recovery-guards.test.ts`: extend existing source-contract owner with 3 targeted tests: exact two-parent strict staging, negative original unsafe SQL counterexample, sanitized failure + persistent safety backup + ordering of preview/confirm/backup/execute. The test is **source-contract only**, not proof of transaction behavior on a real PG16 or multi-session app.
+
+**Safety limitations intentionally outstanding:** The following are **NOT FIXED** by A1: F9 `auditFloor` broad deletion; F8 planned insert counts; natural-key different-ID race and non-cooperating write paths; protected child `ON CONFLICT DO NOTHING`; correct archived audit/provenance treatment; real fully initialized v21 trigger impact; genuine authenticated two-session v13 HTTP restore; D2 gzip bounds. D4 remains blocked for release. The earlier `tooling/data1e3-d4-source-sql-risk-probe.mjs` is a **pre-fix vulnerability reproducer** and is not a ready A1 pass/fail acceptance runner, because a strict parent collision causes a PostgreSQL constraint error instead of continuing to its former unsafe result. Preserve original historical evidence rather than weakening/rewriting it to print PASS.
+
+## Acceptance and explicit boundaries
+
+- Candidate non-DB regression: Node24 Win2022 targeted `node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/v381-data1e3-stored-recovery-guards.test.ts` and `npm run typecheck`, both checked against exact CI SHA and log, **not** assumed. First temporary workflow run #41069595635 failed 5/6 because new test used LF-specific source boundary on Windows CRLF; fixed the test only and retained failing history. Successful second outcome is recorded separately in Project Memory once verified.
+- **Future mandatory D4-A1 database acceptance:** a **new one-use, positively identified, isolated local PostgreSQL16 cluster** with actual canonical triggers. Re-run baseline tests, verify concurrent same-ID flight/FSTD insert conflict rolls back the **entire main restore transaction** (compare current record/certification hashes/audit snapshots), test positive new insert, and distinguish restored safety backup side-effect. Do not reuse the pre-fix minimal probe as if it proves completed D4. Two real sessions, exact v21/effectivity and signed-v13 authenticated app flow remain required for the **full** D4 gate.
+- **DO NOT:** modify `flytally-training`; merge/deploy; touch actual Logbook Shadow/Training/prod DB; production migration/restore/delete or feature-flag changes; run remote destructive tests; claim A1 solves F9/F8 or approve regulatory recency. No secrets, real user flights or GPS. The approval applies to design and bounded work-branch implementation, not to privileged production actions.
+
+**ONE NEXT STEP:** independently verify a safe **A1-specific** isolated PG16 collision/rollback acceptance harness at a frozen candidate SHA, before advancing to A2 audit provenance. No target is approved for destructive testing by this documentation alone.
