@@ -112,6 +112,25 @@
         "tests/v300-sidebar-polish.test.ts"
       ]
     },
+    "data-recovery-contract": {
+      "evidenceClass": "application-source-contract",
+      "coverage": "targeted",
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "test-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "tests": [
+        "tests/v381-data1e3-stored-recovery-guards.test.ts"
+      ]
+    },
     "development-pipeline": {
       "evidenceClass": "application-source-contract",
       "coverage": "targeted",
@@ -491,7 +510,8 @@
         "browser-ui"
       ],
       "testGroups": [
-        "ui-contract"
+        "ui-contract",
+        "data-recovery-contract"
       ],
       "gates": {
         "postgres": true,
