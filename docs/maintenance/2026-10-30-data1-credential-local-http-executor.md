@@ -1,6 +1,6 @@
 # DATA-1D — credential-local Neon HTTP stored gzip/Base64 test gate (2026-10-30)
 
-**Status: implemented as standalone test tooling on a stacked Draft; real Neon HTTP database execution NOT RUN.** Do not treat a test harness or offline PASS as storage transport proof.
+**Status: exact-source Node24 offline/complete application gates PASS; real Neon HTTP database execution NOT RUN.** Do not treat a test harness or offline PASS as storage transport proof.
 
 ## Contract / source
 
@@ -45,5 +45,19 @@ The tool is not an authorization to provision or delete a resource. A new dispos
 - Negative direct CLI run without DATABASE_URL refused with exit 1 and sanitized log, without attempting a database connection.
 - No actual HTTP INSERT/SELECT, full v13 signed backup, browser GET, complete typecheck/build/full suite/PG or verify:release:risk was executed for this test-tooling Draft.
 - No Neon project was provisioned in this slice; production DB/schema/flags unknown. No merge, deployment or Training change.
+
+
+## Broader candidate-bound source verification (2026-10-30, same executable/test SHA)
+
+The exact cloned source and executable test files remained at Git SHA b57b63a49615fc6eafad45d9c38818b8f704aa32; all commits after that source SHA on Draft #443 are documentation-only.
+
+- npm run scope:changed -- tooling/data1-neon-http-store-gate.mjs tooling/data1-neon-http-store-gate.test.mjs **PASS**: development-infrastructure; typecheck=true, full_tests=true, build=true; PostgreSQL=false, browser=false, scale=false; application-source-contract and development-pipeline selected.
+- npm ci --ignore-scripts --no-audit --no-fund **PASS**, Node24.22.1 isolated source clone.
+- npm run typecheck **PASS, exit 0**.
+- npm test **PASS 1,775/1,775, FAIL 0, SKIP 0, exit 0**.
+- npm run build **PASS, exit 0**. This is a build on the candidate source tree, NOT deployed runtime.
+- Independent synthetic random (no real account data) fixture profiler via makeSyntheticArchive in Node24: targets 1/4/12 MiB yielded raw 1,354,665 / 5,548,969 / 16,733,781 bytes; gzip level9 1,020,352 / 4,179,423 / 12,603,499 bytes; Base64 1,360,472 / 5,572,564 / 16,804,668 ASCII bytes. One isolated random run only; do NOT treat as provider throughput or vendor size limit.
+- The sandbox session sbx_tiQXvxVL7CEVZZipvrVoEI88Gt92 was stopped successfully and **independently read back STOPPED**, persistent=false; no Neon project or connection credential was created, read or used in this iteration. Original three Neon projects have not been altered.
+- Source/Node/typecheck/build are PASS only for tested SHA; standalone source files unchanged by later docs commits. Final SHA candidate-bound verify:release:risk evidence **NOT RUN**; real stored Neon HTTP INSERT/SELECT, signed-v13 app backup and browser GET **NOT RUN**; provider maximum **UNKNOWN**.
 
 **ONE NEXT STEP:** owner selects a secure local Node24 executor and obtains separate approval/provisions one fresh, independently empty disposable Neon project; run the two-stage gate and record measured HTTP wire payloads plus independently verified exact-ID cleanup before release consideration.
