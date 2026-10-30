@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — D-A2 Option 2 design-only owner approval; Draft #451 architecture prepared, independent review NOT RUN
+
+- Owner approved Option 2 solely as a direction to develop detailed provenance architecture. [Draft #451](https://github.com/filipto861/flytally-logbook/pull/451) work `docs/logbook-data1e3-d4-a2-provenance-model-20261030`, based #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, main `807f281e5870164b794d001480ecc84e0b45aea5`, executable unchanged `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. [New design](../maintenance/2026-10-30-data1e3-d4-a2-immutable-audit-provenance-architecture-v1.md) recommends separate append-only imported audit ledger; proposed v14 signed export and proposed v22 migration are **NOT AUTHORIZED/IMPLEMENTED**.
+- Critical dependencies: archived v13 has no global verified origin namespace; repeated snapshots ambiguous; v13 export/pre-sign omit imported ledger, so pre_restore safety backup would be incomplete unless export upgraded before importer. Immutable real native trigger history preserved, no broad audit DELETE, no silent identity rewrite. [Independent reviewer brief](../maintenance/2026-10-30-data1e3-d4-a2-provenance-model-independent-review-brief.md) ready; new specific design review **NOT RUN**.
+- Earlier A1 bounded actual local PG16 4/4 baseline + four real two-session races PASS only at `0891ae0fb5f1a1c99a6982f55e7f701411bee001`; full canonical/app restore NOT RUN. No application/schema/test/flag/Training changes, merge/deploy/remote DB, migrations. D4/A2 still BLOCKED. **ONE NEXT STEP:** independently review concrete Option 2 v14/v22 ledger proposal, reconcile before owner decides exact schema and implementation scope.
+
+
 ## 2026-10-30 — DeepSeek A2 audit reviewed/reconciled, owner D-A2 product choice pending
 
 - User provided 282-line read-only DeepSeek A2 review `APPROVE WITH CHANGES (DESIGN ONLY)` for executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Eight findings and original source independently reconciled in [D-A2 decision document](../maintenance/2026-10-30-data1e3-d4-a2-deepseek-review-reconciliation-and-decision.md). F9 broad DELETE proved by earlier synthetic source SQL; global BIGSERIAL archived same ID silent skip and preview same-owner ID-only match source-confirmed, full canonical/Neon/app runtime NOT RUN. Reviewer's “all nonempty targets fail” overstates (only actual collisions), and deleting real transaction-owned trigger events conflicts with owner-frozen retention; **not allowed**.
