@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T15:38:17.770Z — D4 A1 first owner PG16 baseline 3/4 FAIL; corrected strict AC-20 contract ready for new isolated run
+
+- [Draft #449](https://github.com/filipto861/flytally-logbook/pull/449) owner-local old SHA `5ac18ee02800b4cbb973ad4e0e561c9b1ce7b307`: Windows Node24.19/PG16.0.15, owned DB identity PASS, **3/4 PG baseline PASS (AC-20 second unplanned parent INSERT FAIL `flights_pkey`)**, new A1 four 2-session cases **NOT RUN**, PG stop/deletion **PASS as reported**, process exit 1, A1 DB gate FAIL/INCOMPLETE. Runner's prior `baselineStatus=NOT RUN` was inaccurate for this attempted baseline. [Evidence and resolution](../maintenance/2026-10-30-data1e3-d4-a1-first-owner-pg16-ac20-reconciliation.md).
+- Corrected existing AC20 in same tracked PostgreSQL test to assert that unexpected second low-level replay **rejects duplicate** while complete certified R1/R2, verifications, GPS, sharing evidence remains byte-equal; no removed crypto checks/test cases. Updated locked registry SHA `afa6035e85a4e86d1b549ea6b62723d3791d3948d6ef1524fd970249eed485f4` (still 4 tests), corrected baselineStatus FAIL recording, extended static test. Windows CI [#41082032731](https://github.com/filipto861/flytally-logbook/actions/runs/41082032731) source 4/4 + recovery 6/6 + registry + TS **PASS**, **no DB**; later docs-only SHA not retested. Temporary CI workflow removed. Main `807f281e5870164b794d001480ecc84e0b45aea5` unchanged; no prod/Neon/Training/flag/migration/merge/deploy.
+- **ONE NEXT STEP:** owner syncs to final #449 SHA and re-runs new bounded owned PG16 4-baseline+four A1 races, verifies process exit and cleanup; A2 remains HOLD until reliable A1 DB evidence.
+
+
 ## 2026-10-30T14:34:33.255Z — DATA-1E3 D4 A1 separate draft test harness #449 ready; local PG16 SQL NOT RUN
 
 - Owner A–D freeze unchanged. A1 implementation in Draft [#448](https://github.com/filipto861/flytally-logbook/pull/448) `55e3aac2f2a01c1670b0e1b238e45515e711b543`, A2–A4 not implemented, D2 limits open. New test-only [Draft #449](https://github.com/filipto861/flytally-logbook/pull/449) stacked on #448, work `test/logbook-data1e3-d4-a1-owned-pg16-20261030`. Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`. [One-time A1 physical PG16 runbook](../maintenance/2026-10-30-data1e3-d4-a1-pg16-two-session-runbook.md).
