@@ -27,7 +27,7 @@ test("D4 A1 two-session coverage",()=>{
  assert.ok(src.includes("[\"flight\",1003,false]"),"[\"flight\",1003,false]");
  assert.ok(src.includes("[\"fstd\",2003,false]"),"[\"fstd\",2003,false]");
  assert.ok(src.includes("racingSession(kind,ready,sqlAfter,rowId,certified)"),"racingSession(kind,ready,sqlAfter,rowId,certified)");
- assert.ok(src.includes("assert.equal(idVal(table,id),existing)"),"assert.equal(idVal(table,id),existing)");
- assert.ok(src.includes("assert.equal(auditState(),audits)"),"assert.equal(auditState(),audits)");
- assert.ok(src.includes("assert.equal(markerCount(),0)"),"assert.equal(markerCount(),0)");
+ assert.ok(src.includes("assert.equal(idVal(table,id),existing,"),"assert.equal(idVal(table,id),existing)");
+ assert.ok(src.includes("assert.equal(auditState(),audits,"),"assert.equal(auditState(),audits)");
+ assert.ok(src.includes("assert.equal(markerCount(),0,"),"assert.equal(markerCount(),0)");
 });
