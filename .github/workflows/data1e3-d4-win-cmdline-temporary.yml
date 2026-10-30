@@ -1,0 +1,40 @@
+name: DATA1E3 TEMP Windows Node24 PG process path strict match (NO DB)
+on:
+  push:
+    branches:
+      - test/logbook-data1e3-d4-one-local-pg16-20261030
+    paths:
+      - .github/workflows/data1e3-d4-win-cmdline-temporary.yml
+permissions:
+  contents: read
+jobs:
+  node24-no-db:
+    runs-on: windows-2022
+    timeout-minutes: 12
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: SHA, syntax checks and safety context
+        shell: pwsh
+        run: |
+          Write-Host ('EXACT_SHA=' + (git rev-parse HEAD))
+          Write-Host ('NODE=' + (node --version))
+          node --check tooling/data1e3-d4-win-process-path.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'path helper syntax failed' }
+          node --check tooling/data1e3-d4-win-process-path.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'path helper test syntax failed' }
+          node --check tooling/data1e3-d4-owned-local-pg16.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'D4 executor syntax failed' }
+      - name: Strict Windows PG process path and prior localhost gates (no DB)
+        shell: pwsh
+        run: |
+          node --test tooling/data1e3-d4-win-process-path.test.mjs tooling/data1e3-d4-pg-identity-contract.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'process identity regression failed' }
+      - name: Non DB guarantee
+        shell: pwsh
+        run: |
+          Write-Host 'NO INITDB, NO POSTGRES, NO SQL, NO RESTORE, NO DEPLOY'
