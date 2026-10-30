@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — N2-S V3 complete self-contained read-only review packet READY
+
+- Owner-approved **DESIGN-ONLY N2-S sidecar** and existing signed-v13 A, L1, R1, Option2 unchanged. [V3 exact design](../maintenance/2026-10-30-data1e3-d4-a2-v14-n2s-sidecar-review-contract-v3.md); [ZIP integrity ledger](../maintenance/2026-10-30-data1e3-d4-a2-n2s-complete-review-package-evidence.md). Conversation ZIP contains 23 full frozen source files from executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, exact historical V2 + current V3, original reviewer BLOCK, standalone review prompt, manifest: **29 entries**, **117511 bytes**, SHA256 `3aaea08e40780513f5a9dce9cdda88cced49e06c66b30d9353f53e0c39f4c4c5`, CRC+per-file SHA PASS. Previous missing-exact-doc/source package risk resolved for the new packet. Reviewer V3 **NOT RUN**.
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`, docs #451 pre-package checkpoint `fcbbbbdf2aaf02230b3ff053dc9fdabf9f4b52da` base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; verify resulting work SHA. Vercel READY older app SHA, production DB/schema/flags UNKNOWN. PG16 2-session/Neon HTTP/Node/TS/build/Playwright A2 NOT RUN. No SQL/DB/schema/migration/flags/merge/deploy/Training.
+- **ONE NEXT STEP:** send complete ZIP to independent DeepSeek/Claude read-only reviewer; reconcile new findings before asking for code/DDL permission.
+
 ## 2026-10-30 — owner approves N2-S sidecar (DESIGN ONLY), review V3 in progress
 
 - Owner `souhlasim` approved **N2-S mapping in separate sidecar**, instead of mutating `flight_audit_log`. Stable UUID for new native events requires atomic DB assignment; preexisting native events mapped by insert-only `migration_backfill` with separate provenance. Signed-v13 A, account-unattached L1, original imported ledger Option2, R1 verified-at-import-only preserved. [V3 candidate](../maintenance/2026-10-30-data1e3-d4-a2-v14-n2s-sidecar-review-contract-v3.md). Candidate v14 MVCC snapshot now **36 result sets**, not 35, due extra native sidecar section; NOT RUN. Prior DeepSeek **BLOCK DESIGN**, remains pending targeted exact-source re-review; V2 native-column candidate superseded as design direction.
