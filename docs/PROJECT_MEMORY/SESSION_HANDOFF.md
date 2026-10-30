@@ -1,5 +1,16 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-30T19:04:02.584Z — independent DeepSeek Option 2 review RECEIVED, source-reconciled; owner decision OPEN
+
+- **Source/scope:** user-uploaded `Vložený text(20261030-185957).txt` 193-line DeepSeek independent review `APPROVE WITH CHANGES — DESIGN ONLY`, 9 findings 2×P0 / 4×P1 / 3×P2. Reviewer used package with partially unavailable supplementary docs; lead verified full GitHub source where available. Owner **has not approved the new v13 policy** nor any DDL, code, migration, backup-version activation, flags, merge or production deploy.
+- **Repo/SHAs:** `filipto861/flytally-logbook`, `main@807f281e5870164b794d001480ecc84e0b45aea5`, executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, docs Draft PR #451 `docs/logbook-data1e3-d4-a2-provenance-model-20261030` pre-checkpoint HEAD `0d186fbbb73107d697d6340b41356971673d4cdb`, base PR #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Verify final HEAD after commit (never infer from prose).
+- **Docs work only:** [independent F-01..F-09 reconciliation](../maintenance/2026-10-30-data1e3-d4-a2-option2-deepseek-review-reconciliation.md), [one-page v13 cross-snapshot policy A/B/C](../maintenance/2026-10-30-data1e3-d4-a2-v13-cross-snapshot-policy-proposal.md), ROADMAP/ACTIVE_WORK/SESSION_HANDOFF. No runtime or SQL changes, no raw sensitive flight/GPS/credentials.
+- **Critical decision:** v13 signature proves whole snapshot digest, not source database identity. Recommend **A strict fail-closed for any overlapping sourceUser+sourceAuditId across different signed v13 digest**, including identical content; this prevents false merge but can block ordinary later snapshots. Need explicit owner decision A/B/C. Never equate source flight ID with destination flight. v14 signed both-ledger pre_restore and source fidelity remain hard gates; v12 signature nuance documented in reconciliation.
+- **Gates:** DeepSeek report RECEIVED, source read/reconciliation completed (no runtime claim); A2 PG16/Neon HTTP/Node/TS/build/browser NOT RUN; local A1 bounded PASS only at `0891ae0fb5f1a1c99a6982f55e7f701411bee001`. Production `fly-tally.com` READY older `55c8076e1eb8104c14392e15b272b33e0eb29607`, deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`; actual prod DB/schema/flags UNKNOWN. No DB/migration/restore/flag/merge/deploy/Training actions.
+- **DO NOT:** silently choose policy, implement, mutate native audit, declare P0 closed, access remote/production DB, change flag, merge/deploy or treat reviewer as release authority.
+- **ONE NEXT STEP:** obtain owner decision on v13 cross-snapshot policy A/B/C, then freeze smallest A2 contract milestone for design review before code.
+
+
 ## 2026-10-30T18:49:33.465Z — D4 A2 Option 2 DeepSeek package READY; independent reviewer pending
 
 - **Owner scope:** requested preparation of external DeepSeek ZIP only, continuing owner-approved Option 2 **design-only** direction. NO authorization for runtime/SQL/DDL/DB/migration/flag/merge/deploy. Exact repository `filipto861/flytally-logbook`; Training untouched.

@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — D4 A2 DeepSeek review reconciled; cross-snapshot owner choice OPEN
+
+- Independent external review uploaded by owner: `APPROVE WITH CHANGES — DESIGN ONLY`, **F-01..F-09** (P0×2, P1×4, P2×3). Reviewed lead against frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; no A2 runtime/DB executed. [Source reconciliation](../maintenance/2026-10-30-data1e3-d4-a2-option2-deepseek-review-reconciliation.md) and [one-page decision policy](../maintenance/2026-10-30-data1e3-d4-a2-v13-cross-snapshot-policy-proposal.md) drafted only on docs #451. Main `807f281e5870164b794d001480ecc84e0b45aea5`, PR451 pre-checkpoint `0d186fbbb73107d697d6340b41356971673d4cdb` base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; source exact SHA fixed.
+- **Owner decision pending:** Option A strict block of all v13 differing-digest same-source audit ID overlaps even byte-identical (recommended, safest but may block routine restores); alternatives B equal-content snapshot observation or C separate per-snapshot claims, each with identity/UX trade-offs. **Do not silently approve**. F-02 verified destination-flight link and P1 full v14 safety backup remain separate blockers.
+- Production `fly-tally.com` READY old build, DB/schema/flags UNKNOWN. No schema, migrations, SQL/runtime, tests, flags, merges/deploy or Training changes. A2 tests NOT RUN.
+- **ONE NEXT STEP:** owner selects v13 cross-snapshot policy A/B/C before detailed implementation-contract stage.
+
+
 ## 2026-10-30 — D4 A2 DeepSeek Option 2 review package ready (external review NOT RUN)
 
 - Owner requested source-bound external reviewer ZIP, delivered as conversation file (NOT Git-tracked binary). [Evidence](../maintenance/2026-10-30-data1e3-d4-a2-option2-deepseek-package-evidence.md): 182660 bytes, ZIP SHA-256 `382389005ca22c750c5d7725151c8f36b56153091e8e18cdacb4e54aa047cc25`, 16/16 unchanged exact executable sources at `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, six source volumes, new architecture/prompt/risk/20-test matrix. Main `807f281e5870164b794d001480ecc84e0b45aea5`, #451 docs pre-package `ef1a01581eee1f8782e56a17c4df94c1ec196e79` on #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`.
