@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T16:50:42.632Z — A2 independent review package built/verified; second AI report pending
+
+- Docs-only [Draft #450](https://github.com/filipto861/flytally-logbook/pull/450), base #449 at `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; main `807f281e5870164b794d001480ecc84e0b45aea5`. A1 previous owner isolated PG16 baseline4/4 plus 4 two-session SQL race cases PASS at executable `0891ae0fb5f1a1c99a6982f55e7f701411bee001`, not full canonical v21/app.
+- [Frozen A2 reviewer package and verified manifest](../maintenance/2026-10-30-data1e3-d4-a2-deepseek-source-package-evidence.md) from [Actions #41093177377](https://github.com/filipto861/flytally-logbook/actions/runs/41093177377) **PASS**: artifact 12994433879, ZIP SHA256 `ea5321b2045a509a4b36ff23861f74a43be4f63827ccf17fab417fc02dcdbcee`; 16/16 exact-source hash, 6 volumes, 25 archive files; packaging-only, no DB or runtime tests. New [review prompt](../maintenance/2026-10-30-data1e3-d4-a2-deepseek-review-prompt.md) froze source at #449 head. **DeepSeek independent report NOT RUN**; no reviewer conclusion fabricated.
+- A2 global PK/legacy IDs vs new audit trigger events and `auditFloor` deletion BLOCKED for implementation pending independent review and positive no-loss restore design. No A2 code/DB/migrations/flags/merge/deploy, Training untouched. Full release gates NOT RUN. **ONE NEXT STEP:** obtain external read-only review of A2 pack and reconcile before runtime patch.
+
+
 ## 2026-10-30T16:21:06.458Z — D4 A2 audit provenance discovery Draft #450, no SQL edits, reviewer needed
 
 - New docs-only [Draft #450](https://github.com/filipto861/flytally-logbook/pull/450) on `docs/logbook-data1e3-d4-a2-audit-provenance-20261030`, stacked over [#449](https://github.com/filipto861/flytally-logbook/pull/449) `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, canonical main `807f281e5870164b794d001480ecc84e0b45aea5`. A1 owner PG16 exact executable `0891ae0fb5f1a1c99a6982f55e7f701411bee001`: 4/4 existing PG baseline + four real two-session certified/draft flight/FSTD PASS, selected triggers/positive SQL/stop-disposal PASS as owner reported. Full canonical v21/app authenticated v13 NOT RUN.
