@@ -92,7 +92,7 @@ const stagedFstd=(row)=>({...row,certified_at:null,certified_by_user_id:null,cer
 const idVal=(table,id)=>apply("SELECT to_jsonb(t)::text FROM "+table+" t WHERE id="+id);
 const auditState=()=>apply("SELECT COALESCE(jsonb_agg(to_jsonb(a) ORDER BY a.id),'[]'::jsonb)::text FROM flight_audit_log a");
 const markerCount=()=>Number(apply("SELECT COUNT(*) FROM d4_a1_marker"));
-async function racingSession(kind,ready,sqlAfter){
+async function racingSession(kind,ready,sqlAfter,rowId,certified){
   const child=spawn("psql",["-d",urlString,"-X","-w","-qAt","-v","ON_ERROR_STOP=1"],{
     windowsHide:true,shell:false,env:process.env,stdio:["pipe","pipe","pipe"]});
   let stdout="",stderr="";
@@ -103,28 +103,37 @@ async function racingSession(kind,ready,sqlAfter){
   child.stdin.write("SET search_path TO "+schema+";\nBEGIN;\n"+
     "INSERT INTO d4_a1_marker(kind) VALUES("+quote(kind)+");\n"+
     "SELECT COUNT(*) FROM "+(kind==="flight"?"flights":"fstd_sessions")+
-    " WHERE id="+(kind==="flight"?1001:2001)+";\n"+
+    " WHERE id="+rowId+";\n"+
     "SELECT "+quote(ready)+";\n");
   const deadline=Date.now()+12000;
   while(!stdout.includes(ready)){
     if(child.exitCode!==null||Date.now()>deadline)throw Error("Session A preview barrier did not complete");
     await new Promise(r=>setTimeout(r,50));
   }
-  // A genuine independent database session commits the same ID AFTER A checked absence.
-  if(kind==="flight")apply("INSERT INTO flights(id,user_id,date,registration,departure,arrival,off_block,aircraft_make,aircraft_model,aircraft_variant,certified_at,certified_by_user_id,certification_hash,certification_version,locked_at,locked_by_user_id,record_revision) VALUES (1001,7,'2026-10-30','OK-SYN','LKPR','LKVO','12:00','Original','A1','Before','2026-10-30T12:20:00Z',7,'EXISTING_FLIGHT',3,'2026-10-30T12:20:00Z',7,1)");
-  else apply("INSERT INTO fstd_sessions(id,user_id,session_date,device_type,qualification_number,instruction,total_minutes,certified_at,certified_by_user_id,certification_hash,certification_version,record_revision) VALUES (2001,7,'2026-10-30','Synthetic FSTD','TEST','Training',60,'2026-10-30T12:20:00Z',7,'EXISTING_FSTD',3,1)");
+  // Session B commits a certified/locked OR unprotected draft identity, depending
+  // on the case. Draft paths prove strict INSERT is not only relying on triggers.
   const table=kind==="flight"?"flights":"fstd_sessions";
-  const id=kind==="flight"?1001:2001;
+  const existingRow=kind==="flight"?flightRow(rowId,"EXISTING_FLIGHT"):
+    fstdRow(rowId,"EXISTING_FSTD");
+  if(!certified){
+    existingRow.certified_at=null;
+    existingRow.certified_by_user_id=null;
+    existingRow.certification_hash="DRAFT_ORIGINAL";
+    if(kind==="flight"){existingRow.locked_at=null;existingRow.locked_by_user_id=null;}
+  }
+  apply("INSERT INTO "+table+" SELECT (json_populate_record(NULL::"+table+",item)).* FROM "+
+    "json_array_elements("+quote(JSON.stringify([existingRow]))+"::json) items(item)");
+  const id=rowId;
   const existing=idVal(table,id),audits=auditState(),markers=markerCount();
   assert.equal(markers,0,"uncommitted A marker is invisible in session B");
   child.stdin.end(sqlAfter+"\nCOMMIT;\n");
   const code=await Promise.race([completed,new Promise((_,reject)=>setTimeout(()=>reject(Error("Session A timeout")),15000))]);
   assert.notEqual(code,0,"A1 must fail close on concurrent same-ID insert");
   assert.match(stderr,/duplicate key|unique constraint/i,"expected actual PostgreSQL key collision");
-  assert.equal(idVal(table,id),existing,"pre-existing certified record must remain byte-identical");
+  assert.equal(idVal(table,id),existing,"pre-existing record must remain byte-identical");
   assert.equal(auditState(),audits,"independent audit must survive the rejected A1 transaction");
   assert.equal(markerCount(),0,"all preceding changes in failed A transaction must roll back");
-  return {kind,duplicateRejected:true,existingUnchanged:true,auditUnchanged:true,rolledBack:true};
+  return {kind,certified,duplicateRejected:true,existingUnchanged:true,auditUnchanged:true,rolledBack:true};
 }
 let schemaCreated=false;
 try{
@@ -141,14 +150,17 @@ try{
   const triggers=JSON.parse(apply("SELECT json_agg(tgname ORDER BY tgname)::text FROM pg_trigger WHERE NOT tgisinternal"));
   assert.deepEqual(triggers,["trg_logbook_audit_flight_change","trg_logbook_protect_certified_fstd","trg_logbook_protect_locked_flight"]);
   console.log(JSON.stringify({phase:"D4_A1_SELECTED_SOURCE_TRIGGERS",status:"PASS",threeTriggers:true,fullCanonicalV21:false}));
-  const first=await racingSession("flight","A_PREVIEW_FLIGHT_READY",
-    batch(flightInsert,[stagedFlight(flightRow(1001,"ARCHIVED_FLIGHT"))])+";\n"+
-    batch(flightUpdate,[flightRow(1001,"ARCHIVED_FLIGHT")])+";");
-  console.log(JSON.stringify({phase:"D4_A1_FLIGHT_TWO_SESSION",status:"PASS",...first}));
-  const second=await racingSession("fstd","A_PREVIEW_FSTD_READY",
-    batch(fstdInsert,[stagedFstd(fstdRow(2001,"ARCHIVED_FSTD"))])+";\n"+
-    batch(fstdUpdate,[fstdRow(2001,"ARCHIVED_FSTD")])+";");
-  console.log(JSON.stringify({phase:"D4_A1_FSTD_TWO_SESSION",status:"PASS",...second}));
+  for(const [kind,id,certified] of [["flight",1001,true],["fstd",2001,true],
+    ["flight",1003,false],["fstd",2003,false]]){
+    const name="D4_A1_"+kind.toUpperCase()+"_"+(certified?"CERTIFIED":"DRAFT")+"_TWO_SESSION";
+    const row=kind==="flight"?flightRow(id,"ARCHIVED_FLIGHT"):fstdRow(id,"ARCHIVED_FSTD");
+    const staged=kind==="flight"?stagedFlight(row):stagedFstd(row);
+    const insert=kind==="flight"?flightInsert:fstdInsert;
+    const update=kind==="flight"?flightUpdate:fstdUpdate;
+    const result=await racingSession(kind,name+"_READY",batch(insert,[staged])+";\n"+
+      batch(update,[row])+";",id,certified);
+    console.log(JSON.stringify({phase:name,status:"PASS",...result}));
+  }
   // Separate positive path: A1 still permits a genuinely new flight/FSTD and
   // executes the original post-stage update with active source-defined triggers.
   const goodFlight=flightRow(1002,"NEW_FLIGHT"),goodFstd=fstdRow(2002,"NEW_FSTD");
@@ -160,7 +172,7 @@ try{
   assert.equal(Number(apply("SELECT COUNT(*) FROM flight_audit_log WHERE flight_id=1002")),2);
   assert.equal(markerCount(),0);
   console.log(JSON.stringify({phase:"D4_A1_POSITIVE_SOURCE_SQL",status:"PASS",flightAndFstd:true,auditCreatedAndUpdated:true}));
-  console.log(JSON.stringify({phase:"D4_A1_TEST_COMPLETE",status:"PASS",twoRealSessions:true,
+  console.log(JSON.stringify({phase:"D4_A1_TEST_COMPLETE",status:"PASS",twoRealSessions:true,fourRaceCases:true,
     sourceSql:true,sourceDefinedTriggers:true,fullCanonicalV21:false,authenticatedAppRestore:false,
     auditFloorF9StillOpen:true,naturalKeyStillOpen:true,protectedChildStillOpen:true}));
 }catch(e){
