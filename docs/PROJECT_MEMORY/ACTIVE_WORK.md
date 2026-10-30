@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — owner approves N2-S sidecar (DESIGN ONLY), review V3 in progress
+
+- Owner `souhlasim` approved **N2-S mapping in separate sidecar**, instead of mutating `flight_audit_log`. Stable UUID for new native events requires atomic DB assignment; preexisting native events mapped by insert-only `migration_backfill` with separate provenance. Signed-v13 A, account-unattached L1, original imported ledger Option2, R1 verified-at-import-only preserved. [V3 candidate](../maintenance/2026-10-30-data1e3-d4-a2-v14-n2s-sidecar-review-contract-v3.md). Candidate v14 MVCC snapshot now **36 result sets**, not 35, due extra native sidecar section; NOT RUN. Prior DeepSeek **BLOCK DESIGN**, remains pending targeted exact-source re-review; V2 native-column candidate superseded as design direction.
+- Repo main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft PR #451 pre-N2S `a8d323e888f803609261f28c777d68ab6dc3ffad`, base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, reviewed executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Production READY prior SHA, prod DB/schema/flags UNKNOWN. No runtime/SQL/DB/migrations/flags/merge/deploy/Training. A2 tests NOT RUN.
+- **ONE NEXT STEP:** send completely self-contained exact-SHA V3/V2 + source package to independent reviewer; reconcile before implementation request.
+
 ## 2026-10-30 — reviewer BLOCK (4 P0, 5 P1, 3 P2); N2 sidecar alternative pending owner
 
 - Owner-uploaded independent v14 N2/R1 read-only review verdict BLOCK DESIGN. [12 finding source reconciliation](../maintenance/2026-10-30-data1e3-d4-a2-v14-independent-block-review-reconciliation.md): F01 packet full canonical V2 missing (though 16 source files correctly hash verified); F02/F09 native-column audit backfill unsafe vs preferred sidecar; F03/F07 F9 MAX+DELETE+unchecked ON CONFLICT confirmed; F04 clone, F05 R1 limit, F06/F08 complete v14 backup, F10/11 privacy/auth, F12 tests unrun. Reviewer unable to view exact sources in its context. No implementation ready. N2 stable native-event UUID owner direction remains, **sidecar mapping is proposal not yet approved**, no native audit mutation.

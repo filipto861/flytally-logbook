@@ -1,5 +1,7 @@
 # FlyTally D4 A2 — v14 N2/R1 contract for independent review (V2)
 
+**POST-V2 OWNER DECISION (2026-10-30):** After a targeted independent BLOCK review (F-01..F-12) and source reconciliation, the owner explicitly approved **N2-S sidecar mapping** in reply `souhlasim`. Earlier V2 native-column and 35-result layout are **historical candidate only**. Current [V3 N2-S contract](2026-10-30-data1e3-d4-a2-v14-n2s-sidecar-review-contract-v3.md) proposes native audit untouched and **36** candidate snapshot slots including native sidecar; no executable design or code/migration/deploy approved. The independent BLOCK verdict remains open.
+
 **2026-10-30 — DESIGN-ONLY REVIEW CANDIDATE; not executable or approved DDL.**
 
 Repository `filipto861/flytally-logbook`. Verified main `807f281e5870164b794d001480ecc84e0b45aea5`, executable A1 source `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1` in stacked Draft PR #449; Draft #451 parent `8a874a3f7c3488f15fb59cbdc10aa4c79fadaa6b` on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Actual PR #451 review HEAD must be checked after the docs checkpoint. Production Vercel READY previous build `55c8076e1eb8104c14392e15b272b33e0eb29607`; DB/schema/flags UNKNOWN.
