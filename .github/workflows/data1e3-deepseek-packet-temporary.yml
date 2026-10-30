@@ -183,4 +183,5 @@ jobs:
           name: FlyTally_DATA1E3_D4_DeepSeek_Frozen_Review
           path: packet/
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 30
