@@ -1,5 +1,5 @@
 name: DATA1 TEMPORARY Windows local HTTP wrapper acceptance
-# Attempt 2: deterministic marker-based fake-node negative exit test
+# Attempt 3: fake node exits on marker before other command parsing
 on:
   push:
     branches:
