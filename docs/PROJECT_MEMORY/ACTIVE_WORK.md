@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — D4 A2 DeepSeek Option 2 review package ready (external review NOT RUN)
+
+- Owner requested source-bound external reviewer ZIP, delivered as conversation file (NOT Git-tracked binary). [Evidence](../maintenance/2026-10-30-data1e3-d4-a2-option2-deepseek-package-evidence.md): 182545 bytes, ZIP SHA-256 `4c36bf06a23391b73aca01c8fa0aab6961b011686bb539bfa45f2b8a9e6cf819`, 16/16 unchanged exact executable sources at `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, six source volumes, new architecture/prompt/risk/20-test matrix. Main `807f281e5870164b794d001480ecc84e0b45aea5`, #451 docs pre-package `ef1a01581eee1f8782e56a17c4df94c1ec196e79` on #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`.
+- New canonical design docs and some additional source files linked at exact SHA but not byte-bundled; reviewer must explicitly mark inaccessible primary source UNVERIFIED. External reviewer verdict **NOT RUN**, A2 SQL/Neon/PG16 tests **NOT RUN**. No implementation/DDL/schema/flags/DB/merge/deploy/Training change.
+- **ONE NEXT STEP:** upload ZIP to independent DeepSeek, obtain complete design-only Markdown findings, reconcile before asking for any A2 runtime approval.
+
+
 ## 2026-10-30 — D4 A2 read-only review approved; internal source pre-review completed, external independent review NOT RUN
 
 - Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`; design Draft #451 original `406561bde68f9d2e6b073472146483fbd9545b5e`, base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. New [source pre-review](../maintenance/2026-10-30-data1e3-d4-a2-option2-source-pre-review.md), NOT an independent second-AI finding.
