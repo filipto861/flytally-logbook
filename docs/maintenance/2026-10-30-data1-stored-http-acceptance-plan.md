@@ -1,6 +1,6 @@
 # DATA-1D — stored gzip/Base64 HTTP acceptance protocol (2026-10-30)
 
-**Status: PLAN ONLY / HTTP stored INSERT+SELECT NOT RUN.** No application, schema, migration, test assertions, or production changes are authorized by this document.
+**Status: HTTP INSERT/SELECT NOT RUN; SQL-only synthetic persisted Base64 readback 3/3 PASS, with disposable project deleted and sandbox stopped.** See [actual separate evidence](2026-10-30-data1-synthetic-sql-storage-evidence.md). No application, schema, migration, test assertions, or production changes are authorized by this document.
 
 ## Exact source and observed baseline
 
@@ -9,7 +9,7 @@
 - Source `lib/db.ts` uses `@neondatabase/serverless` Neon HTTP client; actual installed version and Node runtime must be checked at execution from locked repo `package-lock.json` and environment, not inferred.
 - The backup GET route `app/api/backups/[id]/route.ts` requires an authenticated session and returns uncompressed JSON, a **separate HTTP/browser transfer** from Neon driver SQL HTTP.
 - Earlier verified synthetic `SELECT $1::text` **echo** at 1/4/12 MiB and repeatable-read 32-array snapshot did not persist anything; previous 32 PostgreSQL skips ran separately and passed at GitHub run #41017214910. No stored gzip/Base64 upload/download evidence exists.
-- Read-only Neon `list_projects` at preparation found only **Logbook Shadow, FlyTally Training Production and FlyTally Training Acceptance**. None is authorized as an empty disposable DATA-1 write target.
+- Before execution, only **Logbook Shadow, FlyTally Training Production and FlyTally Training Acceptance** existed. Owner approved one new empty synthetic Neon project; it was created, used for SQL-only 1/4/12 MiB tests and **deleted**. A subsequent project listing again showed exactly those original three projects. No disposable project remains.
 
 ## Before any cloud write — mandatory environment preflight
 
@@ -48,11 +48,13 @@ Measurements must distinguish DB-driver HTTP **request** and **response** bodies
 | Current main, #441 SHA/base and source inspection | PASS (GitHub read-only) |
 | Prior 32 historical PostgreSQL SKIPs | PASS 32/32 in four separate scoped jobs, prior SHA |
 | Prior nonpersistent HTTP echo up to 12 MiB | PASS at prior sandbox/test project, **not stored** |
-| Current available isolated empty Neon project | **NONE VERIFIED** |
-| New stored gzip/Base64 Neon HTTP INSERT/SELECT | **NOT RUN** |
+| Current available isolated empty Neon project | **NONE: previous test project deleted, three originals preserved** |
+| Server-generated Base64 storage + SQL readback | **PASS 3/3 at 1/4/12 MiB, NOT HTTP full-payload transport** |
+| New stored gzip/Base64 Neon HTTP INSERT/SELECT | **NOT RUN — credential handoff to sandbox blocked; no driver SQL** |
 | 50 MiB archive HTTP boundary / vendor maximum | **UNKNOWN / NOT RUN** |
 | Full signed backup + authenticated HTTP GET | **NOT RUN** |
 | Exact new-candidate `verify:release:risk` | **NOT RUN** |
+| Isolated project deletion + sandbox stop + three originals preserved | **PASS** |
 | Production DB/schema/flags | **UNKNOWN** (no access or mutation) |
 | Merge, deployment, Training changes | **NOT DONE** |
 
