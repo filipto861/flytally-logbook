@@ -2,6 +2,8 @@
 
 **Received:** 2026-10-30, owner-uploaded plain-text independent review `Vložený text(20261030-185957).txt` (193 physical lines / report 9 findings F-01..F-09). **Review verdict quoted:** `APPROVE WITH CHANGES — DESIGN ONLY`. Independent review was performed by DeepSeek as reported in the user-provided document, not by this agent. The reviewer explicitly had a partial bundle and **did not** access canonical GitHub files or run tests. The lead independently inspected full source files at the frozen executable SHA; findings below distinguish implemented facts and design risks. The raw review exists in the current conversation upload; it is **not embedded in this repository**. Source text provided by the user is evidence of a review, *not* execution evidence.
 
+**Later owner decision (2026-10-30):** owner explicitly selected **A** for signed-v13 cross-snapshot collision behavior **at DESIGN-ONLY scope**. Mentions of “owner choice OPEN” in the dated DeepSeek reconciliation below describe the earlier review point; they do not supersede the new decision. Remaining D4 A2 findings and owner choices remain OPEN. The user's single-user assumption is not verified evidence that stored backups are absent. See [owner policy A](2026-10-30-data1e3-d4-a2-v13-cross-snapshot-policy-proposal.md).
+
 ## Exact evidence and decision boundary
 
 - Repo: `filipto861/flytally-logbook`; main `807f281e5870164b794d001480ecc84e0b45aea5`, confirmed today; executable candidate `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1` via stacked #449, still **NOT merged**.

@@ -1,12 +1,16 @@
 # DATA-1E3 D4 A2 — v13 cross-snapshot identity and deduplication policy
 
-**Status: DRAFT / OWNER DECISION REQUIRED — DESIGN ONLY.** Proposed following independent DeepSeek review `APPROVE WITH CHANGES` on 2026-10-30. This is not an approved schema, deployed behavior, migration, release, or verification result. Existing signed v13 files remain immutable and must not be re-signed.
+**Status: OWNER-APPROVED OPTION A — DESIGN POLICY ONLY (2026-10-30).** The owner explicitly selected A after independent DeepSeek review. A is a rule for signed-v13 cross-snapshot overlap, **not** approval for DDL, migration, runtime changes, v14 rollout, flags, merge or deploy. The owner expects no old backups because the app is used alone; actual stored-backup inventory is **UNVERIFIED**, so no backup may be silently assumed absent, purged or rewritten. Signed v13 files remain immutable and must not be re-signed.
+
+## Single-user operational context (not verified absence of archives)
+
+The owner's expectation that there are no old backups is context, **not a database inventory**. Current code (`lib/backup-center.ts:29-53`) can create `automatic`, `manual` and `pre_restore` stored backups; actual presence of any prior archive has not been checked. Never delete them or relax compatibility based on an assumption. Safe forward-looking v14 provenance remains a separate requirement.
 
 ## Problem / proof limit
 
 v13 signed backup authenticator binds `purpose + signatureVersion + backupVersion + sourceUserId + SHA256(JSON.stringify(payload))` (`lib/backup-authenticity.ts:7-19` and `lib/portable-backup.ts:248-254`). It **does not sign a source database instance identity**. Therefore `source_user_id + source_audit_id`, even with matching `event_fingerprint`, cannot establish that records from two **different** backup digests represent one genuine event. Clones, sequence resets and distinct database identities remain indistinguishable. Equivalence cannot be inferred from identical content.
 
-### Recommended safety-first rule
+### Approved v13 safety-first rule (DESIGN ONLY)
 
 - **Origin namespace for v13** = `signed-v13:<sourceUserId>:<fullVerifiedPayloadDigest>` as an *observation/snapshot namespace*, not an issuer or database-instance proof. Namespace generated on server after positive signature validation and account authorization; never client-assigned.
 - **Original source data immutable:** preserve full original `source_audit_id`, `source_flight_id`, actor/action/timestamps/old/new JSON and source user evidence, without rewriting native audit IDs. `local_id` is only destination storage identity.
@@ -33,18 +37,18 @@ v13 signed backup authenticator binds `purpose + signatureVersion + backupVersio
 | Source `flight_id` equals unrelated target flight | NO LINK | Archive preserved as unattached history |
 | Two concurrent sessions: same/different event | Single atomic DB reconciliation | Insert/identical/rollback counts only after commit |
 
-## Product choice and trade-off (NOT DECIDED)
+## Product choice — A APPROVED for v13; alternatives retained as historical trade-offs
 
-**A — Recommended strict:** block **all** overlapping claims across different signed-v13 digests, even identical event payloads. **Protects genuine independent events and provenance**, but may block routine incremental restore of a later snapshot of the same account because most snapshots overlap. Safe as an initial constrained migration/recovery contract, not necessarily sufficient user experience long term.
+**A — Owner approved (design only):** block **all** overlapping claims across different signed-v13 digests, even identical event payloads. **Protects genuine independent events and provenance**, but may block routine incremental restore of a later snapshot of the same account because most snapshots overlap. Safe as an initial constrained migration/recovery contract, not necessarily sufficient user experience long term.
 
 **B — Equal-content evidence-only dedup:** if cross-snapshot content matches, append another signed snapshot observation while showing one canonical event. More usable, but implicitly treats matching events as one display event **without authenticated source-instance identity**; requires explicitly weaker claim and proof of how independent cloned events remain visible. **Not recommended without a stronger identity mechanism and owner acceptance of this trade-off.**
 
 **C — Snapshot-scoped rows, duplicate claims shown separately:** preserves every observation and minimizes conflation but may display apparent duplicates and violates an ordinary expectation of one historical event. Needs explicit presentation and regulatory-evidence policy, not recommended as silent default.
 
-**Owner approval needed for first decision:** choose **A / B / C** for v13 cross-snapshot overlaps. Approval of a policy is **only a DESIGN decision**, not permission to implement/release. Other open owner decisions: destination-flight link strategy; exact event-byte retention and privacy; v14 installation/clone lineage; audited erasure. These are deferred, not automatically approved by choosing A.
+**Owner chose A for signed v13.** B/C are recorded but not selected. The policy decision does **not** authorize implementation/release or automatically resolve destination-flight association, exact event-byte retention and privacy, v14 installation/clone lineage, or audited erasure. These remain owner/architecture gates.
 
 **Acceptance gates to add:** DeepSeek A2-P21 two distinct signed snapshots with identical/different overlapping IDs; A2-P22 DB-level append-only/tenant authorization/cursor merging and unrelated destination-flight ID. All new A2 tests **NOT RUN**.
 
 **DO NOT:** treat backup digest as issuer identity; merge equal source IDs silently; ignore genuine independent native events; mutate prod database; claim A2 DONE before source-backed PG16/Neon test and separate owner approval.
 
-**ONE NEXT STEP:** owner selects v13 cross-snapshot policy option A/B/C; freeze exact contract and smallest acceptance milestone before any DDL/application changes.
+**ONE NEXT STEP:** prepare bounded **A2-CONTRACT design** incorporating owner-approved v13 policy A and explicit verified destination-flight links and complete v14 safety-backup/clone proof; obtain separate owner decision before code or schema changes.

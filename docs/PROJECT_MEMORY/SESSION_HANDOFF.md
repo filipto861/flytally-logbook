@@ -1,5 +1,15 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-30T19:09:34.857Z — signed-v13 cross-snapshot Option A OWNER APPROVED (DESIGN ONLY)
+
+- Owner explicitly said: “stare zalohy nebudou existovat kdyz to pouzivam jen ja... takze souhlasim s A”. Scope: signed-v13 different-digest same `source_user_id + source_audit_id` => strict fail closed **even if byte-identical**; exact signed digest replay idempotent only after complete event equality. **Do not interpret as implementation, DDL/schema, migration, new backup format, flag, merge, deploy, backup cleanup or remote DB permission**. Prior DeepSeek read-only report `APPROVE WITH CHANGES — DESIGN ONLY` and 9 findings remain attached to frozen executable.
+- Current GitHub verified `main@807f281e5870164b794d001480ecc84e0b45aea5`; Draft PR #451 work `docs/logbook-data1e3-d4-a2-provenance-model-20261030` pre-checkpoint `654ab95aef67c15bf53e2b82a99e4f63881c9a71`, base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; actual reviewed executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; verify final work full SHA/readback after committing. Vercel production `fly-tally.com` deployment `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` READY on earlier app SHA `55c8076e1eb8104c14392e15b272b33e0eb29607`. Actual prod DB/schema/flags UNKNOWN.
+- Affected files **docs only**: `ROADMAP.md`, `docs/PROJECT_MEMORY/{ACTIVE_WORK,SESSION_HANDOFF}.md`, `docs/maintenance/2026-10-30-data1e3-d4-a2-{v13-cross-snapshot-policy-proposal,immutable-audit-provenance-architecture-v1,option2-deepseek-review-reconciliation}.md`. F-01 policy chosen but **not implemented/tested**; remaining F-02 source→destination flight verified association, raw evidence/privacy, v14 backup/clone lineage, immutable ledgers and legacy gates remain OPEN. No backups inspected/deleted; user's solo-use expectation of no prior backup is **UNVERIFIED**, supported storage behavior in `lib/backup-center.ts:29-53`.
+- Verification: GitHub content read / docs-only; A2 PostgreSQL16/Neon HTTP/Node/TypeScript/build/browser NOT RUN (N/A docs-only execution); previous narrow A1 local PG16 PASS belongs only to older SHA `0891ae0fb5f1a1c99a6982f55e7f701411bee001`. No DB/flags/schema/migration/remote/Training/merge/deploy action.
+- **DO NOT:** treat solo-user assumption as proof/no backup, delete/corrupt historic audit or downgrade authenticity; implement/merge/deploy before additional owner approval.
+- **ONE NEXT STEP:** design smallest A2-CONTRACT for safe link + full v14 signed backup/provenance gates, then request owner decision before code.
+
+
 ## 2026-10-30T19:04:02.584Z — independent DeepSeek Option 2 review RECEIVED, source-reconciled; owner decision OPEN
 
 - **Source/scope:** user-uploaded `Vložený text(20261030-185957).txt` 193-line DeepSeek independent review `APPROVE WITH CHANGES — DESIGN ONLY`, 9 findings 2×P0 / 4×P1 / 3×P2. Reviewer used package with partially unavailable supplementary docs; lead verified full GitHub source where available. Owner **has not approved the new v13 policy** nor any DDL, code, migration, backup-version activation, flags, merge or production deploy.

@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — D4 A2 owner chooses v13 policy A; next A2-CONTRACT design
+
+- **APPROVED, DESIGN ONLY:** strict fail-closed across different signed-v13 digests with overlapping `source_user_id + source_audit_id` **even if identical content**; exact-digest replay is idempotent only after full equality. The separate imported ledger is still a proposal, not deployed. [Decision record](../maintenance/2026-10-30-data1e3-d4-a2-v13-cross-snapshot-policy-proposal.md), [architecture](../maintenance/2026-10-30-data1e3-d4-a2-immutable-audit-provenance-architecture-v1.md).
+- Single-user “no historic backups” is user expectation, **not verified inventory**. Current app can create automatic/manual/pre_restore files; do not assume/deletе. Remaining gates: safe verified destination-flight link, v14 full signed backups and issuer/clone identity, DB immutability and concurrency. Main `807f281e5870164b794d001480ecc84e0b45aea5`, executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, docs #451 before checkpoint `654ab95aef67c15bf53e2b82a99e4f63881c9a71` on #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. New A2 tests NOT RUN; no code/DB/schema/flags/merge/deploy.
+- **ONE NEXT STEP:** prepare small A2-CONTRACT design for explicit owner review before any implementation.
+
+
 ## 2026-10-30 — D4 A2 DeepSeek review reconciled; cross-snapshot owner choice OPEN
 
 - Independent external review uploaded by owner: `APPROVE WITH CHANGES — DESIGN ONLY`, **F-01..F-09** (P0×2, P1×4, P2×3). Reviewed lead against frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; no A2 runtime/DB executed. [Source reconciliation](../maintenance/2026-10-30-data1e3-d4-a2-option2-deepseek-review-reconciliation.md) and [one-page decision policy](../maintenance/2026-10-30-data1e3-d4-a2-v13-cross-snapshot-policy-proposal.md) drafted only on docs #451. Main `807f281e5870164b794d001480ecc84e0b45aea5`, PR451 pre-checkpoint `0d186fbbb73107d697d6340b41356971673d4cdb` base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; source exact SHA fixed.
