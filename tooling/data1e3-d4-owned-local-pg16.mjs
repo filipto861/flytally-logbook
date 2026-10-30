@@ -122,7 +122,7 @@ async function main(){
   const binPath=path.dirname(binaries.psql),originalPath=env.Path??env.PATH??"";
   env.Path=binPath+path.delimiter+originalPath;env.PATH=env.Path;
   let startAttempted=false,stoppedVerified=false,initialVerified=false;
-  let testStatus="NOT RUN",failure=null,identity=null;
+  let testStatus="NOT RUN",baselineStatus="NOT RUN",securityStatus="NOT RUN",failure=null,identity=null;
   try{
     cmd(binaries.initdb,["-D",data,"-U",role,"-A","trust","--encoding=UTF8","--no-instructions"],
       {env,timeout:90000});
@@ -144,9 +144,24 @@ async function main(){
     if(test.stderr)process.stderr.write(test.stderr);
     if(test.error||test.signal||test.status!==0)throw Error("D4_BASELINE_INTEGRATION_FAILED exit="+
       test.status+" signal="+(test.signal??"none")+" error="+(test.error?.code??"none"));
-    testStatus="PASS";
+    baselineStatus="PASS";
     console.log(JSON.stringify({phase:"D4_BASELINE_SOURCE_SQL_RESTORE",result:"PASS",
-      note:"existing source-backed synthetic security restore integration only; D4 race/certification rewrite NOT tested"}));
+      note:"existing synthetic security/restore PostgreSQL tests; NOT full authenticated signed-v13 app restoration"}));
+    const risk=spawnSync(process.execPath,["tooling/data1e3-d4-source-sql-risk-probe.mjs"],{
+      cwd:repoRoot,env:{...env,DATABASE_URL:url,FLYTALLY_D4_LOCAL_PROBE:"1",
+        FLYTALLY_D4_OWNED_PGDATA:data},encoding:"utf8",shell:false,windowsHide:true,
+      timeout:120000,maxBuffer:4*1024*1024});
+    if(risk.stdout)process.stdout.write(risk.stdout);
+    if(risk.stderr)process.stderr.write(risk.stderr);
+    if(risk.error||risk.signal)throw Error("D4_SOURCE_SQL_PROBE_EXECUTION_ERROR");
+    if(risk.status===30){
+      securityStatus="FAIL";
+      testStatus="D4_SAFETY_FAIL";
+      failure="Actual source SQL reproduced synthetic F3/F9 conflict/audit hazard; fix required. Not a real application restore.";
+    }else if(risk.status===0){
+      securityStatus="PASS";
+      testStatus="PASS";
+    }else throw Error("D4_SOURCE_SQL_PROBE_UNVERIFIED exit="+risk.status);
   }catch(e){failure=e instanceof Error?e.message:String(e);testStatus="FAIL";
     console.error("D4_LOCAL_PG16_ERROR "+failure);
   }finally{
@@ -173,10 +188,10 @@ async function main(){
       process.exitCode=1;
     }
   }
-  console.log(JSON.stringify({phase:"D4_TEST_COMPLETE",testStatus,
+  console.log(JSON.stringify({phase:"D4_TEST_COMPLETE",testStatus,baselineStatus,securityStatus,
     isolation:initialVerified?"PASS":"NOT VERIFIED",cleanup:stoppedVerified?"STOPPED":"UNVERIFIED",
     sourceSha:expected,
-    note:"DO NOT claim actual concurrent signed-v13 application restore PASS"}));
+    note:"Source SQL interleaving is not actual two-session, authenticated signed-v13 application restore"}));
   if(failure)process.exitCode=1;
 }
 main().catch(e=>{console.error("D4_LOCAL_PG16_NOT_RUN "+String(e instanceof Error?e.message:e));process.exitCode=2});
