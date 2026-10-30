@@ -112,11 +112,11 @@ async function preflight(sql, target) {
   return row;
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+export async function runGate({ argv = process.argv.slice(2), env = process.env, fetchImpl = fetch } = {}) {
+  const args = parseArgs(argv);
   if (Number(process.versions.node.split(".")[0]) !== 24)
     throw new Error("Node 24 required; no fallback to another runtime.");
-  const target = checkTarget(process.env);
+  const target = checkTarget(env);
   const versionInfo = JSON.parse(readFileSync(
     new URL("../node_modules/@neondatabase/serverless/package.json", import.meta.url), "utf8"));
   if (versionInfo.version !== EXPECTED_DRIVER_VERSION)
@@ -128,13 +128,13 @@ async function main() {
     const started = performance.now();
     const requestBytes = typeof init?.body === "string"
       ? Buffer.byteLength(init.body, "utf8") : null;
-    const response = await fetch(input, init);
+    const response = await fetchImpl(input, init);
     const resultBytes = (await response.clone().arrayBuffer()).byteLength;
     transport.push({ status: response.status, requestBytes, responseBytes: resultBytes,
       ms: Math.round(performance.now() - started) });
     return response;
   };
-  const sql = neon(process.env.DATABASE_URL, { fullResults: false, arrayMode: false });
+  const sql = neon(env.DATABASE_URL, { fullResults: false, arrayMode: false });
   const initial = await preflight(sql, target);
   const confirm = makeProbeToken(target, initial);
   if (args.mode === "probe") {
@@ -145,7 +145,7 @@ async function main() {
       warning: "Project/branch IDs were operator-provided, NOT proven by SQL. Independently verify Neon console before --execute." }));
     return;
   }
-  if (args.confirm !== confirm || process.env.DATA1_ALLOW_TEST_WRITES !== "YES_DISPOSABLE_ONLY")
+  if (args.confirm !== confirm || env.DATA1_ALLOW_TEST_WRITES !== "YES_DISPOSABLE_ONLY")
     throw new Error("Write authorization or probe confirmation mismatch; NO WRITE.");
   console.log(JSON.stringify({phase:"EXECUTION_PREFLIGHT",status:"PASS",
     projectId:target.id,branchId:target.branch,db:target.db,pgVersion:initial.pg_version}));
@@ -184,7 +184,7 @@ async function main() {
     requiredCleanup:"DELETE ONLY positively verified newly-created test project outside this tool"}));
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch(error => {
+  runGate().catch(error => {
     // Never emit driver errors: they can include SQL, credentials or payloads.
     console.error(JSON.stringify({phase:"FAILED",errorClass:String(error?.name || "Error"),
       safeCode:"DATA1_HTTP_GATE_STOPPED",message:"No further tests; inspect sanitized checkpoint."}));
