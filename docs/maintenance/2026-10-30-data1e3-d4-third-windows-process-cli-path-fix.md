@@ -1,0 +1,29 @@
+# DATA-1E3 D4 — third owner-local PG16 preflight stopped on Win32 process command-line path
+
+**Checkpoint (UTC):** 2026-10-30T11:50:47.590Z  
+**Status:** owner-run physical PID/executable check reached but **failed the command-line data directory assertion**, before validated isolated PG16 identity, security baseline, SQL source probe, or signed-v13 HTTP restore. **NOT RUN** all restore/security SQL. Source-only Windows Node24 tests 9/9 PASS for a strict path-normalization candidate. No production merge/deploy/migration/feature-flag changes.
+
+## Owner-supplied exact runtime evidence
+
+- Clean local Windows PowerShell checkout fast-forward `7a2ffaaec4d9c3812d3a0c74071d714aa034895d` → `a0923434cdd8af0181864bd942eb3a55cac48ac0`; HEAD equality checked. Win32 Node.js `v24.19.0`; native `C:\Program Files\PostgreSQL\16\bin`.
+- `--probe` **PASS** (only repository SHA/OS/Node24/native binaries preflight; **no connection**).
+- `--execute --allow-synthetic-writes --confirm=DATA1E3-LOCAL-ONLY` stopped with exact reported error **`D4_LOCAL_PG16_ERROR PostgreSQL command line does not point at newly-owned data dir`** at `physicalPid()` on `tooling/data1e3-d4-owned-local-pg16.mjs`; this followed the SQL address normalization fix. A locally started PostgreSQL server and matching database identity progressed as far as OS process command-line check, **but full identity did not PASS**.
+- `D4_LOCAL_PG16_DISPOSAL status=PASS, onlyOwnedTempDirectory=true, postgresStopped=true` was emitted by the owner-local tool. That is evidence of its internal stop/sentinel cleanup report, **not independently inspected local OS state**.
+- Final `D4_TEST_COMPLETE` **`testStatus=FAIL, baselineStatus=NOT RUN, securityStatus=NOT RUN, isolation=NOT VERIFIED, cleanup=STOPPED`**, exact source SHA above, PowerShell exit `1`. **No F3 flight/FSTD or F9 audit outcome**, not an application backup restore attempt.
+
+## Source-backed diagnosis, bounded fix, uncertainty
+
+- Old `physicalPid()` validates the PID read from `postmaster.pid` with Windows `Win32_Process` ProcessId and actual `ExecutablePath`, then naively requires `String(obj.CommandLine).toLowerCase().includes(data.toLowerCase())`. SQL separately verifies exact loopback/port/db/user/PG16/`data_directory`, and file `postmaster.pid` verifies data dir and port. The raw command-line comparison is sensitive to Windows **backslash vs forward slash**, a likely explanation, **not confirmed without owner process raw command line**. The raw command line/path is intentionally NOT requested or logged (contains local profile PII).
+- Added pure `tooling/data1e3-d4-win-process-path.mjs` path matcher: Windows-native `path.win32.normalize` for the expected data dir, slash/case/Unicode normalization for the `Win32_Process.CommandLine` string, and exact path-boundary check that **rejects wrong/prefix/partial/missing directory**. `physicalPid()` now calls this instead of raw `.includes(data)`; all other PID/executable, local SQL identity, version, port, process data directory, stop+sentinel disposal gates stay unchanged.
+- Added a safe fail-closed diagnostic **only if the commandline still does not contain the exact owned path**: `D4_PG_CMDLINE_FORMAT_DIAGNOSTIC` reports only booleans `commandLineAvailable,containsDashD,hasForwardSlash,hasBackslash,failClosed`. It does **not** print full commandline, user names, paths, SQL URI, secret or flight data. If validation remains ambiguous, **STOP** and review safe flags; no shortcut to a pre-existing local PG or remote Neon.
+- Tests in `tooling/data1e3-d4-win-process-path.test.mjs` cover synthetic native/mixed/forward slash, Windows case and Unicode, wrong/path-prefix traps, missing commandline and unchanged PID/SQL/cleanup source assertions.
+- **Windows 2022 GitHub hosted Node v24.22.1 [Actions #41050518995](https://github.com/filipto861/flytally-logbook/actions/runs/41050518995)** at exact SHA `a600414a8f4b6433460a631a17de3632ae65507a`: first no-DB matcher suite **9/9 PASS**.
+- **Retest with safe diagnostic [Actions #41050835559](https://github.com/filipto861/flytally-logbook/actions/runs/41050835559)** at exact SHA `f96d859ad9e5d79c8379d499ccebc7793faecb1c`: syntax PASS and **9/9 targeted PASS, 0 FAIL**. Both hosted checks **did not create PG16, execute SQL, or restore**. Temporary CI workflow deleted after PASS at `20ec5939934c31b6fed28c8dbcd66584728f63fa`.
+
+## State and constraints
+
+- Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, work Draft [PR #446](https://github.com/filipto861/flytally-logbook/pull/446), branch `test/logbook-data1e3-d4-one-local-pg16-20261030`, base Draft #445 `d77deeb2dfb0c9312adf3fe6e2cce0d2471f5e86`, stacked on #444/#443. Nothing merged.
+- Only **tooling/tests/docs** changed, not `lib/account-restore-v6.ts`, app, auth, SQL schema, migrations, production flags, Training or deployment.
+- Actual corrected owner-local PG16 identity **NOT RUN**; existing postgres-security baseline **NOT RUN**; F3/FSTD/F9 synthetic interleaving **NOT RUN**; authenticated signed-v13 application GET/restore and two-session races **NOT RUN**; D2 size limit **NOT IMPLEMENTED**, D4 SQL safety fix **NOT IMPLEMENTED**, DATA-1 **NOT RELEASE-READY**.
+- Provider inventory currently only original Logbook Shadow, Training Production and Training Acceptance; no cloud test project created. Live Vercel production prior SHA `55c8076e1eb8104c14392e15b272b33e0eb29607` READY. Production schema/flags **UNKNOWN**.
+- **ONE NEXT STEP:** owner clean-fast-forwards the existing local Windows clone to final verified PR #446 full SHA; runs read-only Probe then **explicitly** a new one-time isolated disposable Execute. If command-line proof still fails, send sanitized `D4_PG_CMDLINE_FORMAT_DIAGNOSTIC` boolean fields, never full OS command line, credentials or flight/GPS data.
