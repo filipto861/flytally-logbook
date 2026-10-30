@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — L1 approved, D4 A2 v14 provenance design drafted; N2/R1 owner choice OPEN
+
+- Owner explicitly accepted **L1**, account-scoped imported audit **UNATTACHED** first; previously approved signed-v13 cross-snapshot A unchanged. [New v14 design V1](../maintenance/2026-10-30-data1e3-d4-a2-v14-provenance-contract-v1.md) source-maps 32-result old v13 snapshot, signer/restore, immutable ledger/clone limitations and all backup surfaces; no v14 executable code exists. Proposed **N2** native per-event UID additive/history migration-time-assignment (not approved) and **R1** source JSONB+canonical hash, import-time verified membership claim only (not approved). Proposes strict L1 empty link section, fail-closed post-write backup rollback.
+- Exact source: main `807f281e5870164b794d001480ecc84e0b45aea5`; Draft #451 pre-v14 `401d61b1a549e5400f93d8b79ece2ef35b2569d8` stacked on #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; reviewed executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; Vercel production earlier READY; DB/schema/flags UNKNOWN. All A2-V14-01..12 **NOT RUN**, no source/DB/migration/flags/deploy/merge/Training.
+- **ONE NEXT STEP:** owner chooses design-only N2+R1 or alternative; one targeted review needed for materially new UID/retention contract before implementation.
+
+
 ## 2026-10-30 — D4 A2-CONTRACT V1 drafted, L1/L2 owner product choice OPEN
 
 - Docs-only [source-bound contract](../maintenance/2026-10-30-data1e3-d4-a2-contract-v1.md) proposes initial **L1 account-level unattached imported audit** (recommended) vs **L2 verified only same-atomic-restore-created link**, strict v14 native/imported dual-ledger signed snapshots across all backup paths, clone safety, immutable event/source identity and PG16/Neon acceptance. The signed-v13 cross-snapshot **Option A is already owner-approved as design policy**; DO NOT reopen as undecided.
