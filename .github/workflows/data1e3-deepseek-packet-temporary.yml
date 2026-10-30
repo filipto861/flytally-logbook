@@ -46,7 +46,12 @@ jobs:
               return subprocess.check_output(['git','-C',str(folder),*args],text=True).strip()
           assert git_at(SOURCE,'rev-parse','HEAD')==SOURCE_SHA,'Source checkout SHA mismatch'
           assert git_at(REVIEW,'rev-parse','HEAD')==REVIEW_SHA,'Review checkout SHA mismatch'
-          delta=git_at(REVIEW,'diff','--name-only',SOURCE_SHA,REVIEW_SHA).splitlines()
+          def blob_tree(folder):
+              lines=git_at(folder,'ls-tree','-r','--full-tree','HEAD').splitlines()
+              return {line.split('\t',1)[1]:line.split('\t',1)[0].split()[2] for line in lines}
+          old_tree=blob_tree(SOURCE)
+          new_tree=blob_tree(REVIEW)
+          delta=sorted(p for p in set(old_tree)|set(new_tree) if old_tree.get(p)!=new_tree.get(p))
           allowed={'ROADMAP.md','docs/PROJECT_MEMORY/ACTIVE_WORK.md','docs/PROJECT_MEMORY/SESSION_HANDOFF.md',
           'docs/maintenance/2026-10-30-data1e3-d4-confirmed-synthetic-sql-evidence.md',
           'docs/maintenance/2026-10-30-data1e3-d4-fail-closed-hardening-design.md',
