@@ -62,7 +62,7 @@ if "%~3"=="--probe" (
 if "%~3"=="--execute" (
   if not "%~4"=="--confirm=aaaaaaaaaaaaaaaaaaaa" exit /b 29
   if not "%DATA1_ALLOW_TEST_WRITES%"=="YES_DISPOSABLE_ONLY" exit /b 30
-  if "%DATA1_MOCK_FAIL%"=="1" exit /b 31
+  if exist "%~dp0fail.flag" exit /b 31
   exit /b 0
 )
 exit /b 32
@@ -90,14 +90,15 @@ exit /b 32
     if ($global:readHostCalls -ne 3) { throw 'Execute must prompt for confirmation and hidden URI' }
     Write-Host 'WIN-EXECUTE: PASS (fake node, no network, cleaned environment)'
 
-    $env:DATA1_MOCK_FAIL = '1'
+    $failFlag = Join-Path $mockDirectory 'fail.flag'
+    [IO.File]::WriteAllText($failFlag, '1', [Text.Encoding]::ASCII)
     try {
         & $launcher -Mode Execute -ProjectId $project -BranchId $branch -ConfirmToken $token -AllowSyntheticWrites
         throw 'Expected fake node failure was not propagated'
     } catch {
         if ($_.Exception.Message -notmatch 'nonzero exit code: 31') { throw }
     } finally {
-        $env:DATA1_MOCK_FAIL = $null
+        Remove-Item -LiteralPath $failFlag -Force -ErrorAction SilentlyContinue
     }
     Assert-Cleared
     Write-Host 'WIN-FAILURE-CLEANUP: PASS'
@@ -117,7 +118,6 @@ exit /b 32
 } finally {
     $env:PATH = $originalPath
     $env:CI = $originalCI
-    $env:DATA1_MOCK_FAIL = $null
     Remove-Variable -Name readHostCalls -Scope Global -ErrorAction SilentlyContinue
     Remove-Variable -Name data1FakeUri -Scope Global -ErrorAction SilentlyContinue
     Remove-Item -Path Function:\Read-Host -Force -ErrorAction SilentlyContinue
