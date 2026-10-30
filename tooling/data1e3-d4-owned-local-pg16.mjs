@@ -8,6 +8,7 @@ import {tmpdir} from "node:os";
 import path from "node:path";
 import net from "node:net";
 import {fileURLToPath} from "node:url";
+import {commandLineContainsExactDataDirectory} from "./data1e3-d4-win-process-path.mjs";
 
 const repoRoot=fileURLToPath(new URL("../",import.meta.url));
 const branchRef="refs/remotes/origin/test/logbook-data1e3-d4-one-local-pg16-20261030";
@@ -67,8 +68,8 @@ function physicalPid(bins,pid,data){
   assert.equal(obj.ProcessId,pid,"PostgreSQL PID changed");
   assert.equal(normalizePath(obj.ExecutablePath),normalizePath(bins.postgres),
     "Unexpected postgres executable");
-  assert.ok(String(obj.CommandLine??"").toLowerCase().includes(data.toLowerCase()),
-    "PostgreSQL command line does not point at newly-owned data dir");
+  assert.ok(commandLineContainsExactDataDirectory(obj.CommandLine,data),
+    "PostgreSQL command line does not contain exact owned data dir after Windows path normalization (fail closed)");
 }
 function verifyIdentity(bins,pgEnv,url,data,port){
   const sql="SELECT row_to_json(t)::text FROM (SELECT current_database() AS db,"+
