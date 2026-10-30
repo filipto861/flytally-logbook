@@ -24,7 +24,7 @@ function sql(query){
   return String(r.stdout||"").trim();
 }
 const identity=JSON.parse(sql("SELECT row_to_json(t)::text FROM (SELECT current_database() AS db,"+
-  "current_user AS usr,inet_server_addr()::text AS addr,current_setting('server_version_num') AS version,"+
+  "current_user AS usr,host(inet_server_addr()) AS addr,current_setting('server_version_num') AS version,"+
   "current_setting('data_directory') AS data) t"));
 if(identity.db!=="data1e3_synthetic"||identity.usr!=="data1e3_owner"||
   identity.addr!=="127.0.0.1"||!/^16[0-9]{4}$/.test(identity.version)||
