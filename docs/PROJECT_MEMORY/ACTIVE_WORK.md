@@ -1,5 +1,14 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T09:01:50.558Z — DATA-1D isolated Neon test DB NOW EXISTS; owner-local HTTP execution pending
+
+- Owner authorized proceeding to actual tests. Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`; Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) base #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`.
+- **Disposable test resource created (do not lose ID):** Neon project `purple-lab-22755259`, PG16.15 `aws-eu-central-1`, branch `br-wild-dew-b9wsd6yq` (`data1d-synthetic-only`), DB `synthetic_data1`, role `synthetic_data1_owner`. Provider list, role, DB and targeted read-only SQL `current_database/current_user/server_version_num` verified exact identity and **0 public base tables**. Initial create attempt returned 412 unsupported suspend config without making a project; second allowed-default create succeeded. **No SQL writes or real Neon HTTP upload/download performed yet**; 3 original FlyTally projects remain untouched. Existing release remains blocked.
+- Local execution credentials must **not** be requested through Neon connector and forwarded through another connector; owner must copy them privately in Neon Console and supply to interactive PowerShell launcher `tooling/data1-neon-http-store-local.ps1` on trusted Windows Node24. Prior Windows offline 4/4 and Neon client mock 10/10 PASS are separate old-SHA evidence; real large gzip/Base64 1/4/12MiB HTTP and signed app GET NOT RUN.
+- Separate explicit approval required before deleting the newly created exact project ID. No merge/deployment/prod schema/flags/Training changed; production state UNKNOWN aside from Vercel READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`.
+- **ONE NEXT STEP:** owner runs local read-only `Probe` for project `purple-lab-22755259` / branch `br-wild-dew-b9wsd6yq`; verify its output before write stage.
+
+
 ## 2026-10-30T08:55:28.960Z — DATA-1D owner-local HTTP gate ready, real Neon execution still NOT RUN
 
 - Reverified canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, work Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) stacked on Draft #442 `bb60178bebdbb7b0242474bc7b0fedfd99268567`; production deployment prior READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`, app `55c8076e1eb8104c14392e15b272b33e0eb29607`. Neon list exactly three original projects `muddy-dust-14049657`, `frosty-recipe-46458686`, `dry-king-94424047`; no disposable database or new cloud tests performed.
