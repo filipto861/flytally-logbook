@@ -1,6 +1,6 @@
 # DATA-1E3 D4 — A1 owner-local PG16 two-session acceptance: single-use runbook
 
-**2026-10-30 | DRAFT TEST HARNESS, NOT YET EXECUTED AGAINST PostgreSQL.**
+**2026-10-30 | FIRST OWNER-LOCAL PG16 RUN FAIL at `5ac18ee02800b4cbb973ad4e0e561c9b1ce7b307`: physical isolation PASS, baseline 3/4 PASS and AC-20 duplicate `flights_pkey` FAIL, new four A1 race cases NOT RUN, owned stop/disposal PASS. The historical replay expectation was reconciled with intentional strict A1 parent insert; updated AC-20 positive/evidence snapshot and negative replay checks are code-verified only, PostgreSQL retest PENDING. Read [complete failure/reconciliation evidence](2026-10-30-data1e3-d4-a1-first-owner-pg16-ac20-reconciliation.md).**
 
 **Exact repository:** `filipto861/flytally-logbook`. **Scope:** D4 **A1** staged parent flight/FSTD ID conflict rollback only. This branch is stacked over Draft #448, itself stacked on Draft #447. **Not** full DATA-1 acceptance, not full app/HTTP v13, not canonical full-v21 restore, and not A2 F9 audit cleanup or A3 F8 real counts.
 
