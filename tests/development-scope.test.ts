@@ -77,6 +77,31 @@ test("registered changed tests select their owning group without inventing runti
   assert.match(result.targeted_tests,/tests\/v320-ui-consistency\.test\.ts/);
 });
 
+test("DATA-1E3 signed-v13 recovery regressions are explicitly owned without relaxing recovery release gates",()=>{
+  const filename="tests/v381-data1e3-stored-recovery-guards.test.ts";
+  const registry=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
+  const group=registry.testGroups["data-recovery-contract"];
+  const recovery=registry.modules.find((item:{id:string})=>item.id==="data-recovery");
+  assert.ok(group,"dedicated data recovery source-contract group required");
+  assert.ok(recovery?.testGroups?.includes("data-recovery-contract"),"runtime data recovery must select signed-v13 tests");
+  assert.equal(group.evidenceClass,"application-source-contract");
+  assert.deepEqual(group.tests,[filename]);
+  const result=classify([filename]);
+  assert.match(result.test_groups,/data-recovery-contract/);
+  assert.match(result.targeted_tests,/v381-data1e3-stored-recovery-guards/);
+  assert.doesNotMatch(result.risks,/unowned-test/);
+  for(const gate of ["postgres","browser","full_tests","build"]){
+    assert.equal(result[gate],"true",`critical recovery test must not weaken ${gate}`);
+  }
+  const runtime=classify(["app/(protected)/export/actions.ts","app/api/backups/[id]/route.ts"]);
+  assert.match(runtime.test_groups,/data-recovery-contract/);
+  assert.match(runtime.targeted_tests,/v381-data1e3-stored-recovery-guards/);
+  assert.match(runtime.required_evidence,/application-source-contract/);
+  assert.match(runtime.required_evidence,/domain-unit/);
+  assert.match(runtime.required_evidence,/postgres-acceptance/);
+  assert.match(runtime.required_evidence,/browser-acceptance/);
+});
+
 test("unknown runtime code remains conservative without automatically requiring PostgreSQL",()=>{
   const result=classify(["lib/future-module.ts"]);
   assert.equal(result.typecheck,"true");
