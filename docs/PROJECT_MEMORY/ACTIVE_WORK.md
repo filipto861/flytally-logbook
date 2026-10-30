@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T08:24:51.255Z — DATA-1D local PowerShell launcher (Draft #443), 6/6 + full Node24 PASS
+
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`; [Draft #443](https://github.com/filipto861/flytally-logbook/pull/443) on #442; new standalone `tooling/data1-neon-http-store-local.ps1` and static guard test, plus documentation. No app runtime/schema/flag change. Local owner-supplied disposable Neon URI collected through hidden interactive prompt; temporary process env cleared on exit; independent Neon console identity check and exact-ID disposal remain mandatory. No cross-connector secret transfer.
+- Exact tested code SHA `8ab50b3b75aa7e5af16d77761a2bd33309c4f897`, isolated Node24.22.1: syntax PASS, **6/6 standalone PASS**, scope planner PASS, npm ci PASS, TypeScript PASS, **1,775/1,775 full Node PASS**, build PASS; **Windows PowerShell execution NOT RUN** (no `pwsh` installed), actual Neon HTTP stored payload/GET and authoritative `verify:release:risk` **NOT RUN**, provider max UNKNOWN. [Detailed evidence](../../docs/maintenance/2026-10-30-data1-credential-local-http-executor.md).
+- Sandbox `sbx_pYaw4krogy5rNcjzOhAHExTLiTdo` stopped and independently confirmed, persistent=false; no Neon project created or test SQL used in this session. Original three Neon projects still present. No merge/deploy/prod DB/migrations/flags/Training; DATA-1 remains BLOCKED.
+- **ONE NEXT STEP:** execute the two-phase gate on trusted owner's Windows Node24 against a **new expressly approved independent empty disposable Neon project** (credentials local only), record real HTTP byte/digest evidence and verify exact-ID cleanup before any release decision.
+
+
 ## 2026-10-30T08:13:35.586Z — DATA-1D standalone credential-local HTTP executor, offline source gates PASS, real Neon transfer pending
 
 - [Draft #443](https://github.com/filipto861/flytally-logbook/pull/443) stacked on #442→#441; main `807f281e5870164b794d001480ecc84e0b45aea5`. Changed `tooling/data1-neon-http-store-gate{,.test}.mjs` + `docs/maintenance/2026-10-30-data1-credential-local-http-executor.md` + roadmap/Project Memory only. Exact code/test SHA `b57b63a49615fc6eafad45d9c38818b8f704aa32`. Owner-local Node24 script requires two-stage read-only probe and explicit confirmation for new empty dedicated Neon PG16; credentials never cross ChatGPT/connector boundaries; SQL cannot independently verify caller-supplied project ID, requiring operator console verification.
