@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T07:32:52.591Z — DATA-1D SQL-only storage PASS, true HTTP backup transfer remains BLOCKED
+
+- Draft [#442](https://github.com/filipto861/flytally-logbook/pull/442) on top of #441, canonical main `807f281e5870164b794d001480ecc84e0b45aea5`; evidence source before checkpoint `140d1ba49d0bbc4709460a51355093031494e13a`. New owner-approved disposable Neon PG16 project `green-grass-72402049` (zero initial user tables) used only for fabricated Base64 storage 1/4/12 MiB: **3/3 SQL INSERT and independent SQL readback digest/bytes PASS**, **NOT** Node HTTP payload transport nor gzip/signed-v13 acceptance. Node24 sandbox prepared; passing DB secret across tools blocked; no Node SQL executed. Provider size limit and actual HTTP upload/download **UNKNOWN/NOT RUN**.
+- All test resources cleaned: Vercel session `sbx_5rdbq6xqPEndvE8GKLDtfrRskExx` independently confirmed STOPPED/nonpersistent, exact disposable Neon project deleted and verified absent; only original Logbook Shadow and 2 Training projects remain. [Evidence](../../docs/maintenance/2026-10-30-data1-synthetic-sql-storage-evidence.md). No production SQL, migrations/flags, merge, deploy or Training change. Full candidate `verify:release:risk` NOT RUN; DATA-1 not release-ready.
+- **ONE NEXT STEP:** owner-controlled credential-safe Node24 test of actual gzip/Base64 Neon HTTP stored INSERT/SELECT in a freshly verified empty disposable project with exact cleanup, not a new source/size-policy change.
+
+
 ## 2026-10-30T07:01:22.950Z — DATA-1 32 PG SKIPs closed, stored Base64 transport still release blocker
 
 - Main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft [#441](https://github.com/filipto861/flytally-logbook/pull/441) branch `chore/logbook-data1-pg-skip-acceptance-20261030` tested pre-checkpoint `092593a1f14be1b64b733bcad77939ece15848a8`, stacked on #440→#439→#438→#437→#436→#435→#434. Prior core 119 PASS/32 SKIP was four different purpose-guarded historical suites; **all 32 executed separately** on four disposable loopback PG16 instances with explicit flags: 5 v21 +19 migration D3b +6 race D3b +2 actual full-v20 catalog = **32/32 PASS, 0 FAIL/SKIP** in [GitHub Actions #41017214910](https://github.com/filipto861/flytally-logbook/actions/runs/41017214910). Each dedicated PostgreSQL shutdown and temp-file cleanup step PASS. Original tests unmodified; first two catalog fixture FAIL attempts retained, third used source-backed real v1-v20 bootstrap. [Evidence](../../docs/maintenance/2026-10-30-data1-quarantined-pg-evidence.md).
