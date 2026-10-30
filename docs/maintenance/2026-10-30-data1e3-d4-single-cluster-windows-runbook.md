@@ -28,6 +28,14 @@ The launcher and its child risk probe now use `host(inet_server_addr())`, which 
 
 Reuse the existing clean clone and follow the fast-forward workflow from the first incident note. The previously used SHA `7a2ffaaec4d9c3812d3a0c74071d714aa034895d` is **obsolete**; substitute the newly verified final 40-character PR #446 HEAD. Each Execute creates one new disposable test cluster and is an explicit owner action, never an automatic retry.
 
+## Third owner-local attempt — Windows process CommandLine path formatting (2026-10-30)
+
+Owner updated to `a0923434cdd8af0181864bd942eb3a55cac48ac0` and Probe passed. Execute progressed through prior pg_ctl timeout and PostgreSQL /32 issues, then **failed the strict `Win32_Process.CommandLine` path check**: `PostgreSQL command line does not point at newly-owned data dir`. The user-local script reported stop and owned directory deletion PASS, but full identity and both SQL test phases remained **NOT RUN**, final exit 1. [Incident and source-backed uncertainty](2026-10-30-data1e3-d4-third-windows-process-cli-path-fix.md).
+
+The test helper now normalizes forward/backward separators, case and Unicode in Windows process command lines and requires a **whole expected data directory, not a prefix or partial match**. Windows hosted Node24 [Actions #41050835559](https://github.com/filipto861/flytally-logbook/actions/runs/41050835559) **9/9 PASS** against synthetic slash/Unicode/trap fixtures; no PostgreSQL executed. The original PID, executable, database, port, server data directory and owned-cleanup checks remain intact. The actual format in the owner's `Win32_Process.CommandLine` was **not observed**, so runtime correction is still **NOT RUN**.
+
+If the strict path proof fails again, the runner prints sanitized `D4_PG_CMDLINE_FORMAT_DIAGNOSTIC` booleans only; send those flags, **not** the raw process command line or full Windows paths. A retry is permitted only after operator checks a new exact 40-character SHA. The prior `a0923434...` SHA is obsolete.
+
 ## Owner Windows PowerShell: run against verified full PR #446 HEAD
 
 Node.js v24 and native PostgreSQL16 must already be installed. Use a new clone, never an existing data directory. Replace the SHA placeholder only with the full verified PR #446 HEAD supplied with this release of the runbook.
