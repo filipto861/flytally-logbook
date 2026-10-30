@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T10:44:01.345Z — DATA-1E3 first batch Windows Node24 3/3 + typecheck PASS; release gates outstanding
+
+- [GitHub Actions #41042561314](https://github.com/filipto861/flytally-logbook/actions/runs/41042561314) on **Windows 2022**, Node `v24.22.1`, actual source checkout `08121cd05f58348e2a8db20a98cc22cc7f4625b1`, job `124018663235` completed SUCCESS: npm ci PASS; targeted synthetic HMAC + D1/D3 source-order regressions **3/3 PASS**; TypeScript typecheck PASS; scope planner PASS. [Full evidence](../maintenance/2026-10-30-data1e3-windows-node24-targeted-typecheck-evidence.md). Temporary push workflow deleted `4761bcf1ed1e7a9b388faf4eb13d9e818ea0a1b1`.
+- Scope planner demands full Node, build, isolated PG16, authenticated browser, source/domain/UI contract before release, and reports new test `unowned-test`. **NOT RUN**, not PASS. D2 size policy unmeasured and D4 stale plan / audit concurrency still open; DATA-1 not release-ready.
+- GitHub canonical main `807f281e5870164b794d001480ecc84e0b45aea5`; stacked Draft #445 `fix/logbook-data1e3-v13-security-gates-20261030` base Draft #444 `512bddf0405854f1c0fe5694b00ee09c8099cb5d`, #443 unchanged. No DB/migrations/flags/Training/merge/deploy action. Neon original three present, no disposable resources; prod DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** define and obtain separate approval for positively identified local PG16 acceptance and test registry ownership before implementing/testing D4.
+
+
 ## 2026-10-30T10:38:19.950Z — DATA-1E3 D1–D4 approved direction, D1/D3 narrow draft implementation #445
 
 - Owner accepted D1–D4 default directions after independent DeepSeek P1/P2 review; numeric D2 cap **not yet frozen** and D4 transactional flight/FSTD/audit SQL implementation **deferred** pending safe disposable PG16 acceptance. Scoped Draft [#445](https://github.com/filipto861/flytally-logbook/pull/445) `fix/logbook-data1e3-v13-security-gates-20261030`, based on docs Draft #444 `512bddf0405854f1c0fe5694b00ee09c8099cb5d` stacked on executable Draft #443 `16a94e051037b680f7b08e97e8880e7967ada062`; canonical main `807f281e5870164b794d001480ecc84e0b45aea5`.
