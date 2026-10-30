@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30T09:34:58.262Z — DATA-1E2 Claude read-only review handoff prepared, reviewer NOT RUN
+
+- Owner asks for **Claude review materials**, not a code, DB or deployment change. Main `807f281e5870164b794d001480ecc84e0b45aea5`, parent Draft [#443](https://github.com/filipto861/flytally-logbook/pull/443) source `16a94e051037b680f7b08e97e8880e7967ada062`, docs-only Draft [#444](https://github.com/filipto861/flytally-logbook/pull/444) on `docs/logbook-data1-v13-auth-acceptance-20261030`, base #443. Design freeze snapshot `3edcfceea5561ef296fbf66e00c703c6a67e2811`. No merge or runtime deployment.
+- New reviewer entrypoint [`docs/maintenance/2026-10-30-data1e-claude-readonly-review-brief.md`](../maintenance/2026-10-30-data1e-claude-readonly-review-brief.md) includes exhaustive pinned SHA source index, 9 independent review questions, P0–P3 path:line verdict, fixed A0–A11 acceptance critique, explicit fallback `UNVERIFIED` if private GitHub inaccessible and forbidden remote SQL/code edits/credentials. Source review concerns: signed-file v13 HMAC vs DB-stored trust; gzip expansion cap; GET error detail; auth/object ownership; preview/restore race and separate safety backup; v21 schema side effects. **No actual independent Claude response yet**; reviewer status NOT RUN.
+- Prior user-operated live Neon HTTP transport 1/4/12MiB **3/3 PASS** at `60affbabda8e377656c9a6ec82e63e227803929d`, with post-test disposable project deletion PASS; three original Neon projects retained. App v13 authenticated GET/restore, isolated PG/HTTP, release risk **NOT RUN**, provider max and prod schema/flags **UNKNOWN**. Docs-only changes; no tests executed in this reviewer-preparation step.
+- **ONE NEXT STEP:** provide the frozen brief to Claude with read-only access, collect a file/line evidenced answer, independently reconcile each finding before any owner decision to implement or test.
+
+
 ## 2026-10-30T09:28:53.516Z — DATA-1E1 read-only signed-v13 auth/GET/restore audit design, Draft #444
 
 - Scope: owner approved **source-only discovery + isolated signed-v13 application acceptance design**, NOT running any restore, creating DB, auth fixture, migration, merge/deploy or production flag. Verified `main@807f281e5870164b794d001480ecc84e0b45aea5`; parent [Draft #443](https://github.com/filipto861/flytally-logbook/pull/443) `16a94e051037b680f7b08e97e8880e7967ada062`; new [Draft #444](https://github.com/filipto861/flytally-logbook/pull/444) on `docs/logbook-data1-v13-auth-acceptance-20261030`, base parent #443. Prior Vercel deployment READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`, no new deploy; Neon list **only three original** projects after DATA-1D test cleanup.
