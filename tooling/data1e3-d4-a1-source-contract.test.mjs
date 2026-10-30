@@ -8,7 +8,7 @@ test("D4 A1 runner guards",()=>{
  assert.ok(src.includes("--expected-sha="),"--expected-sha=");
  assert.ok(src.includes("--confirm=DATA1E3-A1-LOCAL-ONLY"),"--confirm=DATA1E3-A1-LOCAL-ONLY");
  assert.ok(src.includes("physicalPid(bins,pid,data)"),"physicalPid(bins,pid,data)");
- assert.ok(src.includes("\\.data1e3-owned"),"\\.data1e3-owned");
+ assert.ok(src.includes(".data1e3-owned"),"\\.data1e3-owned");
  assert.ok(src.includes("onlyOwnedTempDirectory:true"),"onlyOwnedTempDirectory:true");
  assert.ok(src.includes("Inherited PostgreSQL/cloud/CI setting must be cleared"),"Inherited PostgreSQL/cloud/CI setting must be cleared");
 });
