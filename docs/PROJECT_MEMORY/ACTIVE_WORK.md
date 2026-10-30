@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — v14 V2 independent security review ZIP available; review not yet run
+
+- Conversation review ZIP contains 16 exact frozen source files, new targeted prompt and labelled noncanonical summary; 21 members, 86734 bytes, SHA256 `2d8436aba60128c239724292499eea4cd8f73d36db092a325be6173e400f7315`. [Manifest/evidence](../maintenance/2026-10-30-data1e3-d4-a2-v14-review-package-evidence.md). Full current V2 design and 7 supplementary source paths remain GitHub-linked, NOT verbatim bundled: reviewers without access must mark UNVERIFIED. No external DeepSeek review performed.
+- Frozen owner Option2/v13 A/L1/N2+R1 design unchanged. Main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 pre-package `86ae20b5f7b9a77fe9d8adaf054e3f1e19ac6f52` on #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Prod READY older SHA; DB/schema/flags UNKNOWN; A2 tests NOT RUN; no code/DB/migration/flags/merge/deploy.
+- **ONE NEXT STEP:** obtain complete independent reviewer findings on exact V2+source, then reconcile.
+
 ## 2026-10-30 — v14 N2+R1 design chosen, independent security review pending
 
 - User "ok pokracuj" confirms N2 (stable random native event UID, historical UID backfill honestly labelled) and R1 (source JSONB, canonical hash, verified-at-import source snapshot only) as DESIGN directions, not DDL/runtime permissions. Previously frozen signed-v13 A and L1 unattached imported ledger unchanged. [V2 review candidate](../maintenance/2026-10-30-data1e3-d4-a2-v14-review-contract-v2.md); [reviewer brief](../maintenance/2026-10-30-data1e3-d4-a2-v14-targeted-independent-security-review-brief.md). Reviewer NOT RUN.

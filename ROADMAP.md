@@ -1,5 +1,11 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-30 — v14 V2 independent review package PREPARED; external audit PENDING
+
+- [Package evidence](docs/maintenance/2026-10-30-data1e3-d4-a2-v14-review-package-evidence.md): conversation ZIP 86734 bytes, SHA256 `2d8436aba60128c239724292499eea4cd8f73d36db092a325be6173e400f7315`, 16 full exact frozen executable files at `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1` + targeted reviewer prompt/offline summary and exact GitHub links. Full canonical V2/7 supplementary files **linked, not bundled**; reviewer without private GitHub access must mark them UNVERIFIED. One independent read-only V2 review **NOT RUN**; no automatic external DeepSeek submission occurred.
+- Owner design directions Option2/v13 A/L1/N2+R1 unchanged; repo main `807f281e5870164b794d001480ecc84e0b45aea5`, docs #451 pre-package `86ae20b5f7b9a77fe9d8adaf054e3f1e19ac6f52` base #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Production Vercel READY prior source `55c8076e1eb8104c14392e15b272b33e0eb29607`; prod DB/flags/schema UNKNOWN. New A2 PG16/Neon/Node/TS/build/Playwright NOT RUN. No runtime/SQL/migration/DB/flags/merge/deploy/Training changes.
+- **ONE NEXT STEP:** obtain actual external DeepSeek/Claude review for V2 + full canonical source, adjudicate findings, only then request implementation authorization.
+
 ## 2026-10-30 — N2 + R1 owner DESIGN direction approved; v14 V2 security review candidate
 
 - Owner `ok pokracuj` explicitly accepted N2+R1 proposal as DESIGN direction. N2: stable random native event UUID, old BIGSERIAL preserved, historical UID assignment clearly labelled migration-time. R1: original JSONB/versioned hash and signed source snapshot verification at import, no redundant whole archive and no unproven later event membership claim. Previous v13 A and L1 account-unattached history remain frozen. NO exact schema/DDL, migration, v14 activation, code, flags, merge/deploy approved.

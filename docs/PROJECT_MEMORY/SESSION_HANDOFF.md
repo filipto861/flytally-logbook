@@ -1,5 +1,12 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-30 — v14 N2/R1 independent review ZIP prepared; external audit NOT RUN
+
+- User `ok` acknowledged next step preparing external review package. Immutable owner design choices Option 2, v13 A, L1, N2+R1 unchanged. Local conversation file `FlyTally_D4_A2_V14_N2_R1_Independent_Review_2026-10-30.zip` generated, 86734 bytes, SHA256 `2d8436aba60128c239724292499eea4cd8f73d36db092a325be6173e400f7315`, 21 ZIP members, CRC PASS, 16 frozen executable sources at `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. **Review NOT RUN**, no direct DeepSeek integration. [Package evidence](../maintenance/2026-10-30-data1e3-d4-a2-v14-review-package-evidence.md) documents NON-verbatim V2 offline summary and missing supplementary exact-source paths; reviewer must mark inaccessible V2/source UNVERIFIED.
+- Verified `main@807f281e5870164b794d001480ecc84e0b45aea5`, Draft PR #451 work pre-evidence HEAD `86ae20b5f7b9a77fe9d8adaf054e3f1e19ac6f52` base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; verify checkpoint's actual final work SHA. Deployed `fly-tally.com` READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` earlier `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags UNKNOWN. A2 PG16/Neon/Node/TS/build/browser NOT RUN. No executable/SQL/migration/DB/flags/backups-delete/merge/deploy/Training action.
+- DO NOT infer external reviewer verdict or signed-v14 runtime; exact full V2 needs reviewer GitHub access or separately supplied original, and approvals are DESIGN ONLY.
+- **ONE NEXT STEP:** external DeepSeek/Claude reviewer reads ZIP + exact full V2 from SHA and returns Markdown findings for reconciliation before requesting implementation permission.
+
 ## 2026-10-30 — N2+R1 selected for DESIGN, targeted review package pending
 
 - Owner replied "ok pokracuj" to an explicit N2+R1 DESIGN choice. N2 stable random event UID with migration-time labels, R1 original event JSONB/hash and verification-at-import only; prior signed-v13 A and account-unattached L1 unchanged. NO code/DDL/DB/flags/merge/deploy permission.
