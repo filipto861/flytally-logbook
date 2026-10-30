@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — v14 N2+R1 design chosen, independent security review pending
+
+- User "ok pokracuj" confirms N2 (stable random native event UID, historical UID backfill honestly labelled) and R1 (source JSONB, canonical hash, verified-at-import source snapshot only) as DESIGN directions, not DDL/runtime permissions. Previously frozen signed-v13 A and L1 unattached imported ledger unchanged. [V2 review candidate](../maintenance/2026-10-30-data1e3-d4-a2-v14-review-contract-v2.md); [reviewer brief](../maintenance/2026-10-30-data1e3-d4-a2-v14-targeted-independent-security-review-brief.md). Reviewer NOT RUN.
+- Main 807f281e5870164b794d001480ecc84e0b45aea5, PR451 work pre-commit 8a874a3f7c3488f15fb59cbdc10aa4c79fadaa6b, base PR450 b8ccc583c033f7d9b70f2e3b84000320d066b01a, executable 6fd5597aec03ee7b6cbab4dafd98228fafdaaea1. Production READY previous SHA; prod DB/schema/flags UNKNOWN. New A2 PG16/Neon/Node/build/Playwright NOT RUN. No code/DDL/DB/flags/merge/deploy.
+- ONE NEXT STEP: obtain independent exact-source read-only V2 review, reconcile, then request separate permission for small implementation.
+
 ## 2026-10-30 — L1 approved, D4 A2 v14 provenance design drafted; N2/R1 owner choice OPEN
 
 - Owner explicitly accepted **L1**, account-scoped imported audit **UNATTACHED** first; previously approved signed-v13 cross-snapshot A unchanged. [New v14 design V1](../maintenance/2026-10-30-data1e3-d4-a2-v14-provenance-contract-v1.md) source-maps 32-result old v13 snapshot, signer/restore, immutable ledger/clone limitations and all backup surfaces; no v14 executable code exists. Proposed **N2** native per-event UID additive/history migration-time-assignment (not approved) and **R1** source JSONB+canonical hash, import-time verified membership claim only (not approved). Proposes strict L1 empty link section, fail-closed post-write backup rollback.

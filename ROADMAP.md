@@ -1,5 +1,12 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-30 — N2 + R1 owner DESIGN direction approved; v14 V2 security review candidate
+
+- Owner `ok pokracuj` explicitly accepted N2+R1 proposal as DESIGN direction. N2: stable random native event UUID, old BIGSERIAL preserved, historical UID assignment clearly labelled migration-time. R1: original JSONB/versioned hash and signed source snapshot verification at import, no redundant whole archive and no unproven later event membership claim. Previous v13 A and L1 account-unattached history remain frozen. NO exact schema/DDL, migration, v14 activation, code, flags, merge/deploy approved.
+- [V14 V2 security-review candidate](docs/maintenance/2026-10-30-data1e3-d4-a2-v14-review-contract-v2.md) + [targeted independent reviewer brief](docs/maintenance/2026-10-30-data1e3-d4-a2-v14-targeted-independent-security-review-brief.md) address clone divergence, N2 column-vs-sidecar, v13 SELECT*/json_populate_record compatibility, R1 honest membership, v14 complete both-ledger one-MVCC snapshot, backup pathways, atomic v13 collisions and Neon HTTP. Main `807f281e5870164b794d001480ecc84e0b45aea5`, PR451 docs pre-commit `8a874a3f7c3488f15fb59cbdc10aa4c79fadaa6b` on PR450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. V2 external review PENDING, tests PG16/Neon/Node/TS/build/Playwright NOT RUN.
+- Production READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` on previous `55c8076e1eb8104c14392e15b272b33e0eb29607`; production DB/schema/flags UNKNOWN, stored backup inventory UNVERIFIED. Only documentation, no SQL/runtime/DB/flags/Training/merge/deploy.
+- **ONE NEXT STEP:** obtain one independent read-only exact-SHA review of N2/R1 v14 V2 and reconcile before seeking any implementation authorization.
+
 ## 2026-10-30 — L1 OWNER APPROVED; D4 A2 v14 provenance/retention design draft (N2/R1 decision OPEN)
 
 - **Owner:** “ok souhlasim pokracuj” after explicit L1 choice. Freeze **L1**: initially imported material audit history belongs to account only, **unattached**, with no source↔destination flight numeric join, guessing or retroactive link. Signed-v13 cross-snapshot **Option A remains approved**; these are **DESIGN-ONLY** choices, not SQL/schema/app/deploy authorization. Draft #451 based on #450; main `807f281e5870164b794d001480ecc84e0b45aea5`, work pre-v14 `401d61b1a549e5400f93d8b79ece2ef35b2569d8`, reviewed executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`.

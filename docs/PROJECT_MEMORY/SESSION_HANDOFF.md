@@ -1,5 +1,13 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-30 — N2+R1 selected for DESIGN, targeted review package pending
+
+- Owner replied "ok pokracuj" to an explicit N2+R1 DESIGN choice. N2 stable random event UID with migration-time labels, R1 original event JSONB/hash and verification-at-import only; prior signed-v13 A and account-unattached L1 unchanged. NO code/DDL/DB/flags/merge/deploy permission.
+- GitHub: main 807f281e5870164b794d001480ecc84e0b45aea5, PR451 work parent 8a874a3f7c3488f15fb59cbdc10aa4c79fadaa6b, base PR450 b8ccc583c033f7d9b70f2e3b84000320d066b01a, executable 6fd5597aec03ee7b6cbab4dafd98228fafdaaea1. Confirm final SHA after checkpoint. Vercel READY dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU earlier 55c8076e1eb8104c14392e15b272b33e0eb29607; prod schema/DB/flags UNKNOWN.
+- New exact-source v14 V2 contract and targeted reviewer brief in docs/maintenance/. These are design-only, pending independent review; N2 native-vs-sidecar, clone, v13 parser compatibility and R1 membership proofs still to verify.
+- New A2 tests/PG16/Neon/Node/TS/build/Playwright NOT RUN. No code changes, DB calls, migration, flags, backup deletion, merge/deploy or Training.
+- ONE NEXT STEP: send V2 and exact frozen code to one read-only independent reviewer; reconcile before proposing implementation.
+
 ## 2026-10-30T19:34:03.992Z — L1 OWNER APPROVED, v14 provenance/retention design (N2/R1 not approved)
 
 - **Owner scope:** user said “ok souhlasim pokracuj” after asked **L1 vs L2**; owner-approved L1 **DESIGN ONLY** initial account-unattached imported audit, no source flight ID auto-link. Prior signed-v13 cross-snapshot Option A remains approved design policy. No authorization to add native UUIDs, retain evidence by chosen policy, implement SQL/DDL, run migration, change backup version, feature flags, merge or deploy.
