@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-30 — reviewer BLOCK (4 P0, 5 P1, 3 P2); N2 sidecar alternative pending owner
+
+- Owner-uploaded independent v14 N2/R1 read-only review verdict BLOCK DESIGN. [12 finding source reconciliation](../maintenance/2026-10-30-data1e3-d4-a2-v14-independent-block-review-reconciliation.md): F01 packet full canonical V2 missing (though 16 source files correctly hash verified); F02/F09 native-column audit backfill unsafe vs preferred sidecar; F03/F07 F9 MAX+DELETE+unchecked ON CONFLICT confirmed; F04 clone, F05 R1 limit, F06/F08 complete v14 backup, F10/11 privacy/auth, F12 tests unrun. Reviewer unable to view exact sources in its context. No implementation ready. N2 stable native-event UUID owner direction remains, **sidecar mapping is proposal not yet approved**, no native audit mutation.
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`; Draft #451 pre-checkpoint `9a52008895da5a6e32a29084a811303139a8955c` on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Production READY previous app SHA, DB/schema/flags UNKNOWN; A2 PG16/Neon/Node/build/Playwright NOT RUN. No app/SQL/DB/migrations/flags/merge/deploy.
+- **ONE NEXT STEP:** owner decides N2-S sidecar vs direct native column design; then freeze complete exact-doc/source reviewer packet.
+
 ## 2026-10-30 — v14 V2 independent security review ZIP available; review not yet run
 
 - Conversation review ZIP contains 16 exact frozen source files, new targeted prompt and labelled noncanonical summary; 21 members, 86734 bytes, SHA256 `2d8436aba60128c239724292499eea4cd8f73d36db092a325be6173e400f7315`. [Manifest/evidence](../maintenance/2026-10-30-data1e3-d4-a2-v14-review-package-evidence.md). Full current V2 design and 7 supplementary source paths remain GitHub-linked, NOT verbatim bundled: reviewers without access must mark UNVERIFIED. No external DeepSeek review performed.
