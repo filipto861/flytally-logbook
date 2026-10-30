@@ -153,8 +153,8 @@ async function main(){
       encoding:"utf8",shell:false,windowsHide:true,timeout:180000,maxBuffer:8*1024*1024});
     if(test.stdout)process.stdout.write(test.stdout);
     if(test.stderr)process.stderr.write(test.stderr);
-    if(test.error||test.signal||test.status!==0)throw Error("D4_BASELINE_INTEGRATION_FAILED exit="+
-      test.status+" signal="+(test.signal??"none")+" error="+(test.error?.code??"none"));
+    if(test.error||test.signal||test.status!==0){baselineStatus="FAIL";throw Error("D4_BASELINE_INTEGRATION_FAILED exit="+
+      test.status+" signal="+(test.signal??"none")+" error="+(test.error?.code??"none"));}
     baselineStatus="PASS";
     console.log(JSON.stringify({phase:"D4_BASELINE_SOURCE_SQL_RESTORE",result:"PASS",
       note:"existing synthetic security/restore PostgreSQL tests; NOT full authenticated signed-v13 app restoration"}));
