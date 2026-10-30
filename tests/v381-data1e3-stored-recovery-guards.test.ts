@@ -84,7 +84,7 @@ test("DATA-1E3 D4 A1: flight and FSTD staging INSERTs reject concurrent same-ID 
 test("DATA-1E3 D4 A1: conflict errors disclose retained safety backup without SQL/flight details",()=>{
   const action=read("app/(protected)/export/actions.ts");
   const start=action.indexOf('try{const result=await executeExactAccountRestore(');
-  const end=action.indexOf('  }\n  const preview=await buildPreview(',start);
+  const end=action.indexOf("const preview=await buildPreview(",start);
   assert.ok(start>=0&&end>start,"exact restore error handler exists");
   const region=action.slice(start,end);
   assert.match(region,/code==="23505"\|\|code==="23P01"/);
