@@ -1,5 +1,7 @@
 # FlyTally DATA-1E3 D4 A2 — V14-C clone, namespace and observation policy
 
+**POST-OPTIONS OWNER DECISION — 2026-10-31:** The owner explicitly selected **conditional C2** as DESIGN policy (reply `souhlasim`), not C1 or C3. This options comparison remains the dated pre-decision discussion; its original `NOT SELECTED` language is historical and must not be taken as current authority. The full decision is frozen in [V5 conditional C2 approved contract](2026-10-31-data1e3-d4-a2-v14c-conditional-c2-approved-v5-design.md). This does not lift the independent BLOCK verdict or approve a schema/query count, implementation or production actions.
+
 **31 October 2026 — OWNER DECISION REQUEST / PROPOSAL ONLY.** V14-C has **NOT** been selected or approved. This document is a bounded decision record, not SQL/schema/code, and does not lift the independent security verdict **BLOCK — DESIGN ONLY**. It must not be interpreted as implementation, migration, flags, production operations, merge or deployment authorization.
 
 ## Verified authority and technical anchors

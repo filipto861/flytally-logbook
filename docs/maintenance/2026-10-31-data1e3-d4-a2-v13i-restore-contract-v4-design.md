@@ -1,5 +1,7 @@
 # FlyTally DATA-1E3 D4 A2 — V13-I owner-approved restore semantics / V4 design addendum
 
+**POST-V4 OWNER DECISION — 2026-10-31:** The owner has now selected **V14-C conditional C2 DESIGN ONLY** for native v14 `at_event_insert` UIDs: preserve each signed snapshot observation independently, permit provisional single logical projection only for authenticated same-source UID and fully equal canonical event; mismatches, ambiguous claims and cross-digest `migration_backfill` overlap BLOCK. V13-I and signed-v13 strict A remain unchanged. Earlier `V14-C OPEN` text below is historical. See [approved V5 C2 design](2026-10-31-data1e3-d4-a2-v14c-conditional-c2-approved-v5-design.md). No code, migration or external reviewer clearance is implied.
+
 **31 October 2026. Owner approved V13-I as DESIGN POLICY ONLY** by answering `souhlasím` to the explicit question whether signed-v13 historical audit rows should be preserved in a separate imported account-level ledger rather than inserted into native `flight_audit_log`. This decision is **not** approval of implementation, SQL, schema v22, migration, data restore, flags, merge, or deployment. Prior independent V3 reviewer verdict **BLOCK — DESIGN ONLY** remains in force; F01–F12 are not magically resolved by a written decision.
 
 ## Exact verification and source boundary
