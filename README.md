@@ -1,67 +1,45 @@
-# FlyTally Logbook
+# FlyTally V14-C/C2 + R1 K1/T1/E — 45-file independent security-review packet
 
-FlyTally Logbook is a private multi-user electronic pilot logbook built with Next.js, React, Neon PostgreSQL and Vercel.
+**DeepSeek-compatible: 45 files total, including this README and MANIFEST.**
+Date: 2026-10-31. Private repository: filipto861/flytally-logbook.
+**READ-ONLY REVIEW ARTIFACT — NEVER MERGE THIS SPARSE BRANCH.**
 
-The production source of truth lives in `app/`, `components/` and `lib/`. Regression and PostgreSQL acceptance coverage lives in `tests/`.
+## Frozen sources and unmodified contents
 
-## Start here
+- SOURCE/ = 34 complete original code/test files from frozen, not-deployed executable SHA:
+  6fd5597aec03ee7b6cbab4dafd98228fafdaaea1
+- DESIGN/ = 9 complete original architecture and decision documents from frozen design SHA:
+  f8f3dc07edce42357a0871599d054c9b5e44f146
+- README.md + MANIFEST.tsv = 2 new packet metadata files (45 total).
+- Every SOURCE/ and DESIGN/ Git blob was **reused byte-for-byte** from previously verified 83-file artifact; MANIFEST records its exact Git blob SHA-1, size and original commit.
+- **The entire repo has 1000+ paths. This is deliberately curated, not transitive-complete.** Missing dependencies and tests are possible. Explicitly ask for exact missing files instead of guessing.
+- Source and design SHAs intentionally differ because V14-C/C2 is NOT implemented in the executable source. Do not conflate a design proposal and runtime behavior.
 
-This README is a stable navigation entrypoint, not the authority for current release status. Always establish the current GitHub `main` SHA before starting a new development session. AI contributors should first read the short [AGENTS entrypoint](AGENTS.md), then consult only the relevant source documents below.
+## Auditor task — identical for DeepSeek and Claude
 
-1. **[ROADMAP](ROADMAP.md)** — current release status, work order, owner decisions and next step.
-2. **[DEVELOPMENT](DEVELOPMENT.md)** — active branch, risk-based verification and release workflow.
-3. **[FEATURE LIST](FEATURES.md)** — capabilities, limitations and intentional exclusions.
-4. **[ARCHITECTURE](ARCHITECTURE.md)** — runtime, data ownership, security and regulatory contracts.
-5. **[CHANGELOG](CHANGELOG.md)** — append-only shipped/history evidence; read relevant sections, not the whole file by default.
-6. **[Documentation index](docs/README.md)** — current supporting contracts, review records and dated history.
+Perform a rigorous **independent read-only adversarial security and data-integrity review**. Read `DESIGN/docs/maintenance/2026-10-31-data1e3-d4-a2-v14c-r1-independent-security-review-brief-v7.md` in full. Read the attached V3/V4/V5/V6/V7 contracts, previous V3 BLOCK reconciliation, and inspect **literal relevant SOURCE files**, not just their filenames or this summary. Report whether a file needed for a finding is missing.
 
-Historic [repository audit](docs/maintenance/2026-10-10-repository-audit.md), [roadmap snapshot](docs/history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) and [feature snapshot](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) remain dated evidence, not current instructions. For the current product version and next release, use the ROADMAP and independently verified deployment evidence.
+Concentrate on:
+1. Confirmed legacy restore risk in `lib/account-restore-v6.ts` (global audit MAX, native DELETE, unchecked conflict skip), atomic rollback and account isolation.
+2. v13 original signed snapshot verification, signed-v13 strict cross-snapshot A conflict and V13-I imported-only history.
+3. N2-S native audit immutable one-to-one UID sidecar with honest `at_event_insert` vs `migration_backfill`.
+4. Conditional V14-C/C2: every signed observation persists, strict event equality and provisional logical aggregation; cloned UUID/signer are **not** physical source provenance.
+5. Proposed **37-result** single read-only Repeatable Read V14 snapshot, all backup/download/manual/automatic/pre_restore/flag-OFF/readback paths, fail-closed integrity and restore.
+6. R1 K1 backward-compatible key versioning/rotation; T1 lawful purpose-bounded retention; E exceptional erasure and anti-resurrection from saved portable/pre_restore backup.
+7. Canonical event hash, JSONB vs JS integer precision and missing/null semantics, actor/timestamp identity, concurrent import and Neon HTTP DB authorization.
 
-## Runtime architecture
+## Mandatory answer format
 
-- Next.js 16 App Router and React 19
-- Neon PostgreSQL transactional production database
-- Vercel deployment
-- server actions and authenticated API routes for mutations/private data
-- certified flight revisions and audit/integrity evidence
-- category-aware pilot logbook workflows
-- recency/evidence planning with explicit regulatory boundaries
-- pilot connections, shared flights and instructor verification
-- GPS import, review and playback
-- print/export, backup and recovery
+- Identify both exact full frozen SHAs above; verify you actually opened the relevant source and design files. If unavailable, label **INCOMPLETE REVIEW**.
+- State verdict `APPROVE`, `APPROVE WITH CHANGES`, `BLOCK — DESIGN ONLY`, or `INCOMPLETE REVIEW`.
+- For each P0/P1/P2 finding: affected ORIGINAL path (drop SOURCE/ or DESIGN/ prefix), line numbers, observed source vs unimplemented proposal, reproducible synthetic counterexample, minimal correction and acceptance tests.
+- Explicitly list any omitted transitive files needed to confirm findings. Do not assume they were checked.
+- Do not falsely claim execution of Node/TypeScript/build/Neon/PostgreSQL tests, legality approval, runtime v14 deployment or regulatory flight certification.
 
-## Repository layout
+## Security and limitations
 
-- `app/` — routes, pages, server actions and API endpoints
-- `components/` — shared client/server UI
-- `lib/` — database, regulatory, certification, backup, GPS and domain services
-- `tests/` — TypeScript regression tests and PostgreSQL acceptance tests
-- `e2e/` — browser/end-to-end coverage
-- `data/` — read-only/reference datasets
-- `docs/` — active supporting documentation and archived development evidence
+No source modifications, DB/SQL operations, migrations, production credentials, signing keys, account erasure, merge, deployment, flags or feature launches are authorized. Source package is static; this sparse Git branch deletes unrelated project files from its own tree and must **NEVER** be merged into main. The past independent security verdict remains **BLOCK — DESIGN ONLY**. Exact SHA-1 blob identities allow verification of original source bytes; the ZIP download and its SHA-256 are separate receipt checks, **not claimed PASS** here.
 
-## Verification
+## Follow-up
 
-Typical local gate:
-
-```bash
-npm ci
-npm run typecheck
-npm test
-npm run build
-```
-
-Database acceptance when the PostgreSQL test environment is configured:
-
-```bash
-npm run test:postgres
-npm run test:postgres:full
-```
-
-The exact verification policy is defined in `DEVELOPMENT.md`. Never report a test, build, migration or deployment as successful unless it actually ran.
-
-## Safety and regulatory boundary
-
-FlyTally can preserve and evaluate pilot-entered evidence, but internal implementation and test success do not constitute approval by EASA, ÚCL, LAA or another authority.
-
-The product must fail closed when required regulatory evidence is missing or ambiguous and must preserve certified/finalized records rather than silently rewriting them.
+Return the complete independent review response to the user. Both reviewers receive the **same identical 45-file snapshot** for fair comparison. If more than the bounded packet is needed, name exact additional files; request a supplementary targeted packet later instead of inventing claims.

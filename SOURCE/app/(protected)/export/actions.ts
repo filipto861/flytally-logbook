@@ -1,0 +1,110 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { requireUser } from "@/lib/auth/require-user";
+import { sql } from "@/lib/db";
+import { flightRestoreKey,parsePortableBackup,trackRestoreKey,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { createStoredBackup,loadStoredBackup } from "@/lib/backup-center";
+import { restoreDeletedFlightRecord } from "@/lib/flight-trash";
+import { executeExactAccountRestore,prepareExactAccountRestore,type ExactRestorePreview } from "@/lib/account-restore-v6";
+import { AccountRestoreConflictError,type RecoveryConflict } from "@/lib/recovery-conflict";
+import { portableBackupAuthenticity } from "@/lib/backup-authenticity";
+
+export type RestorePreview=ExactRestorePreview|{digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;withheld?:Record<string,number>;settings:boolean;legacyPoints:number;accountBound?:boolean;schemaVersion?:number;authenticity?:"verified"|"unsigned"|"invalid"|"stored";certification?:{certifiedFlights:number;flightRevisions:number;certifiedFstd:number;fstdRevisions:number}};
+export type RestoreState={error?:string;success?:string;preview?:RestorePreview;conflict?:RecoveryConflict};
+export type TrashRestoreState={error?:string;success?:string};
+const text=(row:BackupRow,key:string,max=2000)=>String(row[key]??"").trim().slice(0,max),upper=(row:BackupRow,key:string,max=120)=>text(row,key,max).toUpperCase();
+const nullableNumber=(value:unknown)=>value===null||value===undefined||value===""?null:Number.isFinite(Number(value))?Number(value):null;
+const integer=(value:unknown,fallback=0)=>Number.isFinite(Number(value))?Math.trunc(Number(value)):fallback;
+const legacyBilling=(row:BackupRow)=>Object.prototype.hasOwnProperty.call(row,"billing_basis")?text(row,"billing_basis",40):"BLOCK";
+const jsonText=(value:unknown,fallback="[]")=>{if(typeof value==="string"){try{JSON.parse(value);return value}catch{return fallback}}try{return JSON.stringify(value??JSON.parse(fallback))}catch{return fallback}};
+const isoTime=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)return"";const date=new Date(raw);return Number.isNaN(date.getTime())?"":date.toISOString()};
+const revalidateRestore=()=>{for(const path of ["/data","/export","/dashboard","/flights","/database","/profile","/map","/print","/fstd"])revalidatePath(path)};
+const restorePreflightFailure=(error:unknown,fallback:string):RestoreState=>error instanceof AccountRestoreConflictError?{error:"Restore blocked before any data changes.",conflict:error.conflict}:{error:error instanceof Error?error.message:fallback};
+
+async function readBackup(form:FormData){const file=form.get("backup");if(!(file instanceof File)||!file.size)throw new Error("Select a complete JSON backup.");if(file.size>150*1024*1024)throw new Error("File exceeds the 150 MB safety limit.");return parsePortableBackup(await file.text())}
+
+async function buildPreview(userId:number,backup:PortableBackup,digest:string):Promise<RestorePreview>{
+  const [flightRows,aircraftRows,rateRows,airportRows,expiryRows,trackRows]=await Promise.all([
+    sql`SELECT date::text date,registration,off_block,departure,arrival FROM flights WHERE user_id=${userId}`,
+    sql`SELECT registration FROM aircraft WHERE user_id=${userId}`,
+    sql`SELECT registration,COALESCE(valid_from,'') valid_from FROM rates WHERE user_id=${userId}`,
+    sql`SELECT ident FROM airports WHERE user_id=${userId}`,
+    sql`SELECT category,label,expiry_date::text expiry_date FROM user_expiries WHERE user_id=${userId}`,
+    sql`SELECT f.date::text date,f.registration,f.off_block,f.departure,f.arrival,t.file_name,t.start_utc::text start_utc,t.end_utc::text end_utc,t.point_count FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id WHERE t.user_id=${userId}`,
+  ]) as Array<Array<BackupRow>>;
+  const existingFlights=new Set(flightRows.map(flightRestoreKey)),existingAircraft=new Set(aircraftRows.map(row=>upper(row,"registration"))),existingRates=new Set(rateRows.map(row=>`${upper(row,"registration")}|${text(row,"valid_from")}`)),existingAirports=new Set(airportRows.map(row=>upper(row,"ident"))),existingExpiries=new Set(expiryRows.map(row=>`${upper(row,"category")}|${upper(row,"label")}|${text(row,"expiry_date").slice(0,10)}`)),existingTracks=new Set(trackRows.map(row=>trackRestoreKey(flightRestoreKey(row),row)));
+  const sourceFlights=new Map(backup.flights.map(row=>[String(row.id),flightRestoreKey(row)])),backupTrackKeys=backup.flight_tracks.map(row=>trackRestoreKey(sourceFlights.get(String(row.flight_id))??"",row));
+  const counts={flights:backup.flights.length,aircraft:backup.aircraft.length,rates:backup.rates.length,airports:backup.airports.length,expiries:backup.expiries.length,flight_tracks:backup.flight_tracks.length};
+  const add={flights:backup.flights.filter(row=>!existingFlights.has(flightRestoreKey(row))).length,aircraft:backup.aircraft.filter(row=>!existingAircraft.has(upper(row,"registration"))).length,rates:backup.rates.filter(row=>!existingRates.has(`${upper(row,"registration")}|${text(row,"valid_from")}`)).length,airports:backup.airports.filter(row=>!existingAirports.has(upper(row,"ident"))).length,expiries:backup.expiries.filter(row=>!existingExpiries.has(`${upper(row,"category")}|${upper(row,"label")}|${text(row,"expiry_date").slice(0,10)}`)).length,flight_tracks:backupTrackKeys.filter(key=>key&&!existingTracks.has(key)).length};
+  const skip=Object.fromEntries(Object.entries(counts).map(([key,value])=>[key,value-(add[key as keyof typeof add]||0)]));
+  return{digest,exportedAt:String(backup.exported_at||""),source:counts,add,skip,settings:Boolean(backup.settings[0]),legacyPoints:(backup.track_points??[]).length};
+}
+
+async function restoreLegacy(userId:number,backup:PortableBackup,preview:RestorePreview){
+  const metadataQueries=[] as any[];
+  const settings=backup.settings[0];if(settings)metadataQueries.push(sql`INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json,created_at,updated_at) VALUES(${userId},${text(settings,"timezone")||"Europe/Prague"},${text(settings,"currency")||"CZK"},${upper(settings,"home_airport")},${upper(settings,"default_role")||"PIC"},${jsonText(settings.preferences_json,"{}")},NOW(),NOW()) ON CONFLICT(user_id) DO UPDATE SET timezone=EXCLUDED.timezone,currency=EXCLUDED.currency,home_airport=EXCLUDED.home_airport,default_role=EXCLUDED.default_role,preferences_json=EXCLUDED.preferences_json,updated_at=NOW()`);
+  for(const row of backup.aircraft){const registration=upper(row,"registration");if(!registration)continue;metadataQueries.push(sql`INSERT INTO aircraft(user_id,registration,aircraft_type,icao_type,aircraft_class,evidence,default_price_per_hour,default_role,billing_basis,active,note,created_at,updated_at) SELECT ${userId},${registration},${text(row,"aircraft_type",120)},${text(row,"icao_type",120)},${upper(row,"aircraft_class")},${upper(row,"evidence")},${nullableNumber(row.default_price_per_hour)},${upper(row,"default_role")||"PIC"},${legacyBilling(row)},${integer(row.active,1)},${text(row,"note")},NOW(),NOW() WHERE NOT EXISTS(SELECT 1 FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${registration})`)}
+  for(const row of backup.rates){const registration=upper(row,"registration"),valid=text(row,"valid_from").slice(0,10);if(!registration)continue;metadataQueries.push(sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source) SELECT ${userId},${registration},${text(row,"aircraft_type",120)},${valid},${nullableNumber(row.price_per_hour)},${nullableNumber(row.dry_price_per_hour)},${text(row,"source",500)} WHERE NOT EXISTS(SELECT 1 FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=${registration} AND COALESCE(valid_from,'')=${valid})`)}
+  for(const row of backup.airports){const ident=upper(row,"ident");if(!ident)continue;metadataQueries.push(sql`INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,active,closed,source,updated_at) SELECT ${userId},${ident},${text(row,"name",500)},${text(row,"municipality",300)},${upper(row,"iso_country",20)},${nullableNumber(row.latitude_deg)},${nullableNumber(row.longitude_deg)},${integer(row.active,1)},${integer(row.closed,0)},${text(row,"source",200)||"Backup restore"},NOW() WHERE NOT EXISTS(SELECT 1 FROM airports WHERE user_id=${userId} AND UPPER(TRIM(ident))=${ident})`)}
+  for(const row of backup.expiries){const category=text(row,"category",120)||"Document",label=text(row,"label",300),date=text(row,"expiry_date").slice(0,10);if(!label||!date)continue;metadataQueries.push(sql`INSERT INTO user_expiries(user_id,category,label,expiry_date,warning_days,note,active,created_at,updated_at) SELECT ${userId},${category},${label},${date},${integer(row.warning_days,30)},${text(row,"note")},${integer(row.active,1)},NOW(),NOW() WHERE NOT EXISTS(SELECT 1 FROM user_expiries WHERE user_id=${userId} AND UPPER(TRIM(category))=UPPER(${category}) AND UPPER(TRIM(label))=UPPER(${label}) AND expiry_date::text=${date})`)}
+  const tracksByFlight=new Map<string,BackupRow[]>();for(const track of backup.flight_tracks){const key=String(track.flight_id),items=tracksByFlight.get(key)??[];items.push(track);tracksByFlight.set(key,items)}
+  const flightBatches=[] as Array<{label:string;queries:any[]}>;for(const row of backup.flights){const sourceId=String(row.id),date=text(row,"date").slice(0,10),registration=upper(row,"registration"),offBlock=text(row,"off_block",20),departure=upper(row,"departure"),arrival=upper(row,"arrival");if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!registration)continue;const queries=[sql`INSERT INTO flights(user_id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,price_per_hour,billing_basis,note) SELECT ${userId},${date},${upper(row,"evidence")},${registration},${text(row,"aircraft_type",120)},${upper(row,"aircraft_class")},${departure},${arrival},${offBlock},${text(row,"takeoff",20)},${text(row,"landing",20)},${text(row,"on_block",20)},${integer(row.starts,0)},${text(row,"commander",300)},${text(row,"instructor",300)},${upper(row,"role")},${text(row,"task",1000)},${nullableNumber(row.price_per_hour)},${legacyBilling(row)},${text(row,"note")} WHERE NOT EXISTS(SELECT 1 FROM flights WHERE user_id=${userId} AND date::text=${date} AND UPPER(TRIM(registration))=${registration} AND COALESCE(off_block,'')=${offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${arrival})`];for(const track of tracksByFlight.get(sourceId)??[]){const fileName=text(track,"file_name",240),start=isoTime(track.start_utc),end=isoTime(track.end_utc),pointCount=Math.max(0,integer(track.point_count,0));queries.push(sql`INSERT INTO flight_tracks(user_id,flight_id,file_name,imported_at,point_count,distance_km,start_utc,end_utc,min_alt_m,max_alt_m,coordinates_json,overview_coordinates_json,overview_version) SELECT ${userId},f.id,${fileName},NOW(),${pointCount},${nullableNumber(track.distance_km)||0},${start||null},${end||null},${nullableNumber(track.min_alt_m)},${nullableNumber(track.max_alt_m)},${jsonText(track.coordinates_json)},${jsonText(track.overview_coordinates_json)},${Math.max(1,integer(track.overview_version,1))} FROM flights f WHERE f.user_id=${userId} AND f.date::text=${date} AND UPPER(TRIM(f.registration))=${registration} AND COALESCE(f.off_block,'')=${offBlock} AND UPPER(TRIM(COALESCE(f.departure,'')))=${departure} AND UPPER(TRIM(COALESCE(f.arrival,'')))=${arrival} AND NOT EXISTS(SELECT 1 FROM flight_tracks t WHERE t.user_id=${userId} AND t.flight_id=f.id AND COALESCE(t.file_name,'')=${fileName} AND LEFT(REPLACE(COALESCE(t.start_utc::text,''),'T',' '),19)=LEFT(REPLACE(${start},'T',' '),19) AND LEFT(REPLACE(COALESCE(t.end_utc::text,''),'T',' '),19)=LEFT(REPLACE(${end},'T',' '),19) AND COALESCE(t.point_count,0)=${pointCount}) ORDER BY f.id LIMIT 1`)}flightBatches.push({label:`${date} · ${registration} · ${departure||"—"} → ${arrival||"—"}`,queries})}
+  const operationCount=metadataQueries.length+flightBatches.reduce((sum,batch)=>sum+batch.queries.length,0);if(operationCount>5000)throw new Error("This backup requires more than 5,000 database operations. Contact an administrator.");
+  if(metadataQueries.length)await sql.transaction(metadataQueries);for(const batch of flightBatches)await sql.transaction(batch.queries);
+  for(const row of backup.flights){const date=text(row,"date").slice(0,10),registration=upper(row,"registration"),offBlock=text(row,"off_block",20),departure=upper(row,"departure"),arrival=upper(row,"arrival"),operationType=["SP","MP"].includes(upper(row,"operation_type"))?upper(row,"operation_type"):"SP",engineType=["SE","ME"].includes(upper(row,"engine_type"))?upper(row,"engine_type"):upper(row,"aircraft_class")==="MEP"?"ME":"SE";if(!date||!registration)continue;await sql`UPDATE flights SET operation_type=${operationType},engine_type=${engineType},landings_day=${integer(row.landings_day,integer(row.starts,0))},landings_night=${integer(row.landings_night,0)},night_minutes=${integer(row.night_minutes,0)},ifr_minutes=${integer(row.ifr_minutes,0)},pic_minutes=${integer(row.pic_minutes,0)},copilot_minutes=${integer(row.copilot_minutes,0)},dual_minutes=${integer(row.dual_minutes,0)},instructor_minutes=${integer(row.instructor_minutes,0)},verification_name=${text(row,"verification_name",160)},verification_reference=${text(row,"verification_reference",160)} WHERE user_id=${userId} AND date::text=${date} AND UPPER(TRIM(registration))=${registration} AND COALESCE(off_block,'')=${offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${arrival}`}
+  return Object.values(preview.add).reduce((sum,value)=>sum+value,0);
+}
+
+type ParsedPortableBackup=Awaited<ReturnType<typeof parsePortableBackup>>;
+type RestoreTrust={trustedSharedState:boolean;authenticity:"verified"|"unsigned"|"invalid"|"stored"};
+
+async function restoreParsedBackup(userId:number,parsed:ParsedPortableBackup,form:FormData,trust:RestoreTrust):Promise<RestoreState>{
+  const intent=String(form.get("intent")||"preview");
+  if(parsed.backup.version>=6){
+    let prepared;try{prepared=await prepareExactAccountRestore(userId,parsed.backup,parsed.digest,{trustedSharedState:trust.trustedSharedState,authenticity:trust.authenticity})}catch(error){return restorePreflightFailure(error,"Backup recovery preflight failed.")}
+    if(intent!=="restore")return{preview:prepared.preview};
+    if(String(form.get("preview_digest")||"")!==parsed.digest)return{error:"The file changed after preview. Validate it again."};if(String(form.get("confirm")||"").trim().toUpperCase()!=="RESTORE")return{error:"Type RESTORE to confirm.",preview:prepared.preview};
+    try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-restore-backup-failed",error);return{error:"Restore was stopped because the safety backup could not be created. Existing data is unchanged.",preview:prepared.preview}}
+    try{const result=await executeExactAccountRestore(userId,parsed.backup,prepared);revalidateRestore();return{success:`Exact recovery completed atomically. Added ${result.added} missing records; existing records were not overwritten. Certification and revision fingerprints were preserved.`,preview:undefined}}catch(error){
+      const code=(error as {code?:unknown})?.code;
+      const conflict=code==="23505"||code==="23P01";
+      // Do not emit SQL, identifiers, raw adapter errors or flight/GPS evidence in the public response or logs.
+      console.error("v6-exact-restore-failed",{kind:conflict?"conflict":"transaction_failure"});
+      return{error:conflict
+        ?"Recovery was stopped because records changed or conflicted. The main restore was rolled back; your pre-restore safety backup was retained."
+        :"Recovery could not be completed. The main restore was rolled back; your pre-restore safety backup was retained.",preview:prepared.preview};
+    }
+  }
+  const preview=await buildPreview(userId,parsed.backup,parsed.digest);if(intent!=="restore")return{preview};if(String(form.get("preview_digest")||"")!==parsed.digest)return{error:"The file changed after preview. Validate it again."};if(String(form.get("confirm")||"").trim().toUpperCase()!=="RESTORE")return{error:"Type RESTORE to confirm.",preview};
+  try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-restore-backup-failed",error);return{error:"Restore was stopped because the safety backup could not be created. Existing data is unchanged.",preview}}
+  try{const added=await restoreLegacy(userId,parsed.backup,preview);revalidateRestore();return{success:`Legacy restore completed. Added ${added} missing records; existing flights and historical rates were not changed.`}}catch(error){console.error("legacy-portable-backup-restore-failed",error);return{error:"Legacy restore stopped after a database error. Use the pre-restore safety backup if needed.",preview}}
+}
+
+export async function restorePortableBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
+  const {userId}=await requireUser();let parsed;try{parsed=await readBackup(form)}catch(error){return{error:error instanceof Error?error.message:"Backup could not be read."}}
+  const authenticity=portableBackupAuthenticity(parsed.backup,parsed.digest);
+  if(Number(parsed.backup.version)>=13&&authenticity!=="verified")return{error:"Version 13 backups containing protected void history require a valid FlyTally server signature."};
+  return restoreParsedBackup(userId,parsed,form,{trustedSharedState:authenticity==="verified",authenticity});
+}
+
+export async function createManualBackup(){const {userId}=await requireUser();await createStoredBackup(userId,"manual");revalidatePath("/data");revalidatePath("/export")}
+
+export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
+  const {userId}=await requireUser(),id=Number(form.get("backup_id"));
+  if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a stored backup."};
+  let stored:Awaited<ReturnType<typeof loadStoredBackup>>;
+  try{stored=await loadStoredBackup(userId,id)}catch(error){
+    console.error("stored-backup-load-failed",{error:error instanceof Error?error.name:"unknown"});
+    return{error:"Stored backup could not be read or verified."};
+  }
+  if(Number(stored.backup.version)>=13&&portableBackupAuthenticity(stored.backup,stored.digest)!=="verified"){
+    return{error:"Stored version 13 backup failed server signature verification. Existing data is unchanged."};
+  }
+  return restoreParsedBackup(userId,stored,form,{
+    trustedSharedState:true,
+    authenticity:Number(stored.backup.version)>=13?"verified":"stored",
+  });
+}
+
+export async function restoreDeletedFlight(_:TrashRestoreState,form:FormData):Promise<TrashRestoreState>{const {userId}=await requireUser(),id=Number(form.get("trash_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a deleted flight."};let result;try{result=await restoreDeletedFlightRecord(userId,id)}catch(error){console.error("flight-trash-restore-failed",error);return{error:"The flight could not be restored. Existing data is unchanged."}}if(result.error)return{error:result.error};revalidateRestore();return{success:`Flight restored as record ${result.flightId}.`}}
