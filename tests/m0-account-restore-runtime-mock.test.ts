@@ -43,7 +43,7 @@ const action = await import(pathToFileURL(resolve("app/(protected)/export/action
 const svc = await import(pathToFileURL(resolve("lib/account-restore-v6.ts")).href);
 const { ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE: m } = await import(pathToFileURL(resolve("lib/account-restore-containment.ts")).href);
 const state = () => ({...c});
-function assertNoMutation(before,after) {
+function assertNoMutation(before: Record<string,number>,after: Record<string,number>) {
   assert.equal(after.sql,before.sql,"zero SQL");
   assert.equal(after.storedLoads,before.storedLoads,"zero stored reads for write intent");
   assert.equal(after.fileReads,before.fileReads,"zero uploaded file reads");
