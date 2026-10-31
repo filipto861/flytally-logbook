@@ -46,6 +46,21 @@ S přesným posledním SHA pracovní větve, PR base/HEAD, testy a checkpointy p
 
 **Další nezávislý Claude audit pro tento návrh momentálně NENÍ plánovaný** podle posledního rozhodnutí vlastníka; přijatý jediný report a jeho nálezy zůstávají otevřené. Toto rozhodnutí nepředstavuje bezpečnostní schválení V14.
 
+## Engineering & Security Backlog
+
+**Původní priority Engineering Security Auditu**, nikoliv automatické nové pořadí práce. Stav je doložený ze současného `main` a otevřených PR; **PARTIAL** znamená jen existující dílčí mechanismus, nikoliv hotovou nápravu. Dokud nemá úkol doložené uzavření, zůstává zde i při odložení.
+
+| ID | Oblast | Auditní priorita | Stav | Důkaz / konkrétní zbývající výsledek |
+| --- | --- | --- | --- | --- |
+| **SEC-1** | Dependency Security | **P1** | **BLOCKED** | [Draft #432](https://github.com/filipto861/flytally-logbook/pull/432): část balíčků aktualizována v kandidátovi, ale Playwright 1.56.0 + odpovídající npm lockfile, bezpečnostní audit a testy pro **aktuální HEAD** čekají na dokončení. |
+| **DATA-1** | Backup & Restore Integrity | **P1** | **ACTIVE** | Draft [#434–#451](https://github.com/filipto861/flytally-logbook/pulls) a samostatný [M0-A Draft #452](https://github.com/filipto861/flytally-logbook/pull/452): plná bezpečná obnova stále **BLOCKED**; dokončit [M0-A až M3](#4-milníky-a-pořadí-návrh-další-práce-vyžaduje-rozhodnutí-vlastníka) a přesné testy před release. |
+| **AUTH-1** | Authentication Throttling | **P2** | **NOT STARTED** | [`lib/auth/security.ts`](lib/auth/security.ts) nyní vedle e-mailu počítá společný limit IP (30 selhání/15 min). Zajistit limity nezávislé pro různé účty za sdílenou IP a ověřit bezpečnost i souběh. |
+| **PREF-1** | Atomic Preferences | **P2** | **NOT STARTED** | [`app/(protected)/profile/appearance-actions.ts`](app/(protected)/profile/appearance-actions.ts) a [profile actions](app/(protected)/profile/actions.ts) pracují s read–modify–write celého `preferences_json`. Zabránit ztraceným souběžným aktualizacím, testovat konflikt dvou zápisů. |
+| **CRON-1** | Scheduler Scalability | **podmíněně P1/P2** | **NOT STARTED** | [Recency cron](app/api/cron/recency/route.ts) i [backup cron](app/api/cron/backups/route.ts) používají `LIMIT 500`. Zavést bezpečné dokončení všech způsobilých účtů s retry/pozicí a ověřit nad 500; naléhavost podle reálného počtu aktivních účtů **UNKNOWN**. |
+| **FLIGHTS-1** | Flights Pagination | **P2** | **PARTIAL** | [`lib/data/flights.ts`](lib/data/flights.ts) stránkuje přes `LIMIT/OFFSET`, ale `COUNT(*) OVER()` vrací bez řádku nulový total na prázdné stránce; [`flights/page.tsx`](app/(protected)/flights/page.tsx) „All“ omezuje na 5 000. Ověřit nezávislé počty, krajní stránky a přístup ke **všem** letům. |
+
+**Trvalá evidence:** Při konsolidaci porovnat úplný seznam otevřených auditních ID proti této tabulce a cíleným dokumentům/PR. Otevřené úkoly **nesmějí zmizet** jen kvůli zkrácení ROADMAP. `VERIFIED` nebo `RELEASED` přiznat pouze po důkazu pro konkrétní SHA a prostředí; při uzavření ponechat důkaz a vědomě zdokumentovat případný přesun z aktivního seznamu. Bez Filipova rozhodnutí **nezahajovat** AUTH-1, PREF-1, CRON-1 ani FLIGHTS-1 a nepřehodnocovat auditní P1/P2 na automatické pořadí práce.
+
 ## 5. Další produktové směry (nezahajovat implicitně)
 
 - **3.8.x Currency:** `3.8.0` měnové řešení a v21 schéma historicky vydány (viz [CHANGELOG](CHANGELOG.md)); aktuální `package.json` na main = `3.8.1`. Historické řádky „3.8.0 NEXT“ v archivované ROADMAP jsou superseded.
@@ -60,7 +75,7 @@ Zachovat mapy/flight/certification/recency/legacy chování; žádné tiché př
 1. **ROADMAP = kompaktní aktuální plán** (ideálně do cca 10–15 tisíc znaků), nikoliv chronologický log každého experimentu, PR a selhání. Při aktualizaci **uprav existující řádek**, nepřidávej další „2026-... checkpoint“ blok.
 2. **Dokončené/nahrazené důkazy** a výsledky auditů ukládat **jednou** do cíleného souboru `docs/maintenance/`, `docs/product/` nebo `CHANGELOG.md`; ROADMAP pouze shrnuje stav a odkazuje. Starší plán archivovat **jednorázově**, nikdy nemařit historii.
 3. **SESSION_HANDOFF / ACTIVE_WORK** jsou krátké rolling pointery, nikoliv druhá ROADMAP. Přesné full SHA, environment, test logs a aktuální blocker tam patří jen jako stručný checkpoint podle [HANDOFF_PROTOCOL](docs/PROJECT_MEMORY/HANDOFF_PROTOCOL.md); historické záznamy mohou mít samostatný archiv.
-4. Pro každý milestone zachovat **owner decision, scope, blockers, acceptance, DO NOT, jeden next step**. Nevypouštět nepohodlný nevyřešený P0 jen kvůli zkrácení.
+4. Pro každý milestone zachovat **owner decision, scope, blockers, acceptance, DO NOT, jeden next step**. Před zkrácením vždy zkontrolovat všech **šest Engineering & Security auditních ID**, nezmizí žádný otevřený P0/P1/P2; pro uzavření vyžadovat doložený SHA + stav a záznam rozhodnutí o archivaci.
 5. `FEATURES.md` = capabilities; `ARCHITECTURE.md` = contracts; `DEVELOPMENT.md` = testy/release; `CHANGELOG.md` = skutečné změny. Nezavádět druhý kanonický plán ani každodenní duplikace.
 
 ## Jeden další krok
