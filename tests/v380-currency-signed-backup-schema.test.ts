@@ -158,13 +158,22 @@ test("isolated browser FSTD correction columns match the canonical DB optimizer 
   }
 });
 
-test("signed v13 desktop recovery waits for an explicit Server Action result before asserting restored money",()=>{
+test("M0-A signed v13 browser check preserves evidence without full-account restore",()=>{
   const browser=readFileSync(new URL("../e2e/trash-integrity.spec.mjs",import.meta.url),"utf8");
-  const signed=browser.slice(browser.indexOf('test("Currency 3.8 browser: signed portable v13'));
+  const start=browser.indexOf('test("M0-A browser: signed v13 backup remains checkable while full restore is blocked"');
+  assert.ok(start>=0,"The browser must retain the signed-v13 containment scenario");
+  const signed=browser.slice(start);
   assert.match(signed,/test\.setTimeout\(90_000\)/);
-  assert.match(signed,/Exact recovery completed atomically\./);
-  assert.match(signed,/Restore error: /);
-  const status=signed.indexOf('page.locator(".backup-center [role=status]")');
-  const persisted=signed.indexOf("SELECT price_currency_code||");
-  assert.ok(status>0&&persisted>status,"Check the actual authenticated restore result before PostgreSQL values");
+  assert.match(signed,/downloaded\.createReadStream\(\)/);
+  assert.match(signed,/backup\.integrity\.server_signature/);
+  assert.match(signed,/getByRole\("button",\{name:"Check backup"\}\)\.click\(\)/);
+  assert.match(signed,/getByRole\("button",\{name:"Restore missing data"\}\)\)\.toHaveCount\(0\)/);
+  assert.match(signed,/getByRole\("textbox",\{name:"Type RESTORE"\}\)\)\.toHaveCount\(0\)/);
+  assert.match(signed,/const beforePreRestore=scalar\("SELECT COUNT\(\*\) FROM account_backups/);
+  assert.match(signed,/const beforeAudit=scalar\("SELECT COUNT\(\*\) FROM flight_audit_log/);
+  assert.match(signed,/expect\(scalar\("SELECT COUNT\(\*\) FROM flights WHERE id="\+flightId/);
+  assert.match(signed,/expect\(scalar\("SELECT COUNT\(\*\) FROM flight_audit_log WHERE user_id=9001"\)\)\.toBe\(beforeAudit\)/);
+  const checked=signed.indexOf('name:"Check backup"');
+  const persisted=signed.lastIndexOf('SELECT COUNT(*) FROM flights WHERE id=');
+  assert.ok(checked>=0&&persisted>checked,"Assert persisted no-restore state after the actual preview");
 });
