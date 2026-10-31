@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — DATA-1E3 D4 A2 / R1 retention, signature lifecycle, privacy (design only)
+
+- **Live authority:** verify `main@807f281e5870164b794d001480ecc84e0b45aea5` and Draft [#451](https://github.com/filipto861/flytally-logbook/pull/451) (`docs/logbook-data1e3-d4-a2-provenance-model-20261030`, stacked on Draft #450). Work pre-checkpoint `98eec57453029aba6fcd831537da930421845481`. Source freeze A2 `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`.
+- **Approved DESIGN:** Option2, v13 strict A/V13-I, L1, N2-S and V14-C conditional C2. **R1 V6 K1/T1/E are proposed OPTIONS ONLY**, owner/legal selection OPEN; see [R1 design](../maintenance/2026-10-31-data1e3-d4-a2-r1-retention-key-rotation-erasure-policy-options-v6-design.md).
+- **Hard gates:** exact C2 observation schema and complete v14 MVCC manifest (previous 36 not final), versioned key verification/legacy v13, legal retention and privacy exceptional erasure plus rollback/backup resurrection, F9 unsafe restore removal, source-grounded independent security BLOCK; new A2 tests NOT RUN. Production DB/schema/flags UNKNOWN; this task changed docs only, no DB/migration/flags/deploy.
+- **ONE NEXT STEP:** owner accepts/rejects the K1/T1/E policy direction as DESIGN ONLY, then independent review of frozen integrated security design before any implementation approval.
+
 ## 2026-10-31 — V14-C conditional C2 approved as DESIGN ONLY, V5 frozen
 
 - Owner `souhlasim` approved V14-C **conditional C2**. [V5 owner-approved contract](../maintenance/2026-10-31-data1e3-d4-a2-v14c-conditional-c2-approved-v5-design.md): multiple independently preserved authenticated v14 snapshot observations; one provisional logical native event only for same signed source user, `at_event_insert` UID and fully equal canonical event; any conflict or ambiguous identity BLOCK; distinct signed digests with cross-snapshot `migration_backfill` UID overlap BLOCK even content-equal absent new strong lineage evidence. No source-DB physical attestation. V13-I signed-v13 history to separate ledger and v13 strict A, L1, R1, N2-S unchanged. C1/C3 remain historic alternatives. V14 per-snapshot observation storage may increase former 36-result backup candidate, **FINAL COUNT OPEN**.
