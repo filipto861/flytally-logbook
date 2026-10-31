@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-31 — First external V7 audit A source reconciliation (dual review pending)
+
+- GitHub independently verified `main@807f281e5870164b794d001480ecc84e0b45aea5`; work `docs/logbook-data1e3-d4-a2-provenance-model-20261030` Draft [#451](https://github.com/filipto861/flytally-logbook/pull/451) on Draft #450 base `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, pre-checkpoint work `dde03ef893f3ea8ecf93a41ace589a26d4ea2294`, **verify final HEAD after Project Memory updates**. Frozen source `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, V7 design `f8f3dc07edce42357a0871599d054c9b5e44f146`, sparse 45-file reviewer artifact `a6e45253efb6a5e25441c8cece73b46e21c052ee`.
+- Received **one** external read-only audit report for those two SHAs; self-reported verdict **BLOCK — DESIGN ONLY**, 5 P0, 5 P1, 3 P2, tests NOT RUN; reviewer provider not positively identified and **no second independent review yet**. Added [provisional source-bound reconciliation](../maintenance/2026-10-31-data1e3-d4-a2-v7-independent-audit-a-provisional-reconciliation.md) with 13 findings, source-backed accepted/qualified findings and a reasoned separation of live source risk vs unimplemented v14 blockers.
+- Critical: `lib/account-restore-v6.ts:224,268–269` destructive native audit MAX/DELETE/unchecked conflict is on **both** frozen executable and deployed Vercel source SHA `55c8076e1eb8104c14392e15b272b33e0eb29607`; `app/(protected)/export/actions.ts` calls exact account restore. **Avoid full account backup restore** pending reviewed fix/guard. No evidence of an actual incident, no data inspection or production mitigation performed.
+- Scope/DO NOT: docs-only reconciliation, no new owner implementation authorization. No code, DB/schema/migration, production flags/keys, stored account backup, personal audit data, erase, merge/deploy or Training changes. Production Vercel `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` READY; DB/schema/flags UNKNOWN. All v14 A2 PG16 2-session/Neon HTTP/Node24/TS/build/Playwright **NOT RUN**. Old V3 and first V7 **BLOCK**.
+- **ONE NEXT STEP:** receive second independent audit on same frozen 45-file packet, reconcile P0/P1 source evidence; separate scope/owner approval required before mitigating production restore.
+
+
 ## 2026-10-31 — NEW 45-file DeepSeek-compatible V14-C/C2 audit handoff
 
 - **GitHub verified:** main `807f281e5870164b794d001480ecc84e0b45aea5`; Draft PR [#451](https://github.com/filipto861/flytally-logbook/pull/451) work `docs/logbook-data1e3-d4-a2-provenance-model-20261030`, base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, pre-checkpoint full work SHA `eb18349283112c3d2c2c450740ec47ff21a03fe7`; verify final work SHA after docs checkpoint.
