@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — 45-file external V7 security review packet READY ON GITHUB (not externally reviewed)
+
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 `docs/logbook-data1e3-d4-a2-provenance-model-20261030` on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a` work before docs `eb18349283112c3d2c2c450740ec47ff21a03fe7`.
+- Replaced prior 83-file user handoff with DeepSeek-compliant **45 original/synthetic metadata files**, branch `review-only/v14c-c2-v7-deepseek-45-files-20261031`, commit `a6e45253efb6a5e25441c8cece73b46e21c052ee`, direct GitHub ZIP https://github.com/filipto861/flytally-logbook/archive/a6e45253efb6a5e25441c8cece73b46e21c052ee.zip . 34 SOURCE code/test full files, 9 DESIGN full docs, README+manifest; Git tree/43 exact source blob identities PASS. ZIP receipt and independent review NOT RUN; **NEVER MERGE sparse branch**.
+- All V13/V14 R1 design decisions remain; previous V3 reviewer BLOCK persists. No application/DB/migration/flags/keys/erasure/merge/deploy/Training changes; prod DB/schema/flags UNKNOWN. A2 runtime/acceptance NOT RUN.
+- **ONE NEXT STEP:** both reviewers receive exactly the same 45-file packet, report evidence-bound findings, then lead reconciles the two read-only reviews.
+
+
 ## 2026-10-31 — DeepSeek upload-compatible review packet completed (separate sparse branch, NOT FOR MERGE)
 
 - Canonical main `807f281e5870164b794d001480ecc84e0b45aea5`; Draft #451 work pre-checkpoint `043bdb8a4826fd9f02740aa2bd7cecff47747c95`, base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`.
