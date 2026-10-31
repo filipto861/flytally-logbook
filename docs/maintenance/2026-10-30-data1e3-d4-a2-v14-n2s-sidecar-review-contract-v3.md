@@ -1,5 +1,7 @@
 # DATA-1E3 D4 A2 — v14 N2-S Sidecar + R1, independent review contract V3
 
+**POST-V3 OWNER DECISION — 2026-10-31:** The owner now approves **V13-I, DESIGN ONLY**: positively signed-v13 `audit_log` history is preserved only in the separate append-only imported account ledger as `legacy_v13_imported` **UNATTACHED**, NEVER reinserted into or used to DELETE native audit. Strict v13 cross-digest policy A and R1 import-time verification apply. The former V3 question whether v13 must import into a separate ledger is no longer open. [V4 V13-I owner decision contract](2026-10-31-data1e3-d4-a2-v13i-restore-contract-v4-design.md). Remaining v14 clone policy, R1 privacy/key details and code/DDL are still OPEN; previous independent BLOCK remains.
+
 **2026-10-30 — OWNER APPROVED DESIGN MECHANISM N2-S; DESIGN CANDIDATE ONLY.** After the independent reviewer BLOCK verdict, the owner explicitly replied **“souhlasim”** to changing N2 from an added native audit column to a separate one-to-one sidecar mapping table. The owner approves **N2-S as the target DESIGN direction**, not an executable DDL/schema, backfill, migration, flags, restore, merge or deployment. The previous reviewer BLOCK is not cleared by this choice.
 
 ## Verified baseline and frozen owner decisions

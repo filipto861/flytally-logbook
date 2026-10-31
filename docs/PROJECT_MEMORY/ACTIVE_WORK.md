@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — OWNER V13-I signed-v13 audit import choice APPROVED FOR DESIGN
+
+- Owner `souhlasím` explicitly approves **V13-I**: signed-v13 source audit rows preserved only as immutable `legacy_v13_imported` in the separate account ledger, L1 **UNATTACHED**, with original signed source digest, user/flight/audit IDs, actor and event payload; **never** insert into / delete from native `flight_audit_log`. Genuine destination writes still fire distinct native triggers. Enforce signed-v13 **A** cross-snapshot conflict and exact replay idempotency; same source numeric flight ID never auto-linked. Previous Option 2/N2-S/R1 DESIGN decisions unchanged. [V4 V13-I contract](../maintenance/2026-10-31-data1e3-d4-a2-v13i-restore-contract-v4-design.md). Code/schema/DDL/flags/merge/deploy not approved.
+- Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, work Draft #451 pre-V4 `77cbb36bf6869a27a94fe56257db40c90c1ac8c0` based Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; executable frozen `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Production READY prior SHA, DB/schema/flags UNKNOWN. Prior independent V3 review BLOCK; all A2 technical gates NOT RUN; only docs, no DB/query/SQL/migration/flags/deploy/Training.
+- **ONE NEXT STEP:** prepare bounded V14-C clone/namespace owner policy choices before freezing implementation scope.
+
 ## 2026-10-30 — Second independent V3 BLOCK source reconciled, v13 restore decision OPEN
 
 - Owner uploaded second DeepSeek V3 `BLOCK — DESIGN ONLY` (F01–F12 P0×4/P1×5/P2×3). [Frozen-source 12-finding reconciliation](../maintenance/2026-10-30-data1e3-d4-a2-v14-n2s-independent-v3-block-review-reconciliation.md): F9 global MAX/native DELETE/unchecked ON CONFLICT source-confirmed, sidecar FK/tenant/immutability and v13 restore still incomplete; hardcoded snapshot 32 vs proposed V3 36, existing stored v13-only. Existing `pre_restore` fail-stop works in candidate; new v14 completeness not implemented. Review packet omitted key transitive dependencies canonical/HMAC/certification/conflict/scale/currency source; GitHub serves them at exact source SHA but reviewer did not inspect. Existing N2-S/R1/v13 A/L1/Option2 approvals DESIGN ONLY; second reviewer BLOCK remains.
