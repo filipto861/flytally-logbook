@@ -29,3 +29,24 @@ Prior PG run without D2 flag was **124 PASS / 8 FAIL / 32 SKIP**: all eight fail
 **Release status: BLOCKED.** Do not reinterpret build PASS or 8/8 browser PASS as release authority. Browser mobile project is Chromium viewport/touch emulation, **not native Safari**. Production READY deployment remains `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU`, SHA `55c8076e1eb8104c14392e15b272b33e0eb29607` (source still unsafe). Production DB/schema/flags **UNKNOWN**. No merge, deploy, production DB writes, migrations or Training changes.
 
 **ONE NEXT STEP:** execute the remaining 32 PostgreSQL cases in the repo-approved **owner-local Windows six-fresh-PG16-partition** flow against the current exact candidate SHA, reconcile their protected fixtures and rerun `verify:release:risk`. Only after a real green release gate request **separate** owner merge/deploy GO.
+
+## 2026-10-31T18:44:31Z — independent continuation / exact missing-case attribution
+
+- **Read-only evidence source:** GitHub `main@807f281e5870164b794d001480ecc84e0b45aea5`, Draft PR #452 `fix/logbook-m0a-account-restore-containment-20261031`, pre-checkpoint work HEAD `34d507240a8e5a8787bf8e72d3255dedc9688b64`, exact earlier tested executable `440c965d1270e1f31dbe9e94d42af0cf4819de3a`. GitHub compare shows only three Markdown files changed since the tested code SHA; earlier 1,770 Node and 8 browser PASS are **historical SHA-bound evidence, not rerun today**. Current Vercel `fly-tally.com` is still production READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` at `55c8076e1eb8104c14392e15b272b33e0eb29607`.
+- **Exact 32 skips**, confirmed against the current `tooling/postgres-partition-registry.json`: `v21-migration` **5** (`FLYTALLY_V21_RELEASE_DISPOSABLE`), `d3b-migration-chain` **19** (`FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE`), `d3b-races` **6** (`FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE`), `real-v20-catalog` **2** (`FLYTALLY_D3B_FULL_V20_DISPOSABLE`). The previous single-DB 132 PASS comprise `shared-core` **124** and `shared-restore` **8**. Partition expectations total **164** across **42** files.
+- **Why not rerun here:** current chat execution container is **Linux / Node v22.16.0**, with no PG16 native binary or Windows PowerShell. The canonical executor deliberately rejects non-Windows, CI/Vercel, dirty tree, or mismatched fetched PR ref; GitHub's available manual workflows use Ubuntu. **New canonical PostgreSQL test execution: NOT RUN.** A Linux or manually flag-enabled shortcut must not be labeled canonical PASS. No source/migration/test logic or benchmark thresholds changed.
+- **Approved owner-local Windows procedure** (clean, freshly fetched branch HEAD exactly matching origin, Node 24.x, native `C:\Program Files\PostgreSQL\16\bin`; no caller DB URL):
+  ```powershell
+  git fetch origin
+  git switch fix/logbook-m0a-account-restore-containment-20261031
+  git pull --ff-only origin fix/logbook-m0a-account-restore-containment-20261031
+  git status --porcelain
+  $env:FLYTALLY_OWNED_PG16_RELEASE = "1"
+  $env:FLYTALLY_OWNED_PG16_EXPECTED_REF = "refs/remotes/origin/fix/logbook-m0a-account-restore-containment-20261031"
+  npm run verify:postgres -- --base origin/main
+  npm run verify:release:risk -- --base origin/main
+  Remove-Item Env:FLYTALLY_OWNED_PG16_RELEASE,Env:FLYTALLY_OWNED_PG16_EXPECTED_REF -ErrorAction SilentlyContinue
+  ```
+  The second command additionally requires its own verified authenticated browser fixture or reusable same-candidate browser evidence. Never aim fixture/reset commands at an existing, remote, Neon or production DB. `tooling/run-pr340-postgres-partitions-local.ps1` is historical PR340, hardcodes a different branch and prints `VALIDATED-ONLY`; it is **not** the canonical PR452 release path.
+- **Status:** PostgreSQL **PARTIAL 132/164, 32 SKIP** (historical); release **BLOCKED**. New Windows six-partition acceptance and new release gate **NOT RUN**. Prod DB/migrations/flags **UNKNOWN**, unchanged by this continuation. No merge/deploy/schema/flag/Training actions.
+- **ONE NEXT STEP:** run the canonical `FLYTALLY_OWNED_PG16_RELEASE=1` Windows six-cluster verifier on the freshly fetched exact PR #452 HEAD, then rerun `verify:release:risk` with the separate browser requirement and record actual TAP/ledger results.
