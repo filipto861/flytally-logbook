@@ -61,10 +61,12 @@ async function restoreLegacy(userId:number,backup:PortableBackup,preview:Restore
 type ParsedPortableBackup=Awaited<ReturnType<typeof parsePortableBackup>>;
 type RestoreTrust={trustedSharedState:boolean;authenticity:"verified"|"unsigned"|"invalid"|"stored"};
 
+const allowedPreviewIntents = new Set(["preview"]);
+
 async function restoreParsedBackup(userId:number,parsed:ParsedPortableBackup,form:FormData,trust:RestoreTrust):Promise<RestoreState>{
   const intent=String(form.get("intent")||"preview");
   // M0-A: allow preview, but never treat malformed or restore intent as write authority.
-  if(intent!=="preview")return{error:ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE};
+  if(!allowedPreviewIntents.has(intent))return{error:ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE};
   if(parsed.backup.version>=6){
     let prepared;try{prepared=await prepareExactAccountRestore(userId,parsed.backup,parsed.digest,{trustedSharedState:trust.trustedSharedState,authenticity:trust.authenticity})}catch(error){return restorePreflightFailure(error,"Backup recovery preflight failed.")}
     if(intent!=="restore")return{preview:prepared.preview};
