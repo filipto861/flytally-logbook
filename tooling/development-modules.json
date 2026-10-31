@@ -1521,12 +1521,12 @@
       },
       "currency-backup-v13-desktop": {
         "spec": "e2e/trash-integrity.spec.mjs",
-        "title": "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
+        "title": "M0-A browser: signed v13 backup remains checkable while full restore is blocked",
         "project": "desktop-chromium"
       },
       "currency-backup-v13-mobile": {
         "spec": "e2e/trash-integrity.spec.mjs",
-        "title": "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
+        "title": "M0-A browser: signed v13 backup remains checkable while full restore is blocked",
         "project": "mobile-chromium"
       },
       "airport-elevation-mutation-desktop": {
