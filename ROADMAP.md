@@ -1,5 +1,11 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-10-31 — Sparse DeepSeek/Claude review delivery prepared (83 original blobs; NOT FOR MERGE)
+
+- Owner reported DeepSeek maximum **100 files**; previous full-repository ZIPs were unusable. Created separate `review-only/v14c-c2-v7-deepseek-83-files-20261031` Git branch as an **artifact-only sparse commit** `d92d5abe35583985fc92f84e9dc587f19472ce0a`, not an application change or merge candidate. GitHub archive: https://github.com/filipto861/flytally-logbook/archive/d92d5abe35583985fc92f84e9dc587f19472ce0a.zip . Tree has **83 blobs**: `SOURCE/` 64 full original source/test files from frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, `DESIGN/` 17 full design/docs files from frozen V7 `f8f3dc07edce42357a0871599d054c9b5e44f146`, plus `README.md` reviewer brief and `MANIFEST.tsv`. GitHub tree count, source blob SHA-1 and size equality **83/83 listing PASS, 81/81 reused-original file identities PASS**. Physical ZIP download, unzip/CRC/SHA-256 and DeepSeek upload **NOT RUN**. No claim of exhaustive transitive completeness; reviewer must flag missing files, no code inventing.
+- Sparse branch has only these 83 files by design and MUST **NEVER BE MERGED** (missing rest of repository). It does not replace PR #451, canonical main, v13/v14 contracts or runtime tests. Previously reviewed V3 remains **BLOCK — DESIGN ONLY**; external V7 review **NOT RUN**. No code, production DB, schema/flags, key rotation, retention deletion, merge, deployment or Training touched.
+- **ONE NEXT STEP:** download the SHA-pinned sparse ZIP, confirm it extracts to 83 files, upload the **same archive** to DeepSeek and Claude with README.md instructions, return both independent verdicts for exact-source finding reconciliation.
+
 ## 2026-10-31 — V14-C/C2 V7 immutable full-source reviewer archive INDEX prepared, physical ZIP/review PENDING
 
 - Verified GitHub `main@807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 source `docs/logbook-data1e3-d4-a2-provenance-model-20261030` on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Frozen executable/source `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1` (Draft #449) and **immutable V7 design pre-index** `f8f3dc07edce42357a0871599d054c9b5e44f146`; candidate index added later, do not accidentally use changing branch HEAD for reviewer source.
