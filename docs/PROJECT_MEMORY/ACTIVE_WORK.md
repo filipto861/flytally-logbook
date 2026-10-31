@@ -9,4 +9,4 @@
 - V14 Option2, V13-A/V13-I, L1, N2-S, conditional C2, R1 K1/T1/E still DESIGN ONLY; prior V3 and first V7 A BLOCK; second Claude audit NOT RUN by owner choice. No implementation, remote/production DB, schema, flags, keys, erasure, merge/deploy or Training changes.
 - Read-only GitHub/Vercel source-check PASS; candidate Node/TS/build/PG16/Neon/browser/smoke NOT RUN; prod DB/schema/flags UNKNOWN. Future M0-A code should branch fresh main outside stacked PRs.
 
-**ONE NEXT STEP:** request owner authorisation for **M0-A temporary account restore lock** (source-only code + UI), then separately implement and verify; no automatic merge/deploy.
+**ONE NEXT STEP:** review [M0-A Draft #452](https://github.com/filipto861/flytally-logbook/pull/452) from main (`aaf5a7f4f3ff0ad963842a2da787ae897b7834c7` code; `81a83914ac2b9481e66fa6a84ad8319812090364` report), complete full-checkout candidate verification. Implementation-only owner approval; 6/6 focused Node24 source tests PASS, typecheck/build/PG16/browser NOT RUN, merge/deploy/DB/flags unapproved and unchanged.
