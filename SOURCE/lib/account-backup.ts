@@ -1,0 +1,68 @@
+import "server-only";
+import { sql } from "@/lib/db";
+import { DATABASE_SCHEMA_VERSION } from "@/lib/migration-plan";
+import { portableBackupDigest,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { signPortableBackup } from "@/lib/backup-authenticity";
+import { ensureV162Schema } from "@/lib/v162-schema";
+import { ensureV163Schema } from "@/lib/v163-schema";
+import { ensureV164Schema } from "@/lib/v164-schema";
+import { ensureV165Schema } from "@/lib/v165-schema";
+import { ensureV166Schema } from "@/lib/v166-schema";
+import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { AccountBackupSnapshotError, validateAccountBackupSnapshotResults } from "@/lib/account-backup-snapshot";
+import { validateAccountBackupBeforeSigning } from "@/lib/account-backup-presign";
+
+export async function buildAccountBackup(userId:number):Promise<{backup:PortableBackup;json:string;digest:string}>{
+  if(!Number.isSafeInteger(userId)||userId<=0)throw new AccountBackupSnapshotError("INVALID_USER_ID","Account backup requires a valid account identifier.");
+  await Promise.all([ensureDatabaseOptimizations(),ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
+  // Every query is created synchronously; both Neon HTTP and local psql
+  // execute this array as one read-only REPEATABLE READ transaction.
+  let snapshotResults:unknown;
+  try{
+    snapshotResults=await sql.transaction([
+    sql`SELECT current_setting('transaction_isolation') AS transaction_isolation,current_setting('transaction_read_only') AS transaction_read_only,pg_current_snapshot()::text AS snapshot_id`,
+    sql`SELECT * FROM flights WHERE user_id=${userId} ORDER BY date,off_block,id`,
+    sql`SELECT * FROM aircraft WHERE user_id=${userId} ORDER BY registration,id`,
+    sql`SELECT * FROM rates WHERE user_id=${userId} ORDER BY registration,valid_from,id`,
+    sql`SELECT * FROM airports WHERE user_id=${userId} ORDER BY ident,id`,
+    sql`SELECT * FROM user_expiries WHERE user_id=${userId} ORDER BY expiry_date,id`,
+    sql`SELECT * FROM user_settings WHERE user_id=${userId}`,
+    sql`SELECT * FROM flight_tracks WHERE user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM flight_audit_log WHERE user_id=${userId} ORDER BY changed_at,id`,
+    sql`SELECT * FROM fstd_sessions WHERE user_id=${userId} ORDER BY session_date,id`,
+    sql`SELECT * FROM flight_certified_revisions WHERE user_id=${userId} ORDER BY flight_id,revision_number,id`,
+    sql`SELECT * FROM fstd_certified_revisions WHERE user_id=${userId} ORDER BY fstd_session_id,revision_number,id`,
+    sql`SELECT * FROM deleted_flights WHERE user_id=${userId} AND restored_at IS NULL AND purge_after>NOW() ORDER BY deleted_at,id`,
+    sql`SELECT * FROM pilot_connections WHERE requester_user_id=${userId} OR recipient_user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM flight_participations WHERE source_user_id=${userId} OR participant_user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM instructor_flight_approvals WHERE student_user_id=${userId} OR instructor_user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM pilot_licences WHERE user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM pilot_qualifications WHERE user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM user_notifications WHERE user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM flight_verifications WHERE flight_user_id=${userId} OR signer_user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM connection_audit_log WHERE actor_user_id=${userId} OR subject_user_id=${userId} ORDER BY id`,
+    sql`SELECT * FROM flight_expenses WHERE user_id=${userId} ORDER BY flight_id,id`,
+    sql`SELECT * FROM spl_recency_evidence WHERE user_id=${userId} ORDER BY evidence_date,id`,
+    sql`SELECT * FROM helicopter_recency_evidence WHERE user_id=${userId} ORDER BY helicopter_type,evidence_date,id`,
+    sql`SELECT * FROM bpl_recency_evidence WHERE user_id=${userId} ORDER BY balloon_class,balloon_group,evidence_date,id`,
+    sql`SELECT id,user_id,original_flight_id,record_revision,certification_hash,certification_version,certified_at,certified_by_user_id,flight_snapshot,flight_snapshot_sha256,archive_version,voided_at,voided_by_user_id,void_reason,operation_token
+      FROM voided_certified_flights WHERE user_id=${userId} ORDER BY voided_at,id`,
+    sql`SELECT r.* FROM voided_flight_certified_revisions r JOIN voided_certified_flights v ON v.id=r.voided_flight_id WHERE v.user_id=${userId} ORDER BY r.voided_flight_id,r.revision_number,r.id`,
+    sql`SELECT x.* FROM voided_flight_verifications x JOIN voided_certified_flights v ON v.id=x.voided_flight_id WHERE v.user_id=${userId} ORDER BY x.voided_flight_id,x.record_revision,x.id`,
+    sql`SELECT a.* FROM voided_flight_archive_items a JOIN voided_certified_flights v ON v.id=a.voided_flight_id WHERE v.user_id=${userId} ORDER BY a.voided_flight_id,a.item_kind,a.id`,
+    sql`SELECT * FROM flight_source_provenance WHERE participant_user_id=${userId} ORDER BY participant_flight_id,id`,
+    sql`SELECT id,email,display_name,slug,role,created_at,updated_at FROM users WHERE id=${userId}`,
+    sql`SELECT current_setting('transaction_isolation') AS transaction_isolation,current_setting('transaction_read_only') AS transaction_read_only,pg_current_snapshot()::text AS snapshot_id`,
+    ],{isolationLevel:"RepeatableRead",readOnly:true});
+  }catch{
+    // A failed or oversized Neon HTTP batch must never fall back to
+    // independently scheduled SELECTs or produce a signed partial file.
+    throw new AccountBackupSnapshotError("SNAPSHOT_UNAVAILABLE","A complete account backup snapshot is unavailable; no backup was created.");
+  }
+  const [flights,aircraft,rates,airports,expiries,settings,tracks,audit,fstdSessions,flightRevisions,fstdRevisions,deletedFlights,connections,participations,approvals,licences,qualifications,notifications,verifications,connectionAudit,expenses,splEvidence,helicopterEvidence,bplEvidence,voidedFlights,voidedRevisions,voidedVerifications,voidedItems,sourceProvenance,user]=validateAccountBackupSnapshotResults(snapshotResults,userId) as Array<Array<BackupRow>>;
+  const counts={flights:flights.length,aircraft:aircraft.length,rates:rates.length,airports:airports.length,expiries:expiries.length,settings:settings.length,flight_tracks:tracks.length,audit_log:audit.length,fstd_sessions:fstdSessions.length,flight_certified_revisions:flightRevisions.length,fstd_certified_revisions:fstdRevisions.length,deleted_flights:deletedFlights.length,pilot_connections:connections.length,flight_participations:participations.length,instructor_flight_approvals:approvals.length,pilot_licences:licences.length,pilot_qualifications:qualifications.length,user_notifications:notifications.length,flight_verifications:verifications.length,connection_audit_log:connectionAudit.length,flight_expenses:expenses.length,spl_recency_evidence:splEvidence.length,helicopter_recency_evidence:helicopterEvidence.length,bpl_recency_evidence:bplEvidence.length,voided_certified_flights:voidedFlights.length,voided_flight_certified_revisions:voidedRevisions.length,voided_flight_verifications:voidedVerifications.length,voided_flight_archive_items:voidedItems.length,flight_source_provenance:sourceProvenance.length};
+  const payload={format:"pilot-logbook-portable",version:13,schema_version:DATABASE_SCHEMA_VERSION,exported_at:new Date().toISOString(),profile:user[0],counts,flights,aircraft,rates,airports,expiries,settings,flight_tracks:tracks,audit_log:audit,fstd_sessions:fstdSessions,flight_certified_revisions:flightRevisions,fstd_certified_revisions:fstdRevisions,deleted_flights:deletedFlights,pilot_connections:connections,flight_participations:participations,instructor_flight_approvals:approvals,pilot_licences:licences,pilot_qualifications:qualifications,user_notifications:notifications,flight_verifications:verifications,connection_audit_log:connectionAudit,flight_expenses:expenses,spl_recency_evidence:splEvidence,helicopter_recency_evidence:helicopterEvidence,bpl_recency_evidence:bplEvidence,voided_certified_flights:voidedFlights,voided_flight_certified_revisions:voidedRevisions,voided_flight_verifications:voidedVerifications,voided_flight_archive_items:voidedItems,flight_source_provenance:sourceProvenance};
+  await validateAccountBackupBeforeSigning(payload,userId);
+  const digest=await portableBackupDigest(JSON.stringify(payload)),signature=signPortableBackup(payload.version,userId,digest),backup={...payload,integrity:{algorithm:"SHA-256",payload_sha256:digest,signature_version:1,server_signature:signature}} satisfies PortableBackup;
+  return{backup,json:JSON.stringify(backup,null,2),digest};
+}
