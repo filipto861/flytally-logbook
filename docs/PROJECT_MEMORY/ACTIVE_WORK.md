@@ -1,12 +1,12 @@
 # FlyTally Logbook — active work
 
-> Short state pointer, updated 2026-10-31T09:58:49.802Z UTC. [Unchanged pre-compaction active-work archive](ACTIVE_WORK_ARCHIVE_PRE_COMPACTION_2026-10-31.md), original Git blob `3d0074bb2346da44e1c6d4001a2265d9a8a25fd4`. Earlier history remains in [2026-10-29 active-work archive](ACTIVE_WORK_ARCHIVE_2026-10-29.md). For active priorities use [ROADMAP](../../ROADMAP.md), not old archived statuses.
+> Short rolling pointer. [Full historical archive](ACTIVE_WORK_ARCHIVE_PRE_COMPACTION_2026-10-31.md) Git blob `3d0074bb2346da44e1c6d4001a2265d9a8a25fd4`; [ROADMAP](../../ROADMAP.md) is the sole active plan. Updated 2026-10-31T10:00:00Z.
 
-## Current scope
-- **Docs-only milestone:** compact ROADMAP and rolling memory, preserve full original bytes in immutable dated archives. Branch `docs/logbook-data1e3-d4-a2-provenance-model-20261030`, Draft [#451](https://github.com/filipto861/flytally-logbook/pull/451) base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, pre-memory HEAD `870cb3a542674b72cd3c24e904e2e15edbb8494e`; verify final HEAD before handoff. Canonical main `807f281e5870164b794d001480ecc84e0b45aea5`.
-- **Main V14 status:** approved **DESIGN ONLY** Option 2, signed v13 A/V13-I, L1, N2-S, conditional C2, R1 K1/T1/E. Frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, V7 design `f8f3dc07edce42357a0871599d054c9b5e44f146`, previous V3 + independent Review A **BLOCK**. Second Claude audit waived for now, **NOT RUN**.
-- **P0 operational risk:** production-reachable full account restore can delete native audit evidence; source confirmed at Vercel production SHA `55c8076e1eb8104c14392e15b272b33e0eb29607`, no actual incident proven. Avoid production full account restore pending separately approved mitigation.
-- **Evidence:** GitHub archive Git blob equalities checked; docs-only changes. Node, TypeScript, build, real PG16/Neon, browser, prod authenticated smoke **NOT RUN**. Production DB/schema/flags **UNKNOWN**. No code, DB, migrations, keys, erasure, flags, merge, deploy or Training changes.
-- **Product backlog:** N3 Manual/GPS simplification and future 3.9/3.10 remain distinct from DATA-1; no implicit reprioritisation or implementation consent.
+## M0 — active DESIGN work, implementation awaiting owner decision
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`; Draft [#451](https://github.com/filipto861/flytally-logbook/pull/451), work `docs/logbook-data1e3-d4-a2-provenance-model-20261030` pre-checkpoint `5cd1e8130ec935f20dc7db69783b772110950ec1`, base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Verify final work head.
+- [M0-A proposal](../maintenance/2026-10-31-data1e3-m0-account-restore-safety-containment-proposal.md): temporary server guard **ALL account backup restore v4+** stored/uploaded and exported exact service; UI restore disabled, create/check/download preserved. M0-B/V13-I separately restores functionality later. **NOT IMPLEMENTED OR APPROVED.**
+- Current production Vercel READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` SHA `55c8076e1eb8104c14392e15b272b33e0eb29607` retains native audit MAX/DELETE/unchecked INSERT; legacy v4/v5 batch restore non-atomic. Source-confirmed operational risk; real incident unknown. Avoid full account restores pending mitigation.
+- V14 Option2, V13-A/V13-I, L1, N2-S, conditional C2, R1 K1/T1/E still DESIGN ONLY; prior V3 and first V7 A BLOCK; second Claude audit NOT RUN by owner choice. No implementation, remote/production DB, schema, flags, keys, erasure, merge/deploy or Training changes.
+- Read-only GitHub/Vercel source-check PASS; candidate Node/TS/build/PG16/Neon/browser/smoke NOT RUN; prod DB/schema/flags UNKNOWN. Future M0-A code should branch fresh main outside stacked PRs.
 
-**ONE NEXT STEP:** Present bounded M0 native-audit restore safety remediation **design** and acceptance tests to owner; implement nothing until separately approved. Update this rolling pointer in place on the next checkpoint.
+**ONE NEXT STEP:** request owner authorisation for **M0-A temporary account restore lock** (source-only code + UI), then separately implement and verify; no automatic merge/deploy.
