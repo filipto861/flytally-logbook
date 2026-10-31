@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — immutable V7 full-source reviewer archive index (design only)
+
+- Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; work pre-checkpoint `a03e8af81410b8f4c69efe08771ff6246a205bea`. Frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, frozen V7 design `f8f3dc07edce42357a0871599d054c9b5e44f146`.
+- [Full-source archive index](../maintenance/2026-10-31-data1e3-d4-a2-v7-frozen-full-source-review-archive-index.md) GitHub tree/blobs verified: 40 source and 18 design/docs entries, both trees non-truncated. Two SHA-bound complete source/design archive URLs. ZIP actual bytes, ZIP SHA-256/CRC **NOT RUN**, external V7 reviewer **NOT RUN**. Prior V3 `BLOCK — DESIGN ONLY` retained; no source/runtime/schema/DB/flag/deploy changes.
+- Frozen approved DESIGN only: Option2, v13 A/V13-I, L1, N2-S, V14-C/C2, R1 K1/T1/E. V7 37-slot SELECT manifest proposed/not tested; old F9 unsafe audit restore and restore completeness/erasure blocks persist. Production DB/flags/schema UNKNOWN; A2 tests NOT RUN.
+- **ONE NEXT STEP:** download/hash actual immutable source+design archives for independent reviewer, collect single read-only verdict, reconcile P0/P1 before any implementation.
+
 ## 2026-10-31 — DATA-1E3/D4 A2, R1 K1/T1/E APPROVED (design); V14-C/C2 V7 review prep
 
 - `main@807f281e5870164b794d001480ecc84e0b45aea5`; Draft PR [#451](https://github.com/filipto861/flytally-logbook/pull/451) `docs/logbook-data1e3-d4-a2-provenance-model-20261030` on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; pre-checkpoint work `f9bc5f3765a4a959cc604f34f1b347ee34f589d7`; frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Verify final pushed work HEAD.
