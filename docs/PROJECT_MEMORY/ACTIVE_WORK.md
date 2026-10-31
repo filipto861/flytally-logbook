@@ -1,5 +1,12 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — DeepSeek upload-compatible review packet completed (separate sparse branch, NOT FOR MERGE)
+
+- Canonical main `807f281e5870164b794d001480ecc84e0b45aea5`; Draft #451 work pre-checkpoint `043bdb8a4826fd9f02740aa2bd7cecff47747c95`, base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`.
+- Artifact-only sparse review branch `review-only/v14c-c2-v7-deepseek-83-files-20261031` at `d92d5abe35583985fc92f84e9dc587f19472ce0a`: 83 files, 64 complete original frozen source/test blobs, 17 original V7 design blobs, README+manifest. GitHub blob identity verification PASS; physical ZIP and independent V7 review NOT RUN. Archive https://github.com/filipto861/flytally-logbook/archive/d92d5abe35583985fc92f84e9dc587f19472ce0a.zip . **Do not merge this sparse branch.**
+- Safety: previously approved V13-A/V13-I/N2-S/L1/C2/K1/T1/E design unchanged, reviewer old BLOCK retained; DB/schema/flags/deploy unchanged, prod DB UNKNOWN; A2 runtime tests NOT RUN.
+- **ONE NEXT STEP:** both independent reviewers inspect identical 83-file archive, submit SHA-based P0/P1/P2 findings for source reconciliation.
+
 ## 2026-10-31 — immutable V7 full-source reviewer archive index (design only)
 
 - Canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; work pre-checkpoint `a03e8af81410b8f4c69efe08771ff6246a205bea`. Frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, frozen V7 design `f8f3dc07edce42357a0871599d054c9b5e44f146`.
