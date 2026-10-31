@@ -1,5 +1,13 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — DATA-1E3/D4 A2, R1 K1/T1/E APPROVED (design); V14-C/C2 V7 review prep
+
+- `main@807f281e5870164b794d001480ecc84e0b45aea5`; Draft PR [#451](https://github.com/filipto861/flytally-logbook/pull/451) `docs/logbook-data1e3-d4-a2-provenance-model-20261030` on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`; pre-checkpoint work `f9bc5f3765a4a959cc604f34f1b347ee34f589d7`; frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`. Verify final pushed work HEAD.
+- **Approved design policies:** Option2; v13 strict A; V13-I imported, L1 unattached; N2-S; R1 import-time-only; conditional V14-C/C2; **R1 K1 versioned keyring, T1 bounded lawful retention, E legally reviewed exceptional erasure/anti-resurrection**. No code or irreversible action approval.
+- **Open candidate, NOT reviewed/implemented:** [V7 C2 observations + proposed exact 37-slot MVCC manifest](../maintenance/2026-10-31-data1e3-d4-a2-v14c-c2-observation-manifest-v7-candidate.md); [V7 independent reviewer brief](../maintenance/2026-10-31-data1e3-d4-a2-v14c-r1-independent-security-review-brief-v7.md). Prior V3 BLOCK persists; source inventory and cross-provider proof to do. 32 existing v13 query count verified in source; V14 runtime/PG/Neon/Node/TS/build/browser all NOT RUN; DB/flag/deploy unchanged, production DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** produce frozen dependency-complete reviewer packet and obtain independent read-only security feedback before proposing implementation.
+
+
 ## 2026-10-31 — DATA-1E3 D4 A2 / R1 retention, signature lifecycle, privacy (design only)
 
 - **Live authority:** verify `main@807f281e5870164b794d001480ecc84e0b45aea5` and Draft [#451](https://github.com/filipto861/flytally-logbook/pull/451) (`docs/logbook-data1e3-d4-a2-provenance-model-20261030`, stacked on Draft #450). Work pre-checkpoint `98eec57453029aba6fcd831537da930421845481`. Source freeze A2 `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`.
