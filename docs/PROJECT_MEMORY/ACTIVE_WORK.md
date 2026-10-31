@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — V14-C clone/namespace proposal ready, owner selection OPEN
+
+- [Source-bound V14-C option analysis](../maintenance/2026-10-31-data1e3-d4-a2-v14-clone-namespace-policy-options.md): **C1 strict cross-digest conflict; C2 conditional lead recommended**, keep separate signed snapshot observations but one provisional logical UID for exact `at_event_insert` UID/content under verified source user, conflicts and `migration_backfill` cross-digest ambiguities block; **C3 separate snapshot rows**. None approved; do not silently adopt C2. v14 UUID cannot authenticate physical database identity, clones copy ancestor UIDs and signing key may be cloned. New evidence-observation section may increase former **candidate** 36-slot snapshot; final query manifest still NOT PROVEN.
+- Frozen owner Option2, signed-v13 A, L1, N2-S, R1, V13-I DESIGN only; reviewer V3 BLOCK persists. `main@807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 pre-checkpoint `83b2c4894edb20c54d049505791fe9fe82c8f6e4`, Draft #450 base `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`; prod Vercel READY older SHA, production DB/schema/flags UNKNOWN. A2 tests NOT RUN. Docs only; no code/DB/SQL/migrations/flags/merge/deploy/Training.
+- **ONE NEXT STEP:** owner chooses V14-C C1/C2-conditional/C3 as DESIGN, then freeze complete observations/backup manifest with separate security review.
+
 ## 2026-10-31 — OWNER V13-I signed-v13 audit import choice APPROVED FOR DESIGN
 
 - Owner `souhlasím` explicitly approves **V13-I**: signed-v13 source audit rows preserved only as immutable `legacy_v13_imported` in the separate account ledger, L1 **UNATTACHED**, with original signed source digest, user/flight/audit IDs, actor and event payload; **never** insert into / delete from native `flight_audit_log`. Genuine destination writes still fire distinct native triggers. Enforce signed-v13 **A** cross-snapshot conflict and exact replay idempotency; same source numeric flight ID never auto-linked. Previous Option 2/N2-S/R1 DESIGN decisions unchanged. [V4 V13-I contract](../maintenance/2026-10-31-data1e3-d4-a2-v13i-restore-contract-v4-design.md). Code/schema/DDL/flags/merge/deploy not approved.
