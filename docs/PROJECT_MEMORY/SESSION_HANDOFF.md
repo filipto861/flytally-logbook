@@ -12,7 +12,7 @@
 - **Evidence:** GitHub read-only source comparison to current deployed production READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` **PASS source checks**; Node24, TypeScript, build, isolated PG16 2-session, Neon HTTP, Playwright, native Safari, production authenticated smoke **NOT RUN**. Prod DB/schema/migrations/flags UNKNOWN. No source/SQL/data/flags/keys/merge/deploy/Training changes.
 - **DO NOT:** implement, merge, deploy, change production DB/flag, restore account, rotate signing keys, or touch Training under this docs-only approval. Future M0-A implementation should branch from fresh canonical main, NOT stacked Draft #434–451.
 
-**ONE NEXT STEP:** obtain owner decision on **M0-A source-only server/UI full-account restore temporary containment**; only after approval create separate scoped code branch and run candidate risk-selected safety tests. Merge/deploy/DB/flags require separate authorisations.
+**ONE NEXT STEP:** independently review M0-A [Draft PR #452](https://github.com/filipto861/flytally-logbook/pull/452) on isolated main-based branch (source/test commit `aaf5a7f4f3ff0ad963842a2da787ae897b7834c7`; documentation checkpoint `81a83914ac2b9481e66fa6a84ad8319812090364`); finish full-checkout typecheck/build, isolated PG16 and UI risk-selected acceptance, then seek separate owner merge/deploy GO. Owner approved implementation only, 6/6 offline Node24 focused source-contract tests PASS, app/build/DB/browser NOT RUN. Production unchanged.
 
 ### Maintenance
 Replace current pointer on the next milestone; keep historical evidence in a single dated document. Preserve full SHA and specific test states; do not turn memory into an append-only diary.
