@@ -1,3 +1,20 @@
+# M0-A — candidate verification checkpoint (2026-10-31 UTC)
+
+**CURRENT authoritative source/test SHA before this docs checkpoint:** `0254e76cbcc1807e4d0fd447641a417bc1e41ae7`; main `807f281e5870164b794d001480ecc84e0b45aea5`; branch `fix/logbook-m0a-account-restore-containment-20261031`, Draft [PR #452](https://github.com/filipto861/flytally-logbook/pull/452) base `main`. Owner authorised verification, **NOT merge, production deploy, DB changes or flags**.
+
+- **Repair:** immediate previous work SHA `21741975540064c7fcbd01807ff6e3c1054bc65b` contained four corrupted Git blobs, each truncated at 1,500 source characters with invalid bytes: `e2e/trash-integrity.spec.mjs`, `tests/browser-suite-structure.test.ts`, `tooling/browser-suite-baseline.json`, `tooling/development-modules.json`. Restored **exact prior valid blob identities** from `59ab36b2bf0a8fb0b920638e3cf27a9066a4f80a` in one Git commit; abandoned incomplete added browser test from corrupted revision, **NOT EXECUTED**. No M0-A server guard/UI logic changed in repair. Verified original errors: `verify:plan` JSON parse FAIL, `typecheck` TS1002 FAIL and `build` compile PASS / typecheck FAIL on broken SHA only.
+- **Environment:** fresh isolated Vercel Sandbox `sbx_NcYWwydVuAgOxTKbixZa0yrb2zMM`, Node `24.22.1`, private Git full checkout exact candidate SHA, `npm ci --no-audit --no-fund` **PASS** exit 0. No production DB credentials or data used.
+- **PASS candidate `0254e76...`:** `npm run typecheck` exit 0; `npm run build` exit 0, Next 16.3.2 with 41 static pages; `npm test` **1770/1770 PASS**, 0 FAIL/SKIP, exit 0.
+- **PASS planner only, NOT release verdict:** `npm run verify:plan -- --base 807f281e5870164b794d001480ecc84e0b45aea5` exit 0; ID `78719009363b6a0dcd49cb75c85e99cfff937a68b0ee12647a8b3d82e4534862`; selects **typecheck, full Node tests, build, PostgreSQL and browser**; scale=false. Early `verify:plan -- <SHA>` (parsed as path) is **not authoritative**; shallow-clone initial `--base` error was resolved by `git fetch --unshallow`.
+- **NOT RUN / BLOCKING:** real owned-loopback PostgreSQL 16 two-session acceptance, database readback/mutation isolation, authenticated Playwright browser and native Safari/iPad. Sandbox lacks `postgres`, `initdb`, `pg_ctl`, `psql` and system Chromium/Chrome; **no verified owned local PostgreSQL**, so no destructive/remote fixture run. Required planner gates remain unsatisfied. `verify:release:risk` **NOT RUN**, status **PARTIAL / RELEASE BLOCKED**, not candidate PASS.
+- **DB/migrations/flags/prod:** no database connections, schema/migrations/flags/restore/deletion or merge/deploy. Production DB/schema/flags **UNKNOWN**; deployed older SHA `55c8076e1eb8104c14392e15b272b33e0eb29607` retains source-proven full-account restore risk. No actual incident established.
+- **Files changed by repair:** only four corrupted test/tooling files restored; latest parent executable M0-A containment code preserved. PR remains Draft.
+- **DO NOT:** treat green Node/build as PostgreSQL/browser acceptance, change main, execute production restore, merge, deploy, touch Training or expand DATA-1 V14 design.
+
+**ONE NEXT STEP:** prepare a truly isolated owned-loopback PostgreSQL 16 and authenticated browser fixture for PR #452 at the current code candidate; execute `DEVELOPMENT.md` selected acceptance and `verify:release:risk` only after independent DB target verification, then request separate owner release decision.
+
+---
+
 # M0-A account-restore containment — candidate checkpoint (2026-10-31)
 
 **Owner-authorized implementation and candidate verification only. NO MERGE / NO DEPLOY / NO PRODUCTION DB OR FLAGS.**
