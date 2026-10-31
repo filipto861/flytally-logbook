@@ -1,5 +1,14 @@
 # FlyTally Logbook — active work
 
+## 2026-10-31 — V7 first independent audit A BLOCK, production full restore risk documented
+
+- `main@807f281e5870164b794d001480ecc84e0b45aea5`; Draft #451 `docs/logbook-data1e3-d4-a2-provenance-model-20261030` pre-checkpoint `dde03ef893f3ea8ecf93a41ace589a26d4ea2294`, base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Original source candidate `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, design `f8f3dc07edce42357a0871599d054c9b5e44f146`; audit packet 45-file `a6e45253efb6a5e25441c8cece73b46e21c052ee`.
+- Reviewer A report received (5 P0/5 P1/3 P2; **BLOCK — DESIGN ONLY**, no runtime tests); [first source-bound reconciliation](../maintenance/2026-10-31-data1e3-d4-a2-v7-independent-audit-a-provisional-reconciliation.md) documents each ACCEPT/QUALIFY. Independent second audit **NOT RECEIVED**.
+- **Existing critical source risk:** exact account restore audit MAX/native DELETE/unchecked INSERT in both candidate and Vercel deployed `55c8076e1eb8104c14392e15b272b33e0eb29607`, reachable from authenticated export/restore actions; avoid full account restore pending controlled remediation. No actual loss observed/claimed. Other v14 review P0s principally unimplemented design gates.
+- No application/schema/DB/flags/keys/erasure/merge/deploy/Training changes, prod DB/schema/flags UNKNOWN; all V14 runtime tests NOT RUN. Old V3 BLOCK persists.
+- **ONE NEXT STEP:** collect second SHA-matched independent review, then consolidate source-verified findings and seek separately approved bounded remediation.
+
+
 ## 2026-10-31 — 45-file external V7 security review packet READY ON GITHUB (not externally reviewed)
 
 - Main `807f281e5870164b794d001480ecc84e0b45aea5`, Draft #451 `docs/logbook-data1e3-d4-a2-provenance-model-20261030` on Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a` work before docs `eb18349283112c3d2c2c450740ec47ff21a03fe7`.
