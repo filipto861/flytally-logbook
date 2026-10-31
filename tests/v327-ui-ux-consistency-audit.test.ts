@@ -659,7 +659,9 @@ test("v3.3 design batch 7b removes redundant check prefixes from backup and tras
   const restore=read("components/backup-restore.tsx");
   assert.match(restore,/>Backup validated</);
   assert.match(restore,/>Certified evidence verified:/);
-  assert.match(restore,/>All recoverable records from this backup are already present\./);
+  assert.match(restore,/>All checked records from this backup are already present\./);
+  assert.doesNotMatch(restore,/>All recoverable records from this backup are already present\./);
+  assert.match(restore,/Full account restore is currently unavailable\./);
 });
 
 
