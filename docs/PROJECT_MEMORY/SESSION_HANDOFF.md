@@ -1,5 +1,13 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-31 — NEW 45-file DeepSeek-compatible V14-C/C2 audit handoff
+
+- **GitHub verified:** main `807f281e5870164b794d001480ecc84e0b45aea5`; Draft PR [#451](https://github.com/filipto861/flytally-logbook/pull/451) work `docs/logbook-data1e3-d4-a2-provenance-model-20261030`, base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`, pre-checkpoint full work SHA `eb18349283112c3d2c2c450740ec47ff21a03fe7`; verify final work SHA after docs checkpoint.
+- **Reviewer artifact** (standalone sparse branch, NEVER MERGE): `review-only/v14c-c2-v7-deepseek-45-files-20261031@a6e45253efb6a5e25441c8cece73b46e21c052ee`; https://github.com/filipto861/flytally-logbook/archive/a6e45253efb6a5e25441c8cece73b46e21c052ee.zip . DeepSeek limit 50; artifact contains precisely 45 blobs: 34 unchanged SOURCE files from frozen executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, 9 unchanged DESIGN files from frozen V7 `f8f3dc07edce42357a0871599d054c9b5e44f146`, README + manifest. GitHub tree and all 43 source-design Git SHA-1 identities/sizes **PASS**; ZIP physical receipt/CRC/SHA256 and both external auditor uploads **NOT RUN**. Previous 83-file artifact superseded only for upload, not deleted.
+- **Scope:** user requested a smaller packet, no new app work approved. Approved design policies Option 2, signed-v13 strict A/V13-I, L1, N2-S, conditional V14-C/C2 and R1 K1/T1/E unchanged; V7 37-slot manifest proposal. Previous independent V3 BLOCK; no V7 review actually obtained. Partial curated packet must explicitly flag missing dependencies. No new code, PG16/Neon HTTP/Node/TS/build/browser runs (NOT RUN), schema, flags, migration, key rotation, real erasure, merge, deploy, Training. Production DB/flags UNKNOWN; Vercel earlier READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` old app `55c8076e1eb8104c14392e15b272b33e0eb29607`.
+- **ONE NEXT STEP:** send new 45-file ZIP identically to Claude and DeepSeek, get independent P0/P1/P2 read-only reports and compare against frozen original source. NEVER merge sparse artifact branch or deploy.
+
+
 ## 2026-10-31 — 83-file sparse reviewer ZIP produced as separate non-merge Git artifact
 
 - Main `807f281e5870164b794d001480ecc84e0b45aea5`; work Draft PR #451 `docs/logbook-data1e3-d4-a2-provenance-model-20261030` before checkpoint `043bdb8a4826fd9f02740aa2bd7cecff47747c95`, stacked base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Reviewer artifact-only branch `review-only/v14c-c2-v7-deepseek-83-files-20261031` commit `d92d5abe35583985fc92f84e9dc587f19472ce0a`. This sparse branch **MUST NOT MERGE**, no PR; only its archive is intended for DeepSeek/Claude.
