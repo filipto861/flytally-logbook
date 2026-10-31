@@ -59,7 +59,7 @@ test("Phase 0C preserves the original 48 browser contracts, five 3.7.0 map scena
   ];
   const addedCurrencyTests=[
     "Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",
-    "Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",
+    "M0-A browser: signed v13 backup remains checkable while full restore is blocked",
   ];
   const addedElevationTests=[
     "Airport elevation add edit and clear preserves nullable persisted MSL values",
