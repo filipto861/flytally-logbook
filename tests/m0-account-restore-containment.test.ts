@@ -51,7 +51,7 @@ test("M0-A server actions require authenticated user and stop restore before fil
     assert.ok(load > guard, action + " must block before file/stored backup read");
   }
   const common = code.slice(code.indexOf("async function restoreParsedBackup("));
-  const guard = common.indexOf('if(intent!=="preview")return{error:ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE}');
+  const guard = common.indexOf('if(!allowedPreviewIntents.has(intent))return{error:ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE}');
   assert.ok(guard > 0);
   assert.ok(guard < common.indexOf("prepareExactAccountRestore"));
   assert.ok(guard < common.indexOf("buildPreview(userId,parsed.backup"));
@@ -60,7 +60,7 @@ test("M0-A server actions require authenticated user and stop restore before fil
 
 test("M0-A preview remains available; backup create/download and individual Trash restore survive", () => {
   const actions = source("app/(protected)/export/actions.ts");
-  assert.match(actions, /if\(intent!=="preview"\)return\{error:ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE\}/);
+  assert.match(actions, /if\(!allowedPreviewIntents\.has\(intent\)\)return\{error:ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE\}/);
   assert.match(actions, /export async function createManualBackup\(/);
   assert.match(actions, /export async function restoreDeletedFlight\(/);
   assert.match(source("components/data-hub.tsx"), /href="\/api\/export\?format=json"/);
