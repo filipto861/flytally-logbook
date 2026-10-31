@@ -1,5 +1,13 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-10-31 — 83-file sparse reviewer ZIP produced as separate non-merge Git artifact
+
+- Main `807f281e5870164b794d001480ecc84e0b45aea5`; work Draft PR #451 `docs/logbook-data1e3-d4-a2-provenance-model-20261030` before checkpoint `043bdb8a4826fd9f02740aa2bd7cecff47747c95`, stacked base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Reviewer artifact-only branch `review-only/v14c-c2-v7-deepseek-83-files-20261031` commit `d92d5abe35583985fc92f84e9dc587f19472ce0a`. This sparse branch **MUST NOT MERGE**, no PR; only its archive is intended for DeepSeek/Claude.
+- Artifact https://github.com/filipto861/flytally-logbook/archive/d92d5abe35583985fc92f84e9dc587f19472ce0a.zip contains 83 Git blob files as source tree: 64 unchanged originals from executable `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1`, 17 unchanged design docs from `f8f3dc07edce42357a0871599d054c9b5e44f146`, README reviewer instructions and MANIFEST.tsv original Git blob IDs. GitHub listing file count **PASS 83**, manifest originals **PASS 81/81**, `truncated=false`. Physical ZIP receipt/checksum and DeepSeek extraction NOT RUN. Subset is not full 1000+ source, reviewers must identify missing dependencies and limit claims.
+- Scope: only review packaging/docs, signed-v13 A/V13-I, N2-S, L1, C2, R1 K1/T1/E remain design only. Prior external V3 BLOCK; V7 DeepSeek/Claude review NOT RUN. A2 PG16/Neon HTTP/Node24/TypeScript/build/Playwright NOT RUN, DB/schema/flags/secrets/deploy untouched, production DB/flags UNKNOWN; last verified Vercel READY `dpl_F2jdeRmYPGw4K2mZyvwUVii8SXAU` old app `55c8076e1eb8104c14392e15b272b33e0eb29607`.
+- DO NOT merge sparse archive branch, implement v14, alter prod, delete data, rotate keys or touch Training.
+- **ONE NEXT STEP:** user downloads and verifies sparse ZIP (83 files) and supplies identical archive to Claude/DeepSeek; bring both independent reports back for reconciliation.
+
 ## 2026-10-31 — V14-C/C2 reviewer source inventory checkpoint (complete commits indexed; ZIP not received)
 
 - GitHub verified canonical `main@807f281e5870164b794d001480ecc84e0b45aea5`, work Draft PR [#451](https://github.com/filipto861/flytally-logbook/pull/451) `docs/logbook-data1e3-d4-a2-provenance-model-20261030`, base Draft #450 `b8ccc583c033f7d9b70f2e3b84000320d066b01a`. Pre-checkpoint work commit `a03e8af81410b8f4c69efe08771ff6246a205bea`; **verify post-checkpoint HEAD**. Frozen source `6fd5597aec03ee7b6cbab4dafd98228fafdaaea1` and frozen V7 design `f8f3dc07edce42357a0871599d054c9b5e44f146` are deliberately distinct and never update from branch HEAD.
