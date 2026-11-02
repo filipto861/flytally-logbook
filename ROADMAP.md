@@ -1,5 +1,18 @@
 # FlyTally Logbook — ROADMAP
 
+## M0-B B1a — owner-authorized implementation staged (2026-11-02; NOT SHIPPED)
+
+**Main base:** `c9c2f60303236113a223942072311f5e37f876f7`. **Isolated candidate:** `fix/logbook-m0b-b1a-parent-id-20261102`, see [B1a exact acceptance checkpoint](docs/maintenance/2026-11-02-m0b-b1a-parent-id-acceptance.md). The owner authorized B1a code and local testing, not merge, deploy, DB migration/restore/delete, production flags or complete restore re-enable. Separate B0 design remains in unmerged Draft PR #454.
+
+- **Implemented:** dormant exact full-account restore parent INSERTs for flights/FSTD now **strictly reject** PK collisions (no `ON CONFLICT DO NOTHING`), before their already-transactional certification/property UPDATE. M0-A direct writer/actions block full account restore at the entrypoint. AC-20 rejects duplicate replay; four real two-session PostgreSQL cases assert original parent/native audit unchanged and full transaction rollback, with positive FSTD insert.
+- **Verified exact CI executable SHA:** `81967fdada079ef65ec969ccb3213d6d69a30a73`, [Actions #41508257156](https://github.com/filipto861/flytally-logbook/actions/runs/41508257156): source guards **7/7 PASS**, TypeScript **PASS**, Node **1771/1771 PASS**, Next build **PASS**, registry **42/164 integrity PASS**, isolated real PostgreSQL16 targeted **4/4 PASS**. Temporary CI workflow removed after verification (docs-only later commits).
+- **NOT RUN:** owner-local six-cluster canonical PG16 164 actual SQL cases, exact-candidate formal release gate, browser/authenticated signed-v13 restore (intentionally blocked), Neon HTTP parity and production smoke. Earlier failures retained in checkpoint. Targeted PG PASS != canonical release PASS.
+- **Unresolved:** natural-key races, protected child consistency, audit native MAX/DELETE and original audit ID collisions, complete signed snapshot / v14 provenance. B1a does not unblock restore.
+- **ONE NEXT STEP:** run canonical exact-SHA Windows owned-PG16 164/164 acceptance and risk-release planner for B1a, then reconcile B1b scope before merging or enabling anything.
+
+---
+
+
 ## Current release state — 2026-11-02: M0-A shipped
 
 **Verified 2026-11-02T18:17:33Z:** `main@f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, merged PR [#452](https://github.com/filipto861/flytally-logbook/pull/452), production Vercel [dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub](https://vercel.com/filipito/logbook/dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub) **READY** serving `fly-tally.com` at the same commit.

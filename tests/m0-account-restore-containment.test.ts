@@ -81,3 +81,25 @@ test("M0-A both client screens can only submit preview and explicitly announce d
   assert.match(source("components/backup-center.tsx"), /Check backup/);
   assert.match(source("components/backup-restore.tsx"), /Check backup/);
 });
+
+test("M0-B B1a staged parents reject duplicate keys and cannot update a colliding flight or FSTD", () => {
+  const code = source("lib/account-restore-v6.ts");
+  for (const [table, stage] of [
+    ["flights", "newFlights.map(stageFlight)"],
+    ["fstd_sessions", "newFstd.map(stageFstd)"],
+  ]) {
+    const sqlBlocks = [...code.matchAll(/sql\x60([\s\S]*?)\x60/g)].map(match => match[1].trim());
+    const prefix = "INSERT INTO " + table + " SELECT (json_populate_record(NULL::" + table + ",item)).*";
+    const inserts = sqlBlocks.filter(sql => sql.startsWith(prefix));
+    assert.equal(inserts.length, 1, table + " must have one source-defined parent INSERT");
+    assert.doesNotMatch(inserts[0], /\bON\s+CONFLICT\b/i, table + " must never silently skip a conflicting parent");
+    const stagePos = code.indexOf(stage);
+    const updatePos = code.indexOf("UPDATE " + table + " ", stagePos);
+    assert.ok(stagePos >= 0 && updatePos > stagePos, table + " certification UPDATE must follow strict INSERT");
+  }
+  const executor = code.slice(code.indexOf("export async function executeExactAccountRestore("));
+  assert.match(executor, /blockFullAccountRestore\(\);/);
+  assert.ok(executor.indexOf("blockFullAccountRestore();") < executor.indexOf("await Promise.all"));
+  assert.match(executor, /await sql\.transaction\(queries\)/);
+  assert.match(executor, /DELETE FROM flight_audit_log/); // Remaining B2 hazard is still M0-A blocked.
+});
