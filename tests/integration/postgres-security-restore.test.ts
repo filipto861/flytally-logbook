@@ -160,7 +160,7 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
   blockedByGuard([{...currentFlight,id:999991}],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
   blockedByGuard([{...currentFlight,user_id:11}],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
   blockedByGuard([currentFlight],[{...currentFstd,device_type:"DIFFERENT TRAINER"}],[currentFlightRevision],/M0B_TX_FSTD_IDENTITY_CONFLICT/);
-  blockedByGuard([currentFlight],[{...currentFstd,id:8299,device_type:"Synthetic distinct trainer"}],[currentFlightRevision],/M0B_TX_FSTD_IDENTITY_CONFLICT/);
+  blockedByGuard([currentFlight],[{...currentFstd,id:902001}],[currentFlightRevision],/M0B_TX_FSTD_IDENTITY_CONFLICT/);
   blockedByGuard([currentFlight],[currentFstd],[{...currentFlightRevision,certification_hash:"INVALID"}],/M0B_TX_CERTIFIED_CHILD_CONFLICT/);
   run("INSERT INTO voided_certified_flights(id,user_id,original_flight_id) VALUES(71001,10,1001)");
   blockedByGuard([currentFlight],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
