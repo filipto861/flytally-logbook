@@ -1,5 +1,16 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-11-02 — M0-B B1a owner-release PASS; B1b.1 targeted PASS (UNMERGED)
+
+- **B1a:** [Draft PR #455](https://github.com/filipto861/flytally-logbook/pull/455), owner-native Windows exact candidate `68b43b98f11b79dd8e76acac9c8d6e3a916375ec` / ID `29f6d94682652c4168c60506d67548768a78e6c616a2f2ceca4ff21d182dd72a`. Fresh six-owned PG16 **164/164 actual tests PASS**, auth Chromium risk **4/4 PASS**, formal release risk **PASS** per owner-provided terminal, private ledgers retained locally. No B1a merge/deploy.
+- **B1b.1:** isolated stacked work `fix/logbook-m0b-b1b-same-id-identity-20261102` on B1a, [detailed checkpoint](docs/maintenance/2026-11-02-m0b-b1b-same-id-identity-checkpoint.md). Adds strict same-numeric-ID flight/FSTD natural-identity proof before preflight skip; incomplete/ambiguous dates/routes/FSTD duration fail closed, missing != zero. [Actions #41512957127](https://github.com/filipto861/flytally-logbook/actions/runs/41512957127) at exact CI code/test SHA `988ae4d8a999dec4a43c1f0cf7b01882c3e3db13`: source+identity **16/16**, Node **1780/1780**, TypeScript, build, canonical PG registry hash **PASS**; isolated real PG16 targeted **4/4 PASS** (inherited two-session B1a regressions). NOT six-owned-PG16 or formal full release for B1b. Earlier CI failed count/mock integration and was corrected without weakening tests.
+- **Still blocked:** preflight/commit natural-key race, protected shared/certified/void/GPS child conflicts, B2 audit deletion/import original-ID hazard, signed-v14 complete coherent snapshot, B3 atomic orchestrator, B4 separate production activation. M0-A prevents full-account restore on live app.
+- **Authority:** implementation and local testing only; no merge/deploy/production DB/flags/restore enablement approval. Live `fly-tally.com` M0-A deployment READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`; production DB/schema/flags UNKNOWN. No Neon parity or authenticated production smoke for B1b. Historical M0-A/B1a test SHAs do not transfer to B1b.
+- **ONE NEXT STEP:** design/verify B1b.2 **transaction-bound** natural-key and protected child collision safeguards with real PostgreSQL and Neon HTTP fixed-batch evidence; keep M0-A blocked and avoid repeating owner full Windows gate until meaningful release candidate.
+
+---
+
+
 ## M0-B B1a — owner-authorized implementation staged (2026-11-02; NOT SHIPPED)
 
 **Main base:** `c9c2f60303236113a223942072311f5e37f876f7`. **Isolated candidate:** `fix/logbook-m0b-b1a-parent-id-20261102`, see [B1a exact acceptance checkpoint](docs/maintenance/2026-11-02-m0b-b1a-parent-id-acceptance.md). The owner authorized B1a code and local testing, not merge, deploy, DB migration/restore/delete, production flags or complete restore re-enable. Separate B0 design remains in unmerged Draft PR #454.

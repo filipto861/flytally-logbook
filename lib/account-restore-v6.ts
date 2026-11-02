@@ -12,6 +12,7 @@ import { AccountRestoreConflictError,archivedCertificationConflict,currentCertif
 import { SERVER_AUTHORITATIVE_BACKUP_SECTIONS } from "@/lib/backup-authenticity";
 import { EXACT_RESTORE_STATEMENT_LIMIT,RESTORE_BATCH_SIZES } from "@/lib/recovery-scale";
 import { blockFullAccountRestore } from "@/lib/account-restore-containment";
+import { sameRestoreParentNaturalIdentity, type RestoreParentKind } from "@/lib/recovery-parent-identity";
 
 export type ExactRestoreAuthenticity="verified"|"unsigned"|"invalid"|"stored";
 export type ExactRestoreOptions={trustedSharedState?:boolean;authenticity?:ExactRestoreAuthenticity};
@@ -45,12 +46,23 @@ const voidedVerificationKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")
 const voidedItemKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")}|${String(row.item_kind??"")}|${String(row.source_key??"")}`;
 const provenanceKey=(row:BackupRow)=>`${String(row.participant_user_id??"")}|${String(row.participant_flight_id??"")}`;
 
-function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>string,label:string,requireStableId=true){
+function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>string,label:string,requireStableId=true,strictSameIdParent?:RestoreParentKind){
   const byId=new Map(current.filter(row=>id(row)).map(row=>[id(row),row])),byKey=new Map(current.filter(row=>key(row)).map(row=>[key(row),row])),add:BackupRow[]=[];
   let skip=0;
   for(const row of source){
     const sourceId=id(row),natural=key(row);
-    if(requireStableId&&sourceId&&byId.has(sourceId)){skip++;continue}
+    if(requireStableId&&sourceId&&byId.has(sourceId)){
+      const existing=byId.get(sourceId)!;
+      if(strictSameIdParent&&!sameRestoreParentNaturalIdentity(row,existing,strictSameIdParent,key)){
+        throw new AccountRestoreConflictError({
+          code:"record-identity",
+          title:`${label} identity conflict`,
+          record:sourceId,
+          detail:`The target already has ${label.toLowerCase()} record ${sourceId}, but the identity fields are different or incomplete. Recovery will not skip or overwrite an ambiguous record.`,
+        });
+      }
+      skip++;continue
+    }
     const match=natural?byKey.get(natural):undefined;
     if(match){
       if(requireStableId&&sourceId&&id(match)!==sourceId)throw new AccountRestoreConflictError(recordIdentityConflict(label,natural,sourceId,id(match)));
@@ -192,7 +204,7 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     ["connection_audit_log",backup.connection_audit_log??[],connectionAudit,stableIdKey,"Connection audit event",true],
   ];
   const source:Record<string,number>={},add:Record<string,number>={},skip:Record<string,number>={},withheld:Record<string,number>={},addRows:Record<string,BackupRow[]>={};
-  for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add}
+  for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable,name==="flights"?"flight":name==="fstd_sessions"?"fstd":undefined),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add}
 
   const protectedSections:Array<[string,BackupRow[],BackupRow[],(row:BackupRow)=>string,string,string[]]>=[
     ["voided_certified_flights",incomingTombstones,voidedFlights,voidedFlightKey,"Voided certified flight",["user_id","original_flight_id","record_revision","certification_hash","certification_version","flight_snapshot_sha256","archive_version","voided_at","voided_by_user_id","void_reason","operation_token"]],
