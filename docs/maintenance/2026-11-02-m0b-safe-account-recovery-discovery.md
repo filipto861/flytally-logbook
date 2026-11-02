@@ -1,8 +1,8 @@
 # M0-B: audit-safe full-account recovery — discovery and proposed contract
 
-**Status:** DISCOVERY, DESIGN PROPOSAL / PENDING OWNER SCOPE DECISION. UTC 2026-11-02. Source verified from filipto861/flytally-logbook main@c9c2f60303236113a223942072311f5e37f876f7. Work branch docs/logbook-m0b-discovery-20261102; recheck actual HEAD. This is NOT implemented, merged, deployed, or approved as a schema migration. M0-A remains live in Vercel deployment dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub at application SHA f8116a7311abbdc9e1a269e133fccd7f8533f5c0.
+**Status:** DISCOVERY COMPLETED; D1–D3 HIGH-LEVEL DIRECTION ACCEPTED and B0 technical design drafted 2026-11-02. This earlier discovery remains source evidence, not permission for runtime/schema implementation. UTC 2026-11-02. Source verified from filipto861/flytally-logbook main@c9c2f60303236113a223942072311f5e37f876f7. Work branch docs/logbook-m0b-discovery-20261102; recheck actual HEAD. This is NOT implemented, merged, deployed, or approved as a schema migration. M0-A remains live in Vercel deployment dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub at application SHA f8116a7311abbdc9e1a269e133fccd7f8533f5c0.
 
-**Permission:** Owner said "super tak pokračujeme" after shipping M0-A. This authorizes read-only discovery and a draft proposal, NOT new restoration code, runtime activation, schema changes, merge, production DB/flags or deployment. The previous skip-review decision concerned M0-A; no external second-AI review has been initiated.
+**Permission:** Owner said "super tak pokračujeme" for discovery, then "ok pokracuj" after D1–D3 recommendations. Treat the latter as acceptance of high-level D1–D3 direction and authorization for B0 contract design only; NOT new restoration code, runtime activation, schema changes, merge, production DB/flags or deployment. The previous skip-review decision concerned M0-A; no external second-AI review has been initiated.
 
 ## Verified current-main source map
 
@@ -63,11 +63,11 @@
 
 **D3 activation:** Implement/verify corrected engine and any additive migration with public M0-A full restore still blocked. Production schema migration, release deploy and enabling full restore are **separate owner decisions** after actual environment checks.
 
-**Recommended draft:** D1 verified-only; D2 separate imported ledger/v14 design-first; D3 staged, blocked-by-default rollout. These are NOT frozen product decisions.
+**Direction accepted by owner for B0:** D1 verified-only, D2 separate imported ledger/v14 design-first, D3 staged blocked-by-default rollout. Detailed protocol, identity proof, schema, migration, key rotation and issuer semantics are NOT frozen. See [B0 contract v1](2026-11-02-m0b-b0-recovery-contract-v1.md).
 
 ## Evidence, DO NOT, and next step
 
 - Main source/GitHub/production deployment VERIFIED at stated baseline; other PRs inventoried. No source/tests modified in this discovery. Node, TypeScript, DB, browser, build, Neon HTTP and live production functional tests **NOT RUN for M0-B**. Historical M0-A owner Windows PG16 164/164, Chromium risk 8/8 and formal release PASS are NOT M0-B acceptance.
 - Production DB/schema/flags live readback UNKNOWN, no production migration/restore/delete/flag or Training operation. M0-A stays enabled. No secrets/PII/GPS files created.
 - Main blockers: signed-v13 issuer/instance ambiguity, per-event membership evidence, safe parent/child remap, original actor truthfulness, mixed-time snapshot consistency, fixed-batch Neon transaction races, v14 schema/export and backward compatibility.
-- **ONE NEXT STEP:** Owner decides D1–D3 and authorizes the isolated B0 contract-design scope. No code/schema changes or restore re-enable before that decision.
+- **ONE NEXT STEP:** Obtain separate owner implementation authorization for **B1a strict flight/FSTD identity + real local PostgreSQL16 two-session tests**; keep full-account M0-A containment active and no schema/migration/production changes.
