@@ -166,6 +166,6 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
   blockedByGuard([currentFlight],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
   run("DELETE FROM voided_certified_flights WHERE id=71001");
   // New positive parent/source IDs remain valid. No hidden re-enable of M0-A.
-  assert.match(run("BEGIN;\n"+allGuardSql([{...currentFlight,id:901001}],[{...currentFstd,id:902001}],[])+";\nCOMMIT;"),/1\s+1\s+1/);
+  assert.match(run("BEGIN;\n"+allGuardSql([{...currentFlight,id:901001,registration:"OK-DISTINCT"}],[{...currentFstd,id:902001,device_type:"Distinct trainer"}],[])+";\nCOMMIT;"),/1\s+1\s+1/);
 
 });
