@@ -96,8 +96,8 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
         await new Promise(resolve=>setTimeout(resolve,30));
       assert.ok(stdout.includes(ready),"the independent preview session must remain alive before B commits");
       const certifiedDate=certified?"'2026-11-02T10:10:00Z'":"NULL";
-      if(table==="flights")run("INSERT INTO flights(id,user_id,date,registration,certified_at,certification_hash,locked_at,record_revision) VALUES ("+id+",10,'2026-11-02','OK-B1A',"+certifiedDate+",'ORIGINAL_"+id+"',"+certifiedDate+",1)");
-      else run("INSERT INTO fstd_sessions(id,user_id,session_date,device_type,qualification_number,instruction,total_minutes,certified_at,certification_hash,record_revision) VALUES ("+id+",10,'2026-11-02','Synthetic trainer','TEST','B1a',60,"+certifiedDate+",'ORIGINAL_"+id+"',1)");
+      if(table==="flights")run("INSERT INTO flights(id,user_id,date,registration,certified_at,certification_hash,locked_at,record_revision) VALUES ("+id+",10,'2026-11-02','OK-B1A-"+id+"',"+certifiedDate+",'ORIGINAL_"+id+"',"+certifiedDate+",1)");
+      else run("INSERT INTO fstd_sessions(id,user_id,session_date,device_type,qualification_number,instruction,total_minutes,certified_at,certification_hash,record_revision) VALUES ("+id+",10,'2026-11-02','Synthetic trainer "+id+"','TEST','B1a',60,"+certifiedDate+",'ORIGINAL_"+id+"',1)");
       const original=rowSnapshot(table,id),nativeAudit=auditSnapshot();
       assert.equal(markerCount(),0,"session A uncommitted marker must not be visible to session B");
       const current=rows("SELECT * FROM "+table+" WHERE id="+id)[0];
