@@ -101,7 +101,7 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
       const original=rowSnapshot(table,id),nativeAudit=auditSnapshot();
       assert.equal(markerCount(),0,"session A uncommitted marker must not be visible to session B");
       const current=rows("SELECT * FROM "+table+" WHERE id="+id)[0];
-      const inbound={...current,certification_hash:"INCOMING_"+id};
+      const inbound:Record<string,unknown>={...current,certification_hash:"INCOMING_"+id};
       if(table==="flights")inbound.registration="OK-DIFFERENT";
       else inbound.device_type="Different synthetic trainer";
       const strictSql=render(sqlBlock(restore,"INSERT INTO "+table+" SELECT (json_populate_record(NULL::"+table+",item)).*"),{"JSON.stringify(batch)":[makeStage(table,inbound)]});
