@@ -1,0 +1,65 @@
+name: Temporary M0-B B1a isolated regression
+
+on:
+  push:
+    branches:
+      - fix/logbook-m0b-b1a-parent-id-20261102
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m0b-b1a-isolated
+  cancel-in-progress: true
+
+jobs:
+  b1a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: b1a_test
+          POSTGRES_PASSWORD: b1a_synthetic_ci_only
+          POSTGRES_DB: b1a_synthetic
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U b1a_test -d b1a_synthetic"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://b1a_test:b1a_synthetic_ci_only@127.0.0.1:5432/b1a_synthetic
+      PGPASSWORD: b1a_synthetic_ci_only
+      SIGNING_SECRET: b1a-synthetic-ci-signing-secret-not-for-users
+      AUTH_SECRET: b1a-synthetic-ci-auth-secret-not-for-users
+      FLYTALLY_POSTGRES_INTEGRATION: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Check exact isolated CI postgres identity (before SQL fixture)
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$CI" == "true" ]] || { echo "not CI"; exit 1; }
+          [[ "$DATABASE_URL" == postgresql://b1a_test:b1a_synthetic_ci_only@127.0.0.1:5432/b1a_synthetic ]] || exit 1
+          psql -X -w "$DATABASE_URL" -At -v ON_ERROR_STOP=1 -c "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||inet_server_port()||'|'||current_setting('server_version_num')" |
+            grep -Eq '^b1a_synthetic\|b1a_test\|127\.0\.0\.1\|5432\|16[0-9]{4}$'
+      - name: Source restore guard (M0-A + B1a)
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "0"
+          DATABASE_URL: ""
+        run: npm run test:target -- tests/m0-account-restore-containment.test.ts
+      - name: TypeScript
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "0"
+          DATABASE_URL: ""
+        run: npm run typecheck
+      - name: B1a PG16 real two-session synthetic regression
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/integration/postgres-security-restore.test.ts
