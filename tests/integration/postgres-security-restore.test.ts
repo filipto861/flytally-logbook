@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
@@ -61,4 +61,72 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
   const fixture=await makeBackup(),{backup}=await parsePortableBackup(fixture.json);validateBackupCertificationHistory(backup,10);run(`DELETE FROM flight_verifications WHERE flight_id=1001;DELETE FROM flight_participations WHERE source_flight_id=1001;DELETE FROM flight_tracks WHERE flight_id=1001;DELETE FROM flight_certified_revisions WHERE flight_id=1001;DELETE FROM flights WHERE id=1001;`);const restore=read("lib/account-restore-v6.ts"),flight=backup.flights[0],staged={...flight,aircraft_make:"",aircraft_model:"",aircraft_variant:"",certified_at:null,certified_by_user_id:null,certification_hash:"",locked_at:null,locked_by_user_id:null};
   const apply=()=>{run(render(sqlBlock(restore,"INSERT INTO flights SELECT (json_populate_record(NULL::flights,item)).*"),{"JSON.stringify(batch)":[staged]}));run(render(sqlBlock(restore,"UPDATE flights f SET aircraft_make="),{"JSON.stringify(batch)":[flight],userId:10}));run(render(sqlBlock(restore,"INSERT INTO flight_tracks SELECT (json_populate_record(NULL::flight_tracks,item)).*"),{"JSON.stringify(batch)":backup.flight_tracks}));run(render(sqlBlock(restore,"INSERT INTO flight_certified_revisions SELECT (json_populate_record(NULL::flight_certified_revisions,item)).*"),{"JSON.stringify(batch)":backup.flight_certified_revisions}));run(render(sqlBlock(restore,"INSERT INTO flight_participations SELECT (json_populate_record(NULL::flight_participations,item)).*"),{"JSON.stringify(batch)":backup.flight_participations}));run(render(sqlBlock(restore,"INSERT INTO flight_verifications SELECT (json_populate_record(NULL::flight_verifications,item)).*"),{"JSON.stringify(batch)":backup.flight_verifications}))};
   apply();const restored=rows(`SELECT * FROM flights WHERE id=1001 AND user_id=10`)[0];assert.ok(restored);assert.equal(verifyFlightCertification(restored,10).status,"verified");assert.equal(String(restored.purpose_code),"LAPL_FCL140A_REFRESHER");assert.equal(String(restored.certification_hash),fixture.r2Hash);const revision=rows(`SELECT * FROM flight_certified_revisions WHERE flight_id=1001 AND revision_number=1`)[0],snapshot=revision.snapshot_data as Record<string,unknown>;assert.equal(verifyFlightCertification({...snapshot,certification_hash:revision.certification_hash,certification_version:revision.certification_version},10).status,"verified");assert.equal(String(revision.certification_hash),fixture.r1Hash);const verifications=rows(`SELECT * FROM flight_verifications WHERE flight_id=1001 ORDER BY id`);assert.equal(verifications.length,2);for(const verification of verifications)assert.equal(verificationCryptographicStatus(verification),"verified");assert.equal((verifications[0].credential_snapshot as Record<string,unknown>).source,"In-person handwritten signature");const track=rows(`SELECT * FROM flight_tracks WHERE flight_id=1001`)[0];assert.equal(Number(track.point_count),3);assert.equal(String(track.coordinates_json),fixture.coordinates);const participation=rows(`SELECT * FROM flight_participations WHERE source_flight_id=1001`)[0];assert.equal(String(participation.source_hash),fixture.r2Hash);assert.equal(String(participation.status),"accepted");assert.throws(()=>apply(),/duplicate key value violates unique constraint "flights_pkey"/i);assert.equal(run(`SELECT COUNT(*) FROM flights WHERE id=1001`),"1");assert.equal(run(`SELECT COUNT(*) FROM flight_certified_revisions WHERE flight_id=1001`),"1");assert.equal(run(`SELECT COUNT(*) FROM flight_verifications WHERE flight_id=1001`),"2");assert.equal(run(`SELECT COUNT(*) FROM flight_tracks WHERE flight_id=1001`),"1");
+
+  // B1a source-defined two-session regression: actual PostgreSQL sessions A/B,
+  // with B committing the colliding ID after A began its recovery transaction.
+  // Source-defined audit triggers must keep genuine B evidence intact.
+  const migr=read("lib/db-optimization.ts");
+  run(sqlBlock(migr,"CREATE TABLE IF NOT EXISTS flight_audit_log ("));
+  run(sqlBlock(migr,"CREATE OR REPLACE FUNCTION logbook_audit_flight_change()"));
+  run("CREATE TRIGGER b1a_audit_flight AFTER INSERT OR UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_audit_flight_change()");
+  run("CREATE TABLE fstd_sessions (id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,session_date DATE,device_type TEXT,qualification_number TEXT,instruction TEXT,total_minutes INTEGER,certified_at TIMESTAMPTZ,certified_by_user_id BIGINT,certification_hash TEXT,certification_version INTEGER DEFAULT 1,record_revision INTEGER DEFAULT 1)");
+  run(sqlBlock(migr,"CREATE OR REPLACE FUNCTION logbook_protect_certified_fstd()"));
+  run("CREATE TRIGGER b1a_protect_fstd BEFORE UPDATE OR DELETE ON fstd_sessions FOR EACH ROW EXECUTE FUNCTION logbook_protect_certified_fstd()");
+  run("CREATE TABLE b1a_marker (id BIGSERIAL PRIMARY KEY,kind TEXT NOT NULL)");
+  const auditSnapshot=()=>run("SELECT COALESCE(jsonb_agg(to_jsonb(a) ORDER BY a.id),'[]'::jsonb)::text FROM flight_audit_log a");
+  const rowSnapshot=(table:string,id:number)=>run("SELECT to_jsonb(t)::text FROM "+table+" t WHERE id="+id);
+  const markerCount=()=>Number(run("SELECT COUNT(*) FROM b1a_marker"));
+  const makeStage=(table:string,row:Record<string,unknown>)=>table==="flights"
+    ?{...row,aircraft_make:"",aircraft_model:"",aircraft_variant:"",certified_at:null,certified_by_user_id:null,certification_hash:"",locked_at:null,locked_by_user_id:null}
+    :{...row,certified_at:null,certified_by_user_id:null,certification_hash:""};
+  async function raceParent(table:"flights"|"fstd_sessions",id:number,certified:boolean){
+    const kind=table==="flights"?"flight":"fstd";
+    const ready="B1A_"+kind.toUpperCase()+"_"+id+"_READY";
+    const sessionA=spawn("psql",["-d",databaseUrl,"-X","-w","-qAt","-v","ON_ERROR_STOP=1","-v","VERBOSITY=verbose"],{
+      stdio:["pipe","pipe","pipe"],env:{...process.env,PGCONNECT_TIMEOUT:"5"},windowsHide:true,shell:false});
+    let stdout="",stderr="";
+    sessionA.stdout.setEncoding("utf8");sessionA.stderr.setEncoding("utf8");
+    sessionA.stdout.on("data",chunk=>{stdout+=String(chunk)});
+    sessionA.stderr.on("data",chunk=>{stderr+=String(chunk)});
+    const closed=new Promise<number|null>(resolve=>sessionA.once("close",code=>resolve(code)));
+    try{
+      sessionA.stdin.write("SET search_path TO "+quotedSchema+";\nBEGIN;\nINSERT INTO b1a_marker(kind) VALUES ('"+kind+"');\nSELECT '"+ready+"';\n");
+      const deadline=Date.now()+12000;
+      while(!stdout.includes(ready)&&sessionA.exitCode===null&&Date.now()<deadline)
+        await new Promise(resolve=>setTimeout(resolve,30));
+      assert.ok(stdout.includes(ready),"the independent preview session must remain alive before B commits");
+      const certifiedDate=certified?"'2026-11-02T10:10:00Z'":"NULL";
+      if(table==="flights")run("INSERT INTO flights(id,user_id,date,registration,certified_at,certification_hash,locked_at,record_revision) VALUES ("+id+",10,'2026-11-02','OK-B1A',"+certifiedDate+",'ORIGINAL_"+id+"',"+certifiedDate+",1)");
+      else run("INSERT INTO fstd_sessions(id,user_id,session_date,device_type,qualification_number,instruction,total_minutes,certified_at,certification_hash,record_revision) VALUES ("+id+",10,'2026-11-02','Synthetic trainer','TEST','B1a',60,"+certifiedDate+",'ORIGINAL_"+id+"',1)");
+      const original=rowSnapshot(table,id),nativeAudit=auditSnapshot();
+      assert.equal(markerCount(),0,"session A uncommitted marker must not be visible to session B");
+      const current=rows("SELECT * FROM "+table+" WHERE id="+id)[0];
+      const inbound={...current,certification_hash:"INCOMING_"+id};
+      if(table==="flights")inbound.registration="OK-DIFFERENT";
+      else inbound.device_type="Different synthetic trainer";
+      const strictSql=render(sqlBlock(restore,"INSERT INTO "+table+" SELECT (json_populate_record(NULL::"+table+",item)).*"),{"JSON.stringify(batch)":[makeStage(table,inbound)]});
+      const updateSql=render(sqlBlock(restore,table==="flights"?"UPDATE flights f SET aircraft_make=":"UPDATE fstd_sessions s SET certified_at="),{"JSON.stringify(batch)":[inbound],userId:10});
+      sessionA.stdin.end(strictSql+";\n"+updateSql+";\nCOMMIT;\n");
+      const result=await Promise.race([closed,new Promise<never>((_,reject)=>setTimeout(()=>reject(Error("B1a two-session wait timed out")),15000))]);
+      assert.notEqual(result,0,"concurrent duplicate parent ID must abort the entire transaction");
+      assert.match(stderr,/23505|duplicate key|unique constraint/i,"PostgreSQL must reject duplicate parent primary-key ID");
+      assert.equal(rowSnapshot(table,id),original,"the competing committed original parent must remain byte-identical");
+      assert.equal(auditSnapshot(),nativeAudit,"independent native audit events must never be deleted by the rejected transaction");
+      assert.equal(markerCount(),0,"earlier changes in rejected restore transaction must be rolled back");
+    }finally{
+      if(sessionA.exitCode===null)sessionA.kill();
+    }
+  }
+  await raceParent("flights",8101,true);
+  await raceParent("fstd_sessions",8201,true);
+  await raceParent("flights",8103,false);
+  await raceParent("fstd_sessions",8203,false);
+  // A genuinely absent FSTD parent must still stage and receive its own certification.
+  const fstdNew=rows("SELECT * FROM fstd_sessions WHERE id=8201")[0];
+  const fstdAdded={...fstdNew,id:8299,certification_hash:"VALID_NEW_FSTD",certified_at:"2026-11-02T10:10:00Z"};
+  const fstdInsert=render(sqlBlock(restore,"INSERT INTO fstd_sessions SELECT (json_populate_record(NULL::fstd_sessions,item)).*"),{"JSON.stringify(batch)":[makeStage("fstd_sessions",fstdAdded)]});
+  const fstdUpdate=render(sqlBlock(restore,"UPDATE fstd_sessions s SET certified_at="),{"JSON.stringify(batch)":[fstdAdded],userId:10});
+  run("BEGIN; "+fstdInsert+"; "+fstdUpdate+"; COMMIT;");
+  assert.equal(String(rows("SELECT certification_hash FROM fstd_sessions WHERE id=8299")[0].certification_hash),"VALID_NEW_FSTD");
+
 });
