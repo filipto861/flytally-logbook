@@ -1,5 +1,17 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-11-02 — M0-B B1b.2b NOWAIT and real cross-user lock evidence (DRAFT)
+
+- **Stacked child of Draft PR #457:** `fix/logbook-m0b-b1b2b-lock-contention-20261102` on B1b.2a `615901b762750e882f2bac0ca1eb388ecd378a91`. B0/#454, B1a/#455, B1b.1/#456 and B1b.2a/#457 remain Draft/unmerged. [Exact detailed checkpoint](docs/maintenance/2026-11-02-m0b-b1b2b-lock-contention-checkpoint.md).
+- **Implement/test:** dormant `LOCK TABLE ... SHARE ROW EXCLUSIVE MODE NOWAIT` fails immediately if an ordinary writer already holds a conflicting lock; real independent PostgreSQL16 A/B sessions prove this and separately prove that an acquired restore lock still **blocks unrelated pilot writes**. Preserves M0-A direct writer/action full-restore block.
+- **Verified targeted CI [#41520038331](https://github.com/filipto861/flytally-logbook/actions/runs/41520038331), executable SHA `b5c95731efe93bfe9556c929274bd833a11bb1a7`:** 17/17 source, Node 1781/1781, TypeScript, Next build, pinned registry 42/164 integrity, isolated actual PG16 4/4 including the new two-session contention proof ALL PASS. Not a complete native owner Windows 164/164 or formal release. GitHub Actions workflow removed after PASS, docs-only HEAD later.
+- **Decision evidence:** global locks are proven unsafe to promote as final live restoration strategy because they block other users' writes. Restore-only per-user advisory locks do not protect against normal writers that do not cooperate; existing dates/routes are not guaranteed unique physical-flight identity. **Next B1b.2c is discovery and agreement on minimal immutable event identity / cooperating writer or safe database constraint**, plus B2 imported native audit/v14 origin handling; no schema/flag/restore activation automatically authorized. Neon HTTP actual transactional LOCK parity, owned Windows complete release and production smoke NOT RUN.
+- **Production:** main `c9c2f60303236113a223942072311f5e37f876f7`; `fly-tally.com` READY M0-A `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, source `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`; no B1b.2b merger/deploy/DB/migration/flag; production DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** map Create/Edit/Quick Add/FSTD/import writers and source-backed immutable event/constraint contracts, then design B1b.2c scoped concurrency model before implementing any v22 migration or replacing the global lock.
+
+---
+
+
 ## 2026-11-02 — M0-B B1b.2a staged transaction guards; targeted PASS, NOT RELEASED
 
 - **Isolated child of Draft PR #456:** `fix/logbook-m0b-b1b2-transaction-guard-20261102`, baseline B1b.1 exact `08410602d3a2ebff7c114d5401fea3f99c949f2e`; [full B1b.2a checkpoint](docs/maintenance/2026-11-02-m0b-b1b2-transaction-guard-checkpoint.md). Parent B1a Draft PR #455 has older owner-local six-owned-PG16 164/164 + browser 4/4 + risk PASS; **not transferable** to B1b.2a. Main still `c9c2f60303236113a223942072311f5e37f876f7`. M0-A remains production enabled as restoration containment, no B1b implementation shipped.
