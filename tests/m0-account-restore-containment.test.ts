@@ -114,3 +114,17 @@ test("M0-B B1b same-ID flight/FSTD skips must verify complete natural identity",
   assert.ok(scope.indexOf("blockFullAccountRestore();") >= 0);
   assert.ok(scope.indexOf("blockFullAccountRestore();") < scope.indexOf("await Promise.all"));
 });
+
+test("M0-B B1b.2 transaction assertions precede every restore mutation, with M0-A fail-closed", () => {
+  const code = source("lib/account-restore-v6.ts");
+  const writer = code.slice(code.indexOf("export async function executeExactAccountRestore("));
+  const lock = writer.indexOf("LOCK TABLE flights, fstd_sessions, flight_certified_revisions, fstd_certified_revisions, voided_certified_flights");
+  assert.ok(lock > writer.indexOf("blockFullAccountRestore();"), "M0-A must remain the first stop");
+  for (const guard of ["M0B_TX_FLIGHT_IDENTITY_CONFLICT", "M0B_TX_FSTD_IDENTITY_CONFLICT", "M0B_TX_CERTIFIED_CHILD_CONFLICT"]) {
+    const at = writer.indexOf(guard);
+    assert.ok(at > lock, "missing atomic fail-closed guard " + guard);
+    assert.ok(at < writer.indexOf("UPDATE users SET display_name="), "no mutation before guard " + guard);
+  }
+  assert.ok(writer.indexOf("await sql.transaction(queries)") > lock);
+  assert.match(writer, /DELETE FROM flight_audit_log/); // Still a B2 blocker behind M0-A.
+});
