@@ -162,11 +162,10 @@ test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata thro
 });
 
 
-test("Currency 3.8 browser: signed portable v13 restores exact flight and expense currency",async({page},testInfo)=>{
+test("M0-A browser: signed v13 backup remains checkable while full restore is blocked",async({page},testInfo)=>{
   test.skip(!authenticated,"Signed monetary recovery requires isolated authenticated localhost PostgreSQL.");
-  // Includes signing/download, Trash, preview, a pre-restore safety backup,
-  // and an atomic full-account recovery. A 30s whole-test cap caused a
-  // desktop timeout before its asynchronous recovery result was observed.
+  // Preserves signing/download/currency evidence plus Trash; checks preview
+  // but proves that full-account restore remains unavailable and write-free.
   test.setTimeout(90_000);
   const flightId=testInfo.project.name==="mobile-chromium"?9974:9964;
   const registration=testInfo.project.name==="mobile-chromium"?"OK-C384":"OK-C381";
@@ -220,25 +219,18 @@ test("Currency 3.8 browser: signed portable v13 restores exact flight and expens
     has:page.locator("span.backup-kind.manual")
   }).first();
   await expect(backupArticle).toBeVisible();
-  await backupArticle.getByRole("button",{name:"Restore preview"}).click();
-  await expect.poll(async()=>{
-    const detail=await backupArticle.allTextContents();
-    const errors=await page.locator(".backup-center [role=alert]").allTextContents();
-    return detail.some(value=>value.includes("missing records will be added"))
-      ?"ready":errors.map(message=>"Preflight error: "+message).join("; ")||"Waiting for preview";
-  },{timeout:15000}).toBe("ready");
-  await backupArticle.getByRole("textbox",{name:"Type RESTORE"}).fill("RESTORE");
-  await backupArticle.getByRole("button",{name:"Restore missing data"}).click();
-  // Do not infer success from a pending UI or an empty SELECT. Observe the
-  // Server Action result first and surface an application error distinctly.
-  await expect.poll(async()=>{
-    const success=(await page.locator(".backup-center [role=status]").allTextContents()).join(" ");
-    const error=(await page.locator(".backup-center [role=alert]").allTextContents()).join(" ");
-    return success.includes("Exact recovery completed atomically.")?"completed"
-      :error?"Restore error: "+error:"Waiting for signed recovery";
-  },{timeout:45_000,message:"Signed v13 restore must explicitly succeed before checking persisted monetary rows"}).toBe("completed");
-  await expect.poll(()=>scalar(`SELECT price_currency_code||':'||price_currency_minor_units||':'||price_per_hour_decimal::text
-    FROM flights WHERE id=${flightId} AND user_id=9001`),{timeout:10_000}).toBe("KWD:3:9876.125");
-  expect(scalar(`SELECT amount_minor||':'||currency||':'||amount_encoding||':'||amount_minor_units
-    FROM flight_expenses WHERE flight_id=${flightId} AND user_id=9001`)).toBe("6789:KWD:iso_minor_units:3");
+  // M0-A temporarily blocks FULL account restore, not single-flight Trash.
+  // The old positive full-restore assertion belongs to the separately gated
+  // M0-B/V13-I release, not to a candidate whose writer must fail closed.
+  const beforePreRestore=scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='pre_restore'");
+  const beforeAudit=scalar("SELECT COUNT(*) FROM flight_audit_log WHERE user_id=9001");
+  await expect(page.locator(".backup-center [role=status]").first()).toContainText("Full account restore is temporarily unavailable");
+  await expect(backupArticle.getByRole("button",{name:"Restore missing data"})).toHaveCount(0);
+  await expect(backupArticle.getByRole("textbox",{name:"Type RESTORE"})).toHaveCount(0);
+  await backupArticle.getByRole("button",{name:"Check backup"}).click();
+  await expect(backupArticle).toContainText("missing records identified");
+  await expect(backupArticle).toContainText("Stored FlyTally backup");
+  expect(scalar("SELECT COUNT(*) FROM flights WHERE id="+flightId+" AND user_id=9001")).toBe("0");
+  expect(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='pre_restore'")).toBe(beforePreRestore);
+  expect(scalar("SELECT COUNT(*) FROM flight_audit_log WHERE user_id=9001")).toBe(beforeAudit);
 });

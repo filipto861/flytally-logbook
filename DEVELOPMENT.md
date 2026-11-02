@@ -207,7 +207,7 @@ npm run verify:browser
 
 ## Owned PostgreSQL 16 acceptance for subsequent PRs (Draft; validation pending)
 
-The six-partition PG16 executor introduced by PR #340 has an explicitly gated, reusable **owner-local** entrypoint. It runs the pinned 42 files / 163 tests in six newly created and physically verified `127.0.0.1` PostgreSQL 16 clusters; the caller does **not** supply or reuse a database. The original PR340 `FLYTALLY_PR340_PARTITION_RELEASE=1` path and ordinary single-database path are unchanged.
+The six-partition PG16 executor introduced by PR #340 has an explicitly gated, reusable **owner-local** entrypoint. It runs the pinned 42 files / 164 tests in six newly created and physically verified `127.0.0.1` PostgreSQL 16 clusters; the caller does **not** supply or reuse a database. The original PR340 `FLYTALLY_PR340_PARTITION_RELEASE=1` path and ordinary single-database path are unchanged.
 
 In a **clean** worktree whose HEAD matches a freshly fetched remote topic branch, with Node.js 24 and native Windows PostgreSQL 16 tools:
 

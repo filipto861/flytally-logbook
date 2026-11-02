@@ -11,6 +11,7 @@ import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,protectedHistoryConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
 import { SERVER_AUTHORITATIVE_BACKUP_SECTIONS } from "@/lib/backup-authenticity";
 import { EXACT_RESTORE_STATEMENT_LIMIT,RESTORE_BATCH_SIZES } from "@/lib/recovery-scale";
+import { blockFullAccountRestore } from "@/lib/account-restore-containment";
 
 export type ExactRestoreAuthenticity="verified"|"unsigned"|"invalid"|"stored";
 export type ExactRestoreOptions={trustedSharedState?:boolean;authenticity?:ExactRestoreAuthenticity};
@@ -218,6 +219,8 @@ function stageFlight(row:BackupRow):BackupRow{return{...row,aircraft_make:"",air
 function stageFstd(row:BackupRow):BackupRow{return{...row,certified_at:null,certified_by_user_id:null,certification_hash:""}}
 
 export async function executeExactAccountRestore(userId:number,backup:PortableBackup,plan:ExactRestorePlan){
+  // M0-A: block before any schema setup, audit read or restore transaction.
+  blockFullAccountRestore();
   await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
   await requireMonetaryRestoreSchema(backup);
   validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
