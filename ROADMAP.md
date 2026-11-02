@@ -1,5 +1,17 @@
 # FlyTally Logbook — ROADMAP
 
+## Proposed next milestone — 2026-11-02: M0-B discovery (PENDING OWNER DECISION)
+
+**Not approved for implementation or merge.** Current main `c9c2f60303236113a223942072311f5e37f876f7` ships M0-A only; deployment `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` READY from M0-A code SHA `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`. The new M0-B discovery is on an isolated docs-only branch, not an application capability.
+
+Source inspection confirmed unexecuted historical exact-restoration hazards: `lib/account-restore-v6.ts` contains `MAX(flight_audit_log.id)` + global-ID floor DELETE, parent `ON CONFLICT DO NOTHING` followed by ID-based UPDATE, and silent imported audit `ON CONFLICT DO NOTHING`. Current `lib/account-backup.ts` builds signed-v13 backups via multiple independent `Promise.all` SQL reads without a common explicit consistency snapshot; draft snapshot improvements, parent-collision fixes and Option2 imported-audit ledger from Draft #433–#451 are **NOT in current main**. Current M0-A blocks the dangerous full-restore writers.
+
+[Detailed M0-B reconstruction and proposed B0–B4 acceptance](docs/maintenance/2026-11-02-m0b-safe-account-recovery-discovery.md). Proposed D1: same-account cryptographically verified backups for first writable restore; legacy unsigned preview-only until separately proven. D2: design-first immutable imported audit provenance + explicitly signed v14, not yet approved schema. D3: verify corrected engine with M0-A still blocking full restore; migration, release and enablement separately authorized. **All D1–D3 PENDING OWNER FREEZE**. No M0-B runtime/schema/DB/flag/Training edits, tests or deploy. Original older Draft PRs untouched.
+
+**ONE NEXT STEP:** owner confirms or revises D1–D3 and authorizes the B0 contractual design; **no M0-B code/schema implementation, merge, deployment or restore enablement** before explicit approval.
+
+---
+
 ## Current release state — 2026-11-02: M0-A shipped
 
 **Verified 2026-11-02T18:17:33Z:** `main@f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, merged PR [#452](https://github.com/filipto861/flytally-logbook/pull/452), production Vercel [dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub](https://vercel.com/filipito/logbook/dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub) **READY** serving `fly-tally.com` at the same commit.
