@@ -43,14 +43,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Check exact isolated CI postgres identity (before SQL fixture)
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$CI" == "true" ]] || { echo "not CI"; exit 1; }
-          [[ "$DATABASE_URL" == postgresql://b1a_test:b1a_synthetic_ci_only@127.0.0.1:5432/b1a_synthetic ]] || exit 1
-          psql -X -w "$DATABASE_URL" -At -v ON_ERROR_STOP=1 -c "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||inet_server_port()||'|'||current_setting('server_version_num')" |
-            grep -Eq '^b1a_synthetic\|b1a_test\|127\.0\.0\.1\|5432\|16[0-9]{4}$'
       - name: Source restore guard (M0-A + B1a)
         env:
           FLYTALLY_POSTGRES_INTEGRATION: "0"
@@ -61,5 +53,18 @@ jobs:
           FLYTALLY_POSTGRES_INTEGRATION: "0"
           DATABASE_URL: ""
         run: npm run typecheck
+      - name: Check exact isolated CI postgres identity (before SQL fixture)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${CI:-unset}" != "true" ]]; then echo "B1A_NOT_CI"; exit 1; fi
+          expected="postgresql://b1a_test:b1a_synthetic_ci_only@127.0.0.1:5432/b1a_synthetic"
+          if [[ "$DATABASE_URL" != "$expected" ]]; then echo "B1A_DATABASE_URL_TARGET_MISMATCH"; exit 1; fi
+          identity="$(psql -X -w "$DATABASE_URL" -At -v ON_ERROR_STOP=1 -c "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||inet_server_port()||'|'||current_setting('server_version_num')")"
+          echo "B1A_SYNTHETIC_IDENTITY=$identity"
+          if [[ ! "$identity" =~ ^b1a_synthetic\|b1a_test\|127\.0\.0\.1\|5432\|16[0-9]{4}$ ]]; then
+            echo "B1A_CLUSTER_IDENTITY_MISMATCH"; exit 1
+          fi
+          echo "B1A_LOOPBACK_PG16_PASS"
       - name: B1a PG16 real two-session synthetic regression
         run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/integration/postgres-security-restore.test.ts
