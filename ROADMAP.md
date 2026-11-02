@@ -1,5 +1,17 @@
 # FlyTally Logbook — ROADMAP
 
+## Current M0-B design milestone — 2026-11-02: B0 contract (D1–D3 DIRECTION ACCEPTED)
+
+**Owner accepted D1–D3 direction and continued B0 design on 2026-11-02; executable implementation, migrations, merge, deploy and full restore activation remain NOT AUTHORIZED.** Current main `c9c2f60303236113a223942072311f5e37f876f7` ships M0-A only; deployment `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` READY from M0-A code SHA `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`. The new M0-B discovery is on an isolated docs-only branch, not an application capability.
+
+Source inspection confirmed unexecuted historical exact-restoration hazards: `lib/account-restore-v6.ts` contains `MAX(flight_audit_log.id)` + global-ID floor DELETE, parent `ON CONFLICT DO NOTHING` followed by ID-based UPDATE, and silent imported audit `ON CONFLICT DO NOTHING`. Current `lib/account-backup.ts` builds signed-v13 backups via multiple independent `Promise.all` SQL reads without a common explicit consistency snapshot; draft snapshot improvements, parent-collision fixes and Option2 imported-audit ledger from Draft #433–#451 are **NOT in current main**. Current M0-A blocks the dangerous full-restore writers.
+
+[Detailed M0-B reconstruction and proposed B0–B4 acceptance](docs/maintenance/2026-11-02-m0b-safe-account-recovery-discovery.md). Proposed D1: same-account cryptographically verified backups for first writable restore; legacy unsigned preview-only until separately proven. D2: design-first immutable imported audit provenance + explicitly signed v14, not yet approved schema. D3: verify corrected engine with M0-A still blocking full restore; migration, release and enablement separately authorized. **D1–D3 high-level direction accepted by owner (2026-11-02)**; exact trust namespace, v14 format/issuer cryptographic proof, Neon HTTP transaction details and rollout remain unresolved. [B0 technical contract v1](docs/maintenance/2026-11-02-m0b-b0-recovery-contract-v1.md) defines the accepted boundaries, explicit blockers, rollback semantics and B1a–B4 small-batch acceptance. No runtime/schema/DB/flag/Training edits, tests or deploy. Original older Draft PRs untouched.
+
+**ONE NEXT STEP:** approve separate **B1a minimal strict flight/FSTD parent identity and two-session local PostgreSQL16 regression implementation** with M0-A unchanged; no other runtime/schema, merge, deployment or restore activation without explicit approval.
+
+---
+
 ## Current release state — 2026-11-02: M0-A shipped
 
 **Verified 2026-11-02T18:17:33Z:** `main@f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, merged PR [#452](https://github.com/filipto861/flytally-logbook/pull/452), production Vercel [dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub](https://vercel.com/filipito/logbook/dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub) **READY** serving `fly-tally.com` at the same commit.
