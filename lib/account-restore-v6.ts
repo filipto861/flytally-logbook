@@ -268,7 +268,7 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
            OR COALESCE(t.certification_hash,'') IS DISTINCT FROM COALESCE(item->>'certification_hash',''))
       OR EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.flights)}::jsonb) AS b(item)
         JOIN voided_certified_flights v ON v.user_id=${userId} AND v.original_flight_id=(item->>'id')::bigint)
-      THEN CAST('M0B_TX_FLIGHT_IDENTITY_CONFLICT' AS INTEGER) ELSE 1 END AS flight_guard_ok`,
+      THEN CAST('M0B_TX_FLIGHT_IDENTITY_CONFLICT:' || txid_current()::text AS INTEGER) ELSE 1 END AS flight_guard_ok`,
     sql`SELECT CASE WHEN
       EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.fstd_sessions)}::jsonb) AS b(item)
         WHERE NULLIF(item->>'id','') IS NULL OR NULLIF(item->>'user_id','') IS NULL
@@ -293,7 +293,7 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
            OR t.total_minutes::text IS DISTINCT FROM item->>'total_minutes'
            OR t.record_revision::text IS DISTINCT FROM item->>'record_revision'
            OR COALESCE(t.certification_hash,'') IS DISTINCT FROM COALESCE(item->>'certification_hash',''))
-      THEN CAST('M0B_TX_FSTD_IDENTITY_CONFLICT' AS INTEGER) ELSE 1 END AS fstd_guard_ok`,
+      THEN CAST('M0B_TX_FSTD_IDENTITY_CONFLICT:' || txid_current()::text AS INTEGER) ELSE 1 END AS fstd_guard_ok`,
     sql`SELECT CASE WHEN
       EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.flight_certified_revisions)}::jsonb) AS b(item)
         JOIN flight_certified_revisions t ON t.id=(item->>'id')::bigint OR (t.user_id=${userId}
@@ -311,7 +311,7 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
           OR t.fstd_session_id::text IS DISTINCT FROM item->>'fstd_session_id'
           OR t.revision_number::text IS DISTINCT FROM item->>'revision_number'
           OR COALESCE(t.certification_hash,'') IS DISTINCT FROM COALESCE(item->>'certification_hash',''))
-      THEN CAST('M0B_TX_CERTIFIED_CHILD_CONFLICT' AS INTEGER) ELSE 1 END AS revisions_guard_ok`,
+      THEN CAST('M0B_TX_CERTIFIED_CHILD_CONFLICT:' || txid_current()::text AS INTEGER) ELSE 1 END AS revisions_guard_ok`,
   ];
   const profileName=text(backup.profile?.display_name);if(profileName)queries.push(sql`UPDATE users SET display_name=${profileName},updated_at=NOW() WHERE id=${userId} AND COALESCE(TRIM(display_name),'')=''`);
   for(const batch of chunks(backup.settings,RESTORE_BATCH_SIZES.settings))queries.push(sql`INSERT INTO user_settings SELECT (json_populate_record(NULL::user_settings,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
