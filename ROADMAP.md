@@ -1,5 +1,14 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-11-02 — M0-B B1b.2c event identity / account-writer gate DESIGN PROPOSED (DRAFT)
+
+- **Source:** verified main `c9c2f60303236113a223942072311f5e37f876f7`, stacked parent Draft #458 `49f7aeb85e5e61b3256d28cfb4937d38d33dba13`. New docs-only child branch `docs/logbook-m0b-b1b2c-event-contract-20261102` has design [B1b.2c/V22](docs/maintenance/2026-11-02-m0b-b1b2c-event-identity-concurrency-v22-design.md). No M0-B runtime or SQL enabled.
+- **Proposed, NOT frozen DDL:** stable per-account event UUID distinct from numeric row ID and dedup fingerprint; lifecycle registry spanning active/Trash/void; account-scoped write-gate row lock enforced by complete DB triggers on relevant normal writes and by separate SQL statement before restore revalidation; signed coherent V14 with verifiable issuer/membership and separate native/imported audit. Global `SHARE ROW EXCLUSIVE` rejected as production lock.
+- **Open blockers:** event issuer continuity and legacy v13 proof; exact v22 trigger/FK coverage and on-demand migration guard; cross-user/share deadlocks; actual isolated PostgreSQL16/Neon HTTP batch parity and full release acceptance; independent read-only reviewer. Missing assurances => UNAVAILABLE. M0-A full account restore remains blocked.
+- **Evidence:** docs/source inspection only, no new B1b.2c tests. Prior Actions #41520038331 B1b.2b exact-source PASS must not be assigned to this design candidate. Production Vercel M0-A READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, app `f8116a7311abbdc9e1a269e133fccd7f8533f5c0` independently read; prod DB/schema/flags UNKNOWN. No merge, deploy, production DB/migration/flag/restore or Training action.
+- **ONE NEXT STEP:** independent SHA-bound read-only architecture/security review and reconciliation before any isolated executable v22 prototype; explicit separate authority for future migrations and activation.
+
+
 ## 2026-11-02 — M0-B B1b.2b NOWAIT and real cross-user lock evidence (DRAFT)
 
 - **Stacked child of Draft PR #457:** `fix/logbook-m0b-b1b2b-lock-contention-20261102` on B1b.2a `615901b762750e882f2bac0ca1eb388ecd378a91`. B0/#454, B1a/#455, B1b.1/#456 and B1b.2a/#457 remain Draft/unmerged. [Exact detailed checkpoint](docs/maintenance/2026-11-02-m0b-b1b2b-lock-contention-checkpoint.md).
