@@ -1,5 +1,15 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-11-02 — M0-B discovery / proposal, implementation NOT approved
+
+- **GitHub source:** `main@c9c2f60303236113a223942072311f5e37f876f7`, checked 2026-11-02 UTC. M0-A merged PRs #452/#453; production `fly-tally.com` Vercel READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, runtime `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`. Production authenticated smoke/Safari/Neon HTTP **NOT RUN**, DB/schema/flags **UNKNOWN**.
+- **Work:** branch `docs/logbook-m0b-discovery-20261102`, pre-handoff HEAD `9e512e8e3020d74be00b1bf1378c85b2b37fbc6f`, base main (reverify actual branch and Draft PR head after checkpoint commits). Files: new `docs/maintenance/2026-11-02-m0b-safe-account-recovery-discovery.md`; ROADMAP.md proposal; this SESSION_HANDOFF.md and ACTIVE_WORK.md pointers. Documentation only. No runtime or tests changed.
+- **Read-only source findings:** unexecuted `lib/account-restore-v6.ts` unsafe global audit MAX/DELETE/imported original IDs and parent `ON CONFLICT DO NOTHING`/ID-updates; current signed-v13 `lib/account-backup.ts` has independent parallel reads without shared snapshot; imported-audit v22/v14, parent collision fix, presign/snapshot contracts reside in **unmerged Draft DATA-1 PRs**. M0-A guards remain active and unchanged. [Complete source map + B0–B4 proposal](../maintenance/2026-11-02-m0b-safe-account-recovery-discovery.md).
+- **Owner scope:** “super tak pokračujeme” authorizes read-only M0-B discovery, not runtime/schema changes, merge/deploy/production DB/flags/restore activation. No second-AI review initiated. D1 verified-only trust, D2 separate imported audit/v14 design, D3 multi-stage enablement are **recommendations PENDING OWNER FREEZE**; prior v13 Option A is draft owner policy only, require reconciliation.
+- **Tests for new SHA:** static GitHub file and source inspection only. M0-B Node/TS/build/PG16/Playwright/Neon HTTP **NOT RUN**; M0-A historic 164/164, 8/8 and release PASS only for earlier SHA. No DB connection, migration, flag, Training or production deploy action.
+- **ONE NEXT STEP:** owner chooses D1–D3 and approves B0 design scope; only then implement narrow, source-backed, separately gated B1/B2 milestone. DO NOT unblock full account restore.
+
+
 ## 2026-11-02 — M0-A shipped: current canonical handoff
 
 **Verified 2026-11-02T18:17:33Z:** `main@f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, merged PR [#452](https://github.com/filipto861/flytally-logbook/pull/452), production Vercel [dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub](https://vercel.com/filipito/logbook/dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub) **READY** serving `fly-tally.com` at the same commit.
