@@ -1,5 +1,8 @@
 # M0-B B1b.2c — event identity + account-scoped transaction contract (DESIGN, NOT EXECUTED)
 
+> **SAFETY UPDATE — 2026-11-02:** This original proposal is **NOT a frozen/safe trigger-only transaction design**. [F1–F7 lead pre-review](2026-11-02-m0b-b1b2c-lock-order-pre-review.md) identifies possible reversed lock order and stale DML predicate snapshot when `BEFORE ROW` triggers acquire the user gate too late, incomplete multi-owner/protected-child coverage, and automatic v22 migration activation hazards. Explicit first-statement locking and immutable event DB constraints require comparative design, real two-session tests and independent external review. Do **not** implement the trigger-only mechanism from §3 as-is. M0-A full restore remains fail closed.
+
+
 **2026-11-02T20:48Z.** Repository: `filipto861/flytally-logbook`; verified `main@c9c2f60303236113a223942072311f5e37f876f7`, parent work `fix/logbook-m0b-b1b2b-lock-contention-20261102@49f7aeb85e5e61b3256d28cfb4937d38d33dba13` (Draft #458, stacked over Draft #457/#456/#455). B0 design is separate Draft #454. This document is an architectural **proposal for owner/reviewer acceptance**, not an applied contract, release or migration. Runtime remains protected by M0-A.
 
 ## 1. Source reconciliation / non-negotiable constraints

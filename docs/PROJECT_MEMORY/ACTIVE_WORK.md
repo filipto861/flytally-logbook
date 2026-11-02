@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+**2026-11-02T21:02:26.585Z — B1b.2c lead lock-order review: DESIGN HOLD.** Draft #459 on #458 `49f7aeb85e5e61b3256d28cfb4937d38d33dba13`, main `c9c2f60303236113a223942072311f5e37f876f7`. [F1–F7](../maintenance/2026-11-02-m0b-b1b2c-lock-order-pre-review.md) identify row-trigger gate lock inversion/stale-predicate risk, incomplete cross-owner/protected-child coverage, automatic v22 migration risk; V14 issuer/MVCC and Neon HTTP unproved. PRE-REVIEW BY LEAD ONLY, NOT independent AI. Docs-only, no new tests; live `fly-tally.com` still READY M0-A `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` at `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, DB/flags UNKNOWN. No merger, migration, production SQL/flag/deploy or Training change.
+
+**ONE NEXT STEP:** one actual external independent SHA-bound review of the frozen PR #459 packet, then reconcile and pick the smallest isolated prototype. Keep all full-account restore paths blocked.
+
+
+
 **2026-11-02 — B1b.2c design milestone (DOCS-ONLY, NOT FINAL SCHEMA).** New child branch `docs/logbook-m0b-b1b2c-event-contract-20261102` on #458 head `49f7aeb85e5e61b3256d28cfb4937d38d33dba13`; `main@c9c2f60303236113a223942072311f5e37f876f7`. [V22 proposed architecture](../maintenance/2026-11-02-m0b-b1b2c-event-identity-concurrency-v22-design.md) separates stable event UID/issuer/fingerprint/PK; account-scoped DB-trigger-enforced lock and fresh post-lock conflict read; V14 coherent signing and immutable imported audit. No SQL/trigger/runtime change. Existing PR #458 target remains Draft and M0-A blocked; current Vercel production `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` READY at app `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`; DB/schema/flags UNKNOWN. New B1b.2c tests NOT RUN, existing B1b.2b Actions PASS stays exact-SHA historical only. No merge/deploy/migration/restore/flags/Training action.
 
 **ONE NEXT STEP:** independent read-only design/security review and reconciliation, then separately approved isolated V22 prototype (not production migration).

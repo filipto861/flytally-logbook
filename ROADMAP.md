@@ -1,5 +1,13 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-11-02 — B1b.2c lock-order pre-review: HOLD current trigger-only guarantee (DRAFT #459)
+
+- **Engineering finding (not independent second AI):** [F1–F7 source-backed pre-review](docs/maintenance/2026-11-02-m0b-b1b2c-lock-order-pre-review.md) identifies (1) per-row trigger acquisition can be too late relative to row/predicate locks, causing reverse lock order/deadlocks and potentially stale same-statement predicates, (2) incomplete protected writer/owner/child coverage, (3) `lib/migration-plan.ts` automatic v21→v22 execution risk through `ensureDatabaseOptimizations()`, and (4) unresolved issuer, signed-v14 snapshot, native/imported audit and Neon HTTP parity.
+- **Direction:** do not freeze universal trigger-only per-user gate, auto-register migration v22, or implement Restore from Draft #459. Compare explicit first-statement lock + DB-enforced event registry/UNIQUE vs exhaustive account gate, with concrete two-session timeline and old/new schema compatibility tests. Both remain proposals; v14 and producer trust require separate proof. M0-A stays blocked.
+- **Evidence:** verified GitHub `main@c9c2f60303236113a223942072311f5e37f876f7`, #459 base #458 `49f7aeb85e5e61b3256d28cfb4937d38d33dba13`. Read-only Vercel `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` READY app SHA `f8116a7311abbdc9e1a269e133fccd7f8533f5c0` with `fly-tally.com`. New runtime/SQL tests NOT RUN (docs-only); earlier B1b.2b CI PASS is historical source SHA only. Production DB/flags UNKNOWN. No merge/deploy/migration/remote SQL.
+- **ONE NEXT STEP:** obtain a real independent SHA-bound DeepSeek/Claude read-only verdict on the frozen reviewer packet, reconcile it, then prototype isolated lock ordering and event identity with strict PG16/Neon HTTP evidence. No production permission inferred.
+
+
 ## 2026-11-02 — M0-B B1b.2c event identity / account-writer gate DESIGN PROPOSED (DRAFT)
 
 - **Source:** verified main `c9c2f60303236113a223942072311f5e37f876f7`, stacked parent Draft #458 `49f7aeb85e5e61b3256d28cfb4937d38d33dba13`. New docs-only child branch `docs/logbook-m0b-b1b2c-event-contract-20261102` has design [B1b.2c/V22](docs/maintenance/2026-11-02-m0b-b1b2c-event-identity-concurrency-v22-design.md). No M0-B runtime or SQL enabled.

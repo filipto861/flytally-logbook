@@ -1,5 +1,8 @@
 # FlyTally Logbook — architecture (current Next.js generation)
 
+**M0-B B1b.2c design safety review (DRAFT, NOT RUNTIME):** [Source-backed lock-order findings](docs/maintenance/2026-11-02-m0b-b1b2c-lock-order-pre-review.md) place the original [account-gate proposal](docs/maintenance/2026-11-02-m0b-b1b2c-event-identity-concurrency-v22-design.md) on **HOLD**: `BEFORE ROW` trigger alone is not proof that the per-user gate precedes row locks/predicates; a reverse lock order with Trash/void/Edit and missed child writers remains possible. `ensureDatabaseOptimizations()` may automatically apply a version 22 if naïvely registered. Independent review, exact owner-gate/identity DDL, and Neon HTTP tests NOT RUN. Shipped boundary is still M0-A fail-closed account restore.
+
+
 **DRAFT M0-B B1b.2c (2026-11-02; NOT runtime contract):** [Event identity / scoped database-writer gate / v22 design](docs/maintenance/2026-11-02-m0b-b1b2c-event-identity-concurrency-v22-design.md) proposes account-owned immutable event UIDs separate from row IDs and heuristic flight fingerprints; account-specific guard rows enforced across all relevant DML through DB triggers; explicit fresh-statement conflict reads in a PostgreSQL transaction; signed V14 coherent full snapshot + verifiable issuer and separate imported audit. Global `SHARE ROW EXCLUSIVE` is proven disruptive to unrelated pilots. No v22 SQL, triggers, v14 parser, new capability or approval has been implemented. **Current canonical shipped runtime remains M0-A full-restore block.**
 
 
