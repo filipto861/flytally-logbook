@@ -1,5 +1,16 @@
 # FlyTally Logbook — ROADMAP
 
+## Current release state — 2026-11-02: M0-A shipped
+
+**Verified 2026-11-02T18:17:33Z:** `main@f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, merged PR [#452](https://github.com/filipto861/flytally-logbook/pull/452), production Vercel [dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub](https://vercel.com/filipito/logbook/dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub) **READY** serving `fly-tally.com` at the same commit.
+
+- M0-A temporarily disables **all full-account restore** writes (stored/uploaded V4+ including signed V13) at the API/action and direct writer boundaries. Backup creation, signed download/preview/check, and independent single-flight Trash recovery remain supported. This is containment, **not M0-B audit-native restore repair**. No M0-B capability is shipped.
+- Owner waived independent AI review and authorized merge / standard M0-A deployment. Owner-home native Windows release acceptance at `fb230dd1466dc03420e372a004705cdc3d621bb9` (candidate `aed4090ac705d5076466c2c6668da4a33f447b356886d3465d9848f4a1ec83da`): strict PG16 **164/164 PASS**; Chromium desktop + mobile emulation **8/8 PASS**; risk release **PASS**. Last docs-only branch changes before merge did not change runtime/tests; the merged production SHA itself was not re-executed in the owner Windows gate. Earlier other-PC 5-second manual-backup timeout remains timing risk; separate home-PC manual backup diagnostic and full gate succeeded. See [evidence checkpoint](docs/maintenance/2026-10-31-m0a-full-account-restore-containment-checkpoint.md).
+- Production deployment/build/alias **PASS** by Vercel; authenticated production smoke, native Safari/VoiceOver, Neon HTTP parity **NOT RUN**; production DB/schema/feature flags **UNKNOWN**. No production DB migration, restore, deletion or feature flag changes performed or approved. No actual data incident established.
+- **Next milestone is a product decision:** M0-B design/discovery of audit-safe full restore with exact-flight/certification/shared evidence invariants; must first confirm roadmap scope and obtain owner implementation authorization. Until then keep M0-A containment active. No implicit restore re-enable or flag change.
+
+---
+
 ## Current work status — 2026-10-29, documentation reset
 
 - **Main:** `eb98982d9ce7cb166c32ba77c9262683989570f8`; application version `3.8.1`. Older release-order tables below are dated history, not current instructions.
