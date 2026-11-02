@@ -237,7 +237,82 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
   await requireMonetaryRestoreSchema(backup);
   validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
   const maxAudit=await sql`SELECT COALESCE(MAX(id),0)::bigint id FROM flight_audit_log` as Array<{id:number|string}>;const auditFloor=Number(maxAudit[0]?.id||0);
-  const queries:any[]=[];
+  // B1b.2 (dormant behind M0-A): serialized, transaction-bound identity
+  // assertions execute before ANY restore mutation. A stale preview is never
+  // authority to skip or import protected parents/children. These broad locks
+  // must be measured against Neon HTTP semantics before B3 activation.
+  const queries:any[]=[
+    sql`LOCK TABLE flights, fstd_sessions, flight_certified_revisions, fstd_certified_revisions, voided_certified_flights IN SHARE ROW EXCLUSIVE MODE`,
+    sql`SELECT CASE WHEN
+      EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.flights)}::jsonb) AS b(item)
+        WHERE NULLIF(item->>'id','') IS NULL OR NULLIF(item->>'user_id','') IS NULL
+          OR (item->>'user_id')::bigint<>${userId}
+          OR NULLIF(item->>'date','') IS NULL OR NULLIF(TRIM(item->>'registration'),'') IS NULL
+          OR NULLIF(TRIM(item->>'off_block'),'') IS NULL OR NULLIF(TRIM(item->>'departure'),'') IS NULL
+          OR NULLIF(TRIM(item->>'arrival'),'') IS NULL OR NULLIF(item->>'record_revision','') IS NULL)
+      OR EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.flights)}::jsonb) AS b(item)
+        JOIN flights t ON t.id=(item->>'id')::bigint OR (t.user_id=${userId}
+          AND t.date::text=(item->>'date')
+          AND UPPER(TRIM(t.registration))=UPPER(TRIM(item->>'registration'))
+          AND TRIM(t.off_block)=TRIM(item->>'off_block')
+          AND UPPER(TRIM(t.departure))=UPPER(TRIM(item->>'departure'))
+          AND UPPER(TRIM(t.arrival))=UPPER(TRIM(item->>'arrival')))
+        WHERE t.id::text IS DISTINCT FROM item->>'id'
+           OR t.user_id IS DISTINCT FROM ${userId}
+           OR t.date::text IS DISTINCT FROM item->>'date'
+           OR UPPER(TRIM(t.registration)) IS DISTINCT FROM UPPER(TRIM(item->>'registration'))
+           OR TRIM(t.off_block) IS DISTINCT FROM TRIM(item->>'off_block')
+           OR UPPER(TRIM(t.departure)) IS DISTINCT FROM UPPER(TRIM(item->>'departure'))
+           OR UPPER(TRIM(t.arrival)) IS DISTINCT FROM UPPER(TRIM(item->>'arrival'))
+           OR t.record_revision::text IS DISTINCT FROM item->>'record_revision'
+           OR COALESCE(t.certification_hash,'') IS DISTINCT FROM COALESCE(item->>'certification_hash',''))
+      OR EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.flights)}::jsonb) AS b(item)
+        JOIN voided_certified_flights v ON v.user_id=${userId} AND v.original_flight_id=(item->>'id')::bigint)
+      THEN CAST('M0B_TX_FLIGHT_IDENTITY_CONFLICT' AS INTEGER) ELSE 1 END AS flight_guard_ok`,
+    sql`SELECT CASE WHEN
+      EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.fstd_sessions)}::jsonb) AS b(item)
+        WHERE NULLIF(item->>'id','') IS NULL OR NULLIF(item->>'user_id','') IS NULL
+          OR (item->>'user_id')::bigint<>${userId}
+          OR NULLIF(item->>'session_date','') IS NULL OR NULLIF(TRIM(item->>'device_type'),'') IS NULL
+          OR NULLIF(TRIM(item->>'qualification_number'),'') IS NULL OR NULLIF(TRIM(item->>'instruction'),'') IS NULL
+          OR NULLIF(item->>'total_minutes','') IS NULL OR (item->>'total_minutes')::numeric<0
+          OR NULLIF(item->>'record_revision','') IS NULL)
+      OR EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.fstd_sessions)}::jsonb) AS b(item)
+        JOIN fstd_sessions t ON t.id=(item->>'id')::bigint OR (t.user_id=${userId}
+          AND t.session_date::text=(item->>'session_date')
+          AND UPPER(TRIM(t.device_type))=UPPER(TRIM(item->>'device_type'))
+          AND UPPER(TRIM(t.qualification_number))=UPPER(TRIM(item->>'qualification_number'))
+          AND UPPER(TRIM(t.instruction))=UPPER(TRIM(item->>'instruction'))
+          AND t.total_minutes::text=(item->>'total_minutes'))
+        WHERE t.id::text IS DISTINCT FROM item->>'id'
+           OR t.user_id IS DISTINCT FROM ${userId}
+           OR t.session_date::text IS DISTINCT FROM item->>'session_date'
+           OR UPPER(TRIM(t.device_type)) IS DISTINCT FROM UPPER(TRIM(item->>'device_type'))
+           OR UPPER(TRIM(t.qualification_number)) IS DISTINCT FROM UPPER(TRIM(item->>'qualification_number'))
+           OR UPPER(TRIM(t.instruction)) IS DISTINCT FROM UPPER(TRIM(item->>'instruction'))
+           OR t.total_minutes::text IS DISTINCT FROM item->>'total_minutes'
+           OR t.record_revision::text IS DISTINCT FROM item->>'record_revision'
+           OR COALESCE(t.certification_hash,'') IS DISTINCT FROM COALESCE(item->>'certification_hash',''))
+      THEN CAST('M0B_TX_FSTD_IDENTITY_CONFLICT' AS INTEGER) ELSE 1 END AS fstd_guard_ok`,
+    sql`SELECT CASE WHEN
+      EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.flight_certified_revisions)}::jsonb) AS b(item)
+        JOIN flight_certified_revisions t ON t.id=(item->>'id')::bigint OR (t.user_id=${userId}
+          AND t.flight_id=(item->>'flight_id')::bigint AND t.revision_number=(item->>'revision_number')::integer)
+        WHERE t.user_id IS DISTINCT FROM ${userId}
+          OR t.id::text IS DISTINCT FROM item->>'id'
+          OR t.flight_id::text IS DISTINCT FROM item->>'flight_id'
+          OR t.revision_number::text IS DISTINCT FROM item->>'revision_number'
+          OR COALESCE(t.certification_hash,'') IS DISTINCT FROM COALESCE(item->>'certification_hash',''))
+      OR EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.fstd_certified_revisions)}::jsonb) AS b(item)
+        JOIN fstd_certified_revisions t ON t.id=(item->>'id')::bigint OR (t.user_id=${userId}
+          AND t.fstd_session_id=(item->>'fstd_session_id')::bigint AND t.revision_number=(item->>'revision_number')::integer)
+        WHERE t.user_id IS DISTINCT FROM ${userId}
+          OR t.id::text IS DISTINCT FROM item->>'id'
+          OR t.fstd_session_id::text IS DISTINCT FROM item->>'fstd_session_id'
+          OR t.revision_number::text IS DISTINCT FROM item->>'revision_number'
+          OR COALESCE(t.certification_hash,'') IS DISTINCT FROM COALESCE(item->>'certification_hash',''))
+      THEN CAST('M0B_TX_CERTIFIED_CHILD_CONFLICT' AS INTEGER) ELSE 1 END AS revisions_guard_ok`,
+  ];
   const profileName=text(backup.profile?.display_name);if(profileName)queries.push(sql`UPDATE users SET display_name=${profileName},updated_at=NOW() WHERE id=${userId} AND COALESCE(TRIM(display_name),'')=''`);
   for(const batch of chunks(backup.settings,RESTORE_BATCH_SIZES.settings))queries.push(sql`INSERT INTO user_settings SELECT (json_populate_record(NULL::user_settings,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.aircraft??[],RESTORE_BATCH_SIZES.aircraft))queries.push(sql`INSERT INTO aircraft SELECT (json_populate_record(NULL::aircraft,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
