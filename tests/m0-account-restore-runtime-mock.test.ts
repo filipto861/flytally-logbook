@@ -30,6 +30,11 @@ registerHooks({
     if (specifier === "@/lib/account-restore-containment") {
       return nextResolve(pathToFileURL(resolve("lib/account-restore-containment.ts")).href, context);
     }
+    if (specifier === "@/lib/recovery-parent-identity") {
+      // Load the real pure identity comparator. M0-A's runtime block still
+      // must happen before this would reach any SQL or schema side effect.
+      return nextResolve(pathToFileURL(resolve("lib/recovery-parent-identity.ts")).href, context);
+    }
     if (specifier === "@/lib/account-restore-v6") {
       return nextResolve(pathToFileURL(resolve("lib/account-restore-v6.ts")).href, context);
     }
