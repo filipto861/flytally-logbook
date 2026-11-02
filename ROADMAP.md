@@ -1,5 +1,16 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-11-02 — M0-B B1b.2a staged transaction guards; targeted PASS, NOT RELEASED
+
+- **Isolated child of Draft PR #456:** `fix/logbook-m0b-b1b2-transaction-guard-20261102`, baseline B1b.1 exact `08410602d3a2ebff7c114d5401fea3f99c949f2e`; [full B1b.2a checkpoint](docs/maintenance/2026-11-02-m0b-b1b2-transaction-guard-checkpoint.md). Parent B1a Draft PR #455 has older owner-local six-owned-PG16 164/164 + browser 4/4 + risk PASS; **not transferable** to B1b.2a. Main still `c9c2f60303236113a223942072311f5e37f876f7`. M0-A remains production enabled as restoration containment, no B1b implementation shipped.
+- **Proposed dormant implementation (NOT an approved final algorithm):** transaction-ordered `LOCK TABLE` plus three SQL fail-closed checks for full source-flight/FSTD identities, active/voided collisions and certified-revision ID/hash conflicts before writes. B1a two-session tests retained; new source-derived PG checks explicitly verify positives, negatives, rollback and native audit persistence. **This does not solve all protected children or guarantee durable uniqueness after commit**.
+- **Verified CI [#41517766335](https://github.com/filipto861/flytally-logbook/actions/runs/41517766335), executable SHA `32c52870e9bc7aef25f56ca49508924f49e8f93e`:** source 17/17, full Node 1781/1781, TypeScript, build, 42/164 registry hash integrity and isolated targeted PG16 4/4 ALL PASS. Earlier failed/diagnostic runs retained; code/test SHA after final run unchanged apart from removing temporary CI workflow and docs.
+- **Release BLOCKED / risk:** broad locks may block ordinary writers; no B1b.2-specific interleaved two-session lock verification, Neon HTTP batch LOCK/rollback parity, complete child/sharing/verification tests, canonical Windows 164/164, authenticated browser, full release gate or production smoke. Existing audit MAX/DELETE and v13 backup snapshot risks still dormant and unresolved. No merge/deploy/remote DB/migration/flags.
+- **ONE NEXT STEP:** obtain independent read-only review of table-lock and Neon HTTP transaction contract, then prove a safer granular atomic guard with real concurrent PG + isolated Neon HTTP parity before any restore enablement, schema change or merge decision.
+
+---
+
+
 ## 2026-11-02 — M0-B B1a owner-release PASS; B1b.1 targeted PASS (UNMERGED)
 
 - **B1a:** [Draft PR #455](https://github.com/filipto861/flytally-logbook/pull/455), owner-native Windows exact candidate `68b43b98f11b79dd8e76acac9c8d6e3a916375ec` / ID `29f6d94682652c4168c60506d67548768a78e6c616a2f2ceca4ff21d182dd72a`. Fresh six-owned PG16 **164/164 actual tests PASS**, auth Chromium risk **4/4 PASS**, formal release risk **PASS** per owner-provided terminal, private ledgers retained locally. No B1a merge/deploy.

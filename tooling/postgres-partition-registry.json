@@ -156,7 +156,7 @@
         },
         {
           "file": "postgres-security-restore.test.ts",
-          "sha256": "8b0f2b42e3d8b507beafc94ceec2c971b771d76305bbd8117d808bb4247d6578",
+          "sha256": "3a28279304cc9ff8cc7473d6a96dc5022fb1e437371c984c1d623befe3ea5f08",
           "expectedTests": 4
         },
         {

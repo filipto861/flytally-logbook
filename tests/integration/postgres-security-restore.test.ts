@@ -96,8 +96,8 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
         await new Promise(resolve=>setTimeout(resolve,30));
       assert.ok(stdout.includes(ready),"the independent preview session must remain alive before B commits");
       const certifiedDate=certified?"'2026-11-02T10:10:00Z'":"NULL";
-      if(table==="flights")run("INSERT INTO flights(id,user_id,date,registration,certified_at,certification_hash,locked_at,record_revision) VALUES ("+id+",10,'2026-11-02','OK-B1A',"+certifiedDate+",'ORIGINAL_"+id+"',"+certifiedDate+",1)");
-      else run("INSERT INTO fstd_sessions(id,user_id,session_date,device_type,qualification_number,instruction,total_minutes,certified_at,certification_hash,record_revision) VALUES ("+id+",10,'2026-11-02','Synthetic trainer','TEST','B1a',60,"+certifiedDate+",'ORIGINAL_"+id+"',1)");
+      if(table==="flights")run("INSERT INTO flights(id,user_id,date,registration,certified_at,certification_hash,locked_at,record_revision) VALUES ("+id+",10,'2026-11-02','OK-B1A-"+id+"',"+certifiedDate+",'ORIGINAL_"+id+"',"+certifiedDate+",1)");
+      else run("INSERT INTO fstd_sessions(id,user_id,session_date,device_type,qualification_number,instruction,total_minutes,certified_at,certification_hash,record_revision) VALUES ("+id+",10,'2026-11-02','Synthetic trainer "+id+"','TEST','B1a',60,"+certifiedDate+",'ORIGINAL_"+id+"',1)");
       const original=rowSnapshot(table,id),nativeAudit=auditSnapshot();
       assert.equal(markerCount(),0,"session A uncommitted marker must not be visible to session B");
       const current=rows("SELECT * FROM "+table+" WHERE id="+id)[0];
@@ -123,10 +123,49 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
   await raceParent("fstd_sessions",8203,false);
   // A genuinely absent FSTD parent must still stage and receive its own certification.
   const fstdNew=rows("SELECT * FROM fstd_sessions WHERE id=8201")[0];
-  const fstdAdded={...fstdNew,id:8299,certification_hash:"VALID_NEW_FSTD",certified_at:"2026-11-02T10:10:00Z"};
+  const fstdAdded={...fstdNew,id:8299,device_type:"Synthetic distinct trainer",certification_hash:"VALID_NEW_FSTD",certified_at:"2026-11-02T10:10:00Z"};
   const fstdInsert=render(sqlBlock(restore,"INSERT INTO fstd_sessions SELECT (json_populate_record(NULL::fstd_sessions,item)).*"),{"JSON.stringify(batch)":[makeStage("fstd_sessions",fstdAdded)]});
   const fstdUpdate=render(sqlBlock(restore,"UPDATE fstd_sessions s SET certified_at="),{"JSON.stringify(batch)":[fstdAdded],userId:10});
   run("BEGIN; "+fstdInsert+"; "+fstdUpdate+"; COMMIT;");
   assert.equal(String(rows("SELECT certification_hash FROM fstd_sessions WHERE id=8299")[0].certification_hash),"VALID_NEW_FSTD");
+  // B1b.2 transaction-bound source SQL: lock + full parent + certified child
+  // assertions. Run inside actual PostgreSQL transactions, never in preview.
+  run("CREATE TABLE fstd_certified_revisions(id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL, fstd_session_id BIGINT NOT NULL, revision_number INTEGER NOT NULL, certification_hash TEXT NOT NULL)");
+  run("CREATE TABLE voided_certified_flights(id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL, original_flight_id BIGINT NOT NULL)");
+  const b1b2Lock=sqlBlock(restore,"LOCK TABLE flights, fstd_sessions, flight_certified_revisions, fstd_certified_revisions, voided_certified_flights");
+  const b1b2Flight=sqlBlock(restore,"M0B_TX_FLIGHT_IDENTITY_CONFLICT");
+  const b1b2Fstd=sqlBlock(restore,"M0B_TX_FSTD_IDENTITY_CONFLICT");
+  const b1b2Revisions=sqlBlock(restore,"M0B_TX_CERTIFIED_CHILD_CONFLICT");
+  const currentFlight=rows("SELECT * FROM flights WHERE id=1001")[0];
+  const currentFstd=rows("SELECT * FROM fstd_sessions WHERE id=8201")[0];
+  const currentFlightRevision=rows("SELECT * FROM flight_certified_revisions WHERE id=3001")[0];
+  const guard=(statement:string,inputs:Record<string,unknown>,revFlight:Record<string,unknown>[]=[currentFlightRevision])=>
+    render(statement,{userId:10,"JSON.stringify(backup.flights)":[currentFlight],"JSON.stringify(backup.fstd_sessions)":[currentFstd],
+      "JSON.stringify(backup.flight_certified_revisions)":revFlight,"JSON.stringify(backup.fstd_certified_revisions)":[],...inputs});
+  const allGuardSql=(flightInput:Record<string,unknown>[],fstdInput:Record<string,unknown>[],revisionInput:Record<string,unknown>[])=>
+    [b1b2Lock,guard(b1b2Flight,{"JSON.stringify(backup.flights)":flightInput}),
+      guard(b1b2Fstd,{"JSON.stringify(backup.fstd_sessions)":fstdInput}),
+      guard(b1b2Revisions,{"JSON.stringify(backup.flight_certified_revisions)":revisionInput})].join(";\n");
+  const success=allGuardSql([currentFlight],[currentFstd],[currentFlightRevision]);
+  assert.match(run("BEGIN;\n"+success+";\nCOMMIT;"),/1\s+1\s+1/,"source-defined parent and certified-child guards must pass exact evidence");
+  const initialAudit=auditSnapshot(),initialFlight=rowSnapshot("flights",1001);
+  function blockedByGuard(flights:Record<string,unknown>[],fstdRows:Record<string,unknown>[],revisions:Record<string,unknown>[],reason:RegExp){
+    assert.throws(()=>run("BEGIN;\nINSERT INTO b1a_marker(kind) VALUES ('b1b2');\n"+
+      allGuardSql(flights,fstdRows,revisions)+";\nCOMMIT;"),reason);
+    assert.equal(markerCount(),0,"rejected transaction must roll back earlier writes");
+    assert.equal(rowSnapshot("flights",1001),initialFlight,"protected flight parent must be unchanged");
+    assert.equal(auditSnapshot(),initialAudit,"native audit must not be modified");
+  }
+  blockedByGuard([{...currentFlight,arrival:"LKTB"}],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
+  blockedByGuard([{...currentFlight,id:999991}],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
+  blockedByGuard([{...currentFlight,user_id:11}],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
+  blockedByGuard([currentFlight],[{...currentFstd,device_type:"DIFFERENT TRAINER"}],[currentFlightRevision],/M0B_TX_FSTD_IDENTITY_CONFLICT/);
+  blockedByGuard([currentFlight],[{...currentFstd,id:902001}],[currentFlightRevision],/M0B_TX_FSTD_IDENTITY_CONFLICT/);
+  blockedByGuard([currentFlight],[currentFstd],[{...currentFlightRevision,certification_hash:"INVALID"}],/M0B_TX_CERTIFIED_CHILD_CONFLICT/);
+  run("INSERT INTO voided_certified_flights(id,user_id,original_flight_id) VALUES(71001,10,1001)");
+  blockedByGuard([currentFlight],[currentFstd],[currentFlightRevision],/M0B_TX_FLIGHT_IDENTITY_CONFLICT/);
+  run("DELETE FROM voided_certified_flights WHERE id=71001");
+  // New positive parent/source IDs remain valid. No hidden re-enable of M0-A.
+  assert.match(run("BEGIN;\n"+allGuardSql([{...currentFlight,id:901001,registration:"OK-DISTINCT"}],[{...currentFstd,id:902001,device_type:"Distinct trainer"}],[])+";\nCOMMIT;"),/1\s+1\s+1/);
 
 });
