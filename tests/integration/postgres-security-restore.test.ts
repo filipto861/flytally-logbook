@@ -168,4 +168,60 @@ test("AC-20 production restore SQL preserves R1/R2 hashes, signatures, participa
   // New positive parent/source IDs remain valid. No hidden re-enable of M0-A.
   assert.match(run("BEGIN;\n"+allGuardSql([{...currentFlight,id:901001,registration:"OK-DISTINCT"}],[{...currentFstd,id:902001,device_type:"Distinct trainer"}],[])+";\nCOMMIT;"),/1\s+1\s+1/);
 
+  // B1b.2b LOCK CONCURRENCY DIAGNOSTIC (source NOWAIT; owner-independent):
+  // A transaction writing a different pilot's flight blocks a global table
+  // lock request. Conversely, an acquired restore lock blocks that pilot's
+  // otherwise valid INSERT. Both facts must remain visible in safety evidence.
+  assert.match(b1b2Lock,/SHARE ROW EXCLUSIVE MODE NOWAIT/);
+  async function holdB1b2Session(statement:string,ready:string){
+    const child=spawn("psql",["-d",databaseUrl,"-X","-w","-qAt","-v","ON_ERROR_STOP=1","-v","VERBOSITY=verbose"],{
+      stdio:["pipe","pipe","pipe"],env:{...process.env,PGCONNECT_TIMEOUT:"5"},windowsHide:true,shell:false});
+    let output="",diagnostic="";
+    child.stdout.setEncoding("utf8");child.stderr.setEncoding("utf8");
+    child.stdout.on("data",data=>{output+=String(data)});
+    child.stderr.on("data",data=>{diagnostic+=String(data)});
+    const closed=new Promise<number|null>(resolve=>child.once("close",code=>resolve(code)));
+    child.stdin.write("SET search_path TO "+quotedSchema+";\nBEGIN;\n"+statement+";\nSELECT '"+ready+"';\n");
+    const limit=Date.now()+12000;
+    while(!output.includes(ready)&&child.exitCode===null&&Date.now()<limit)
+      await new Promise(resolve=>setTimeout(resolve,30));
+    if(!output.includes(ready)){
+      child.kill();
+      throw new Error("B1b.2b independent session readiness failed: "+diagnostic.slice(0,250));
+    }
+    return async()=>{
+      child.stdin.end("ROLLBACK;\n");
+      const code=await Promise.race([closed,new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error("B1b.2b session did not close")),12000))]);
+      assert.equal(code,0,"diagnostic holding session must roll back and exit cleanly");
+    };
+  }
+
+  const auditBeforeContention=auditSnapshot();
+  // Scenario 1: ordinary writer for OTHER user holds ROW EXCLUSIVE;
+  // restore's NOWAIT fails immediately. Its earlier marker rolls back.
+  const releaseWriter=await holdB1b2Session(
+    "INSERT INTO flights(id,user_id,date,registration) VALUES(930001,11,'2026-11-02','OK-OTHER')",
+    "B1B2_OTHER_WRITER_READY");
+  try{
+    assert.throws(()=>run("BEGIN;\nINSERT INTO b1a_marker(kind) VALUES ('b1b2b');\n"+b1b2Lock+";\nCOMMIT;"),
+      /55P03|could not obtain lock on relation/i,"NOWAIT must reject a competing writer");
+    assert.equal(markerCount(),0,"NOWAIT failure must roll back prior transactional marker");
+  }finally{await releaseWriter()}
+  assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=930001"),"0");
+  assert.equal(auditSnapshot(),auditBeforeContention,"rolled-back competing writer must not create audit history");
+
+  // Scenario 2: once acquired, restore's broad table lock blocks an
+  // unrelated pilot's INSERT; lock_timeout only bounds this diagnostic.
+  const releaseRestore=await holdB1b2Session(b1b2Lock,"B1B2_RESTORE_HOLDS_GLOBAL_LOCK");
+  try{
+    assert.throws(()=>run("SET lock_timeout='300ms';\nINSERT INTO flights(id,user_id,date,registration) VALUES(930002,11,'2026-11-02','OK-OTHER')"),
+      /55P03|lock timeout/i,"global restore lock must expose unrelated pilot writer contention");
+  }finally{await releaseRestore()}
+  assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=930002"),"0");
+  assert.equal(auditSnapshot(),auditBeforeContention,"blocked unrelated writer must not create audit history");
+  // Release really frees the lock; no service-level prohibition on user 11.
+  run("INSERT INTO flights(id,user_id,date,registration) VALUES(930002,11,'2026-11-02','OK-OTHER')");
+  assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=930002"),"1");
+  run("DELETE FROM flights WHERE id=930002");
+
 });
