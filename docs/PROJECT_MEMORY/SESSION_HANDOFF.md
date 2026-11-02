@@ -1,5 +1,22 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-11-02T21:02:26.585Z — B1b.2c design pre-review BLOCKER recorded; independent model NOT RUN
+
+- **Verified:** `main@c9c2f60303236113a223942072311f5e37f876f7`; Draft #459 `docs/logbook-m0b-b1b2c-event-contract-20261102`, based on #458 `49f7aeb85e5e61b3256d28cfb4937d38d33dba13` (#455–#458 stacked; #454 B0 separate). Parent review HEAD before these docs `17567881e51cd8ba531a9cbd04e43dc4924e2315`. Reverify final SHA from GitHub.
+- **Sources & findings:** [F1–F7 pre-review and external reviewer packet](../maintenance/2026-11-02-m0b-b1b2c-lock-order-pre-review.md) shows trigger-only gate may acquire after row locks/snapshot predicate, reverse ordering with Trash/void/Edit, incomplete child/multi-owner coverage; v22 auto-migration risk (current `DATABASE_SCHEMA_VERSION=21`); signed-v14 provenance, native/imported ledger and Neon HTTP parity unresolved. Original proposed gate NOT frozen. This is LEAD source review only, **not** Claude/DeepSeek independent verdict.
+- **Scope/status:** documentation-only edits in ROADMAP/ARCHITECTURE/design/Project Memory + new review/checkpoint; M0-A blocked. No code/tests/DDL change, no production SQL/merge/deploy/flag/restore/Training. New B1b.2c Node/TS/build/PG/Neon/browser/release tests NOT RUN / N/A for docs-only review, historical B1b.2b Actions #41520038331 PASS attaches only to earlier tested SHA. Vercel read-only confirms READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` app `f8116a7311abbdc9e1a269e133fccd7f8533f5c0` at `fly-tally.com`; prod DB/schema/flags UNKNOWN.
+- **ONE NEXT STEP:** one real independent read-only DeepSeek/Claude audit of exact new Draft #459 SHA with F1–F7 packet, reconcile findings before any isolated V22 executable prototype.
+
+
+## 2026-11-02T20:51Z — M0-B B1b.2c design proposed, NO EXECUTABLE CHANGES
+
+- **Verified GitHub:** `main@c9c2f60303236113a223942072311f5e37f876f7`; parent `fix/logbook-m0b-b1b2b-lock-contention-20261102@49f7aeb85e5e61b3256d28cfb4937d38d33dba13` Draft PR #458 (stacked over #457/#456/#455), separate B0 Draft #454. New work `docs/logbook-m0b-b1b2c-event-contract-20261102` based on exact parent; reverify latest SHA/PR. Changes: B1b.2c [design](../maintenance/2026-11-02-m0b-b1b2c-event-identity-concurrency-v22-design.md), ROADMAP/ARCHITECTURE/docs and [dated checkpoint](../maintenance/2026-11-02-m0b-b1b2c-event-contract-checkpoint.md); **no runtime/tests/SQL**.
+- **Proposal:** event UID vs storage row ID vs dedup fingerprint vs trusted issuer; cross-lifecycle identity registry; per-account gate row enforced through exhaustive DB triggers for all relevant writers; separate transaction statement for gate then fresh conflict read; coherent signed v14 with native/imported audit. Not approved schema or completed review; missing v13 provenance/issuer => UNAVAILABLE. Existing M0-A first-line server/direct restore block stays.
+- **Evidence:** docs-only change; B1b.2c targeted/Node/TS/build/PG16/Neon HTTP/browser/release tests **NOT RUN (N/A for docs-only candidate)**; earlier B1b.2b Actions #41520038331 exact code/test SHA `b5c95731efe93bfe9556c929274bd833a11bb1a7` PASS is historical, not transfer. Independent reviewer NOT RUN. Vercel independently returned READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` app SHA `f8116a7311abbdc9e1a269e133fccd7f8533f5c0` with `fly-tally.com` alias; prod DB/schema/flags UNKNOWN.
+- **DO NOT:** merge/deploy, production SQL/migration/restore/delete/flag changes, enable full-account restore, modify Training, or adopt v22 automatically. Missing proof is a blocker.
+- **ONE NEXT STEP:** obtain one independent read-only architecture/security review at frozen PR SHA and reconcile findings before implementing isolated v22 trigger/constraint prototype.
+
+
 ## 2026-11-02 later checkpoint — B1b.2c ordinary-writer discovery COMPLETE (DOCS ONLY)
 
 - **Canonical:** main `c9c2f60303236113a223942072311f5e37f876f7`; work `fix/logbook-m0b-b1b2b-lock-contention-20261102` pre-doc HEAD `54988ba247fd98afea8e15ac28a8953fdf87b593`; PR #458 stacked on Draft #457, both unmerged; ancestor Draft #456/#455; prod Vercel M0-A READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` at `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`. Reverify head/current PR before next work.
