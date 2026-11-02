@@ -53,6 +53,20 @@ jobs:
           FLYTALLY_POSTGRES_INTEGRATION: "0"
           DATABASE_URL: ""
         run: npm run typecheck
+      - name: Validate canonical 42-file / 164-case PostgreSQL registry
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "0"
+          DATABASE_URL: ""
+        run: node tooling/validate-postgres-partition-registry.mjs
+      - name: Full Node unit/regression suite (no database)
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "0"
+          DATABASE_URL: ""
+        run: npm test
+      - name: Next.js production build (synthetic only)
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "0"
+        run: npm run build
       - name: Check exact isolated CI postgres identity (before SQL fixture)
         shell: bash
         run: |
