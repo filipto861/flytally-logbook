@@ -103,3 +103,14 @@ test("M0-B B1a staged parents reject duplicate keys and cannot update a collidin
   assert.match(executor, /await sql\.transaction\(queries\)/);
   assert.match(executor, /DELETE FROM flight_audit_log/); // Remaining B2 hazard is still M0-A blocked.
 });
+
+test("M0-B B1b same-ID flight/FSTD skips must verify complete natural identity", () => {
+  const code = source("lib/account-restore-v6.ts");
+  assert.match(code, /sameRestoreParentNaturalIdentity\(row,existing,strictSameIdParent,key\)/);
+  assert.match(code, /strictSameIdParent\s*\?\s*:\s*RestoreParentKind/);
+  assert.match(code, /name==="flights"\?"flight":name==="fstd_sessions"\?"fstd":undefined/);
+  assert.match(code, /if\(requireStableId&&sourceId&&byId\.has\(sourceId\)\)/);
+  const scope = code.slice(code.indexOf("export async function executeExactAccountRestore("));
+  assert.ok(scope.indexOf("blockFullAccountRestore();") >= 0);
+  assert.ok(scope.indexOf("blockFullAccountRestore();") < scope.indexOf("await Promise.all"));
+});
