@@ -240,9 +240,9 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
   // B1b.2 (dormant behind M0-A): serialized, transaction-bound identity
   // assertions execute before ANY restore mutation. A stale preview is never
   // authority to skip or import protected parents/children. These broad locks
-  // must be measured against Neon HTTP semantics before B3 activation.
+  // still block unrelated writers while held; do not activate until granular\n  // safe uniqueness and Neon HTTP parity have been proven.
   const queries:any[]=[
-    sql`LOCK TABLE flights, fstd_sessions, flight_certified_revisions, fstd_certified_revisions, voided_certified_flights IN SHARE ROW EXCLUSIVE MODE`,
+    sql`LOCK TABLE flights, fstd_sessions, flight_certified_revisions, fstd_certified_revisions, voided_certified_flights IN SHARE ROW EXCLUSIVE MODE NOWAIT`,
     sql`SELECT CASE WHEN
       EXISTS(SELECT 1 FROM jsonb_array_elements(${JSON.stringify(backup.flights)}::jsonb) AS b(item)
         WHERE NULLIF(item->>'id','') IS NULL OR NULLIF(item->>'user_id','') IS NULL
