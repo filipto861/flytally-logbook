@@ -1,5 +1,17 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-11-02 — M0-B B1a implemented + targeted real PostgreSQL16 PASS (NOT RELEASED)
+
+- **GitHub baseline:** `main@c9c2f60303236113a223942072311f5e37f876f7`, branch `fix/logbook-m0b-b1a-parent-id-20261102`, pre-handoff HEAD `3c0bf7a0b1c54e0ef264369a07fe446025183dbe` (verify subsequent full work SHA), base main, isolated Draft PR to be created. B0 design and scope direction in separate Draft #454, **not merged**. M0-A previously merged PR #452/#453.
+- **Owner scope:** explicit consent to **B1a parent-ID collision code/test**; no consent to merge/deploy/migrations/prod DB/flags/full restore activation. No second AI reviewer run; preserve scope. New production source not yet deployed.
+- **Changed:** `lib/account-restore-v6.ts` strict flight/FSTD stage INSERT (remove 2x `ON CONFLICT DO NOTHING`); `tests/m0-account-restore-containment.test.ts` M0-A guard+B1a source assertions; `tests/integration/postgres-security-restore.test.ts` AC20 strict duplicate + 4 genuine two-session tests (certified/draft flight+FSTD) with parent and audit preservation + rollback + positive FSTD; updated exact SHA-256 entry in `tooling/postgres-partition-registry.json` (42/164 unchanged). Temporary `.github/workflows/m0b-b1a-temporary.yml` created solely to run CI then removed, no resulting workflow change in final diff. Detailed [B1a checkpoint](../maintenance/2026-11-02-m0b-b1a-parent-id-acceptance.md). ROADMAP status staged only.
+- **Actual verification for exact code+test SHA `81967fdada079ef65ec969ccb3213d6d69a30a73`:** [Actions #41508257156](https://github.com/filipto861/flytally-logbook/actions/runs/41508257156) Node24 source **7/7 PASS**, TypeScript **PASS**, Node **1771/1771 PASS**, Next build **PASS**, 42-file/164-case PG registry hash integrity **PASS**; isolated synthetic PG16.15 identity on localhost→private Docker bridge verified; actual targeted integration **4/4 PASS**, includes four two-session B1a races. Earlier failed CI infrastructure/typecheck diagnostics retained. CI source SHA has only temporary workflow and subsequent Markdown diffs from branch HEAD.
+- **NOT RUN:** canonical owner Windows native 6-partition PostgreSQL actual 164/164, exact final risk release gate, authenticated signed-v13 full restoration (M0-A intentionally blocks it), browser, Neon HTTP parity, native Safari and production signed-in smoke. No claim of release acceptance.
+- **Production:** Vercel `fly-tally.com` **READY** `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` app SHA `f8116a7311abbdc9e1a269e133fccd7f8533f5c0` stays M0-A. Production DB/schema/flags **UNKNOWN**. No production DB/migration/deploy/flag, other repo or Training action.
+- **Remaining:** B1b protected children/natural key, B2 audit MAX/DELETE/v14 coherent snapshot and provenance, B3 complete restore transaction, B4 release/activation. No silent restore enablement.
+- **ONE NEXT STEP:** perform exact source-candidate full canonical owner Windows owned-PG16 164/164 and risk release gate for B1a, then reconcile B1b design. No merge/deploy/DB approval implicit.
+
+
 ## 2026-11-02 — M0-A shipped: current canonical handoff
 
 **Verified 2026-11-02T18:17:33Z:** `main@f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, merged PR [#452](https://github.com/filipto861/flytally-logbook/pull/452), production Vercel [dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub](https://vercel.com/filipito/logbook/dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub) **READY** serving `fly-tally.com` at the same commit.
