@@ -119,6 +119,7 @@ test("M0-B B1b.2 transaction assertions precede every restore mutation, with M0-
   const code = source("lib/account-restore-v6.ts");
   const writer = code.slice(code.indexOf("export async function executeExactAccountRestore("));
   const lock = writer.indexOf("LOCK TABLE flights, fstd_sessions, flight_certified_revisions, fstd_certified_revisions, voided_certified_flights");
+  assert.match(writer, /LOCK TABLE flights, fstd_sessions, flight_certified_revisions, fstd_certified_revisions, voided_certified_flights IN SHARE ROW EXCLUSIVE MODE NOWAIT/);
   assert.ok(lock > writer.indexOf("blockFullAccountRestore();"), "M0-A must remain the first stop");
   for (const guard of ["M0B_TX_FLIGHT_IDENTITY_CONFLICT", "M0B_TX_FSTD_IDENTITY_CONFLICT", "M0B_TX_CERTIFIED_CHILD_CONFLICT"]) {
     const at = writer.indexOf(guard);
