@@ -1,5 +1,16 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-11-02 — M0-B B0 technical design contract v1, accepted D1–D3 direction
+
+- **Verified GitHub baseline:** `main@c9c2f60303236113a223942072311f5e37f876f7`, work branch `docs/logbook-m0b-discovery-20261102`, pre-handoff HEAD `3e12d89bff98c881eb82c499ad31a6810cce253b`, unmerged Draft PR #454 base main. Recheck current HEAD/PR after new documentation commits. This is exclusively documentation; no executable tests/schema files changed.
+- **Owner direction:** “ok pokracuj” following recommended D1 (verified signed same account), D2 (independent imported audit ledger + explicit v14 design), D3 (implement/test with full restore M0-A blocked; separate activation) is accepted as direction for **B0 technical design**, NOT as approval for B1a executable code, v22 migration, DB, merge, deploy or flags. Exact identity/issuer, retention, v14 wire format and Neon transaction contracts remain OPEN; no second-AI review run.
+- **Design artifact:** [M0-B B0 contract v1](../maintenance/2026-11-02-m0b-b0-recovery-contract-v1.md) defines eligibility, preview/safety backup/atomic commit/result states, two-ledger evidence truthfulness, signed-v13 same/different digest restrictions, v14 complete consistent snapshot, 5 concurrency/rollback timelines, small B1a–B4 milestones and X1–X6 blockers. Discovery source map [here](../maintenance/2026-11-02-m0b-safe-account-recovery-discovery.md). ROADMAP top updated, no user-visible FEATURE/ARCHITECTURE runtime capability.
+- **Key source evidence:** currently dormant `lib/account-restore-v6.ts` has parent ON CONFLICT skip + ID UPDATE and global native audit MAX/DELETE/import-ID; signed-v13 `lib/account-backup.ts` uses independent parallel SQL reads; Draft DATA-1 #448/#451 include proposals NOT in main. M0-A guard remains unchanged on production.
+- **Tests for B0 SHA:** source inspection/Markdown diff only; Node/TypeScript/PostgreSQL/Neon HTTP/Playwright/build NOT RUN (N/A for design). Historical M0-A owner-local PG16 164/164, risk browser 8/8 and release PASS apply only to earlier production source-equivalent SHA, not this B0 proposal.
+- **DB/deploy/flags:** production DB/schema/flags UNKNOWN; no queries/migrations/remote/production writes; no changes to Training; Vercel `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` READY for code `f8116a7311abbdc9e1a269e133fccd7f8533f5c0` on `fly-tally.com`, unchanged; production authenticated smoke NOT RUN.
+- **ONE NEXT STEP:** obtain explicit owner authorization for narrow **B1a parent-ID conflict implementation and two real-session owned localhost PG16 tests**, keep M0-A full-account restore blocked, and do not merge/deploy/migrate during B1a without further permission.
+
+
 ## 2026-11-02 — M0-B discovery / proposal, implementation NOT approved
 
 - **GitHub source:** `main@c9c2f60303236113a223942072311f5e37f876f7`, checked 2026-11-02 UTC. M0-A merged PRs #452/#453; production `fly-tally.com` Vercel READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, runtime `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`. Production authenticated smoke/Safari/Neon HTTP **NOT RUN**, DB/schema/flags **UNKNOWN**.
