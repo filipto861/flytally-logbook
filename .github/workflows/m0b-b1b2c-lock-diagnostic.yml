@@ -1,0 +1,64 @@
+name: M0-B B1b.2c isolated PG16 lock diagnostic
+
+on:
+  push:
+    branches:
+      - test/logbook-m0b-b1b2c-lock-proof-20261103
+    paths:
+      - tooling/m0b-b1b2c-concurrency-probe.mjs
+      - tooling/m0b-b1b2c-concurrency-probe.test.mjs
+      - .github/workflows/m0b-b1b2c-lock-diagnostic.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m0b-lock-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-pg16:
+    name: Synthetic disposable PostgreSQL16 only
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: diagnostic-only
+          POSTGRES_DB: flytally_m0b_disposable_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_m0b_disposable_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      FLYTALLY_M0B_OWNED_PG16: M0B_DISPOSABLE_PG16_CONFIRMED
+      DATABASE_URL: postgresql://flytally:diagnostic-only@127.0.0.1:5432/flytally_m0b_disposable_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Source syntax and safe-target contract
+        run: |
+          node --check tooling/m0b-b1b2c-concurrency-probe.mjs
+          node --test tooling/m0b-b1b2c-concurrency-probe.test.mjs
+      - name: Independent PostgreSQL sessions, deadlock and identity evidence
+        shell: bash
+        run: |
+          set -o pipefail
+          node tooling/m0b-b1b2c-concurrency-probe.mjs 2>&1 | tee m0b-b1b2c-lock-diagnostic.txt
+      - name: Preserve synthetic evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m0b-b1b2c-lock-diagnostic-${{ github.sha }}
+          path: m0b-b1b2c-lock-diagnostic.txt
+          if-no-files-found: ignore
+          retention-days: 14
