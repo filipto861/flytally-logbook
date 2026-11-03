@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-11-03T06:52:39.252Z — M0-B B1b.2c PG16 synthetic proof PASS, full Restore still unavailable
+
+- **Source:** `main@c9c2f60303236113a223942072311f5e37f876f7`, Draft **PR #460** `test/logbook-m0b-b1b2c-lock-proof-20261103` stacked on Draft #459 `a4db663322475dcd090cdbe877130115c50f1575`; #459 on #458→#457→#456→#455. PR #454 B0 remains separate. Exact executed source SHA `96e0e6a4d70dc96a83c4ea0d32ff9241beae22bd`; checkpoint [here](../maintenance/2026-11-03-m0b-b1b2c-pg16-lock-identity-proof.md). Reverify new documentation HEAD and base in GitHub, do not attribute test PASS to changed source SHA.
+- **Owner:** `ok pokracujeme ale zadny review s deepseek`; proceed without DeepSeek/external second AI for this scoped work, prioritize evidence; not authorization to merge, deploy, production DB/migration/flags or full Restore activation. No Training changes.
+- **PASS:** [Actions #41592224174](https://github.com/filipto861/flytally-logbook/actions/runs/41592224174), Node24 syntax, safe-target 7/7, real isolated PostgreSQL16.15 four synthetic concurrency scenarios 4/4. Proves row-trigger-only deadlock, first-statement owner gate and fresh read with cross-user independence, UNIQUE event UID collision protection, NON-UNIQUE fingerprint and missing UID rejection. CI #41592031914 and #41592178136 earlier FAILED due Docker bridge identity guard; preserved. Temporary CI workflow removal docs-only after executable SHA.
+- **NOT RUN:** complete application PostgreSQL Windows 164/164, full Node/typecheck/build, browser/risk, Neon HTTP parity, signed-v14 coherent snapshot, protected-child/void/certification and production authenticated smoke. Production `fly-tally.com` M0-A READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, app `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`; DB/schema/flags UNKNOWN. No prod SQL/migration, merge, deploy or flags.
+- **ONE NEXT STEP:** exhaustive DML writer/owner/lock-order mapping across flight/FSTD/Trash/void/shared/evidence, then test-only V22 constraint design; do not enable Restore or request DeepSeek review.
+
+
 ## 2026-11-02T21:02:26.585Z — B1b.2c design pre-review BLOCKER recorded; independent model NOT RUN
 
 - **Verified:** `main@c9c2f60303236113a223942072311f5e37f876f7`; Draft #459 `docs/logbook-m0b-b1b2c-event-contract-20261102`, based on #458 `49f7aeb85e5e61b3256d28cfb4937d38d33dba13` (#455–#458 stacked; #454 B0 separate). Parent review HEAD before these docs `17567881e51cd8ba531a9cbd04e43dc4924e2315`. Reverify final SHA from GitHub.

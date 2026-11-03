@@ -1,5 +1,11 @@
 # FlyTally Logbook — active work
 
+**2026-11-03 — B1b.2c real isolated PG16.15 diagnostic 4/4 PASS, guard 7/7 PASS (NOT production release).** New stacked Draft [#460](https://github.com/filipto861/flytally-logbook/pull/460) on #459 `a4db663322475dcd090cdbe877130115c50f1575`, `main@c9c2f60303236113a223942072311f5e37f876f7`. Exact tested `96e0e6a4d70dc96a83c4ea0d32ff9241beae22bd` [Actions #41592224174](https://github.com/filipto861/flytally-logbook/actions/runs/41592224174): proved (1) inverted row-trigger gate deadlock, (2) account-first separate lock + fresh read/unrelated-user write success, (3) DB UNIQUE rejects noncooperating duplicate scoped event UID, (4) heuristic fingerprint can duplicate and null UID rejected. Previous CI guard failures retained. [Detailed checkpoint](../maintenance/2026-11-03-m0b-b1b2c-pg16-lock-identity-proof.md). Owner explicitly declined DeepSeek review; none used. No v22/runtime/Neon HTTP/app writer changes, no release gate. Prod M0-A READY at `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, DB/flags UNKNOWN; no merge/deploy/prod DB/flags/restore/Training.
+
+**ONE NEXT STEP:** exhaustive normal-writer/protected-child/owner lock-order map to narrow V22 test-only constraints; keep M0-A block and no DeepSeek review.
+
+
+
 **2026-11-02T21:02:26.585Z — B1b.2c lead lock-order review: DESIGN HOLD.** Draft #459 on #458 `49f7aeb85e5e61b3256d28cfb4937d38d33dba13`, main `c9c2f60303236113a223942072311f5e37f876f7`. [F1–F7](../maintenance/2026-11-02-m0b-b1b2c-lock-order-pre-review.md) identify row-trigger gate lock inversion/stale-predicate risk, incomplete cross-owner/protected-child coverage, automatic v22 migration risk; V14 issuer/MVCC and Neon HTTP unproved. PRE-REVIEW BY LEAD ONLY, NOT independent AI. Docs-only, no new tests; live `fly-tally.com` still READY M0-A `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` at `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`, DB/flags UNKNOWN. No merger, migration, production SQL/flag/deploy or Training change.
 
 **ONE NEXT STEP:** one actual external independent SHA-bound review of the frozen PR #459 packet, then reconcile and pick the smallest isolated prototype. Keep all full-account restore paths blocked.

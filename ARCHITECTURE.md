@@ -1,5 +1,8 @@
 # FlyTally Logbook — architecture (current Next.js generation)
 
+**2026-11-03 M0-B B1b.2c synthetic PG16 proof — NOT runtime:** [Dedicated evidence](docs/maintenance/2026-11-03-m0b-b1b2c-pg16-lock-identity-proof.md) from Draft #460, source SHA `96e0e6a4d70dc96a83c4ea0d32ff9241beae22bd`, Actions #41592224174: 7/7 safe-target tests and actual PG16.15 4/4 synthetic concurrency scenarios PASS. Row-trigger-only account gate demonstrably deadlocks when a writer holds a parent row first. Explicit account-gate FIRST, followed by fresh READ COMMITTED statements and DB UNIQUE for `(user_id,kind,event_uid)`, works in minimal two-session fixture without blocking unrelated owner writes; fingerprint stays NON-UNIQUE. **No v22 schema/app writer changes, no restored audit, V14 provenance, Neon HTTP evidence or broad writer coverage exists.** M0-A production block remains canonical. Owner declined DeepSeek review for this scope.
+
+
 **M0-B B1b.2c design safety review (DRAFT, NOT RUNTIME):** [Source-backed lock-order findings](docs/maintenance/2026-11-02-m0b-b1b2c-lock-order-pre-review.md) place the original [account-gate proposal](docs/maintenance/2026-11-02-m0b-b1b2c-event-identity-concurrency-v22-design.md) on **HOLD**: `BEFORE ROW` trigger alone is not proof that the per-user gate precedes row locks/predicates; a reverse lock order with Trash/void/Edit and missed child writers remains possible. `ensureDatabaseOptimizations()` may automatically apply a version 22 if naïvely registered. Independent review, exact owner-gate/identity DDL, and Neon HTTP tests NOT RUN. Shipped boundary is still M0-A fail-closed account restore.
 
 
