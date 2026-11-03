@@ -23,8 +23,11 @@ export function validateHttpConnection(raw){
     decodeURIComponent(uri.pathname)!=='/'+M0B_READ_ONLY_EXPECTED.databaseName||
     !uri.password)
     throw Error('M0-B HTTP database/role or credential absent');
-  if(uri.searchParams.size!==1||uri.searchParams.get('sslmode')!=='require')
-    throw Error('M0-B HTTP must use sslmode=require without URL overrides');
+  if(uri.searchParams.get('sslmode')!=='require'||
+     [...uri.searchParams.keys()].some(k=>k!=='sslmode'&&k!=='channel_binding')||
+     (uri.searchParams.has('channel_binding')&&uri.searchParams.get('channel_binding')!=='require')||
+     uri.searchParams.size>2)
+    throw Error('M0-B HTTP requires TLS/channel-binding policy without unknown URL overrides');
   return Object.freeze({host:uri.hostname,database:M0B_READ_ONLY_EXPECTED.databaseName,
     role:M0B_READ_ONLY_EXPECTED.operatorRole});
 }
