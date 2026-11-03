@@ -1,5 +1,7 @@
 # M0-B B1b.2c — Fail-closed actual serverless HTTP read-only runner (DRAFT, not executed)
 
+> **2026-11-03 additional verification:** The probe now preserves PostgreSQL `timestamptz` milliseconds for either an actual JavaScript `Date` object or an ISO text value (including invalid timestamps fail-closed). Two new offline regression cases were added to bring the authored suite to **15**. A local Node.js **22.16.0 source-equivalent reproduction** executed all **15/15 PASS** with `node --check` PASS. **PARTIAL only**: the local reproductions' Git blob hashes differ from the exact GitHub source hashes, so **do not count this as SHA-bound PASS**. Exact-repo Node24 test execution and live `@neondatabase/serverless` HTTP remain **NOT RUN**. A temporary GitHub Actions workflow was blocked by tool safety; no workaround was attempted.
+
 **UTC:** 2026-11-03. **Repo:** `filipto861/flytally-logbook`. Independently verified canonical main `c9c2f60303236113a223942072311f5e37f876f7`; starting stacked Draft #467 at `cbc3c2067570917e29c2e62fde2bcd935f200d0b`, ancestors #466→#455, independent Draft #454. Owner approved continuation of a strictly isolated, read-only `@neondatabase/serverless` HTTP two-client test; **no** merge, deploy, production DB change, V22 schema migration, flag, full Restore, Training repo or DeepSeek review.
 
 ## Implemented tooling (not a runtime feature)
