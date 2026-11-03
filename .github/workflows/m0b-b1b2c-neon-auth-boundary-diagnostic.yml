@@ -1,0 +1,29 @@
+name: M0-B B1b.2c source-only Neon auth and cron boundary audit
+
+on:
+  push:
+    branches:
+      - test/logbook-m0b-b1b2c-neon-auth-boundary-20261103
+    paths:
+      - tooling/m0b-b1b2c-neon-auth-boundary.test.mjs
+      - .github/workflows/m0b-b1b2c-neon-auth-boundary-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  no-database:
+    name: Node24 read-only source and cron auth audit (NO DB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check diagnostic syntax (NO DATABASE_URL)
+        run: node --check tooling/m0b-b1b2c-neon-auth-boundary.test.mjs
+      - name: Source and pure function boundary checks (NO DATABASE_URL)
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tooling/m0b-b1b2c-neon-auth-boundary.test.mjs
