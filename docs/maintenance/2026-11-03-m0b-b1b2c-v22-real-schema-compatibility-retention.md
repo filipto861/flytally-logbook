@@ -1,5 +1,8 @@
 # M0-B B1b.2c — source-schema compatibility and retention boundary (DESIGN ONLY)
 
+> **OWNER DECISION UPDATE — 2026-11-03 (supersedes earlier “A/B OPEN” in this dated analysis):** option **A** accepted as design direction, **90-day Trash** and **working additional 12 calendar months** for a minimal owner-linked event UID marker measured from `purge_after`; legal/privacy retention and erasure assessment remains a mandatory release gate. See [decision](2026-11-03-m0b-b1b2c-retention-a-owner-decision.md). [Isolated test #41598681099](https://github.com/filipto861/flytally-logbook/actions/runs/41598681099) at executable source `f18e873aa549160e0ee876fb1d825d28ca3a2131`: PG16.15 **8/8 PASS**; no V22 production migration or release authorization.
+
+
 > **New isolated test evidence (2026-11-03):** [GitHub Actions #41596162456](https://github.com/filipto861/flytally-logbook/actions/runs/41596162456) at exact executable SHA `a966ee5805a120f52d5707183a5667a5e2c71b53` on disposable PG16.15: safe-target **7/7** and synthetic real-shaped nullable UID/FK/Trash variant tests **7/7 PASS**. Source shape remains unverified against live DB; test **does not** approve A or B retention. See [checkpoint](2026-11-03-m0b-b1b2c-v22-compatibility-retention-checkpoint.md).
 
 
