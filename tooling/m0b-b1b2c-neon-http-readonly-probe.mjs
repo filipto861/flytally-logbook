@@ -70,7 +70,8 @@ export function assessTwoClientOverlap(a,b){
     throw Error('M0-B HTTP incomplete concurrency response');
   const read=(v)=>{
     const start=oneRow(v[0],'start'),end=oneRow(v[2],'end');
-    const startAt=Date.parse(start.started_at),endAt=Date.parse(end.ended_at);
+    const millis=(value)=>value instanceof Date?value.getTime():typeof value==='string'?Date.parse(value):NaN;
+    const startAt=millis(start.started_at),endAt=millis(end.ended_at);
     if(!Number.isFinite(startAt)||!Number.isFinite(endAt)||
       endAt<=startAt||String(start.backend_pid)!==String(end.backend_pid))
       throw Error('M0-B HTTP transaction timestamps or backend identity invalid');
