@@ -1,0 +1,63 @@
+name: M0-B B1b.2c shared Trash entrypoint state diagnostic
+
+on:
+  push:
+    branches:
+      - test/logbook-m0b-b1b2c-v22-trash-writer-gate-20261103
+    paths:
+      - tooling/m0b-b1b2c-trash-writer-gate-probe.mjs
+      - .github/workflows/m0b-b1b2c-trash-writer-gate.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m0b-trash-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-pg16:
+    name: Synthetic restored Trash and shared purge owner gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: diagnostic-only
+          POSTGRES_DB: flytally_m0b_disposable_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_m0b_disposable_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      FLYTALLY_M0B_OWNED_PG16: M0B_DISPOSABLE_PG16_CONFIRMED
+      DATABASE_URL: postgresql://flytally:diagnostic-only@127.0.0.1:5432/flytally_m0b_disposable_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test syntax and safe-target preflight
+        run: |
+          node --check tooling/m0b-b1b2c-trash-writer-gate-probe.mjs
+          node --test tooling/m0b-b1b2c-concurrency-probe.test.mjs
+      - name: Test restored Trash retention and owner-first gate
+        shell: bash
+        run: |
+          set -o pipefail
+          node tooling/m0b-b1b2c-trash-writer-gate-probe.mjs 2>&1 | tee m0b-trash-writer-gate.txt
+      - name: Persist source-bound diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m0b-trash-writer-gate-${{ github.sha }}
+          path: m0b-trash-writer-gate.txt
+          if-no-files-found: ignore
+          retention-days: 14
