@@ -22,6 +22,7 @@ const secondWindow=runWindow(202,'2026-11-03T08:00:00.200Z','2026-11-03T08:00:01
 
 test('strict isolated DB host, user, database and sslmode accepted',()=>{
  assert.equal(validateHttpConnection(URL_OK).role,'flytally_m0b_operator');
+ assert.equal(validateHttpConnection(URL_OK+'&channel_binding=require').role,'flytally_m0b_operator');
 });
 test('remote production/other host and pooler rejected',()=>{
  for(const host of ['ep-prod.neon.tech','ep-quiet-smoke-babbdfv9-pooler.c-8.eu-central-1.aws.neon.tech','localhost']){
