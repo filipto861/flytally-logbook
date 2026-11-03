@@ -103,7 +103,7 @@ export function runRoleFkProbe(env=process.env) {
         FOREIGN KEY(user_id,kind,event_uid) REFERENCES ${s}.identity(owner_id,kind,event_uid));
       CREATE UNIQUE INDEX owned_archived_uid ON ${s}.deleted_flights(user_id,kind,event_uid) WHERE event_uid IS NOT NULL;
       CREATE FUNCTION ${s}.check_state() RETURNS trigger LANGUAGE plpgsql
-      SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $
+      SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
       DECLARE v_owner bigint;v_kind text;v_uid uuid;v_state text;v_unrestored int;v_archives int;
       BEGIN
         IF TG_TABLE_NAME='identity' THEN
