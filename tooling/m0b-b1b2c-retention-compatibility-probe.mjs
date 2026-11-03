@@ -119,9 +119,9 @@ export function runCompatibilityProbe(env=process.env){
     messages.push('PASS new owner UID UNIQUE, but heuristic fingerprint remains non-unique');
 
     // Simulate an expired Trash record under a future lifecycle registry.
-    query(`INSERT INTO ${schema}.registry VALUES(1,'flight','${A}','trash')`);
-    query(`INSERT INTO ${schema}.deleted_flights(user_id,event_uid,original_flight_id,flight_data,purge_after)
-      VALUES(1,'${A}',${old},'{"synthetic":true}'::jsonb,NOW()-INTERVAL '1 day')`);
+    query(`BEGIN;INSERT INTO ${schema}.registry VALUES(1,'flight','${A}','trash');
+      INSERT INTO ${schema}.deleted_flights(user_id,event_uid,original_flight_id,flight_data,purge_after)
+      VALUES(1,'${A}',${old},'{"synthetic":true}'::jsonb,NOW()-INTERVAL '1 day');COMMIT;`);
     // Existing two deletion paths issue this direct DELETE without registry state transition.
     const listing=query(`DELETE FROM ${schema}.deleted_flights WHERE user_id=1 AND purge_after<=NOW()`,true);
     assert.notEqual(listing.status,0);assert.match(listing.error,/Trash registry requires archive/);
@@ -139,9 +139,9 @@ export function runCompatibilityProbe(env=process.env){
 
     // Candidate B: delete archive + owner-linked marker together. No prior-state
     // evidence survives. Reusing that UID becomes possible: a deliberate risk.
-    query(`INSERT INTO ${schema}.registry VALUES(1,'flight','${B}','trash')`);
-    query(`INSERT INTO ${schema}.deleted_flights(user_id,event_uid,original_flight_id,flight_data,purge_after)
-      VALUES(1,'${B}',${old},'{"synthetic":true}'::jsonb,NOW()-INTERVAL '1 day')`);
+    query(`BEGIN;INSERT INTO ${schema}.registry VALUES(1,'flight','${B}','trash');
+      INSERT INTO ${schema}.deleted_flights(user_id,event_uid,original_flight_id,flight_data,purge_after)
+      VALUES(1,'${B}',${old},'{"synthetic":true}'::jsonb,NOW()-INTERVAL '1 day');COMMIT;`);
     query(`BEGIN;DELETE FROM ${schema}.deleted_flights WHERE user_id=1 AND event_uid='${B}';
       DELETE FROM ${schema}.registry WHERE owner_id=1 AND event_uid='${B}';COMMIT;`);
     assert.equal(query(`SELECT count(*) FROM ${schema}.registry WHERE owner_id=1 AND event_uid='${B}'`).out,'0');
