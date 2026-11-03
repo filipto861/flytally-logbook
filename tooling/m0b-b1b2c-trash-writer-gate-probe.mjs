@@ -97,7 +97,7 @@ export function runTrashWriterGateProbe(env=process.env) {
         DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION ${schema}.coherence();
       CREATE FUNCTION ${schema}.purge_owner(p_owner bigint,p_asof timestamptz) RETURNS int
       LANGUAGE plpgsql SECURITY INVOKER AS $$
-      DECLARE rec record;state text;cleared int:=0;
+      DECLARE rec record;v_state text;cleared int:=0;
       BEGIN
         IF p_owner IS NULL OR p_owner<=0 OR p_asof IS NULL THEN
           RAISE EXCEPTION 'Owner/time not supplied'; END IF;
@@ -109,18 +109,18 @@ export function runTrashWriterGateProbe(env=process.env) {
           WHERE owner_id=p_owner AND purge_after<=p_asof ORDER BY id
           LIMIT 30 FOR UPDATE LOOP
           IF rec.uid IS NOT NULL THEN
-            SELECT state INTO state FROM ${schema}.identity
-              WHERE owner_id=p_owner AND kind='flight' AND uid=rec.uid FOR UPDATE;
+            SELECT r.state INTO v_state FROM ${schema}.identity r
+              WHERE r.owner_id=p_owner AND r.kind='flight' AND r.uid=rec.uid FOR UPDATE;
             IF NOT FOUND THEN RAISE EXCEPTION 'Missing owner event registry'; END IF;
             IF rec.restored_at IS NULL THEN
-              IF state<>'trash' THEN
+              IF v_state<>'trash' THEN
                 RAISE EXCEPTION 'Un-restored archive has wrong identity state'; END IF;
               UPDATE ${schema}.identity SET state='purged',
                 trash_cutoff=rec.purge_after,
                 marker_until=rec.purge_after+INTERVAL '12 months'
                 WHERE owner_id=p_owner AND kind='flight' AND uid=rec.uid AND state='trash';
             ELSE
-              IF state<>'active' THEN RAISE EXCEPTION 'Restored archive must have active identity'; END IF;
+              IF v_state<>'active' THEN RAISE EXCEPTION 'Restored archive must have active identity'; END IF;
             END IF;
           END IF;
           DELETE FROM ${schema}.deleted_flights
