@@ -1,0 +1,12 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { assertIsolatedTarget } from './m0b-b1b2c-concurrency-probe.mjs';
+const flag = 'M0B_DISPOSABLE_PG16_CONFIRMED';
+const base = { FLYTALLY_M0B_OWNED_PG16: flag, DATABASE_URL: 'postgresql://flytally:dummy@127.0.0.1:55771/flytally_m0b_disposable_ci' };
+test('denies absent explicit ownership flag', () => assert.throws(() => assertIsolatedTarget({DATABASE_URL:base.DATABASE_URL}), /disabled/));
+test('denies remote host', () => assert.throws(() => assertIsolatedTarget({...base,DATABASE_URL:'postgresql://flytally@ep-prod.neon.tech:5432/flytally_m0b_disposable_ci'}),/non-127/));
+test('denies localhost alias to prevent resolver ambiguity', () => assert.throws(() => assertIsolatedTarget({...base,DATABASE_URL:'postgresql://flytally@localhost:5432/flytally_m0b_disposable_ci'}),/non-127/));
+test('denies regular database and missing named purpose', () => assert.throws(() => assertIsolatedTarget({...base,DATABASE_URL:'postgresql://flytally@127.0.0.1:5432/neondb'}),/purpose-named/));
+test('denies omitted explicit port', () => assert.throws(() => assertIsolatedTarget({...base,DATABASE_URL:'postgresql://flytally@127.0.0.1/flytally_m0b_disposable_ci'}),/explicit TCP port/));
+test('denies URL overrides', () => assert.throws(() => assertIsolatedTarget({...base,DATABASE_URL:base.DATABASE_URL+'?options=-csearch_path%3Dpublic'}),/overrides/));
+test('allows explicitly scoped loopback target for subsequent actual PG16 identity check', () => assert.deepEqual(assertIsolatedTarget(base),{url:base.DATABASE_URL,databaseName:'flytally_m0b_disposable_ci',port:55771}));
