@@ -69,6 +69,19 @@ test('parallel proof needs distinct backend identities and >=200ms overlap',()=>
  assert.equal(assessTwoClientOverlap(firstWindow,
   runWindow(202,'2026-11-03T08:00:02.000Z','2026-11-03T08:00:03.200Z')).status,'INCONCLUSIVE');
 });
+test('PostgreSQL timestamptz Date objects preserve millisecond overlap',()=>{
+ const one=runWindow(101,new Date('2026-11-03T08:00:00.790Z'),new Date('2026-11-03T08:00:01.890Z'));
+ const two=runWindow(202,new Date('2026-11-03T08:00:01.060Z'),new Date('2026-11-03T08:00:02.160Z'));
+ const proof=assessTwoClientOverlap(one,two);
+ assert.equal(proof.status,'PASS');
+ assert.equal(proof.overlapMs,830);
+});
+test('invalid timestamptz values fail closed instead of fabricating overlap',()=>{
+ for(const value of [null,undefined,0,{},new Date('not a date')]){
+  const sample=runWindow(101,value,'2026-11-03T08:00:01.000Z');
+  assert.throws(()=>assessTwoClientOverlap(sample,secondWindow),/M0-B/);
+ }
+});
 test('broken transaction backend continuity or timestamps rejected',()=>{
  assert.throws(()=>assessTwoClientOverlap(
   runWindow(101,'x','y'),secondWindow),/M0-B/);
