@@ -1,5 +1,8 @@
 # M0-B B1b.2c — source-schema compatibility and retention boundary (DESIGN ONLY)
 
+> **New isolated test evidence (2026-11-03):** [GitHub Actions #41596162456](https://github.com/filipto861/flytally-logbook/actions/runs/41596162456) at exact executable SHA `a966ee5805a120f52d5707183a5667a5e2c71b53` on disposable PG16.15: safe-target **7/7** and synthetic real-shaped nullable UID/FK/Trash variant tests **7/7 PASS**. Source shape remains unverified against live DB; test **does not** approve A or B retention. See [checkpoint](2026-11-03-m0b-b1b2c-v22-compatibility-retention-checkpoint.md).
+
+
 **Date:** 2026-11-03 UTC. **Repo:** `filipto861/flytally-logbook`. Verified `main@c9c2f60303236113a223942072311f5e37f876f7`; examined stacked Draft #461 `b852114307b37dd6f17442a430bdfb6bee2af0b6` (base #460, ancestors #459–#455; B0 #454 separate). Owner requires continuation **without DeepSeek**. No production database connection, SQL, schema migration, runtime change, merge, deploy or flag adjustment.
 
 ## Authority and evidence
