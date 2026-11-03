@@ -1,5 +1,11 @@
 # FlyTally Logbook — ROADMAP
 
+## 2026-11-03 — M0-B B1b.2c JS Date-precision correction for isolated HTTP probe (Draft #468)
+
+- Source/test SHA `9a4b3eaf39244efa700c5fd715c771389cd72c8b`; main `c9c2f60303236113a223942072311f5e37f876f7`; Draft #468 on #467, no merge. Read-only driver probe now correctly retains PostgreSQL `timestamptz` millisecond precision for native JS `Date` and text and fails closed on invalid timestamps; adds two regression tests (15 in total). Local Node22 **non-byte-identical source-equivalent** reproduction: `node --check` PASS, tests **15/15 PASS**: **PARTIAL**, not SHA-bound CI. Temporary CI workflow creation blocked, not bypassed; actual app Neon HTTP driver concurrency **NOT RUN**. [Technical document](docs/maintenance/2026-11-03-m0b-neon-serverless-http-readonly-harness.md), [SHA checkpoint](docs/maintenance/2026-11-03-m0b-http-readonly-harness-checkpoint.md).
+- Independent Neon read-only SQL confirmed still-isolated `blue-haze-29352938`, branch `br-patient-sound-bacf0trt`, DB `flytally_m0b_isolated`, PostgreSQL 16.15 and 0 public user tables; not HTTP app driver proof. Production M0-A unchanged READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` app `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`; production DB/schema/flags UNKNOWN, full-account Restore blocked. No code/runtime/schema version 22, merges, production deploys, SQL migrations, flags, Training or DeepSeek. Working +12-month UID retention still requires privacy/legal signoff.
+- **ONE NEXT STEP:** SHA-bound Node24 offline verification and genuine isolated credential-protected READ ONLY serverless HTTP two-client test; no remote destructive DML.
+
 ## 2026-11-03 — M0-B isolated NEW Neon PG16 read-only trial and guarded role diagnosis (Draft #467)
 
 - **Owner permission:** explicitly approved isolated temporary Neon test environment and P0–P8 testing without production data copying. **Safety reconciliation:** newly created a whole empty Neon project rather than branching existing Logbook Shadow/Training/other potentially populated project; remote **read-only** SQL plus test-only role configuration was performed, **no remote destructive flight/Trash DML**. No merge, deploy, production DB SQL/migrations/flags, full Restore, or DeepSeek review.
