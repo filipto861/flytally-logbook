@@ -132,7 +132,11 @@ export async function runProbe(env = process.env) {
   const [db, user, address, port, version] = identity.split('|');
   assert.equal(db, cfg.databaseName, 'Actual connected PostgreSQL database must match target');
   assert.equal(user, 'flytally', 'Diagnostic accepts only purpose-specific flytally role');
-  assert.equal(address, '127.0.0.1', 'PostgreSQL backend must be loopback');
+  // Hosted CI connects to 127.0.0.1:5432, but PostgreSQL's Docker bridge
+  // reports a private container-side server address (not the host loopback).
+  // This exception is CI-only and never relaxes the client URL loopback guard.
+  const ciDockerBridge = env.CI === 'true' && /^(?:10\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.|192\\.168\\.)/.test(address);
+  assert.ok(address === '127.0.0.1' || ciDockerBridge, 'PostgreSQL server must be local or CI-private bridge');
   assert.equal(Number(port), cfg.port, 'PostgreSQL backend port must match target');
   assert.ok(/^16\d{4}$/.test(version), 'Only real PostgreSQL16 is acceptable');
   const schema = 'ft_m0b_' + randomUUID().replaceAll('-', '');
