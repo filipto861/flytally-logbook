@@ -1,5 +1,13 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-11-03 — PR #468 Date-precision safe HTTP probe, local 15/15 PARTIAL
+
+- **Verified:** main `c9c2f60303236113a223942072311f5e37f876f7`, work `test/logbook-m0b-http-readonly-20261103` Draft PR #468 on #467 `cbc3c2067570917e29c2e62fde2bcd935f200d0b`, earlier Drafts #466→#455 (B0 #454 separate). Source/test executable SHA `9a4b3eaf39244efa700c5fd715c771389cd72c8b`; final docs HEAD must be reverified. [Checkpoint](../maintenance/2026-11-03-m0b-http-readonly-harness-checkpoint.md), [design](../maintenance/2026-11-03-m0b-neon-serverless-http-readonly-harness.md).
+- **Change:** preserve milliseconds from PostgreSQL `timestamptz` values returned as real JS `Date` or ISO text; reject invalid values; two added offline tests (15 total). No application runtime/schema, migration or package changes.
+- **Evidence:** Node22.16.0 local **source-equivalent only** `node --check` PASS and 15/15 mocked tests PASS; local blob hashes do NOT match GitHub's source blobs, so **PARTIAL not exact-source PASS**. GitHub CI workflow blocked by tool safety; exact GitHub Node24 test **NOT RUN**. Live Neon app HTTP driver/two-client concurrency, privilege and rollback acceptance **NOT RUN**.
+- **Isolated Neon:** project `blue-haze-29352938` / branch `br-patient-sound-bacf0trt` / DB `flytally_m0b_isolated`; direct read-only connector recheck returned role `flytally_m0b_operator`, PG16.15, public tables 0. No prod SQL or new real data. M0-A prod Vercel READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, app `f8116a7311abbdc9e1a269e133fccd7f8533f5c0`; DB/flags UNKNOWN, full-account Restore blocked. A retention +12 calendar months is legal/privacy review only.
+- **DO NOT:** merge, deploy, production DB migration/restore/delete, flags, Training, rewrite signed evidence, DeepSeek. **ONE NEXT STEP:** exact-code Node24 offline test and confidential authorized READ ONLY Neon HTTP driver two-client validation; no remote destructive DML.
+
 ## 2026-11-03T08:57:32.614Z — M0-B new empty Neon PG16 scoped read-only/role test, Draft #467 (PARTIAL P0–P8)
 
 - **Verified GitHub:** `main@c9c2f60303236113a223942072311f5e37f876f7`, Draft [PR #467](https://github.com/filipto861/flytally-logbook/pull/467) branch `test/logbook-m0b-neon-isolated-readonly-20261103` stacked on #466 `905df42d32080db0704410d87f37a86af4e03c11` (#465→#455 ancestors, #454 separate). Executable test SHA `82dc5259ab9a080f1c1101e2041ba10bdcacefb0`; final work commit must be reverified after checkpoint. [Evidence](../maintenance/2026-11-03-m0b-neon-isolated-project-readonly-evidence.md), [checkpoint](../maintenance/2026-11-03-m0b-neon-disposable-readonly-checkpoint.md).
