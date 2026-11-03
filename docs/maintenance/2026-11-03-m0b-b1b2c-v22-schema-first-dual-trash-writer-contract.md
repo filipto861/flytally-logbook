@@ -1,5 +1,8 @@
 # M0-B B1b.2c — V22 schema-first rollout and shared Trash writer contract (DESIGN + TEST ONLY)
 
+> **Verified isolated engineering proof — 2026-11-03:** [Actions #41600027200](https://github.com/filipto861/flytally-logbook/actions/runs/41600027200) exact executable SHA `e40588df02c992adb0c6dffeea137d78c3ea8129`: Node24 syntax PASS, target guard **7/7**, real disposable PostgreSQL16.15 restored-archive + dual per-owner cleanup **8/8 PASS**; random private schema dropped. **Still not application/Neon HTTP/DB-role/legal release acceptance**. [Exact checkpoint](2026-11-03-m0b-b1b2c-v22-dual-trash-restored-archive-checkpoint.md).
+
+
 **UTC:** 2026-11-03. **Repository:** `filipto861/flytally-logbook`. Verified canonical `main@c9c2f60303236113a223942072311f5e37f876f7`. Design base: Draft #463 `test/logbook-m0b-b1b2c-retention-a-window-20261103@f13e89515cdafd697c00dbb16dd981670bb22f0d` stacked on #462→#461→#460→#459→#458→#457→#456→#455; independent B0 #454. User approved retention **A as design direction**, not runtime/production; declined DeepSeek review. This document changes **no application code or real database schema**. No production/remote SQL, merge, deployment, Restore enablement or flag changes.
 
 ## 1. Source reconciliation: a third state, previously missing
