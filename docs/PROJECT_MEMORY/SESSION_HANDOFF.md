@@ -1,5 +1,14 @@
 # FlyTally Logbook — current session handoff
 
+## 2026-11-03T07:27:49.254Z — M0-B B1b.2c real-source FK + retention A/B proof, Draft #462
+
+- **GitHub state:** `main@c9c2f60303236113a223942072311f5e37f876f7`; work `docs/logbook-m0b-b1b2c-v22-compatibility-retention-20261103`, Draft [PR #462](https://github.com/filipto861/flytally-logbook/pull/462) based on #461 `b852114307b37dd6f17442a430bdfb6bee2af0b6`, ancestors #460→#455 and B0 #454 separately. Exact **executed** test SHA `a966ee5805a120f52d5707183a5667a5e2c71b53`; subsequent docs/workflow removal affects docs, not executable source; reverify final work SHA/PR in GitHub. Owner: **no DeepSeek review**, no production authority.
+- **Scope:** new [source-level FK/retention contract](../maintenance/2026-11-03-m0b-b1b2c-v22-real-schema-compatibility-retention.md), `tooling/m0b-b1b2c-retention-compatibility-probe.mjs`, temporary branch-only CI (remove after PASS), [checkpoint](../maintenance/2026-11-03-m0b-b1b2c-v22-compatibility-retention-checkpoint.md); ROADMAP, ARCHITECTURE, ACTIVE_WORK. No runtime or migration code. No FEATURES/CHANGELOG ship.
+- **Evidence:** Actions [#41596162456](https://github.com/filipto861/flytally-logbook/actions/runs/41596162456) at `a966ee5805a120f52d5707183a5667a5e2c71b53` SUCCESS, Node24 syntax PASS, safe-target 7/7 PASS, disposable PG16.15 **7/7 PASS**: legacy nullable UID, owner FK, non-unique fingerprint, both old Trash purge SQL paths would be blocked by strict registry, A retained marker prevents UID replay, B marker deletion loses replay proof; no live data, schema removed. Other app/build/native PG16 164/164/Playwright/Neon HTTP/issuer/audit/production auth tests **NOT RUN**. Actual production DB/schema/flags UNKNOWN; Vercel M0-A READY `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub` app `f8116a7311abbdc9e1a269e133fccd7f8533f5c0` at fly-tally.com.
+- **BLOCKERS:** source-defined FK differences not validated against physical pg_catalog; retention A may keep owner-linked personal data while B loses replay evidence. Owner policy not chosen; V22 DDL/version bump/Restore activation forbidden. **DO NOT** merge/deploy/prod DB SQL/migration/restore/delete/flag/audit rewrite or Training.
+- **ONE NEXT STEP:** specific owner choice on expired Trash UID marker, account-erasure effect and finite retention duration; then isolated real-schema-compatible V22 gate design without DeepSeek.
+
+
 ## 2026-11-03T07:12:09.544Z — B1b.2c writer topology + lifecycle synthetic PG16 PASS; Draft #461
 
 - **Canonical/stack:** verified `main@c9c2f60303236113a223942072311f5e37f876f7`; work `docs/logbook-m0b-b1b2c-writer-topology-20261103`, Draft **PR #461** base Draft #460 `8d783f4b7a80d9b8c67987e2ca68558ceb1750aa`, ancestors #459→#458→#457→#456→#455; #454 B0 separate. Tested executable source SHA `d5d14a21e042de1ce2af706ae9cb9f22e8b43f3b`. Work documentation HEAD after checkpoint to be read back from GitHub; never transfer tests to changed code.
