@@ -1,0 +1,63 @@
+name: M0-B V22 isolated owner-FK and least-privilege diagnostic
+
+on:
+  push:
+    branches:
+      - test/logbook-m0b-b1b2c-v22-role-fk-20261103
+    paths:
+      - tooling/m0b-b1b2c-role-fk-privilege-probe.mjs
+      - .github/workflows/m0b-b1b2c-role-fk-diagnostic.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m0b-owner-role-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  owned-disposable-pg16:
+    name: Real-shaped FK, SQL roles, scoped Trash — disposable PG16
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: diagnostic-only
+          POSTGRES_DB: flytally_m0b_disposable_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_m0b_disposable_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      FLYTALLY_M0B_OWNED_PG16: M0B_DISPOSABLE_PG16_CONFIRMED
+      DATABASE_URL: postgresql://flytally:diagnostic-only@127.0.0.1:5432/flytally_m0b_disposable_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Guard and syntax checks
+        run: |
+          node --check tooling/m0b-b1b2c-role-fk-privilege-probe.mjs
+          node --test tooling/m0b-b1b2c-concurrency-probe.test.mjs
+      - name: Real-shaped owner FK and least-privilege diagnostic
+        shell: bash
+        run: |
+          set -o pipefail
+          node tooling/m0b-b1b2c-role-fk-privilege-probe.mjs 2>&1 | tee m0b-role-fk.txt
+      - name: Preserve exactly tested source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m0b-role-fk-${{ github.sha }}
+          path: m0b-role-fk.txt
+          if-no-files-found: ignore
+          retention-days: 14
