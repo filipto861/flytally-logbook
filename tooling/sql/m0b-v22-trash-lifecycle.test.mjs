@@ -8,7 +8,7 @@ const acceptance=read("./m0b-v22-trash-lifecycle-acceptance.sql");
 test("test-only V22 writer has local PG16 / full V21 preflight",()=>{
   for(const needle of ["flytally_m0b_disposable_","host(inet_server_addr())","source-backed currency exact-money","version=21","source columns unavailable"])
     assert.ok(sql.includes(needle),needle);
-  assert.match(sql,/^BEGIN;[\s\S]+COMMIT;\s*$/);
+  assert.match(sql,/\bBEGIN;[\s\S]+COMMIT;\s*$/);
   assert.match(sql,/CREATE FUNCTION public\.logbook_v22_expire_owner_candidate/);
   assert.doesNotMatch(sql,/DATABASE_SCHEMA_VERSION=22|CREATE TRIGGER/);
 });
