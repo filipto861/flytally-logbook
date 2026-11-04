@@ -55,6 +55,25 @@ CREATE TABLE public.logbook_v22_redelete_edge_candidate (
     REFERENCES public.logbook_event_uid_registry(owner_id,event_kind,event_uid)
     ON DELETE RESTRICT
 );
+
+-- This source receipt is issued ONLY after a canonical V21-style restore
+-- INSERT+archive mark occurred within the SAME database transaction.
+-- It outlives the archived payload and prevents re-delete lineage gaps.
+CREATE TABLE public.logbook_v22_restored_source_receipt_candidate(
+  owner_id BIGINT NOT NULL,
+  event_kind TEXT NOT NULL DEFAULT 'flight' CHECK(event_kind='flight'),
+  event_uid UUID NOT NULL,
+  archive_id BIGINT NOT NULL CHECK(archive_id>0),
+  original_flight_id BIGINT NOT NULL CHECK(original_flight_id>0),
+  restored_flight_id BIGINT NOT NULL CHECK(restored_flight_id>0),
+  restored_at TIMESTAMPTZ NOT NULL,
+  attested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY(owner_id,event_kind,event_uid,archive_id),
+  UNIQUE(owner_id,event_kind,event_uid,restored_flight_id),
+  FOREIGN KEY(owner_id,event_kind,event_uid)
+   REFERENCES public.logbook_event_uid_registry(owner_id,event_kind,event_uid)
+   ON DELETE RESTRICT
+);
 CREATE TABLE public.logbook_v22_terminal_purge_candidate (
   owner_id BIGINT NOT NULL,
   event_kind TEXT NOT NULL DEFAULT 'flight' CHECK(event_kind='flight'),
@@ -86,6 +105,9 @@ CREATE TRIGGER m0b_immutable_terminal BEFORE UPDATE OR DELETE
   ON public.logbook_v22_terminal_purge_candidate FOR EACH ROW
   EXECUTE FUNCTION public.logbook_v22_reject_witness_change_candidate();
 
+CREATE TRIGGER m0b_immutable_restored_receipt BEFORE UPDATE OR DELETE
+  ON public.logbook_v22_restored_source_receipt_candidate FOR EACH ROW
+  EXECUTE FUNCTION public.logbook_v22_reject_witness_change_candidate();
 -- TEST-ONLY trusted writer prototype. This must eventually be called from
 -- the authenticated source redel(et)e writer in the SAME owner transaction;
 -- neither an imported archive nor a guessed source UID can create a witness.
@@ -287,8 +309,82 @@ BEGIN
   END LOOP;
   RETURN v_expired;
 END $writer$;
+
+-- Tested post-restore adapter; NOT invoked from V21. The application V22
+-- restoration transaction, when separately approved, must acquire the owner
+-- gate then execute canonical V21 restore CTE and this finalizer in ONE
+-- sql.transaction([...]) (no separate HTTP round-trip). SECURITY INVOKER
+-- does not authenticate the owner: server-side requireUser remains mandatory.
+CREATE FUNCTION public.logbook_v22_finalize_restored_source_candidate(
+ p_owner BIGINT,p_archive BIGINT
+) RETURNS BIGINT LANGUAGE plpgsql SECURITY INVOKER
+SET search_path=pg_catalog,pg_temp SET lock_timeout='5s'
+AS $finalize$
+DECLARE d RECORD;f RECORD;r RECORD;v_xid BIGINT;v_n INTEGER;
+BEGIN
+ IF p_owner IS NULL OR p_owner<=0 OR p_archive IS NULL OR p_archive<=0
+   THEN RAISE EXCEPTION 'V22 restore finalizer requires positive owner/archive';END IF;
+ PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'V22 restore finalizer owner gate absent';END IF;
+ SELECT a.* INTO d FROM public.deleted_flights a
+   WHERE a.id=p_archive AND a.user_id=p_owner FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'V22 restore finalizer source archive absent';END IF;
+ IF d.event_uid IS NULL OR d.restored_at IS NULL
+   OR d.restored_flight_id IS NULL OR d.restored_at>NOW()
+   OR d.restored_at>d.purge_after
+   OR NOT(d.flight_data @> jsonb_build_object(
+       'id',d.original_flight_id,'user_id',p_owner,'event_uid',d.event_uid::text))
+   THEN RAISE EXCEPTION 'V22 restore finalizer source identity malformed';END IF;
+ SELECT live.* INTO f FROM public.flights live
+   WHERE live.id=d.restored_flight_id AND live.user_id=p_owner FOR UPDATE;
+ IF NOT FOUND OR f.event_uid IS NOT NULL
+   OR f.certified_at IS NOT NULL OR f.locked_at IS NOT NULL
+   OR COALESCE(f.record_revision,1)<>1
+   OR f.date::text IS DISTINCT FROM d.flight_data->>'date'
+   OR f.registration IS DISTINCT FROM d.flight_data->>'registration'
+   OR f.off_block IS DISTINCT FROM d.flight_data->>'off_block'
+   OR f.departure IS DISTINCT FROM d.flight_data->>'departure'
+   OR f.arrival IS DISTINCT FROM d.flight_data->>'arrival'
+   THEN RAISE EXCEPTION 'V22 restore finalizer live identity mismatch';END IF;
+ -- Both archive mark and newly created flight MUST originate from this
+ -- SAME PostgreSQL transaction, preventing after-the-fact receipt forgery.
+ v_xid:=mod(txid_current(),4294967296::BIGINT);
+ IF d.xmin::text::BIGINT<>v_xid OR f.xmin::text::BIGINT<>v_xid
+   THEN RAISE EXCEPTION 'V22 restore finalizer requires same transaction mark and insert';END IF;
+ SELECT reg.* INTO r FROM public.logbook_event_uid_registry reg
+   WHERE reg.owner_id=p_owner AND reg.event_kind='flight'
+     AND reg.event_uid=d.event_uid FOR UPDATE;
+ IF NOT FOUND OR r.lifecycle_state<>'trash'
+   OR r.original_trash_cutoff IS DISTINCT FROM d.purge_after
+   OR r.marker_until IS NOT NULL
+   OR EXISTS(SELECT 1 FROM public.deleted_flights other
+     WHERE other.user_id=p_owner AND other.event_uid=d.event_uid
+       AND other.restored_at IS NULL)
+   OR EXISTS(SELECT 1 FROM public.flights other
+     WHERE other.user_id=p_owner AND other.event_uid=d.event_uid)
+   THEN RAISE EXCEPTION 'V22 restore finalizer registry conflict';END IF;
+ UPDATE public.flights SET event_uid=d.event_uid
+   WHERE id=d.restored_flight_id AND user_id=p_owner AND event_uid IS NULL;
+ GET DIAGNOSTICS v_n=ROW_COUNT;
+ IF v_n<>1 THEN RAISE EXCEPTION 'V22 restore finalizer UID assignment conflict';END IF;
+ UPDATE public.logbook_event_uid_registry
+   SET lifecycle_state='active',original_trash_cutoff=NULL,marker_until=NULL
+   WHERE owner_id=p_owner AND event_kind='flight'
+     AND event_uid=d.event_uid AND lifecycle_state='trash';
+ GET DIAGNOSTICS v_n=ROW_COUNT;
+ IF v_n<>1 THEN RAISE EXCEPTION 'V22 restore finalizer transition conflict';END IF;
+ INSERT INTO public.logbook_v22_restored_source_receipt_candidate(
+   owner_id,event_kind,event_uid,archive_id,original_flight_id,
+   restored_flight_id,restored_at)
+ VALUES(p_owner,'flight',d.event_uid,d.id,d.original_flight_id,
+   d.restored_flight_id,d.restored_at);
+ RETURN d.restored_flight_id;
+END
+$finalize$;
+
 -- PostgreSQL defaults public EXECUTE; do not grant this even to read-only
 -- test roles. The owning local fixture principal retains inherent access.
 REVOKE ALL ON FUNCTION public.logbook_v22_expire_owner_candidate(BIGINT,INTEGER) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.logbook_v22_attest_redelete_candidate(BIGINT,UUID,BIGINT,BIGINT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.logbook_v22_finalize_restored_source_candidate(BIGINT,BIGINT) FROM PUBLIC;
 COMMIT;
