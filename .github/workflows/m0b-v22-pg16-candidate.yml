@@ -126,6 +126,38 @@ jobs:
           }
           echo 'PASS: two distinct PG16 backends serialize same-owner expiry on first user gate.'
           echo 'PASS: exact V1-V21 source migrations + V22 SQL owner lifecycle, rollback, deny-by-role.'
+      - name: Derive complete browser-feature V21 fixture without destructive reset
+        run: |
+          set -euo pipefail
+          node --check tooling/m0b-v22-feature-v21-fixture.mjs
+          node tooling/m0b-v22-feature-v21-fixture.mjs > /tmp/m0b-v21-app-features.sql
+          test "$(wc -c < /tmp/m0b-v21-app-features.sql)" -gt 20000
+          if grep -Eiq '\bDROP\s+(SCHEMA|DATABASE|TABLE)\b' /tmp/m0b-v21-app-features.sql; then
+            echo 'FAIL: source feature fixture emits destructive DDL'; exit 1
+          fi
+      - name: V21 application feature catalog and immutable terminal lineage on disposable PG16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql -h 127.0.0.1 \
+              -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          printf 'CREATE DATABASE flytally_m0b_disposable_feature_v21;\n' | pgdb postgres
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb flytally_m0b_disposable_feature_v21)"
+          [[ "$identity" =~ ^flytally_m0b_disposable_feature_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Refused feature fixture target <$identity>"; exit 1;
+          }
+          pgdb flytally_m0b_disposable_feature_v21 < /tmp/m0b-v21-app-features.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-expand-candidate.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-feature-v21-acceptance.sql
+          echo 'PASS: current application V21 feature snapshot and independent immutable terminal lineage on isolated PG16.'
       - name: Execute unchanged candidate on single disposable local PG16
         shell: bash
         env:

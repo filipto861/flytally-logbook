@@ -84,3 +84,19 @@ test("physical SQL covers absent lineage, one-hop and multi-hop history, tamperi
     "duplicate immutable witness refused"
   ])assert.ok(acceptance.includes(expected),expected);
 });
+
+test("richer feature V21 fixture derives bootstrap schema without executing unsafe resets",()=>{
+  const feature=read("../m0b-v22-feature-v21-fixture.mjs");
+  const physical=read("./m0b-v22-feature-v21-acceptance.sql");
+  assert.match(feature,/tooling\/bootstrap-browser-smoke-db\.mjs/);
+  assert.match(feature,/lib\/db-optimization\.ts/);
+  assert.match(feature,/for\(let v=20;v<=21;v\+\+\)/);
+  assert.match(feature,/current_database\(\)<>'flytally_m0b_disposable_feature_v21'/);
+  assert.match(feature,/refuses populated target/);
+  assert.match(feature,/sql\.replace\(destructive,guard\)/);
+  assert.doesNotMatch(feature,/\bspawnSync\b|\bexecSync\b/);
+  assert.match(physical,/V22 feature V21 acceptance isolated target or migration mismatch/);
+  assert.match(physical,/flight_expenses/);
+  assert.match(physical,/flight_verifications/);
+  assert.match(physical,/feature schema, protected shared\/evidence tables/);
+});
