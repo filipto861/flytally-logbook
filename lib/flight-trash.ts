@@ -29,8 +29,7 @@ export async function moveFlightToTrash(userId:number,flightId:number):Promise<b
     const session=await requireUser();
     if(session.userId!==userId)throw new Error("V22 redelete owner authorization mismatch.");
     requireV22TrashRetentionApproved(v22DeleteMode);
-    const archived=await sql`SELECT public.logbook_v22_redelete_source_candidate(${userId},${flightId},${token}::uuid) AS archive_id`
-      as Array<{archive_id:number|string}>;
+    const archived=(await sql`SELECT public.logbook_v22_redelete_source_candidate(${userId},${flightId},${token}::uuid) AS archive_id`) as Array<{archive_id:number|string}>;
     const archivedId=Number(archived[0]?.archive_id);
     if(archived.length!==1||!Number.isSafeInteger(archivedId)||archivedId<=0)
       throw new Error("V22 redelete source returned invalid archive identity.");
