@@ -246,4 +246,182 @@ DO $wrong_restored_link$ BEGIN
     THEN RAISE EXCEPTION 'Wrong restored link mutated protected owner data'; END IF;
 END $wrong_restored_link$;
 SELECT 'PASS: wrong restored flight ID/owner/UID cannot purge history';
+
+-- Source-owned immutable edge is attested while both archives exist.
+-- Simulated clock advancement later modifies only synthetic cutoff rows
+-- because the test runner does not use fake global PostgreSQL time.
+INSERT INTO public.users(id,email) VALUES
+ (9003,'synthetic-lineage-1@example.test'),
+ (9004,'synthetic-lineage-2@example.test'),
+ (9005,'synthetic-no-edge@example.test');
+INSERT INTO public.logbook_event_uid_registry
+ (owner_id,event_kind,event_uid,lifecycle_state,original_trash_cutoff)
+ VALUES
+ (9003,'flight','aaaa0000-0000-4000-8000-000000000003','trash',now()-interval '2 hours'),
+ (9004,'flight','bbbb0000-0000-4000-8000-000000000004','trash',now()+interval '5 hours'),
+ (9005,'flight','cccc0000-0000-4000-8000-000000000005','trash',now()-interval '2 hours');
+INSERT INTO public.deleted_flights
+ (id,user_id,original_flight_id,delete_token,flight_data,deleted_at,purge_after,
+  restored_at,restored_flight_id,event_uid)
+ VALUES
+ (91,9003,4091,'m0b91',
+   jsonb_build_object('id',4091,'user_id',9003,'event_uid','aaaa0000-0000-4000-8000-000000000003'),
+   now()-interval '8 days',now()+interval '2 days',
+   now()-interval '6 days',5091,'aaaa0000-0000-4000-8000-000000000003'),
+ (92,9003,5091,'m0b92',
+   jsonb_build_object('id',5091,'user_id',9003,'event_uid','aaaa0000-0000-4000-8000-000000000003'),
+   now()-interval '3 days',now()-interval '2 hours',
+   NULL,NULL,'aaaa0000-0000-4000-8000-000000000003'),
+ (130,9005,4130,'m0b130',
+   jsonb_build_object('id',4130,'user_id',9005,'event_uid','cccc0000-0000-4000-8000-000000000005'),
+   now()-interval '8 days',now()+interval '2 days',
+   now()-interval '6 days',5130,'cccc0000-0000-4000-8000-000000000005'),
+ (131,9005,5130,'m0b131',
+   jsonb_build_object('id',5130,'user_id',9005,'event_uid','cccc0000-0000-4000-8000-000000000005'),
+   now()-interval '3 days',now()-interval '2 hours',
+   NULL,NULL,'cccc0000-0000-4000-8000-000000000005');
+
+DO $unattested$ BEGIN
+  BEGIN
+    PERFORM public.logbook_v22_expire_owner_candidate(9005,25);
+    RAISE EXCEPTION 'Terminal purge without predecessor attestation was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM<>'V22 terminal purge missing immutable predecessor edge'
+      THEN RAISE; END IF;
+  END;
+  IF NOT EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=131)
+    OR NOT EXISTS(SELECT 1 FROM public.logbook_event_uid_registry
+      WHERE owner_id=9005 AND event_uid='cccc0000-0000-4000-8000-000000000005'
+        AND lifecycle_state='trash')
+    THEN RAISE EXCEPTION 'Unattested final purge failed to roll back'; END IF;
+END $unattested$;
+SELECT 'PASS: terminal purge without immutable predecessor edge refused atomically';
+
+DO $witness$ BEGIN
+  PERFORM public.logbook_v22_attest_redelete_candidate(
+    9003,'aaaa0000-0000-4000-8000-000000000003',91,92);
+  IF (SELECT count(*) FROM public.logbook_v22_redelete_edge_candidate
+      WHERE owner_id=9003 AND event_uid='aaaa0000-0000-4000-8000-000000000003')<>1
+    THEN RAISE EXCEPTION 'Source redelete attestation missing'; END IF;
+  IF public.logbook_v22_expire_owner_candidate(9003,25)<>1
+    THEN RAISE EXCEPTION 'Last Trash terminal archive was not purged'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate t
+    WHERE t.owner_id=9003 AND t.event_uid='aaaa0000-0000-4000-8000-000000000003'
+      AND t.terminal_archive_id=92
+      AND t.original_trash_cutoff=(
+        SELECT original_trash_cutoff FROM public.logbook_event_uid_registry r
+        WHERE r.owner_id=9003 AND r.event_uid=t.event_uid))
+    OR NOT EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=91)
+    OR EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=92)
+    THEN RAISE EXCEPTION 'Terminal receipt or older restored archive lost'; END IF;
+END $witness$;
+-- Synthetic time advance only; this is NOT a production change to cutoff.
+UPDATE public.deleted_flights SET purge_after=now()-interval '1 hour'
+ WHERE id=91 AND user_id=9003;
+DO $oldrestored$ BEGIN
+  IF public.logbook_v22_expire_owner_candidate(9003,25)<>1
+    OR EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=91)
+    OR NOT EXISTS(SELECT 1 FROM public.logbook_v22_redelete_edge_candidate
+      WHERE owner_id=9003 AND prior_archive_id=91 AND next_archive_id=92)
+    OR NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
+      WHERE owner_id=9003 AND terminal_archive_id=92)
+    OR NOT EXISTS(SELECT 1 FROM public.logbook_event_uid_registry
+      WHERE owner_id=9003 AND event_uid='aaaa0000-0000-4000-8000-000000000003'
+        AND lifecycle_state='purged')
+    THEN RAISE EXCEPTION 'Proven older restored archive after final purge mismatch'; END IF;
+END $oldrestored$;
+SELECT 'PASS: attest A->B, purge B, then safely expire older restored A with terminal witness';
+
+-- Multi-restore event: A -> B -> C; both predecessors eventually expire
+-- after terminal C has been deleted, but no source archive is invented.
+INSERT INTO public.deleted_flights
+ (id,user_id,original_flight_id,delete_token,flight_data,deleted_at,purge_after,
+  restored_at,restored_flight_id,event_uid)
+ VALUES
+ (110,9004,4110,'m0b110',
+  jsonb_build_object('id',4110,'user_id',9004,'event_uid','bbbb0000-0000-4000-8000-000000000004'),
+  now()-interval '14 days',now()+interval '4 days',
+  now()-interval '12 days',5110,'bbbb0000-0000-4000-8000-000000000004'),
+ (111,9004,5110,'m0b111',
+  jsonb_build_object('id',5110,'user_id',9004,'event_uid','bbbb0000-0000-4000-8000-000000000004'),
+  now()-interval '9 days',now()+interval '5 hours',
+  NULL,NULL,'bbbb0000-0000-4000-8000-000000000004');
+DO $firsthop$ BEGIN
+  PERFORM public.logbook_v22_attest_redelete_candidate(
+    9004,'bbbb0000-0000-4000-8000-000000000004',110,111);
+END $firsthop$;
+-- Synthetic restoration of B and next deletion C, always before testing
+-- terminal cleanup and entirely within the disposable fixture.
+UPDATE public.deleted_flights SET restored_at=now()-interval '6 days',
+ restored_flight_id=5111 WHERE id=111;
+UPDATE public.logbook_event_uid_registry SET original_trash_cutoff=now()-interval '1 hour'
+ WHERE owner_id=9004 AND event_uid='bbbb0000-0000-4000-8000-000000000004';
+INSERT INTO public.deleted_flights
+ (id,user_id,original_flight_id,delete_token,flight_data,deleted_at,purge_after,
+  restored_at,restored_flight_id,event_uid)
+ VALUES(112,9004,5111,'m0b112',
+  jsonb_build_object('id',5111,'user_id',9004,'event_uid','bbbb0000-0000-4000-8000-000000000004'),
+  now()-interval '2 days',now()-interval '1 hour',
+  NULL,NULL,'bbbb0000-0000-4000-8000-000000000004');
+DO $secondhop$ BEGIN
+  PERFORM public.logbook_v22_attest_redelete_candidate(
+    9004,'bbbb0000-0000-4000-8000-000000000004',111,112);
+  IF public.logbook_v22_expire_owner_candidate(9004,25)<>1
+    THEN RAISE EXCEPTION 'Multi-hop terminal archive not purged'; END IF;
+END $secondhop$;
+UPDATE public.deleted_flights SET purge_after=now()-interval '20 minutes'
+ WHERE id IN(110,111) AND user_id=9004;
+DO $multihop$ BEGIN
+  IF public.logbook_v22_expire_owner_candidate(9004,25)<>2
+    OR EXISTS(SELECT 1 FROM public.deleted_flights WHERE id IN(110,111,112))
+    OR (SELECT count(*) FROM public.logbook_v22_redelete_edge_candidate
+      WHERE owner_id=9004 AND event_uid='bbbb0000-0000-4000-8000-000000000004')<>2
+    OR NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
+      WHERE owner_id=9004 AND terminal_archive_id=112)
+    THEN RAISE EXCEPTION 'Immutable multi-hop archived lineage failure'; END IF;
+END $multihop$;
+SELECT 'PASS: multi-hop attest A->B->C and purge historic A+B only with terminal C proof';
+
+-- Append-only trigger protects the retained audit evidence.
+DO $immutable$ BEGIN
+  BEGIN
+    UPDATE public.logbook_v22_redelete_edge_candidate
+      SET next_archive_id=999 WHERE owner_id=9004 AND prior_archive_id=110;
+    RAISE EXCEPTION 'Edge update unexpectedly allowed';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM<>'V22 immutable event lineage cannot be updated/deleted'
+      THEN RAISE; END IF;
+  END;
+  BEGIN
+    DELETE FROM public.logbook_v22_terminal_purge_candidate
+      WHERE owner_id=9004 AND terminal_archive_id=112;
+    RAISE EXCEPTION 'Terminal proof delete unexpectedly allowed';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM<>'V22 immutable event lineage cannot be updated/deleted'
+      THEN RAISE; END IF;
+  END;
+END $immutable$;
+SELECT 'PASS: immutable owner-scoped lineage edges and terminal receipts cannot mutate';
+
+-- Wrong owner, missing source and repeat attestation must NOT forge evidence.
+DO $reject_attest$ BEGIN
+  BEGIN
+    PERFORM public.logbook_v22_attest_redelete_candidate(
+      9005,'cccc0000-0000-4000-8000-000000000005',91,92);
+    RAISE EXCEPTION 'Wrong-owner witness accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM<>'V22 lineage attestation prior source unavailable' THEN RAISE; END IF;
+  END;
+  BEGIN
+    PERFORM public.logbook_v22_attest_redelete_candidate(
+      9005,'cccc0000-0000-4000-8000-000000000005',130,131);
+    PERFORM public.logbook_v22_attest_redelete_candidate(
+      9005,'cccc0000-0000-4000-8000-000000000005',130,131);
+    RAISE EXCEPTION 'Repeated source attestation accepted';
+  EXCEPTION WHEN unique_violation THEN
+    NULL;
+  END;
+END $reject_attest$;
+SELECT 'PASS: missing owner source rejected and duplicate immutable witness refused';
+
 COMMIT;
