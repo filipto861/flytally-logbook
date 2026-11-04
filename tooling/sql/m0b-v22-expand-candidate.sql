@@ -7,7 +7,7 @@ BEGIN
   -- Never allow this standalone candidate on an unknown or remotely hosted DB.
   IF current_database() !~ '^flytally_m0b_disposable_[a-z0-9_]+$'
      OR current_user <> 'flytally'
-     OR coalesce(inet_server_addr()::text,'') <> '127.0.0.1' THEN
+     OR coalesce(host(inet_server_addr()),'') <> '127.0.0.1' THEN
     RAISE EXCEPTION 'V22 candidate requires owned local disposable loopback target';
   END IF;
   IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public'

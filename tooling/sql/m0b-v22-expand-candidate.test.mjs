@@ -10,7 +10,7 @@ test('transaction encloses the inactive candidate',()=>{
 test('SQL self-guards local disposable target and refuses preexisting identity schema',()=>{
   check(/current_database\(\) !~ '\^flytally_m0b_disposable_/);
   check(/current_user <> 'flytally'/);
-  check(/inet_server_addr\(\)::text,''\) <> '127\.0\.0\.1'/);
+  check(/coalesce\(host\(inet_server_addr\(\)\),''\) <> '127\.0\.0\.1'/);
   check(/to_regclass\('public\.logbook_event_uid_registry'\) IS NOT NULL/);
 });
 test('PG16 and exact source tables/columns are preflighted',()=>{

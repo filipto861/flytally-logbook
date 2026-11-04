@@ -46,7 +46,7 @@ jobs:
               -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_ci \
               -X -v ON_ERROR_STOP=1 -A -t -q "$@"
           }
-          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||inet_server_addr()::text||'|'||current_setting('server_version_num');\n" | pg)"
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pg)"
           echo "Disposable PostgreSQL identity: <$identity>"
           [[ "$identity" =~ ^flytally_m0b_disposable_ci\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || { echo "Refused: SQL connection identity mismatch"; exit 1; }
           cat <<'SQL' | pg
