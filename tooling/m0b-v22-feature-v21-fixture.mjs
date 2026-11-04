@@ -71,6 +71,16 @@ for(let v=20;v<=21;v++){
     "INSERT INTO public.flytally_schema_migrations(version,name) VALUES("+
       v+","+quote(names[v-1][2])+");","COMMIT;");
 }
+// Same owner-bound public-share table that actual V21 delete prepares using
+// ensureFlightSharingSchema; use source-exact SQL, never a handwritten stub.
+const sharing=readFileSync(new URL("lib/flight-sharing.ts",root),"utf8");
+const sharesStart=sharing.indexOf("sql"+tick+"CREATE TABLE IF NOT EXISTS flight_public_shares");
+const sharesEnd=sharing.indexOf(tick,sharesStart+4);
+assert.ok(sharesStart>=0&&sharesEnd>sharesStart,"Flight-sharing schema source changed");
+const sharesSQL=sharing.slice(sharesStart+("sql"+tick).length,sharesEnd);
+assert.match(sharesSQL,/flight_public_shares_owner_fk/);
+assert.ok(!sharesSQL.includes(token),"Unexpected dynamic sharing schema");
+statements.push("BEGIN;",sharesSQL+";","COMMIT;");
 statements.push([
 "DO $m0b_check$ BEGIN",
 "IF (SELECT count(*) FROM public.flytally_schema_migrations)<>21",
