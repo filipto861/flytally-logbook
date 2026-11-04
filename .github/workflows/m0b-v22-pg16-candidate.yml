@@ -47,6 +47,7 @@ jobs:
               -X -v ON_ERROR_STOP=1 -A -t -q "$@"
           }
           identity="$(printf "SELECT current_database()||'|'||current_user||'|'||inet_server_addr()::text||'|'||current_setting('server_version_num');\n" | pg)"
+          echo "Disposable PostgreSQL identity: <$identity>"
           [[ "$identity" =~ ^flytally_m0b_disposable_ci\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || { echo "Refused: SQL connection identity mismatch"; exit 1; }
           cat <<'SQL' | pg
           CREATE TABLE public.users (id BIGINT PRIMARY KEY);
