@@ -52,3 +52,35 @@ test("real PG acceptance covers dual owner, legacy, restored, re-deletion and fo
   assert.match(acceptance,/SELECT public\.logbook_v22_expire_owner_candidate\(9001,2\)/);
   assert.match(acceptance,/SQLERRM<>'V22 expiry un-restored archive state\/cutoff mismatch'/);
 });
+
+test("immutable source-attested V22 lineage is separate from archive payload and scoped to owner/UID",()=>{
+  assert.match(sql,/CREATE TABLE public\.logbook_v22_redelete_edge_candidate/);
+  assert.match(sql,/CREATE TABLE public\.logbook_v22_terminal_purge_candidate/);
+  assert.match(sql,/PRIMARY KEY\(owner_id,event_kind,event_uid,prior_archive_id\)/);
+  assert.match(sql,/FOREIGN KEY\(owner_id,event_kind,event_uid\)/);
+  assert.match(sql,/m0b_immutable_edge BEFORE UPDATE OR DELETE/);
+  assert.match(sql,/m0b_immutable_terminal BEFORE UPDATE OR DELETE/);
+  assert.match(sql,/logbook_v22_attest_redelete_candidate/);
+  assert.match(sql,/REVOKE ALL ON FUNCTION public\.logbook_v22_attest_redelete_candidate/);
+});
+test("archive reaches terminal purge only via bounded, immutable, noncycling chain",()=>{
+  assert.match(sql,/IF EXISTS \(SELECT 1 FROM public\.deleted_flights old_d/);
+  assert.match(sql,/terminal purge missing immutable predecessor edge/);
+  assert.match(sql,/ELSIF v_state='purged'/);
+  assert.match(sql,/JOIN public\.logbook_v22_redelete_edge_candidate edge/);
+  assert.match(sql,/c\.depth<64 AND NOT\(edge\.next_archive_id=ANY\(c\.visited\)\)/);
+  assert.match(sql,/WHERE archive_id=v_terminal AND depth>0/);
+  assert.match(sql,/v_matches<>1/);
+  assert.match(sql,/terminal lineage receipt unavailable/);
+  assert.match(sql,/restored archive cannot reach immutable terminal purge/);
+  assert.doesNotMatch(sql,/INSERT INTO public\.logbook_v22_redelete_edge_candidate[\s\S]*?VALUES\s*\(p_owner,'flight',rec\.event_uid/);
+});
+test("physical SQL covers absent lineage, one-hop and multi-hop history, tampering and wrong-owner witnesses",()=>{
+  for(const expected of [
+    "terminal purge without immutable predecessor edge refused atomically",
+    "attest A->B, purge B, then safely expire older restored A",
+    "multi-hop attest A->B->C",
+    "immutable owner-scoped lineage edges and terminal receipts cannot mutate",
+    "duplicate immutable witness refused"
+  ])assert.ok(acceptance.includes(expected),expected);
+});

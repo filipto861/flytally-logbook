@@ -168,7 +168,7 @@ DO $unknown_lineage$ BEGIN
     PERFORM public.logbook_v22_expire_owner_candidate(9002,25);
     RAISE EXCEPTION 'Purged restored history was inappropriately deleted';
   EXCEPTION WHEN OTHERS THEN
-    IF SQLERRM<>'V22 expiry restored archive lifecycle provenance unavailable'
+    IF SQLERRM<>'V22 expiry terminal lineage receipt unavailable'
       THEN RAISE; END IF;
   END;
   IF NOT EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=80)
