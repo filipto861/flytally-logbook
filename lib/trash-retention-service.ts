@@ -49,7 +49,7 @@ function requireV22Candidate(){
 }
 async function expireV22OwnerBatchCandidate(ownerId:number):Promise<number>{
   const owner=positiveTrashOwnerId(ownerId);
-  const rows=await sql`SELECT public.logbook_v22_expire_owner_candidate(${owner},25) AS expired_count`
+  const rows=(await sql`SELECT public.logbook_v22_expire_owner_candidate(${owner},25) AS expired_count`)
     as Array<{expired_count:number|string}>;
   const count=Number(rows[0]?.expired_count);
   if(!Number.isSafeInteger(count)||count<0||count>25){
@@ -71,8 +71,8 @@ export async function proposedV22ExpireForAuthorizedCron(authorization:unknown):
   }
   requireV22Candidate();
   // Fresh, deterministic, bounded account list. No global owner=NULL writer.
-  const eligible=await sql`SELECT DISTINCT user_id FROM deleted_flights
-    WHERE purge_after<=NOW() ORDER BY user_id LIMIT 25`
+  const eligible=(await sql`SELECT DISTINCT user_id FROM deleted_flights
+    WHERE purge_after<=NOW() ORDER BY user_id LIMIT 25`)
     as Array<{user_id:number|string}>;
   let expired=0;
   for(const row of eligible){
