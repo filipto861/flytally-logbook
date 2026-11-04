@@ -382,9 +382,127 @@ BEGIN
 END
 $finalize$;
 
+
+-- Staged owner-gated source writer, NOT callable by any live V21 path.
+-- Mirrors A+ protected/unlinked draft eligibility in moveFlightToTrash;
+-- when source verification is missing, refuse BEFORE archived mutation.
+-- One SQL function invocation is atomic: archive -> track cleanup -> live
+-- deletion -> registry transition -> immutable event edge or full rollback.
+CREATE FUNCTION public.logbook_v22_redelete_source_candidate(
+ p_owner BIGINT,p_flight BIGINT,p_token UUID
+) RETURNS BIGINT LANGUAGE plpgsql SECURITY INVOKER
+SET search_path=pg_catalog,pg_temp SET lock_timeout='5s'
+AS $source_delete$
+DECLARE f RECORD;reg RECORD;prior RECORD;v_archive BIGINT;
+ v_cutoff TIMESTAMPTZ;v_count INTEGER;
+BEGIN
+ IF p_owner IS NULL OR p_owner<=0 OR p_flight IS NULL OR p_flight<=0
+   OR p_token IS NULL THEN
+   RAISE EXCEPTION 'V22 redelete source requires positive owner/flight and token';END IF;
+ PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'V22 redelete source owner gate absent';END IF;
+ SELECT live.* INTO f FROM public.flights live
+   WHERE live.id=p_flight AND live.user_id=p_owner FOR UPDATE;
+ IF NOT FOUND OR f.event_uid IS NULL OR f.certified_at IS NOT NULL
+   OR f.locked_at IS NOT NULL OR COALESCE(f.record_revision,1)<>1
+   THEN RAISE EXCEPTION 'V22 redelete source protected or unknown live identity';END IF;
+
+ -- No authorization by SQL parameter. These must be run only by an
+ -- authenticated server owner-bound action once separately approved.
+ IF to_regclass('public.flight_participations') IS NULL
+   OR to_regclass('public.flight_connected_crew') IS NULL
+   OR to_regclass('public.flight_verifications') IS NULL
+   OR to_regclass('public.instructor_flight_approvals') IS NULL
+   OR to_regclass('public.flight_source_provenance') IS NULL
+   OR to_regclass('public.flight_public_shares') IS NULL
+   OR to_regclass('public.flight_certified_revisions') IS NULL
+   OR to_regclass('public.voided_certified_flights') IS NULL
+   OR to_regclass('public.flight_expenses') IS NULL
+   OR to_regclass('public.flight_tracks') IS NULL
+   OR to_regclass('public.track_points') IS NULL
+   THEN RAISE EXCEPTION 'V22 redelete source prerequisite protected tables absent';END IF;
+ IF EXISTS(SELECT 1 FROM public.flight_participations p
+     WHERE p.source_flight_id=f.id OR p.participant_flight_id=f.id)
+   OR EXISTS(SELECT 1 FROM public.flight_connected_crew c
+     WHERE c.source_flight_id=f.id)
+   OR EXISTS(SELECT 1 FROM public.flight_verifications v
+     WHERE v.flight_id=f.id)
+   OR EXISTS(SELECT 1 FROM public.instructor_flight_approvals a
+     WHERE a.flight_id=f.id)
+   OR EXISTS(SELECT 1 FROM public.flight_source_provenance p
+     WHERE p.source_flight_id=f.id OR p.participant_flight_id=f.id)
+   OR EXISTS(SELECT 1 FROM public.flight_public_shares s
+     WHERE s.flight_id=f.id)
+   OR EXISTS(SELECT 1 FROM public.flight_certified_revisions v
+     WHERE v.flight_id=f.id)
+   OR EXISTS(SELECT 1 FROM public.voided_certified_flights v
+     WHERE v.user_id=p_owner AND v.original_flight_id=f.id)
+   THEN RAISE EXCEPTION 'V22 redelete source protected participant/certified evidence';END IF;
+ SELECT r.* INTO reg FROM public.logbook_event_uid_registry r
+   WHERE r.owner_id=p_owner AND r.event_kind='flight'
+     AND r.event_uid=f.event_uid FOR UPDATE;
+ IF NOT FOUND OR reg.lifecycle_state<>'active'
+   OR reg.original_trash_cutoff IS NOT NULL OR reg.marker_until IS NOT NULL
+   OR EXISTS(SELECT 1 FROM public.deleted_flights d
+     WHERE d.user_id=p_owner AND d.event_uid=f.event_uid
+       AND d.restored_at IS NULL)
+   THEN RAISE EXCEPTION 'V22 redelete source registry/lifecycle unavailable';END IF;
+
+ SELECT receipt.* INTO prior
+   FROM public.logbook_v22_restored_source_receipt_candidate receipt
+   WHERE receipt.owner_id=p_owner AND receipt.event_kind='flight'
+     AND receipt.event_uid=f.event_uid AND receipt.restored_flight_id=f.id
+   FOR UPDATE;
+ IF NOT FOUND AND EXISTS(SELECT 1 FROM public.deleted_flights d
+   WHERE d.user_id=p_owner AND d.event_uid=f.event_uid
+     AND d.restored_flight_id=f.id)
+   THEN RAISE EXCEPTION 'V22 redelete source missing trusted restoration receipt';END IF;
+
+ INSERT INTO public.deleted_flights(user_id,original_flight_id,delete_token,
+   flight_data,tracks_data,expenses_data,event_uid)
+ SELECT f.user_id,f.id,p_token::text,to_jsonb(f),
+   COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id)
+     FROM public.flight_tracks t
+     WHERE t.user_id=p_owner AND t.flight_id=f.id),'[]'::jsonb),
+   COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id)
+     FROM public.flight_expenses e
+     WHERE e.user_id=p_owner AND e.flight_id=f.id),'[]'::jsonb),f.event_uid
+ RETURNING id,purge_after INTO v_archive,v_cutoff;
+ DELETE FROM public.track_points t WHERE t.user_id=p_owner AND
+   t.track_id IN(SELECT id FROM public.flight_tracks
+     WHERE user_id=p_owner AND flight_id=p_flight);
+ DELETE FROM public.flight_tracks WHERE user_id=p_owner AND flight_id=p_flight;
+ DELETE FROM public.flights WHERE id=p_flight AND user_id=p_owner
+   AND event_uid=f.event_uid AND certified_at IS NULL AND locked_at IS NULL
+   AND COALESCE(record_revision,1)=1;
+ GET DIAGNOSTICS v_count=ROW_COUNT;
+ IF v_count<>1 THEN RAISE EXCEPTION 'V22 redelete source flight deletion conflict';END IF;
+ UPDATE public.logbook_event_uid_registry
+   SET lifecycle_state='trash',original_trash_cutoff=v_cutoff,
+     marker_until=NULL WHERE owner_id=p_owner AND event_kind='flight'
+       AND event_uid=f.event_uid AND lifecycle_state='active';
+ GET DIAGNOSTICS v_count=ROW_COUNT;
+ IF v_count<>1 THEN RAISE EXCEPTION 'V22 redelete source registry transition conflict';END IF;
+ IF prior.archive_id IS NOT NULL THEN
+   IF prior.restored_at>NOW() OR prior.restored_flight_id<>f.id
+     OR (SELECT deleted_at FROM public.deleted_flights WHERE id=v_archive)<prior.restored_at
+     THEN RAISE EXCEPTION 'V22 redelete source immutable receipt chronology mismatch';END IF;
+   INSERT INTO public.logbook_v22_redelete_edge_candidate(
+     owner_id,event_kind,event_uid,prior_archive_id,prior_original_flight_id,
+     restored_flight_id,restored_at,next_archive_id,
+     next_original_flight_id,next_purge_after)
+   VALUES(p_owner,'flight',f.event_uid,prior.archive_id,
+     prior.original_flight_id,prior.restored_flight_id,prior.restored_at,
+     v_archive,f.id,v_cutoff);
+ END IF;
+ RETURN v_archive;
+END
+$source_delete$;
+
 -- PostgreSQL defaults public EXECUTE; do not grant this even to read-only
 -- test roles. The owning local fixture principal retains inherent access.
 REVOKE ALL ON FUNCTION public.logbook_v22_expire_owner_candidate(BIGINT,INTEGER) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.logbook_v22_attest_redelete_candidate(BIGINT,UUID,BIGINT,BIGINT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.logbook_v22_finalize_restored_source_candidate(BIGINT,BIGINT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.logbook_v22_redelete_source_candidate(BIGINT,BIGINT,UUID) FROM PUBLIC;
 COMMIT;
