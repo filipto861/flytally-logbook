@@ -87,6 +87,44 @@ jobs:
             echo 'FAIL: PUBLIC EXECUTE unexpectedly allowed'; exit 1
           fi
           grep -Fq 'permission denied for function logbook_v22_expire_owner_candidate' /tmp/m0b-v22-role.txt
+          # Two independent PostgreSQL backends prove gate ordering, not a
+          # mocked transaction. Only on the freshly built disposable V21 DB.
+          printf "INSERT INTO public.users(id,email) VALUES(9003,'synthetic-lock@example.test');\n" |
+            pgdb flytally_m0b_disposable_full_v21
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_holder "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_full_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q -c \
+              'BEGIN; SELECT id FROM public.users WHERE id=9003 FOR UPDATE; SELECT pg_sleep(3); COMMIT;' \
+            >/tmp/m0b-v22-holder.log 2>&1 &
+          holder_pid=$!
+          holder_ready=0
+          for i in $(seq 1 25); do
+            active="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_holder' AND wait_event='PgSleep';\n" |
+              pgdb flytally_m0b_disposable_full_v21)"
+            if [[ "$active" == 1 ]]; then holder_ready=1; break; fi
+            sleep 0.1
+          done
+          [[ "$holder_ready" == 1 ]] || { echo 'FAIL: first backend never held account gate'; exit 1; }
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_waiter "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_full_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q -c \
+              'SELECT public.logbook_v22_expire_owner_candidate(9003,25);' \
+            >/tmp/m0b-v22-waiter.log 2>&1 &
+          waiter_pid=$!
+          observed_lock=0
+          for i in $(seq 1 25); do
+            waiting="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_waiter' AND wait_event_type='Lock';\n" |
+              pgdb flytally_m0b_disposable_full_v21)"
+            if [[ "$waiting" == 1 ]]; then observed_lock=1; break; fi
+            sleep 0.1
+          done
+          wait "$holder_pid"
+          wait "$waiter_pid"
+          [[ "$observed_lock" == 1 ]] || { echo 'FAIL: second backend did not block on first owner gate'; exit 1; }
+          grep -Fxq '0' /tmp/m0b-v22-waiter.log || {
+            echo 'FAIL: second backend did not resume and return zero'; exit 1;
+          }
+          echo 'PASS: two distinct PG16 backends serialize same-owner expiry on first user gate.'
           echo 'PASS: exact V1-V21 source migrations + V22 SQL owner lifecycle, rollback, deny-by-role.'
       - name: Execute unchanged candidate on single disposable local PG16
         shell: bash
