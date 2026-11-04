@@ -318,17 +318,23 @@ END $witness$;
 -- Synthetic time advance only; this is NOT a production change to cutoff.
 UPDATE public.deleted_flights SET purge_after=now()-interval '1 hour'
  WHERE id=91 AND user_id=9003;
-DO $oldrestored$ BEGIN
-  IF public.logbook_v22_expire_owner_candidate(9003,25)<>1
-    OR EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=91)
-    OR NOT EXISTS(SELECT 1 FROM public.logbook_v22_redelete_edge_candidate
+DO $oldrestored$ DECLARE n INTEGER; BEGIN
+  -- Separate SQL statements: read post-mutation state AFTER the writer call,
+  -- never rely on the snapshot used by a single OR expression.
+  n:=public.logbook_v22_expire_owner_candidate(9003,25);
+  IF n<>1 THEN RAISE EXCEPTION 'Old restored purge count %, expected 1',n; END IF;
+  IF EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=91)
+    THEN RAISE EXCEPTION 'Old restored archive retained after successful writer'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.logbook_v22_redelete_edge_candidate
       WHERE owner_id=9003 AND prior_archive_id=91 AND next_archive_id=92)
-    OR NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
+    THEN RAISE EXCEPTION 'Original immutable redelete edge lost'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
       WHERE owner_id=9003 AND terminal_archive_id=92)
-    OR NOT EXISTS(SELECT 1 FROM public.logbook_event_uid_registry
+    THEN RAISE EXCEPTION 'Original immutable terminal receipt lost'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.logbook_event_uid_registry
       WHERE owner_id=9003 AND event_uid='aaaa0000-0000-4000-8000-000000000003'
         AND lifecycle_state='purged')
-    THEN RAISE EXCEPTION 'Proven older restored archive after final purge mismatch'; END IF;
+    THEN RAISE EXCEPTION 'Terminal UID lifecycle changed'; END IF;
 END $oldrestored$;
 SELECT 'PASS: attest A->B, purge B, then safely expire older restored A with terminal witness';
 
@@ -371,14 +377,17 @@ DO $secondhop$ BEGIN
 END $secondhop$;
 UPDATE public.deleted_flights SET purge_after=now()-interval '20 minutes'
  WHERE id IN(110,111) AND user_id=9004;
-DO $multihop$ BEGIN
-  IF public.logbook_v22_expire_owner_candidate(9004,25)<>2
-    OR EXISTS(SELECT 1 FROM public.deleted_flights WHERE id IN(110,111,112))
-    OR (SELECT count(*) FROM public.logbook_v22_redelete_edge_candidate
-      WHERE owner_id=9004 AND event_uid='bbbb0000-0000-4000-8000-000000000004')<>2
-    OR NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
-      WHERE owner_id=9004 AND terminal_archive_id=112)
-    THEN RAISE EXCEPTION 'Immutable multi-hop archived lineage failure'; END IF;
+DO $multihop$ DECLARE n INTEGER;BEGIN
+  n:=public.logbook_v22_expire_owner_candidate(9004,25);
+  IF n<>2 THEN RAISE EXCEPTION 'Multi-hop historical expiry count %, expected 2',n;END IF;
+  IF EXISTS(SELECT 1 FROM public.deleted_flights WHERE id IN(110,111,112))
+    THEN RAISE EXCEPTION 'Multi-hop historical archive survived cleanup';END IF;
+  IF (SELECT count(*) FROM public.logbook_v22_redelete_edge_candidate
+    WHERE owner_id=9004 AND event_uid='bbbb0000-0000-4000-8000-000000000004')<>2
+    THEN RAISE EXCEPTION 'Multi-hop immutable edges disappeared';END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
+    WHERE owner_id=9004 AND terminal_archive_id=112)
+    THEN RAISE EXCEPTION 'Multi-hop terminal receipt disappeared';END IF;
 END $multihop$;
 SELECT 'PASS: multi-hop attest A->B->C and purge historic A+B only with terminal C proof';
 
