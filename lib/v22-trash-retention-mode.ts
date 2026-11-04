@@ -15,3 +15,9 @@ export function requireLegacyTrashRetention(mode:unknown):void {
     throw new Error("V22 owner retention unavailable: schema, writer and privacy policy unapproved.");
   }
 }
+
+// Runtime activation cannot be requested through configuration or a caller.
+// Any future ON requires separate approved code, schema and retention policy.
+export function requireV22TrashRetentionApproved(mode:unknown):void {
+  if(mode!=="on")throw new Error("V22 lifecycle writer unavailable; approval and migration required.");
+}

@@ -44,6 +44,50 @@ jobs:
         run: npm test
       - name: Production build diagnostic (not deployment)
         run: npm run build
+      - name: Source-only V22 transactional candidate and canonical V21 emitter tests
+        run: |
+          set -euo pipefail
+          node --check tooling/m0b-v22-canonical-v21-fixture.mjs
+          node --test tooling/sql/m0b-v22-trash-lifecycle.test.mjs
+          node tooling/m0b-v22-canonical-v21-fixture.mjs > /tmp/m0b-v21-source-exact.sql
+          test "$(wc -c < /tmp/m0b-v21-source-exact.sql)" -gt 20000
+      - name: Run source-exact 21 migrations and owner-gated V22 lifecycle on isolated PG16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || { echo 'No owned PG service'; exit 1; }
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql -h 127.0.0.1 \
+              -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          printf 'CREATE DATABASE flytally_m0b_disposable_full_v21;\n' | pgdb postgres
+          target="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb flytally_m0b_disposable_full_v21)"
+          [[ "$target" =~ ^flytally_m0b_disposable_full_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "REFUSED full V21 test target <$target>"; exit 1;
+          }
+          pgdb flytally_m0b_disposable_full_v21 < /tmp/m0b-v21-source-exact.sql
+          pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-expand-candidate.sql
+          pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql
+          pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-trash-lifecycle-acceptance.sql
+          if pgdb postgres < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql >/dev/null 2>/tmp/m0b-v22-wrong-target.txt; then
+            echo 'FAIL: candidate allowed wrong database'; exit 1
+          fi
+          grep -Fq 'isolated loopback PG16 flytally target' /tmp/m0b-v22-wrong-target.txt
+          if pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql >/dev/null 2>/tmp/m0b-v22-rerun.txt; then
+            echo 'FAIL: candidate overwritten existing function'; exit 1
+          fi
+          grep -Fq 'already exists; review required' /tmp/m0b-v22-rerun.txt
+          printf 'CREATE ROLE m0b_v22_read_only NOLOGIN;\nGRANT USAGE ON SCHEMA public TO m0b_v22_read_only;\n' | pgdb flytally_m0b_disposable_full_v21
+          if printf 'SET ROLE m0b_v22_read_only; SELECT public.logbook_v22_expire_owner_candidate(9001,25);\n' |
+            pgdb flytally_m0b_disposable_full_v21 >/dev/null 2>/tmp/m0b-v22-role.txt; then
+            echo 'FAIL: PUBLIC EXECUTE unexpectedly allowed'; exit 1
+          fi
+          grep -Fq 'permission denied for function logbook_v22_expire_owner_candidate' /tmp/m0b-v22-role.txt
+          echo 'PASS: exact V1-V21 source migrations + V22 SQL owner lifecycle, rollback, deny-by-role.'
       - name: Execute unchanged candidate on single disposable local PG16
         shell: bash
         env:

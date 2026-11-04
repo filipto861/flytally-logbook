@@ -71,3 +71,20 @@ test("V22 remains unregistered and M0-A full-account restore remains blocked",()
   assert.doesNotMatch(read("lib/db-optimization.ts"),/if\(version===22\)/);
   assert.match(read("app/(protected)/export/actions.ts"),/ACCOUNT_RESTORE_UNAVAILABLE_MESSAGE/);
 });
+
+
+test("staged V22 adapter stays OFF before either pilot or scheduled SQL",()=>{
+  const mode=read("lib/v22-trash-retention-mode.ts");
+  const service=read("lib/trash-retention-service.ts");
+  assert.match(mode,/requireV22TrashRetentionApproved\(mode:unknown\)/);
+  assert.match(mode,/mode!=="on"/);
+  assert.match(service,/requireV22TrashRetentionApproved\(V22_OWNER_TRASH_RETENTION_MODE\)/);
+  const pilot=service.slice(service.indexOf("export async function proposedV22ExpireForAuthenticatedPilot"),
+    service.indexOf("export async function proposedV22ExpireForAuthorizedCron"));
+  assert.ok(pilot.indexOf("await requireUser()")<pilot.indexOf("requireV22Candidate()"));
+  const cron=service.slice(service.indexOf("export async function proposedV22ExpireForAuthorizedCron"));
+  assert.ok(cron.indexOf("cronRequestAuthorized(")<cron.indexOf("requireV22Candidate()"));
+  assert.ok(cron.indexOf("requireV22Candidate()")<cron.indexOf("SELECT DISTINCT user_id"));
+  assert.match(service,/public\.logbook_v22_expire_owner_candidate/);
+  assert.match(cron,/ORDER BY user_id LIMIT 25/);
+});
