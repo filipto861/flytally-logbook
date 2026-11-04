@@ -33,6 +33,17 @@ jobs:
           node --version
           node --check tooling/sql/m0b-v22-expand-candidate.test.mjs
           node --test tooling/sql/m0b-v22-expand-candidate.test.mjs
+      - name: Install locked app dependencies for runtime boundary checks
+        run: npm ci
+      - name: New owner/cron boundary tests and legacy privacy contract
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/v22-trash-owner-boundary.test.ts tests/v280-privacy-self-service.test.ts
+      - name: TypeScript / Next source check
+        run: npm run typecheck
+      - name: Full Node unit and source regression
+        run: npm test
+      - name: Production build diagnostic (not deployment)
+        run: npm run build
       - name: Execute unchanged candidate on single disposable local PG16
         shell: bash
         env:
