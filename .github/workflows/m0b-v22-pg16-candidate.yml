@@ -1,0 +1,116 @@
+name: V22 candidate disposable PostgreSQL 16 acceptance
+
+on:
+  push:
+    branches:
+      - feat/logbook-m0b-v22-expand-candidate-20261104
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_m0b_disposable_ci
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_m0b_disposable_ci"
+          --health-interval=5s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Exact branch Node 24 source tests
+        run: |
+          set -euo pipefail
+          node --version
+          node --check tooling/sql/m0b-v22-expand-candidate.test.mjs
+          node --test tooling/sql/m0b-v22-expand-candidate.test.mjs
+      - name: Execute unchanged candidate on single disposable local PG16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || { echo "Refused: service identity missing"; exit 1; }
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || { echo "Refused: service image mismatch"; exit 1; }
+          pg() {
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_ci \
+              -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||inet_server_addr()::text||'|'||current_setting('server_version_num');\n" | pg)"
+          [[ "$identity" =~ ^flytally_m0b_disposable_ci\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || { echo "Refused: SQL connection identity mismatch"; exit 1; }
+          cat <<'SQL' | pg
+          CREATE TABLE public.users (id BIGINT PRIMARY KEY);
+          CREATE TABLE public.flights (
+            id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES public.users(id));
+          CREATE TABLE public.fstd_sessions (
+            id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES public.users(id));
+          CREATE TABLE public.deleted_flights (
+            id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES public.users(id),
+            purge_after TIMESTAMPTZ, restored_at TIMESTAMPTZ, restored_flight_id BIGINT);
+          INSERT INTO public.users(id) VALUES(100),(200);
+          INSERT INTO public.flights(id,user_id) VALUES(1,100),(2,100),(3,200);
+          INSERT INTO public.fstd_sessions(id,user_id) VALUES(101,100),(102,100);
+          INSERT INTO public.deleted_flights(id,user_id,purge_after,restored_at,restored_flight_id)
+            VALUES(10,100,now()+'1 day',now(),1),(11,100,now()+'1 day',now(),1);
+          SQL
+          pg < tooling/sql/m0b-v22-expand-candidate.sql
+          assertion="$(cat <<'SQL' | pg
+          SELECT
+            (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND column_name='event_uid' AND table_name IN ('flights','fstd_sessions','deleted_flights'))||'|'||
+            (SELECT count(*) FROM public.flights WHERE event_uid IS NULL)||'|'||
+            (SELECT count(*) FROM public.fstd_sessions WHERE event_uid IS NULL)||'|'||
+            (SELECT count(*) FROM public.deleted_flights WHERE event_uid IS NULL)||'|'||
+            (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname IN ('idx_flights_owner_event_uid','idx_fstd_owner_event_uid','idx_deleted_flights_owner_event_uid'));
+          SQL
+          )"
+          [[ "$assertion" == "3|3|2|2|3" ]] || { echo "Legacy/catalog acceptance FAIL: $assertion"; exit 1; }
+          cat <<'SQL' | pg
+          UPDATE public.flights SET event_uid='00000000-0000-4000-8000-000000000001' WHERE id IN(1,3);
+          UPDATE public.fstd_sessions SET event_uid='00000000-0000-4000-8000-000000000002' WHERE id=101;
+          UPDATE public.deleted_flights SET event_uid='00000000-0000-4000-8000-000000000001' WHERE id IN(10,11);
+          INSERT INTO public.logbook_event_uid_registry(owner_id,event_kind,event_uid,lifecycle_state)
+            VALUES(100,'flight','00000000-0000-4000-8000-000000000001','active');
+          INSERT INTO public.logbook_event_uid_registry(
+            owner_id,event_kind,event_uid,lifecycle_state,original_trash_cutoff,marker_until)
+            VALUES(100,'flight','00000000-0000-4000-8000-000000000003','purged',now(),now()+'1 day');
+          SQL
+          assert="$(cat <<'SQL' | pg
+          SELECT (SELECT count(*) FROM public.deleted_flights WHERE event_uid='00000000-0000-4000-8000-000000000001')||'|'||
+                 (SELECT count(*) FROM public.flights WHERE event_uid='00000000-0000-4000-8000-000000000001')||'|'||
+                 (SELECT count(*) FROM public.logbook_event_uid_registry);
+          SQL
+          )"
+          [[ "$assert" == "2|2|2" ]] || { echo "Owner/history compatibility FAIL: $assert"; exit 1; }
+          expect_failure() {
+            local needle="$1" command="$2"
+            if printf '%s\n' "$command" | pg >/dev/null 2>/tmp/v22-error.txt; then
+              echo "Expected SQL rejection did not occur"; exit 1
+            fi
+            grep -Fq "$needle" /tmp/v22-error.txt || {
+              echo "Unexpected rejection class"; cat /tmp/v22-error.txt; exit 1;
+            }
+          }
+          expect_failure 'idx_flights_owner_event_uid' \
+            "UPDATE public.flights SET event_uid='00000000-0000-4000-8000-000000000001' WHERE id=2;"
+          expect_failure 'idx_fstd_owner_event_uid' \
+            "UPDATE public.fstd_sessions SET event_uid='00000000-0000-4000-8000-000000000002' WHERE id=102;"
+          expect_failure 'logbook_uid_registry_marker_shape' \
+            "INSERT INTO public.logbook_event_uid_registry(owner_id,event_kind,event_uid,lifecycle_state) VALUES(100,'flight','00000000-0000-4000-8000-000000000004','purged');"
+          expect_failure 'logbook_uid_registry_marker_shape' \
+            "INSERT INTO public.logbook_event_uid_registry(owner_id,event_kind,event_uid,lifecycle_state,marker_until) VALUES(100,'flight','00000000-0000-4000-8000-000000000005','active',now());"
+          if pg < tooling/sql/m0b-v22-expand-candidate.sql >/dev/null 2>/tmp/v22-rerun-error.txt; then
+            echo 'Unexpected SQL candidate rerun success'; exit 1
+          fi
+          grep -Fq 'target already contains UID objects' /tmp/v22-rerun-error.txt
+          [[ "$(printf "SELECT count(*) FROM public.logbook_event_uid_registry;\n" | pg)" == "2" ]] || exit 1
+          echo "PASS: PG16 disposable exact-candidate DDL, legacy, owner uniqueness, restored archives, marker checks, idempotence refusal."
