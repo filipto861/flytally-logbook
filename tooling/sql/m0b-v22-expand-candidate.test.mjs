@@ -7,6 +7,12 @@ test('transaction encloses the inactive candidate',()=>{
   check(/^BEGIN;\s*DO \$m0b_preflight\$/m);
   check(/COMMIT;\s*$/);
 });
+test('SQL self-guards local disposable target and refuses preexisting identity schema',()=>{
+  check(/current_database\(\) !~ '\^flytally_m0b_disposable_/);
+  check(/current_user <> 'flytally'/);
+  check(/inet_server_addr\(\)::text,''\) <> '127\.0\.0\.1'/);
+  check(/to_regclass\('public\.logbook_event_uid_registry'\) IS NOT NULL/);
+});
 test('PG16 and exact source tables/columns are preflighted',()=>{
   check(/server_version_num/);check(/170000/);
   for(const t of ['users','flights','fstd_sessions','deleted_flights'])check(new RegExp("'"+t+"'"));
