@@ -73,7 +73,7 @@ test("archive reaches terminal purge only via bounded, immutable, noncycling cha
   assert.match(sql,/v_matches<>1/);
   assert.match(sql,/terminal lineage receipt unavailable/);
   assert.match(sql,/restored archive cannot reach immutable terminal purge/);
-  const expiry=sql.slice(sql.indexOf("CREATE FUNCTION public.logbook_v22_expire_owner_candidate"));
+  const expiry=sql.slice(sql.indexOf("CREATE FUNCTION public.logbook_v22_expire_owner_candidate"),sql.indexOf("END $writer$;")+ "END $writer$;".length);
   assert.ok(!expiry.includes("INSERT INTO public.logbook_v22_redelete_edge_candidate"));
   assert.ok(sql.includes("VALUES(p_owner,'flight',p_uid,old_rec.id"));
 });
@@ -114,8 +114,8 @@ test("source-owned restoration and protected redelete require owner gate, same t
  const restoration=sql.slice(sql.indexOf("CREATE FUNCTION public.logbook_v22_finalize_restored_source_candidate"),sql.indexOf("CREATE FUNCTION public.logbook_v22_redelete_source_candidate"));
  const redelete=sql.slice(sql.indexOf("CREATE FUNCTION public.logbook_v22_redelete_source_candidate"));
  assert.ok(restoration.indexOf("PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE")<restoration.indexOf("FROM public.deleted_flights a"));
- assert.ok(restoration.includes("d.xmin::text::BIGINT<>v_xid"));
- assert.ok(restoration.includes("f.xmin::text::BIGINT<>v_xid"));
+ assert.ok(restoration.includes("d.source_xid<>v_xid"));
+ assert.ok(restoration.includes("f.source_xid<>v_xid"));
  assert.ok(restoration.includes("d.event_uid IS NULL"));
  assert.ok(restoration.includes("lifecycle_state='active'"));
  assert.ok(restoration.includes("INSERT INTO public.logbook_v22_restored_source_receipt_candidate"));

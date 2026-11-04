@@ -326,7 +326,7 @@ BEGIN
    THEN RAISE EXCEPTION 'V22 restore finalizer requires positive owner/archive';END IF;
  PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'V22 restore finalizer owner gate absent';END IF;
- SELECT a.* INTO d FROM public.deleted_flights a
+ SELECT a.*,a.xmin::text::BIGINT AS source_xid INTO d FROM public.deleted_flights a
    WHERE a.id=p_archive AND a.user_id=p_owner FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'V22 restore finalizer source archive absent';END IF;
  IF d.event_uid IS NULL OR d.restored_at IS NULL
@@ -335,7 +335,7 @@ BEGIN
    OR NOT(d.flight_data @> jsonb_build_object(
        'id',d.original_flight_id,'user_id',p_owner,'event_uid',d.event_uid::text))
    THEN RAISE EXCEPTION 'V22 restore finalizer source identity malformed';END IF;
- SELECT live.* INTO f FROM public.flights live
+ SELECT live.*,live.xmin::text::BIGINT AS source_xid INTO f FROM public.flights live
    WHERE live.id=d.restored_flight_id AND live.user_id=p_owner FOR UPDATE;
  IF NOT FOUND OR f.event_uid IS NOT NULL
    OR f.certified_at IS NOT NULL OR f.locked_at IS NOT NULL
@@ -349,7 +349,7 @@ BEGIN
  -- Both archive mark and newly created flight MUST originate from this
  -- SAME PostgreSQL transaction, preventing after-the-fact receipt forgery.
  v_xid:=mod(txid_current(),4294967296::BIGINT);
- IF d.xmin::text::BIGINT<>v_xid OR f.xmin::text::BIGINT<>v_xid
+ IF d.source_xid<>v_xid OR f.source_xid<>v_xid
    THEN RAISE EXCEPTION 'V22 restore finalizer requires same transaction mark and insert';END IF;
  SELECT reg.* INTO r FROM public.logbook_event_uid_registry reg
    WHERE reg.owner_id=p_owner AND reg.event_kind='flight'
