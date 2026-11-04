@@ -89,12 +89,12 @@ jobs:
           grep -Fq 'permission denied for function logbook_v22_expire_owner_candidate' /tmp/m0b-v22-role.txt
           # Two independent PostgreSQL backends prove gate ordering, not a
           # mocked transaction. Only on the freshly built disposable V21 DB.
-          printf "INSERT INTO public.users(id,email) VALUES(9003,'synthetic-lock@example.test');\n" |
+          printf "INSERT INTO public.users(id,email) VALUES(9013,'synthetic-lock@example.test');\n" |
             pgdb flytally_m0b_disposable_full_v21
           docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_holder "$PG_CONTAINER" \
             psql -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_full_v21 \
               -X -v ON_ERROR_STOP=1 -A -t -q -c \
-              'BEGIN; SELECT id FROM public.users WHERE id=9003 FOR UPDATE; SELECT pg_sleep(3); COMMIT;' \
+              'BEGIN; SELECT id FROM public.users WHERE id=9013 FOR UPDATE; SELECT pg_sleep(3); COMMIT;' \
             >/tmp/m0b-v22-holder.log 2>&1 &
           holder_pid=$!
           holder_ready=0
@@ -108,7 +108,7 @@ jobs:
           docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_waiter "$PG_CONTAINER" \
             psql -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_full_v21 \
               -X -v ON_ERROR_STOP=1 -A -t -q -c \
-              'SELECT public.logbook_v22_expire_owner_candidate(9003,25);' \
+              'SELECT public.logbook_v22_expire_owner_candidate(9013,25);' \
             >/tmp/m0b-v22-waiter.log 2>&1 &
           waiter_pid=$!
           observed_lock=0
