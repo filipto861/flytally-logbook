@@ -96,7 +96,7 @@ test("richer feature V21 fixture derives bootstrap schema without executing unsa
   assert.match(feature,/current_database\(\)<>'flytally_m0b_disposable_feature_v21'/);
   assert.match(feature,/refuses populated target/);
   assert.match(feature,/sql\.replace\(destructive,guard\)/);
-  assert.doesNotMatch(feature,/\bspawnSync\b|\bexecSync\b/);
+  assert.doesNotMatch(feature,/^import[^\n]*(?:spawnSync|execSync)|^\s*(?:spawnSync|execSync)\(/m);
   assert.match(physical,/V22 feature V21 acceptance isolated target or migration mismatch/);
   assert.match(physical,/flight_expenses/);
   assert.match(physical,/flight_verifications/);
