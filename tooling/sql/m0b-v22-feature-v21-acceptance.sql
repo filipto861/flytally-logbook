@@ -51,26 +51,29 @@ INSERT INTO public.deleted_flights
      'event_uid','fe000000-0000-4000-8000-000000000902'),
    now()-interval '3 days',now()-interval '2 hours',
    NULL,NULL,'fe000000-0000-4000-8000-000000000902');
-DO $verify$ DECLARE v_before bigint;v_after bigint; BEGIN
+DO $verify$ DECLARE v_before bigint;v_after bigint;n int; BEGIN
   SELECT count(*) INTO v_before FROM public.flights WHERE user_id=9001;
   IF v_before<1 THEN RAISE EXCEPTION 'Browser fixture source flight missing'; END IF;
   PERFORM public.logbook_v22_attest_redelete_candidate(
     9002,'fe000000-0000-4000-8000-000000000902',9901,9902);
-  IF public.logbook_v22_expire_owner_candidate(9002,25)<>1
-    OR NOT EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=9901)
+  n:=public.logbook_v22_expire_owner_candidate(9002,25);
+  IF n<>1 THEN RAISE EXCEPTION 'Feature fixture terminal purge result %, expected 1',n; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=9901)
     OR EXISTS(SELECT 1 FROM public.deleted_flights WHERE id=9902)
-    OR NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
+    THEN RAISE EXCEPTION 'Feature fixture archived rows not coherent'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.logbook_v22_terminal_purge_candidate
       WHERE owner_id=9002 AND terminal_archive_id=9902)
-    THEN RAISE EXCEPTION 'Feature fixture lineage terminal purge mismatch'; END IF;
+    THEN RAISE EXCEPTION 'Feature fixture immutable terminal receipt absent'; END IF;
   SELECT count(*) INTO v_after FROM public.flights WHERE user_id=9001;
   IF v_before<>v_after THEN RAISE EXCEPTION 'Unrelated owner flight modified'; END IF;
 END $verify$;
 -- Synthetic clock advance only; a live server would wait for original cutoff.
 UPDATE public.deleted_flights SET purge_after=now()-interval '1 hour'
  WHERE id=9901 AND user_id=9002;
-DO $older$ BEGIN
- IF public.logbook_v22_expire_owner_candidate(9002,25)<>1
-   OR EXISTS(SELECT 1 FROM public.deleted_flights WHERE id IN(9901,9902))
+DO $older$ DECLARE n int;BEGIN
+ n:=public.logbook_v22_expire_owner_candidate(9002,25);
+ IF n<>1 THEN RAISE EXCEPTION 'Feature fixture old restored purge count %, expected 1',n;END IF;
+ IF EXISTS(SELECT 1 FROM public.deleted_flights WHERE id IN(9901,9902))
    OR NOT EXISTS(SELECT 1 FROM public.logbook_event_uid_registry
      WHERE owner_id=9002 AND event_uid='fe000000-0000-4000-8000-000000000902'
        AND lifecycle_state='purged')
