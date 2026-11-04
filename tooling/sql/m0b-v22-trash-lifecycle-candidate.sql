@@ -29,6 +29,116 @@ DO $preflight$ BEGIN
     THEN RAISE EXCEPTION 'V22 lifecycle candidate already exists; review required'; END IF;
 END $preflight$;
 
+
+-- Append-only, owner-scoped attestations. These are NOT inferred from legacy
+-- archive fingerprints or populated by a migration. Future trusted restore
+-- and re-delete writers must issue verified attestations while records exist.
+-- A terminal proof is written atomically by the guarded final purge below.
+CREATE TABLE public.logbook_v22_redelete_edge_candidate (
+  owner_id BIGINT NOT NULL,
+  event_kind TEXT NOT NULL DEFAULT 'flight' CHECK(event_kind='flight'),
+  event_uid UUID NOT NULL,
+  prior_archive_id BIGINT NOT NULL CHECK(prior_archive_id>0),
+  prior_original_flight_id BIGINT NOT NULL CHECK(prior_original_flight_id>0),
+  restored_flight_id BIGINT NOT NULL CHECK(restored_flight_id>0),
+  restored_at TIMESTAMPTZ NOT NULL,
+  next_archive_id BIGINT NOT NULL CHECK(next_archive_id>0),
+  next_original_flight_id BIGINT NOT NULL CHECK(next_original_flight_id>0),
+  next_purge_after TIMESTAMPTZ NOT NULL,
+  attested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT m0b_edge_distinct_archives CHECK(prior_archive_id<>next_archive_id),
+  CONSTRAINT m0b_edge_restored_link CHECK(restored_flight_id=next_original_flight_id),
+  CONSTRAINT m0b_edge_restore_before_attestation CHECK(restored_at<=attested_at),
+  PRIMARY KEY(owner_id,event_kind,event_uid,prior_archive_id),
+  UNIQUE(owner_id,event_kind,event_uid,next_archive_id),
+  FOREIGN KEY(owner_id,event_kind,event_uid)
+    REFERENCES public.logbook_event_uid_registry(owner_id,event_kind,event_uid)
+    ON DELETE RESTRICT
+);
+CREATE TABLE public.logbook_v22_terminal_purge_candidate (
+  owner_id BIGINT NOT NULL,
+  event_kind TEXT NOT NULL DEFAULT 'flight' CHECK(event_kind='flight'),
+  event_uid UUID NOT NULL,
+  terminal_archive_id BIGINT NOT NULL CHECK(terminal_archive_id>0),
+  terminal_original_flight_id BIGINT NOT NULL CHECK(terminal_original_flight_id>0),
+  original_trash_cutoff TIMESTAMPTZ NOT NULL,
+  attested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY(owner_id,event_kind,event_uid),
+  UNIQUE(owner_id,event_kind,terminal_archive_id),
+  FOREIGN KEY(owner_id,event_kind,event_uid)
+    REFERENCES public.logbook_event_uid_registry(owner_id,event_kind,event_uid)
+    ON DELETE RESTRICT
+);
+
+-- Immutable evidence. No update/delete without a separate, reviewed legal
+-- retention/erasure operation, which this candidate intentionally omits.
+CREATE FUNCTION public.logbook_v22_reject_witness_change_candidate()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path=pg_catalog,pg_temp
+AS $immutable$
+BEGIN
+  RAISE EXCEPTION 'V22 immutable event lineage cannot be updated/deleted';
+END
+$immutable$;
+CREATE TRIGGER m0b_immutable_edge BEFORE UPDATE OR DELETE
+  ON public.logbook_v22_redelete_edge_candidate FOR EACH ROW
+  EXECUTE FUNCTION public.logbook_v22_reject_witness_change_candidate();
+CREATE TRIGGER m0b_immutable_terminal BEFORE UPDATE OR DELETE
+  ON public.logbook_v22_terminal_purge_candidate FOR EACH ROW
+  EXECUTE FUNCTION public.logbook_v22_reject_witness_change_candidate();
+
+-- TEST-ONLY trusted writer prototype. This must eventually be called from
+-- the authenticated source redel(et)e writer in the SAME owner transaction;
+-- neither an imported archive nor a guessed source UID can create a witness.
+CREATE FUNCTION public.logbook_v22_attest_redelete_candidate(
+  p_owner BIGINT,p_uid UUID,p_prior_archive BIGINT,p_next_archive BIGINT
+) RETURNS VOID LANGUAGE plpgsql SECURITY INVOKER
+SET search_path=pg_catalog,pg_temp SET lock_timeout='5s'
+AS $attest$
+DECLARE old_rec RECORD;next_rec RECORD;v_state TEXT;v_cutoff TIMESTAMPTZ;
+BEGIN
+  IF p_owner IS NULL OR p_owner<=0 OR p_uid IS NULL
+    OR p_prior_archive IS NULL OR p_prior_archive<=0
+    OR p_next_archive IS NULL OR p_next_archive<=0
+    OR p_prior_archive=p_next_archive
+    THEN RAISE EXCEPTION 'V22 lineage attestation requires verified owner/UID/two archives'; END IF;
+  PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'V22 lineage attestation missing owner gate'; END IF;
+  SELECT r.lifecycle_state,r.original_trash_cutoff INTO v_state,v_cutoff
+  FROM public.logbook_event_uid_registry r
+  WHERE r.owner_id=p_owner AND r.event_kind='flight' AND r.event_uid=p_uid
+  FOR UPDATE;
+  IF NOT FOUND OR v_state<>'trash'
+    THEN RAISE EXCEPTION 'V22 lineage attestation requires current Trash registry'; END IF;
+
+  SELECT d.* INTO old_rec FROM public.deleted_flights d
+    WHERE d.id=p_prior_archive AND d.user_id=p_owner AND d.event_uid=p_uid
+    FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'V22 lineage attestation prior source unavailable'; END IF;
+  SELECT d.* INTO next_rec FROM public.deleted_flights d
+    WHERE d.id=p_next_archive AND d.user_id=p_owner AND d.event_uid=p_uid
+    FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'V22 lineage attestation next source unavailable'; END IF;
+  IF old_rec.restored_at IS NULL OR old_rec.restored_flight_id IS NULL
+    OR old_rec.restored_at>next_rec.deleted_at
+    OR old_rec.restored_at>NOW()
+    OR next_rec.restored_at IS NOT NULL OR next_rec.restored_flight_id IS NOT NULL
+    OR old_rec.restored_flight_id<>next_rec.original_flight_id
+    OR v_cutoff IS DISTINCT FROM next_rec.purge_after
+    OR NOT(old_rec.flight_data @> jsonb_build_object(
+      'id',old_rec.original_flight_id,'user_id',p_owner,'event_uid',p_uid::text))
+    OR NOT(next_rec.flight_data @> jsonb_build_object(
+      'id',next_rec.original_flight_id,'user_id',p_owner,'event_uid',p_uid::text))
+    THEN RAISE EXCEPTION 'V22 lineage attestation original/restore/redelete proof mismatch'; END IF;
+  INSERT INTO public.logbook_v22_redelete_edge_candidate(
+    owner_id,event_kind,event_uid,prior_archive_id,prior_original_flight_id,
+    restored_flight_id,restored_at,next_archive_id,next_original_flight_id,
+    next_purge_after)
+  VALUES(p_owner,'flight',p_uid,old_rec.id,old_rec.original_flight_id,
+    old_rec.restored_flight_id,old_rec.restored_at,next_rec.id,
+    next_rec.original_flight_id,next_rec.purge_after);
+END
+$attest$;
+
 -- SECURITY INVOKER, source-only function. The caller MUST separately prove
 -- authenticated pilot ownership or authorized cron. A DB owner_id parameter
 -- is not an authentication boundary. Each invocation is atomic.
@@ -40,6 +150,7 @@ AS $writer$
 DECLARE rec RECORD; v_now TIMESTAMPTZ;
   v_state TEXT;v_cutoff TIMESTAMPTZ;v_marker TIMESTAMPTZ;
   v_pending INTEGER;v_linked INTEGER;v_affected INTEGER;v_expired INTEGER:=0;
+  v_terminal BIGINT;v_terminal_cutoff TIMESTAMPTZ;v_matches INTEGER;
 BEGIN
   IF p_owner IS NULL OR p_owner<=0 OR p_batch IS NULL OR p_batch<1 OR p_batch>25
     THEN RAISE EXCEPTION 'V22 expiry requires a positive owner and batch size 1..25'; END IF;
@@ -80,6 +191,23 @@ BEGIN
         IF v_pending<>1 OR EXISTS(SELECT 1 FROM public.flights f
           WHERE f.user_id=p_owner AND f.event_uid=rec.event_uid)
           THEN RAISE EXCEPTION 'V22 expiry pending archive has ambiguous live event'; END IF;
+        -- A still-retained restored predecessor is only purgeable if the
+        -- trusted source writer previously attested its successor archive.
+        IF EXISTS (SELECT 1 FROM public.deleted_flights old_d
+          WHERE old_d.user_id=p_owner AND old_d.event_uid=rec.event_uid
+            AND old_d.id<>rec.id AND old_d.restored_at IS NOT NULL
+            AND old_d.restored_flight_id=rec.original_flight_id
+            AND NOT EXISTS(
+              SELECT 1 FROM public.logbook_v22_redelete_edge_candidate edge
+              WHERE edge.owner_id=p_owner AND edge.event_kind='flight'
+                AND edge.event_uid=rec.event_uid AND edge.prior_archive_id=old_d.id
+                AND edge.next_archive_id=rec.id
+                AND edge.prior_original_flight_id=old_d.original_flight_id
+                AND edge.restored_flight_id=old_d.restored_flight_id
+                AND edge.restored_at=old_d.restored_at
+                AND edge.next_original_flight_id=rec.original_flight_id
+                AND edge.next_purge_after=rec.purge_after))
+          THEN RAISE EXCEPTION 'V22 terminal purge missing immutable predecessor edge'; END IF;
         UPDATE public.logbook_event_uid_registry r
           SET lifecycle_state='purged',original_trash_cutoff=rec.purge_after,
             marker_until=rec.purge_after+INTERVAL '12 months'
@@ -87,6 +215,11 @@ BEGIN
             AND r.event_uid=rec.event_uid AND r.lifecycle_state='trash';
         GET DIAGNOSTICS v_affected=ROW_COUNT;
         IF v_affected<>1 THEN RAISE EXCEPTION 'V22 expiry state transition conflict'; END IF;
+        INSERT INTO public.logbook_v22_terminal_purge_candidate(
+          owner_id,event_kind,event_uid,terminal_archive_id,
+          terminal_original_flight_id,original_trash_cutoff)
+        VALUES(p_owner,'flight',rec.event_uid,rec.id,
+          rec.original_flight_id,rec.purge_after);
       ELSE
         IF v_state='active' THEN
           SELECT count(*)::int INTO v_linked FROM public.flights f
@@ -104,9 +237,44 @@ BEGIN
               AND d.event_uid=rec.event_uid AND d.restored_at IS NULL;
           IF v_pending<>1 OR v_linked<>1 OR v_marker IS NOT NULL
             THEN RAISE EXCEPTION 'V22 expiry re-deleted event lineage unavailable'; END IF;
+        ELSIF v_state='purged' THEN
+          -- Recover an immutable path of source-attested re-deletions from
+          -- this older restored archive to the terminal purged archive.
+          SELECT t.terminal_archive_id,t.original_trash_cutoff
+            INTO v_terminal,v_terminal_cutoff
+            FROM public.logbook_v22_terminal_purge_candidate t
+            WHERE t.owner_id=p_owner AND t.event_kind='flight'
+              AND t.event_uid=rec.event_uid;
+          IF NOT FOUND OR v_terminal_cutoff IS DISTINCT FROM v_cutoff
+            OR v_marker IS DISTINCT FROM v_cutoff+INTERVAL '12 months'
+            THEN RAISE EXCEPTION 'V22 expiry terminal lineage receipt unavailable'; END IF;
+          IF EXISTS(SELECT 1 FROM public.flights f
+            WHERE f.user_id=p_owner AND f.event_uid=rec.event_uid)
+            THEN RAISE EXCEPTION 'V22 expiry purged event still has a live flight'; END IF;
+          -- Adjacent immutable edge validates the archived record's exact
+          -- source owner, original flight ID, restored flight ID & timestamp.
+          IF NOT EXISTS(SELECT 1 FROM public.logbook_v22_redelete_edge_candidate edge
+            WHERE edge.owner_id=p_owner AND edge.event_kind='flight'
+              AND edge.event_uid=rec.event_uid AND edge.prior_archive_id=rec.id
+              AND edge.prior_original_flight_id=rec.original_flight_id
+              AND edge.restored_flight_id=rec.restored_flight_id
+              AND edge.restored_at=rec.restored_at)
+            THEN RAISE EXCEPTION 'V22 expiry restored archive lacks immutable first edge'; END IF;
+          WITH RECURSIVE chain(archive_id,depth,visited) AS(
+            SELECT rec.id::BIGINT,0,ARRAY[rec.id::BIGINT]
+            UNION ALL
+            SELECT edge.next_archive_id,c.depth+1,c.visited||edge.next_archive_id
+            FROM chain c
+            JOIN public.logbook_v22_redelete_edge_candidate edge
+              ON edge.owner_id=p_owner AND edge.event_kind='flight'
+                AND edge.event_uid=rec.event_uid
+                AND edge.prior_archive_id=c.archive_id
+            WHERE c.depth<64 AND NOT(edge.next_archive_id=ANY(c.visited))
+          ) SELECT count(*)::INTEGER INTO v_matches FROM chain
+            WHERE archive_id=v_terminal AND depth>0;
+          IF v_matches<>1 THEN
+            RAISE EXCEPTION 'V22 expiry restored archive cannot reach immutable terminal purge'; END IF;
         ELSE
-          -- No immutable lineage exists to prove a restored historical
-          -- archive after the latest event has already been purged/voided.
           RAISE EXCEPTION 'V22 expiry restored archive lifecycle provenance unavailable';
         END IF;
       END IF;
@@ -122,4 +290,5 @@ END $writer$;
 -- PostgreSQL defaults public EXECUTE; do not grant this even to read-only
 -- test roles. The owning local fixture principal retains inherent access.
 REVOKE ALL ON FUNCTION public.logbook_v22_expire_owner_candidate(BIGINT,INTEGER) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.logbook_v22_attest_redelete_candidate(BIGINT,UUID,BIGINT,BIGINT) FROM PUBLIC;
 COMMIT;
