@@ -102,3 +102,37 @@ test("richer feature V21 fixture derives bootstrap schema without executing unsa
   assert.match(physical,/flight_verifications/);
   assert.match(physical,/feature schema, protected shared\/evidence tables/);
 });
+
+
+test("source-owned restoration and protected redelete require owner gate, same transaction, canonical evidence",()=>{
+ const sql=read("./m0b-v22-trash-lifecycle-candidate.sql");
+ const physical=read("./m0b-v22-source-writers-acceptance.sql");
+ assert.match(sql,/CREATE TABLE public\.logbook_v22_restored_source_receipt_candidate/);
+ assert.match(sql,/m0b_immutable_restored_receipt BEFORE UPDATE OR DELETE/);
+ assert.match(sql,/logbook_v22_finalize_restored_source_candidate/);
+ assert.match(sql,/logbook_v22_redelete_source_candidate/);
+ const restoration=sql.slice(sql.indexOf("CREATE FUNCTION public.logbook_v22_finalize_restored_source_candidate"),sql.indexOf("CREATE FUNCTION public.logbook_v22_redelete_source_candidate"));
+ const redelete=sql.slice(sql.indexOf("CREATE FUNCTION public.logbook_v22_redelete_source_candidate"));
+ assert.ok(restoration.indexOf("PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE")<restoration.indexOf("FROM public.deleted_flights a"));
+ assert.ok(restoration.includes("d.xmin::text::BIGINT<>v_xid"));
+ assert.ok(restoration.includes("f.xmin::text::BIGINT<>v_xid"));
+ assert.ok(restoration.includes("d.event_uid IS NULL"));
+ assert.ok(restoration.includes("lifecycle_state='active'"));
+ assert.ok(restoration.includes("INSERT INTO public.logbook_v22_restored_source_receipt_candidate"));
+ assert.ok(redelete.indexOf("PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE")<redelete.indexOf("FROM public.flights live"));
+ for(const name of ["flight_participations","flight_connected_crew","flight_verifications","instructor_flight_approvals","flight_source_provenance","flight_public_shares","flight_certified_revisions","voided_certified_flights"]){
+  assert.ok(redelete.includes("public."+name),"missing protected-evidence check for "+name);
+ }
+ assert.ok(redelete.includes("INSERT INTO public.deleted_flights"));
+ assert.ok(redelete.includes("DELETE FROM public.track_points"));
+ assert.ok(redelete.includes("DELETE FROM public.flight_tracks"));
+ assert.ok(redelete.includes("DELETE FROM public.flights"));
+ assert.ok(redelete.includes("INSERT INTO public.logbook_v22_redelete_edge_candidate"));
+ assert.ok(redelete.includes("logbook_v22_restored_source_receipt_candidate"));
+ assert.ok(redelete.includes("V22 redelete source missing trusted restoration receipt"));
+ assert.ok(sql.includes("REVOKE ALL ON FUNCTION public.logbook_v22_finalize_restored_source_candidate"));
+ assert.ok(sql.includes("REVOKE ALL ON FUNCTION public.logbook_v22_redelete_source_candidate"));
+ for(const phrase of ["same-transaction V21-style restore core","detached/forged post-restore receipt refused","cross-owner source finalization denied","same-source protected redelete","linked shared flight protected","immutable restore receipt cannot be deleted"]){
+  assert.ok(physical.includes(phrase),phrase);
+ }
+});

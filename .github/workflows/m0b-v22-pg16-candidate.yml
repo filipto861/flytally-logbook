@@ -157,6 +157,7 @@ jobs:
           pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-expand-candidate.sql
           pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql
           pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-feature-v21-acceptance.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-source-writers-acceptance.sql
           echo 'PASS: current application V21 feature snapshot and independent immutable terminal lineage on isolated PG16.'
       - name: Execute unchanged candidate on single disposable local PG16
         shell: bash
