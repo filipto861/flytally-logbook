@@ -11,7 +11,18 @@ const newer=branches[1],legacy=branches[2];
 
 test("currency-bearing Trash restore keeps parent, tracks, expenses and mark atomic",()=>{
   assert.match(restore,/const tx=await sql\.transaction\(\[/);
-  assert.match(restore,/restoreQuery\],\{isolationLevel:'ReadCommitted'\}\)/);
+  // OFF leaves the original advisory-lock + restoreQuery pair intact;
+  // the staged V22 branch adds account gate and source finalizer to that
+  // same ordered sql.transaction, never a detached later HTTP request.
+  assert.match(readFileSync(new URL("../lib/v22-trash-retention-mode.ts",import.meta.url),"utf8"),
+    /V22_OWNER_TRASH_RETENTION_MODE = "off" as const/);
+  assert.match(restore,/v22RestorationActive=v22RestoreMode!=="off"/);
+  assert.match(restore,/SELECT id FROM users WHERE id=\$\{userId\} FOR UPDATE/);
+  assert.match(restore,/pg_advisory_xact_lock/);
+  assert.match(restore,/restoreQuery,\s*\.\.\.\(v22RestorationActive/);
+  assert.match(restore,/public\.logbook_v22_finalize_restored_source_candidate/);
+  assert.match(restore,/\],\{isolationLevel:'ReadCommitted'\}\)/);
+  assert.match(restore,/tx\[v22RestorationActive \? 3 : 1\]/);
   for(const body of [newer,legacy]){
     assert.match(body,/restored_flight AS \(INSERT INTO flights\(/);
     assert.match(body,/restored_tracks AS \(INSERT INTO flight_tracks\(/);
