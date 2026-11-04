@@ -115,3 +115,53 @@ jobs:
           grep -Fq 'target already contains UID objects' /tmp/v22-rerun-error.txt
           [[ "$(printf "SELECT count(*) FROM public.logbook_event_uid_registry;\n" | pg)" == "2" ]] || exit 1
           echo "PASS: PG16 disposable exact-candidate DDL, legacy, owner uniqueness, restored archives, marker checks, idempotence refusal."
+      - name: Reject wrong target and prove atomic DDL rollback after second ALTER
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || { echo "Refused: no isolated service"; exit 1; }
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          if pgdb postgres < tooling/sql/m0b-v22-expand-candidate.sql >/dev/null 2>/tmp/v22-wrong-target.txt; then
+            echo "FAIL: wrong database accepted"; exit 1
+          fi
+          grep -Fq 'requires owned local disposable loopback target' /tmp/v22-wrong-target.txt
+          printf 'CREATE DATABASE flytally_m0b_disposable_rollback;\n' | pgdb postgres
+          cat <<'SQL' | pgdb flytally_m0b_disposable_rollback
+          CREATE TABLE public.users (id BIGINT PRIMARY KEY);
+          CREATE TABLE public.flights (id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL);
+          CREATE TABLE public.fstd_sessions (id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL);
+          CREATE TABLE public.deleted_flights (
+            id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,
+            purge_after TIMESTAMPTZ,restored_at TIMESTAMPTZ,restored_flight_id BIGINT);
+          CREATE FUNCTION public.v22_test_abort_second_alter() RETURNS event_trigger AS $abort$
+          BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns
+              WHERE table_schema='public' AND table_name='fstd_sessions' AND column_name='event_uid') THEN
+              RAISE EXCEPTION 'V22 intentional test-only forced failure after second ALTER';
+            END IF;
+          END
+          $abort$ LANGUAGE plpgsql;
+          CREATE EVENT TRIGGER v22_test_abort ON ddl_command_end
+            WHEN TAG IN ('ALTER TABLE') EXECUTE FUNCTION public.v22_test_abort_second_alter();
+          SQL
+          if pgdb flytally_m0b_disposable_rollback \
+              < tooling/sql/m0b-v22-expand-candidate.sql >/dev/null 2>/tmp/v22-forced-rollback.txt; then
+            echo "FAIL: synthetic mid-transaction DDL error did not stop candidate"; exit 1
+          fi
+          grep -Fq 'V22 intentional test-only forced failure after second ALTER' /tmp/v22-forced-rollback.txt
+          result="$(cat <<'SQL' | pgdb flytally_m0b_disposable_rollback
+          SELECT (SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_schema='public' AND table_name IN ('flights','fstd_sessions','deleted_flights')
+            AND column_name='event_uid')||'|'||
+            (to_regclass('public.logbook_event_uid_registry') IS NULL)::text;
+          SQL
+          )"
+          [[ "$result" == "0|true" ]] || { echo "FAIL: DDL rollback incomplete $result"; exit 1; }
+          echo 'PASS: wrong database refused; forced second-ALTER error rolls back all previous candidate DDL.'
