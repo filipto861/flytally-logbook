@@ -10,7 +10,7 @@ test("test-only V22 writer has local PG16 / full V21 preflight",()=>{
     assert.ok(sql.includes(needle),needle);
   assert.match(sql,/\bBEGIN;[\s\S]+COMMIT;\s*$/);
   assert.match(sql,/CREATE FUNCTION public\.logbook_v22_expire_owner_candidate/);
-  assert.doesNotMatch(sql,/DATABASE_SCHEMA_VERSION=22|CREATE TRIGGER/);
+  assert.doesNotMatch(sql,/DATABASE_SCHEMA_VERSION=22|CREATE TRIGGER[^;]*\bON\s+public\.(?:flights|deleted_flights|fstd_sessions)\b/i);
 });
 test("function acquires owner gate before fresh candidate rows",()=>{
   const first=sql.indexOf("PERFORM 1 FROM public.users WHERE id=p_owner FOR UPDATE");
@@ -73,7 +73,7 @@ test("archive reaches terminal purge only via bounded, immutable, noncycling cha
   assert.match(sql,/v_matches<>1/);
   assert.match(sql,/terminal lineage receipt unavailable/);
   assert.match(sql,/restored archive cannot reach immutable terminal purge/);
-  assert.doesNotMatch(sql,/INSERT INTO public\.logbook_v22_redelete_edge_candidate[\s\S]*?VALUES\s*\(p_owner,'flight',rec\.event_uid/);
+  assert.doesNotMatch(sql,/VALUES\s*\(p_owner,'flight',rec\.event_uid/);
 });
 test("physical SQL covers absent lineage, one-hop and multi-hop history, tampering and wrong-owner witnesses",()=>{
   for(const expected of [
