@@ -88,3 +88,27 @@ test("staged V22 adapter stays OFF before either pilot or scheduled SQL",()=>{
   assert.match(service,/public\.logbook_v22_expire_owner_candidate/);
   assert.match(cron,/ORDER BY user_id LIMIT 25/);
 });
+
+
+test("OFF-only canonical V21 delete and restore stage V22 source writers behind real session checks",()=>{
+ const source=read("lib/flight-trash.ts");
+ const deletion=source.slice(source.indexOf("export async function moveFlightToTrash"),
+  source.indexOf("export async function restoreDeletedFlightRecord"));
+ const restoration=source.slice(source.indexOf("const v22RestoreMode:string="));
+ assert.match(source,/import \{ V22_OWNER_TRASH_RETENTION_MODE,requireV22TrashRetentionApproved \}/);
+ assert.match(deletion,/const v22DeleteMode:string=V22_OWNER_TRASH_RETENTION_MODE/);
+ assert.match(deletion,/if\(v22DeleteMode!=="off"\)/);
+ assert.ok(deletion.indexOf("await requireUser()")<deletion.indexOf("requireV22TrashRetentionApproved(v22DeleteMode)"));
+ assert.ok(deletion.indexOf("requireV22TrashRetentionApproved(v22DeleteMode)")<
+   deletion.indexOf("public.logbook_v22_redelete_source_candidate"));
+ assert.match(deletion,/sql\.transaction\(\[\s*\/\/ Always lock an existing owned row/);
+ assert.match(restoration,/v22RestorationActive=v22RestoreMode!=="off"/);
+ assert.ok(restoration.indexOf("await requireUser()")<restoration.indexOf("requireV22TrashRetentionApproved(v22RestoreMode)"));
+ assert.ok(restoration.indexOf("requireV22TrashRetentionApproved(v22RestoreMode)")<
+  restoration.indexOf("sql.transaction(["));
+ assert.match(restoration,/SELECT id FROM users WHERE id=\$\{userId\} FOR UPDATE/);
+ assert.match(restoration,/pg_advisory_xact_lock/);
+ assert.match(restoration,/restoreQuery,[\s\S]+public\.logbook_v22_finalize_restored_source_candidate/);
+ assert.match(restoration,/tx\[v22RestorationActive \? 3 : 1\]/);
+ assert.match(read("lib/v22-trash-retention-mode.ts"),/V22_OWNER_TRASH_RETENTION_MODE = "off" as const/);
+});
