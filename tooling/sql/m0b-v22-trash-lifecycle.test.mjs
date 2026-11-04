@@ -74,8 +74,8 @@ test("archive reaches terminal purge only via bounded, immutable, noncycling cha
   assert.match(sql,/terminal lineage receipt unavailable/);
   assert.match(sql,/restored archive cannot reach immutable terminal purge/);
   const expiry=sql.slice(sql.indexOf("CREATE FUNCTION public.logbook_v22_expire_owner_candidate"));
-  assert.doesNotMatch(expiry,/INSERT INTO public\\.logbook_v22_redelete_edge_candidate/);
-  assert.match(sql,/VALUES\\(p_owner,'flight',p_uid,old_rec\\.id/);
+  assert.ok(!expiry.includes("INSERT INTO public.logbook_v22_redelete_edge_candidate"));
+  assert.ok(sql.includes("VALUES(p_owner,'flight',p_uid,old_rec.id"));
 });
 test("physical SQL covers absent lineage, one-hop and multi-hop history, tampering and wrong-owner witnesses",()=>{
   for(const expected of [
