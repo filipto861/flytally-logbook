@@ -163,3 +163,36 @@ test("V22 final source DELETE repeats every original V21 A+ protected associatio
  assert.match(feature,/AFTER INSERT ON public\.deleted_flights/);
  assert.match(feature,/PERFORM pg_sleep\(4\)/);
 });
+
+test("V22 source provenance producer takes account gate before fresh SQL write, while OFF retains V21",()=>{
+ const actions=read("../../app/(protected)/flights/shared-actions.ts");
+ const mode=read("../../lib/v22-trash-retention-mode.ts");
+ const fn=actions.slice(actions.indexOf("async function materializeParticipation"),
+   actions.indexOf("async function insertPicParticipation"));
+ const producer=fn.slice(fn.indexOf("const v22SourceMode:string="));
+ assert.match(mode,/V22_OWNER_TRASH_RETENTION_MODE = "off" as const/);
+ assert.ok(producer.indexOf("await requireUser()")<producer.indexOf("requireV22TrashRetentionApproved(v22SourceMode)"));
+ assert.ok(producer.indexOf("requireV22TrashRetentionApproved(v22SourceMode)")<
+    producer.indexOf("const rows=await sql"));
+ assert.ok(producer.includes('v22SourceMode==="off"'));
+ assert.ok(producer.includes("await materializationQuery"));
+ assert.ok(producer.includes("sql.transaction(["));
+ assert.ok(producer.includes("SELECT 1 / COUNT(*)::integer AS owner_gate"));
+ assert.ok(producer.includes("FROM (SELECT id FROM users WHERE id="));
+ assert.ok(producer.includes("FOR UPDATE) held_owner"));
+ assert.ok(producer.indexOf("held_owner")<producer.lastIndexOf("materializationQuery"));
+ assert.ok(producer.includes("{isolationLevel:'ReadCommitted'}"));
+ assert.ok(producer.includes("current_source AS MATERIALIZED"));
+ assert.ok(producer.includes("sf.certified_at IS NOT NULL"));
+ assert.ok(producer.includes("INSERT INTO flight_source_provenance"));
+ const fixture=read("./m0b-v22-reverse-source-gate-setup.sql");
+ const first=read("./m0b-v22-reverse-source-race-writer.sql");
+ const second=read("./m0b-v22-reverse-source-race-provenance.sql");
+ assert.match(fixture,/current_database\(\)<>'flytally_m0b_disposable_feature_v21'/);
+ assert.match(fixture,/pg_get_constraintdef\(c\.oid\) LIKE '%source_flight_id%'/);
+ assert.match(first,/SELECT pg_sleep\(4\)/);
+ assert.match(second,/BEGIN ISOLATION LEVEL READ COMMITTED/);
+ assert.match(second,/FOR UPDATE\) held_owner/);
+ assert.ok(second.indexOf("held_owner")<second.indexOf("INSERT INTO public.flight_source_provenance"));
+ assert.match(second,/materialized_count/);
+});
