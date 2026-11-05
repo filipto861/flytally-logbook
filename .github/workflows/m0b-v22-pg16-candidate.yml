@@ -446,3 +446,26 @@ jobs:
           )"
           [[ "$result" == "0|true" ]] || { echo "FAIL: DDL rollback incomplete $result"; exit 1; }
           echo 'PASS: wrong database refused; forced second-ALTER error rolls back all previous candidate DDL.'
+
+
+  windows-owner-runner-syntax:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell 5.1 parse only — no local or remote databases
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $source = (Resolve-Path "tooling/run-m0b-owned-pg16-windows.ps1").Path
+          $tokens = $null
+          $errors = $null
+          $parsed = [System.Management.Automation.Language.Parser]::ParseFile(
+            $source, [ref]$tokens, [ref]$errors)
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          if ($null -eq $parsed) { throw "PowerShell AST missing" }
+          Write-Host "PASS: Windows PowerShell 5.1 parser accepted local owner PG16 runner (syntax only)."
+          Write-Host "No PostgreSQL clusters, fixture SQL or 164-case owner suite executed in this Windows CI job."
