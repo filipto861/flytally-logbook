@@ -3,6 +3,9 @@ import test from "node:test";
 import {readFileSync} from "node:fs";
 const ps=readFileSync(new URL("../tooling/run-m0b-owned-pg16-windows.ps1",import.meta.url),"utf8");
 test("M0-B Windows PG16 wrapper reuses canonical six-owned-cluster ledger, never remote DB",()=>{
+  // PowerShell 5.1 may interpret no-BOM UTF-8 as the system ANSI codepage.
+  assert.ok([...ps].every(char=>char.charCodeAt(0)<128),
+    "Windows PowerShell 5.1 launcher must remain 7-bit ASCII without a BOM");
   for(const marker of [
     "param(", "[switch]$PreflightOnly", "feat/logbook-m0b-v22-expand-candidate-20261104",
     "filipto861/flytally-logbook", "c9c2f60303236113a223942072311f5e37f876f7",
