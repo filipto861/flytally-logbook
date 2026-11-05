@@ -136,3 +136,30 @@ test("source-owned restoration and protected redelete require owner gate, same t
   assert.ok(physical.includes(phrase),phrase);
  }
 });
+
+test("V22 final source DELETE repeats every original V21 A+ protected association predicate",()=>{
+ const original=read("../../lib/flight-trash.ts");
+ const candidate=read("./m0b-v22-trash-lifecycle-candidate.sql");
+ const start=original.indexOf("WITH deleted AS (");
+ const frozen=original.slice(start,original.indexOf("RETURNING f.id",start));
+ const writer=candidate.slice(candidate.indexOf("CREATE FUNCTION public.logbook_v22_redelete_source_candidate"));
+ const initial=writer.slice(0,writer.indexOf("INSERT INTO public.deleted_flights"));
+ const last=writer.slice(writer.indexOf("DELETE FROM public.flights WHERE id=p_flight"),writer.indexOf("GET DIAGNOSTICS v_count=ROW_COUNT",writer.indexOf("DELETE FROM public.flights WHERE id=p_flight")));
+ for(const table of ["flight_participations","flight_connected_crew","flight_verifications",
+  "instructor_flight_approvals","flight_source_provenance","flight_public_shares",
+  "flight_certified_revisions","voided_certified_flights"]){
+  assert.ok(frozen.includes(table),"canonical V21 no longer protects "+table);
+  assert.ok(initial.includes("public."+table),"initial V22 guard missing "+table);
+  assert.ok(last.includes("public."+table),"final V22 guard missing "+table);
+ }
+ for(const field of ["p.source_flight_id=p_flight OR p.participant_flight_id=p_flight",
+  "p.source_flight_id=p_flight OR p.participant_flight_id=p_flight",
+  "v.user_id=p_owner AND v.original_flight_id=p_flight"]){
+  assert.ok(last.includes(field),"final V22 guard lost protected link "+field);
+ }
+ const feature=read("./m0b-v22-late-link-race-setup.sql");
+ assert.match(feature,/current_database\(\)<>'flytally_m0b_disposable_feature_v21'/);
+ assert.match(feature,/NEW\.user_id=9041 AND NEW\.original_flight_id=7041/);
+ assert.match(feature,/AFTER INSERT ON public\.deleted_flights/);
+ assert.match(feature,/PERFORM pg_sleep\(4\)/);
+});
