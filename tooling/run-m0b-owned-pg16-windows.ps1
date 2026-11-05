@@ -1,4 +1,4 @@
-# FlyTally M0-B — Windows 11, six fresh owned PostgreSQL16 clusters, 164 tests.
+# FlyTally M0-B - Windows 11, six fresh owned PostgreSQL16 clusters, 164 tests.
 # Run from a clean checkout of Draft PR #469. NEVER use production or remote DB.
 # Requires Windows PowerShell 5.1+, Git, Node 24.x, PostgreSQL 16 installed at
 # C:\Program Files\PostgreSQL\16\bin. No admin shell / Docker / Neon needed.
@@ -93,7 +93,7 @@ try {
   Require-Success "Canonical 42-file, 164-test partition registry"
 
   if ($PreflightOnly) {
-    Write-Host "PREFLIGHT PASS — PostgreSQL tests NOT RUN." -ForegroundColor Green
+    Write-Host "PREFLIGHT PASS - PostgreSQL tests NOT RUN." -ForegroundColor Green
     return
   }
 
