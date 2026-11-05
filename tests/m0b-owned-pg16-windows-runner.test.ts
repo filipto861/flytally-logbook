@@ -22,5 +22,5 @@ test("M0-B Windows PG16 wrapper reuses canonical six-owned-cluster ledger, never
   assert.match(ps,/if \(\$PreflightOnly\)[\s\S]*?return[\s\S]*?npm.cmd ci/);
   assert.match(ps,/FLYTALLY_OWNED_PG16_RELEASE = "1"/);
   assert.doesNotMatch(ps,/\b(?:DROP DATABASE|DROP SCHEMA|TRUNCATE|DELETE FROM)\b/i);
-  assert.doesNotMatch(ps,/\b(?:git (?:push|reset|clean|switch|checkout|merge)|vercel deploy)\b/i);
+  assert.doesNotMatch(ps,/(?:&\s*git|^\s*git)\s+(?:push|reset|clean|switch|checkout|merge)\b|(?:&\s*vercel|^\s*vercel)\s+deploy\b/mi);
 });

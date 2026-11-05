@@ -16,16 +16,15 @@ $originBranch = "refs/remotes/origin/$branch"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $backup = @{}
 $clearNames = @()
-$originalDirectory = (Get-Location).Path
 
 function Require-Success([string]$name) {
   if ($LASTEXITCODE -ne 0) {
     throw "$name failed (exit code $LASTEXITCODE). No PG16 acceptance PASS."
   }
 }
-function Get-GitValue([string[]]$args, [string]$label) {
-  $value = (& git @args | Out-String).Trim()
-  Require-Success $label
+function Get-GitValue([string[]]$GitArgs, [string]$Label) {
+  $value = (& git @GitArgs | Out-String).Trim()
+  Require-Success $Label
   return $value
 }
 
@@ -43,11 +42,11 @@ try {
   if ($nodeVersion -notmatch '^v24\.') { throw "Node 24.x required, installed: $nodeVersion" }
 
   # Verify exact repository and work branch before touching any database.
-  $remote = Get-GitValue @("remote","get-url","origin") "Git remote"
+  $remote = Get-GitValue -GitArgs @("remote","get-url","origin") -Label "Git remote"
   if ($remote -cnotmatch '^(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)filipto861/flytally-logbook(?:\.git)?/?$') {
     throw "Unexpected Git origin: $remote. Refusing to run."
   }
-  $actualBranch = Get-GitValue @("branch","--show-current") "Git branch"
+  $actualBranch = Get-GitValue -GitArgs @("branch","--show-current") -Label "Git branch"
   if ($actualBranch -cne $branch) { throw "Expected Draft #469 branch $branch; got $actualBranch." }
 
   $changed = @(& git status --porcelain --untracked-files=all)
@@ -58,9 +57,9 @@ try {
   # Fetch ONLY the approved branch and canonical main; never switch/merge.
   & git fetch --no-tags origin ("+refs/heads/" + $branch + ":" + $originBranch) ("+refs/heads/main:refs/remotes/origin/main")
   Require-Success "Git read-only fetch"
-  $head = Get-GitValue @("rev-parse","HEAD") "Git work SHA"
-  $remoteHead = Get-GitValue @("rev-parse","--verify",$originBranch) "Git origin branch SHA"
-  $remoteMain = Get-GitValue @("rev-parse","--verify","refs/remotes/origin/main") "Git canonical main SHA"
+  $head = Get-GitValue -GitArgs @("rev-parse","HEAD") -Label "Git work SHA"
+  $remoteHead = Get-GitValue -GitArgs @("rev-parse","--verify",$originBranch) -Label "Git origin branch SHA"
+  $remoteMain = Get-GitValue -GitArgs @("rev-parse","--verify","refs/remotes/origin/main") -Label "Git canonical main SHA"
   if ($head -cne $remoteHead) {
     throw "Local checkout is stale ($head). Fetch/switch with --ff-only to $remoteHead, then rerun."
   }
@@ -129,7 +128,7 @@ try {
   & npm.cmd run verify:postgres -- --base origin/main
   Require-Success "Canonical six-partition PG16 acceptance"
 
-  $last = Get-GitValue @("rev-parse","HEAD") "Final work SHA"
+  $last = Get-GitValue -GitArgs @("rev-parse","HEAD") -Label "Final work SHA"
   if ($last -cne $head) { throw "Work HEAD changed during acceptance. Evidence INVALID." }
   $status = @(& git status --porcelain --untracked-files=all)
   Require-Success "Final worktree identity"
