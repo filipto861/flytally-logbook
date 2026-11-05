@@ -159,6 +159,79 @@ jobs:
           pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-feature-v21-acceptance.sql
           pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-source-writers-acceptance.sql
           echo 'PASS: current application V21 feature snapshot and independent immutable terminal lineage on isolated PG16.'
+      - name: Prove concurrent late source link rollback with two real PG16 backends
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_feature_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb)"
+          [[ "$identity" =~ ^flytally_m0b_disposable_feature_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Refused source-race DB identity <$identity>"; exit 1;
+          }
+          pgdb < tooling/sql/m0b-v22-late-link-race-setup.sql
+          # A: account/flight are locked; trigger pauses after snapshot insert.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_race_writer \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q -c \
+            "SELECT public.logbook_v22_redelete_source_candidate(9041,7041,'94410000-0000-4000-8000-000000009041'::uuid);" \
+            >/tmp/m0b-v22-race-writer.log 2>&1 &
+          writer_pid=$!
+          observed_sleep=0
+          for i in $(seq 1 40); do
+            sleeping="$(printf "SELECT count(*) FROM pg_stat_activity WHERE datname='flytally_m0b_disposable_feature_v21' AND application_name='m0b_v22_race_writer' AND wait_event='PgSleep';\n" | pgdb)"
+            if [[ "$sleeping" == 1 ]]; then observed_sleep=1; break; fi
+            sleep 0.1
+          done
+          [[ "$observed_sleep" == 1 ]] || {
+            echo 'FAIL: writer never entered post-precheck archive pause'; cat /tmp/m0b-v22-race-writer.log; wait "$writer_pid" || :; exit 1;
+          }
+          # B: source_flight_id has NO FK, participant flight is independent
+          # and FK-protected. This link must commit before A's final DELETE.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_race_link \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q -c \
+            "INSERT INTO public.flight_source_provenance(participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,participant_role) VALUES(7042,9042,7041,9041,1,'synthetic-provenance','OBSERVER');" \
+            >/tmp/m0b-v22-race-link.log 2>&1 || {
+              cat /tmp/m0b-v22-race-link.log; wait "$writer_pid" || :; exit 1;
+            }
+          set +e
+          wait "$writer_pid"
+          writer_rc=$?
+          set -e
+          [[ "$writer_rc" -ne 0 ]] || {
+            echo 'FAIL: source redelete accepted after late protected link'; exit 1;
+          }
+          grep -Fq 'V22 redelete source flight deletion conflict' /tmp/m0b-v22-race-writer.log || {
+            echo 'FAIL: writer failure was not final protected DELETE'; cat /tmp/m0b-v22-race-writer.log; exit 1;
+          }
+          unchanged="$(cat <<'SQL' | pgdb
+          SELECT
+            (SELECT COUNT(*) FROM public.flights WHERE id=7041 AND user_id=9041)||'|'||
+            (SELECT COUNT(*) FROM public.flight_source_provenance
+              WHERE source_flight_id=7041 AND source_user_id=9041 AND participant_flight_id=7042)||'|'||
+            (SELECT COUNT(*) FROM public.deleted_flights
+              WHERE user_id=9041 AND original_flight_id=7041)||'|'||
+            (SELECT COUNT(*) FROM public.logbook_event_uid_registry
+              WHERE owner_id=9041 AND lifecycle_state='active'
+                AND original_trash_cutoff IS NULL AND marker_until IS NULL)||'|'||
+            (SELECT COUNT(*) FROM public.logbook_v22_redelete_edge_candidate
+              WHERE owner_id=9041);
+          SQL
+          )"
+          [[ "$unchanged" == '1|1|0|1|0' ]] || {
+            echo "FAIL: owner and immutable archive rollback mismatch <$unchanged>"; exit 1;
+          }
+          echo 'PASS: physical two-backend post-snapshot source link, final guarded DELETE refusal and full owner/archive rollback.'
       - name: Execute unchanged candidate on single disposable local PG16
         shell: bash
         env:
