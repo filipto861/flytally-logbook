@@ -474,7 +474,15 @@ BEGIN
  DELETE FROM public.flight_tracks WHERE user_id=p_owner AND flight_id=p_flight;
  DELETE FROM public.flights WHERE id=p_flight AND user_id=p_owner
    AND event_uid=f.event_uid AND certified_at IS NULL AND locked_at IS NULL
-   AND COALESCE(record_revision,1)=1;
+   AND COALESCE(record_revision,1)=1
+   AND NOT EXISTS(SELECT 1 FROM public.flight_participations p WHERE p.source_flight_id=p_flight OR p.participant_flight_id=p_flight)
+   AND NOT EXISTS(SELECT 1 FROM public.flight_connected_crew c WHERE c.source_flight_id=p_flight)
+   AND NOT EXISTS(SELECT 1 FROM public.flight_verifications v WHERE v.flight_id=p_flight)
+   AND NOT EXISTS(SELECT 1 FROM public.instructor_flight_approvals a WHERE a.flight_id=p_flight)
+   AND NOT EXISTS(SELECT 1 FROM public.flight_source_provenance p WHERE p.source_flight_id=p_flight OR p.participant_flight_id=p_flight)
+   AND NOT EXISTS(SELECT 1 FROM public.flight_public_shares s WHERE s.flight_id=p_flight)
+   AND NOT EXISTS(SELECT 1 FROM public.flight_certified_revisions r WHERE r.flight_id=p_flight)
+   AND NOT EXISTS(SELECT 1 FROM public.voided_certified_flights v WHERE v.user_id=p_owner AND v.original_flight_id=p_flight);
  GET DIAGNOSTICS v_count=ROW_COUNT;
  IF v_count<>1 THEN RAISE EXCEPTION 'V22 redelete source flight deletion conflict';END IF;
  UPDATE public.logbook_event_uid_registry
