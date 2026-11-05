@@ -232,6 +232,88 @@ jobs:
             echo "FAIL: owner and immutable archive rollback mismatch <$unchanged>"; exit 1;
           }
           echo 'PASS: physical two-backend post-snapshot source link, final guarded DELETE refusal and full owner/archive rollback.'
+      - name: Prove reverse race source-owner gate waits until V22 delete commits
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_feature_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb)"
+          [[ "$identity" =~ ^flytally_m0b_disposable_feature_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Reverse source gate refused database <$identity>"; exit 1;
+          }
+          pgdb < tooling/sql/m0b-v22-reverse-source-gate-setup.sql
+          # Backend A completes guarded flight DELETE inside its transaction,
+          # then deliberately holds source owner's row lock before COMMIT.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_reverse_delete \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q < tooling/sql/m0b-v22-reverse-source-race-writer.sql \
+            >/tmp/m0b-v22-reverse-delete.log 2>&1 &
+          writer_pid=$!
+          saw_writer_sleep=0
+          for i in $(seq 1 40); do
+            sleepers="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_reverse_delete' AND datname='flytally_m0b_disposable_feature_v21' AND wait_event='PgSleep';\n" | pgdb)"
+            if [[ "$sleepers" == 1 ]]; then saw_writer_sleep=1; break; fi
+            sleep 0.1
+          done
+          [[ "$saw_writer_sleep" == 1 ]] || {
+            echo 'FAIL: deleted-flight writer did not reach uncommitted post-delete hold'
+            cat /tmp/m0b-v22-reverse-delete.log; wait "$writer_pid" || :; exit 1;
+          }
+          # Backend B uses TWO successive statements: source owner gate
+          # FOR UPDATE, THEN a fresh READ COMMITTED source read and INSERT.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_reverse_link \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q < tooling/sql/m0b-v22-reverse-source-race-provenance.sql \
+            >/tmp/m0b-v22-reverse-link.log 2>&1 &
+          link_pid=$!
+          observed_block=0
+          for i in $(seq 1 35); do
+            blocked="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_reverse_link' AND datname='flytally_m0b_disposable_feature_v21' AND wait_event_type='Lock';\n" | pgdb)"
+            if [[ "$blocked" == 1 ]]; then observed_block=1; break; fi
+            sleep 0.1
+          done
+          [[ "$observed_block" == 1 ]] || {
+            echo 'FAIL: source link did not wait for same source-owner gate'
+            cat /tmp/m0b-v22-reverse-link.log
+            wait "$writer_pid" || :; wait "$link_pid" || :; exit 1;
+          }
+          wait "$writer_pid" || {
+            echo 'FAIL: source delete did not commit'; cat /tmp/m0b-v22-reverse-delete.log; exit 1;
+          }
+          wait "$link_pid" || {
+            echo 'FAIL: source link query rejected instead of returning zero'; cat /tmp/m0b-v22-reverse-link.log; exit 1;
+          }
+          grep -xq '0' /tmp/m0b-v22-reverse-link.log || {
+            echo 'FAIL: source link inserted after deleted source committed'; cat /tmp/m0b-v22-reverse-link.log; exit 1;
+          }
+          final="$(cat <<'SQL' | pgdb
+          SELECT
+            (SELECT count(*) FROM public.flights WHERE user_id=9051 AND id=7051)||'|'||
+            (SELECT count(*) FROM public.flight_source_provenance
+              WHERE source_user_id=9051 AND source_flight_id=7051)||'|'||
+            (SELECT count(*) FROM public.deleted_flights
+              WHERE user_id=9051 AND original_flight_id=7051)||'|'||
+            (SELECT count(*) FROM public.logbook_event_uid_registry
+              WHERE owner_id=9051 AND lifecycle_state='trash'
+                AND original_trash_cutoff IS NOT NULL)||'|'||
+            (SELECT count(*) FROM public.logbook_v22_redelete_edge_candidate
+              WHERE owner_id=9051);
+          SQL
+          )"
+          [[ "$final" == '0|0|1|1|0' ]] || {
+            echo "FAIL: reverse ordering missed source/archive invariant <$final>"; exit 1;
+          }
+          echo 'PASS: two real PG16 backends, reverse-ordered source link waits on V22 owner gate, fresh committed source read rejects link.'
       - name: Execute unchanged candidate on single disposable local PG16
         shell: bash
         env:
