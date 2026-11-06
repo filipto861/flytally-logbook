@@ -20,8 +20,7 @@ const transaction=restore.slice(txStart,txEnd+txEndNeedle.length);
 const advisoryStart=transaction.indexOf("sql`SELECT pg_advisory_xact_lock(");
 assert.ok(advisoryStart>=0,"Production restore advisory lock missing");
 const locateRestoreAfterAdvisory=(value:string,offset:number)=>{
-  const match=value.slice(offset).search(/`,\r?\
-  restoreQuery,/);
+  const match=value.slice(offset).search(/`,\r?\n  restoreQuery,/);
   return match<0 ? -1 : offset+match;
 };
 const advisoryEnd=locateRestoreAfterAdvisory(transaction,advisoryStart);
