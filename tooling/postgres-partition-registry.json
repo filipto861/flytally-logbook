@@ -191,7 +191,7 @@
         },
         {
           "file": "v380-restore-lock-and-trigger-contract.test.ts",
-          "sha256": "0f4766e1db3b4f83ae081d052697db942c303c590505e66c13457f852a122aa2",
+          "sha256": "04734dbe150f38a87dbfed9f666f4353b325fd36a03b9e6b440e987cab1384cb",
           "expectedTests": 7
         }
       ]

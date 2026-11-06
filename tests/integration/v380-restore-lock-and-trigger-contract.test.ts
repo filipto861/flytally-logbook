@@ -19,7 +19,12 @@ assert.ok(txEnd>txStart,"ReadCommitted transaction and V22-dependent result inde
 const transaction=restore.slice(txStart,txEnd+txEndNeedle.length);
 const advisoryStart=transaction.indexOf("sql`SELECT pg_advisory_xact_lock(");
 assert.ok(advisoryStart>=0,"Production restore advisory lock missing");
-const advisoryEnd=transaction.indexOf("`,\n  restoreQuery,",advisoryStart);
+const locateRestoreAfterAdvisory=(value:string,offset:number)=>{
+  const match=value.slice(offset).search(/`,\r?\
+  restoreQuery,/);
+  return match<0 ? -1 : offset+match;
+};
+const advisoryEnd=locateRestoreAfterAdvisory(transaction,advisoryStart);
 assert.ok(advisoryEnd>advisoryStart,"Restore SQL not immediately following advisory lock");
 const advisory=transaction.slice(advisoryStart+4,advisoryEnd);
 assert.equal((transaction.match(/pg_advisory_xact_lock\(/g)||[]).length,1);
@@ -54,6 +59,10 @@ test("legacy and modern restore keep archived aircraft identity, never enrich fr
   }
 });
 test("one advisory lock and selected restore query execute as one atomic transaction",()=>{
+  const windowsTx=transaction.replace(/\r?\n/g,"\r\n");
+  const windowsAdvisoryStart=windowsTx.indexOf("sql`SELECT pg_advisory_xact_lock(");
+  assert.ok(locateRestoreAfterAdvisory(windowsTx,windowsAdvisoryStart)>windowsAdvisoryStart,
+    "Restore adjacency must also hold with Windows CRLF checkout");
   assert.match(restore,/const tx=await sql\.transaction\(\[/);
   assert.match(advisory,/pg_advisory_xact_lock\(hashtextextended\(concat_ws\('\|',/);
   assert.match(transaction,/restoreQuery,\s*\.\.\.\(v22RestorationActive/);
