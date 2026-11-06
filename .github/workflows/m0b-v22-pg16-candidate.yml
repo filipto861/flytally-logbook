@@ -51,6 +51,46 @@ jobs:
           node --test tooling/sql/m0b-v22-trash-lifecycle.test.mjs
           node tooling/m0b-v22-canonical-v21-fixture.mjs > /tmp/m0b-v21-source-exact.sql
           test "$(wc -c < /tmp/m0b-v21-source-exact.sql)" -gt 20000
+      - name: Reproduce owner PG16 FI and restore acceptance files on disposable physical PostgreSQL16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          existing="$(printf "SELECT COUNT(*) FROM pg_database WHERE datname='flytally_m0b_fi_contract_ci';\n" | pgdb postgres)"
+          [[ "$existing" == 0 ]] || { echo 'Refused nonfresh FI test database'; exit 1; }
+          printf 'CREATE DATABASE flytally_m0b_fi_contract_ci;\n' | pgdb postgres
+          target="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb flytally_m0b_fi_contract_ci)"
+          [[ "$target" =~ ^flytally_m0b_fi_contract_ci\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Refused unsafe FI owner-race test target <$target>"; exit 1;
+          }
+          # The exact FI test fixture invokes psql via Node spawnSync.
+          # Isolate its process inside this already verified postgres:16
+          # service (the GitHub runner has no PostgreSQL client dependency).
+          wrapper="$(mktemp -d)"
+          cat > "$wrapper/psql" <<'PSQL_WRAPPER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          : "$M0B_TEST_PG_CONTAINER"
+          exec docker exec -i -e PGPASSWORD=flytally "$M0B_TEST_PG_CONTAINER" psql "$@"
+          PSQL_WRAPPER
+          chmod 700 "$wrapper/psql"
+          export PATH="$wrapper:$PATH"
+          export M0B_TEST_PG_CONTAINER="$PG_CONTAINER"
+          export DATABASE_URL="postgresql://flytally:flytally@127.0.0.1:5432/flytally_m0b_fi_contract_ci"
+          export FLYTALLY_POSTGRES_INTEGRATION=1
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \
+            --experimental-strip-types --test --test-reporter=tap \
+            tests/integration/postgres-fi-materialization.test.ts \
+            tests/integration/v380-restore-lock-and-trigger-contract.test.ts
+          echo 'PASS: 3 actual FI/PIC materializations and 7 restored-record lock/guard tests on disposable PostgreSQL16.'
       - name: Run source-exact 21 migrations and owner-gated V22 lifecycle on isolated PG16
         shell: bash
         env:
