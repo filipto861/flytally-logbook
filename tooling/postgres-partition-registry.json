@@ -66,7 +66,7 @@
         },
         {
           "file": "postgres-fi-materialization.test.ts",
-          "sha256": "4e46a12da16e9e574b0bdcaf38be58b6ba4ef378da11bd0797a394b3c4dcdd5c",
+          "sha256": "85262e29b064f6257903a960de900f9e32c7297080c009c6e2692f1633817715",
           "expectedTests": 3
         },
         {
@@ -191,7 +191,7 @@
         },
         {
           "file": "v380-restore-lock-and-trigger-contract.test.ts",
-          "sha256": "580b16a0e7cb5665d6b45962263e79c2bedfb718b1fc80ac99b88fb257144041",
+          "sha256": "10c5a1cdf0880327089313591a73d5527656b696c8dfd043226a013b4c551daf",
           "expectedTests": 7
         }
       ]

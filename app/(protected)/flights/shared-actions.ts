@@ -1,7 +1,16 @@
 "use server";
 import { redirect } from "next/navigation";import { revalidatePath } from "next/cache";import { requireUser } from "@/lib/auth/require-user";import { sql } from "@/lib/db";import { ensureRuntimeSchema } from "@/lib/runtime-schema";import { flightFingerprint } from "@/lib/flight-dedup";import { canInviteAsPic,crewRoleCredits,normalizeCrewRole,normalizePicCommanderBasis,validCrewCombination,type CrewRole,type PicCommanderBasis } from "@/lib/crew";import { notifyUser } from "@/lib/notifications";import { signVerificationPayload } from "@/lib/verification-signature";import { refreshRecencySnapshot } from "@/lib/recency-service";import { sharedFlightCreditMinutes } from "@/lib/shared-flight-credit";
+import { V22_OWNER_TRASH_RETENTION_MODE,requireV22TrashRetentionApproved } from "@/lib/v22-trash-retention-mode";
 const id=(value:unknown)=>{const parsed=Number(value);return Number.isSafeInteger(parsed)&&parsed>0?parsed:0};const text=(value:unknown)=>String(value??"").trim();const refresh=(sourceFlightId:number)=>{revalidatePath(`/flights/${sourceFlightId}`);revalidatePath(`/flights/${sourceFlightId}/audit`);revalidatePath("/connections");revalidatePath("/notifications");revalidatePath("/flights");revalidatePath("/dashboard");revalidatePath("/print")};const participantLogbookRole=(role:CrewRole)=>role==="INSTRUCTOR"?"FI":role;const markRequestRead=(userId:number,participationId:number)=>sql`UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE user_id=${userId} AND href=${`/connections/shared/${participationId}`}`;type ParticipationSource=Record<string,unknown>&{participation_id:number|string;source_flight_id:number|string;source_user_id:number|string;participant_flight_id:number|string|null};
 async function materializeParticipation(participationId:number,userId:number){
+ // Source-frozen OFF preserves V21; future V22 re-delete requires the
+ // NON-FK source-provenance writer to share a source-owner account gate.
+ const v22SourceMode:string=V22_OWNER_TRASH_RETENTION_MODE;
+ if(v22SourceMode!=="off"){
+   const session=await requireUser();
+   if(session.userId!==userId)throw new Error("V22 provenance recipient authorization mismatch.");
+   requireV22TrashRetentionApproved(v22SourceMode);
+ }
  const rows=await sql`SELECT p.id participation_id,p.source_flight_id,p.source_user_id,p.participant_user_id,p.participant_role,p.pic_commander_basis,p.source_revision,p.source_hash,p.status,p.participant_flight_id,
   f.date::text date,f.evidence,f.registration,f.aircraft_type,f.aircraft_class,f.regulatory_category,f.balloon_class,f.balloon_group,f.balloon_operation,f.launch_method,f.launches,
   f.aircraft_make,f.aircraft_model,f.aircraft_variant,f.departure,f.arrival,f.off_block,f.takeoff,f.landing,f.on_block,f.role source_role,f.task,f.purpose_code,f.note,
@@ -26,7 +35,9 @@ async function materializeParticipation(participationId:number,userId:number){
  if(pic&&!commander)return 0;
  const instructorName="",recipientNote=pic?text(row.note):instructor?`FI entry linked to ${text(row.source_name)}'s verified training flight`:`Shared flight with ${text(row.source_name)}`;
  const fingerprint=flightFingerprint(userId,{date:text(row.date),registration:text(row.registration),offBlock:text(row.off_block),departure:text(row.departure),arrival:text(row.arrival)});
- const result=await sql`WITH locked AS MATERIALIZED(SELECT pg_advisory_xact_lock(hashtextextended(${fingerprint},0))),
+ const sourceOwnerId=Number(row.source_user_id);
+ if(v22SourceMode!=="off"&&(!Number.isSafeInteger(sourceOwnerId)||sourceOwnerId<=0))return 0;
+ const materializationQuery=sql`WITH locked AS MATERIALIZED(SELECT pg_advisory_xact_lock(hashtextextended(${fingerprint},0))),
  current_source AS MATERIALIZED(
    SELECT 1 ok FROM flights sf,locked
    WHERE sf.id=${Number(row.source_flight_id)} AND sf.user_id=${Number(row.source_user_id)}
@@ -104,7 +115,17 @@ async function materializeParticipation(participationId:number,userId:number){
    WHERE p.id=${participationId} AND p.participant_user_id=${userId} AND p.status IN ('pending','accepted')
    RETURNING p.participant_flight_id
  )
- SELECT participant_flight_id FROM linked` as Array<{participant_flight_id:number|string}>;
+ SELECT participant_flight_id FROM linked`;
+ // Two ordered SQL statements in one READ COMMITTED transaction: source
+ // owner FOR UPDATE first, then a fresh snapshot for certified source
+ // revalidation and immutable provenance INSERT. OFF executes V21 unchanged.
+ const result=v22SourceMode==="off"
+   ? await materializationQuery as Array<{participant_flight_id:number|string}>
+   : (await sql.transaction([
+     sql`SELECT 1 / COUNT(*)::integer AS owner_gate
+       FROM (SELECT id FROM users WHERE id=${sourceOwnerId} FOR UPDATE) held_owner`,
+     materializationQuery
+   ],{isolationLevel:'ReadCommitted'}))[1] as Array<{participant_flight_id:number|string}>;
  return Number(result[0]?.participant_flight_id)||0;
 }
 

@@ -4,6 +4,7 @@ import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { countActiveFlightShares, ensureFlightSharingSchema, purgeRevokedFlightShares, revokeAllFlightShares } from "@/lib/flight-sharing";
 import { ensureV290Schema } from "@/lib/v290-schema";
 import { ensurePushSchema } from "@/lib/push-schema";
+import { authorizedCronTrashExpiryStatement } from "@/lib/trash-retention-service";
 
 export type AccountPrivacySummary=Readonly<{
   activePublicShares:number;
@@ -41,11 +42,13 @@ export async function getAccountPrivacySummary(userId:number):Promise<AccountPri
 
 export async function revokeAccountPublicShares(userId:number){await revokeAllFlightShares(userId)}
 
-export async function runPrivacyRetentionSweep(){
+export async function runPrivacyRetentionSweep(authorization:unknown){
+  // Validate scheduled-job authority before any cleanup statement executes.
+  const expiredTrash=authorizedCronTrashExpiryStatement(authorization);
   await Promise.all([ensureDatabaseOptimizations(),ensureFlightSharingSchema()]);
   await purgeRevokedFlightShares();
   await sql.transaction([
-    sql`DELETE FROM deleted_flights WHERE purge_after<=NOW()`,
+    expiredTrash,
     sql`DELETE FROM auth_password_resets WHERE expires_at<NOW()-INTERVAL '30 days' OR (used_at IS NOT NULL AND used_at<NOW()-INTERVAL '30 days')`,
     sql`DELETE FROM auth_sessions WHERE expires_at<NOW()-INTERVAL '30 days' OR (revoked_at IS NOT NULL AND revoked_at<NOW()-INTERVAL '30 days')`,
     sql`DELETE FROM auth_events WHERE event_at<NOW()-INTERVAL '90 days'`,

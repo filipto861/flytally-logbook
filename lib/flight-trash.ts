@@ -7,18 +7,36 @@ import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { ensureFlightSharingSchema } from "@/lib/flight-sharing";
+import { expireTrashForAuthenticatedPilot } from "@/lib/trash-retention-service";
+import { requireUser } from "@/lib/auth/require-user";
+import { V22_OWNER_TRASH_RETENTION_MODE,requireV22TrashRetentionApproved } from "@/lib/v22-trash-retention-mode";
 export type DeletedFlight={id:number;originalFlightId:number;date:string;registration:string;departure:string;arrival:string;deletedAt:string;purgeAfter:string;trackCount:number};
-export async function listDeletedFlights(userId:number):Promise<DeletedFlight[]>{await ensureDatabaseOptimizations();await sql`DELETE FROM deleted_flights WHERE user_id=${userId} AND purge_after<=NOW()`;const rows=await sql`SELECT id,original_flight_id,flight_data->>'date' date,COALESCE(flight_data->>'registration','') registration,COALESCE(flight_data->>'departure','') departure,COALESCE(flight_data->>'arrival','') arrival,deleted_at,purge_after,jsonb_array_length(tracks_data)::int track_count FROM deleted_flights WHERE user_id=${userId} AND restored_at IS NULL AND purge_after>NOW() ORDER BY deleted_at DESC,id DESC LIMIT 100` as Array<Record<string,unknown>>;return rows.map(row=>({id:Number(row.id),originalFlightId:Number(row.original_flight_id),date:String(row.date||""),registration:String(row.registration||""),departure:String(row.departure||""),arrival:String(row.arrival||""),deletedAt:String(row.deleted_at||""),purgeAfter:String(row.purge_after||""),trackCount:Number(row.track_count||0)}))}
+export async function listDeletedFlights(userId:number):Promise<DeletedFlight[]>{await ensureDatabaseOptimizations();await expireTrashForAuthenticatedPilot(userId);const rows=await sql`SELECT id,original_flight_id,flight_data->>'date' date,COALESCE(flight_data->>'registration','') registration,COALESCE(flight_data->>'departure','') departure,COALESCE(flight_data->>'arrival','') arrival,deleted_at,purge_after,jsonb_array_length(tracks_data)::int track_count FROM deleted_flights WHERE user_id=${userId} AND restored_at IS NULL AND purge_after>NOW() ORDER BY deleted_at DESC,id DESC LIMIT 100` as Array<Record<string,unknown>>;return rows.map(row=>({id:Number(row.id),originalFlightId:Number(row.original_flight_id),date:String(row.date||""),registration:String(row.registration||""),departure:String(row.departure||""),arrival:String(row.arrival||""),deletedAt:String(row.deleted_at||""),purgeAfter:String(row.purge_after||""),trackCount:Number(row.track_count||0)}))}
 // A+ frozen: an ordinary Trash operation is only for an unlinked, unprotected
 // draft. Preserve independent participant/approval/provenance/verification evidence.
 // Both the archive snapshot and the final DELETE must succeed atomically.
 export async function moveFlightToTrash(userId:number,flightId:number):Promise<boolean>{
   if(!Number.isSafeInteger(userId)||userId<=0||!Number.isSafeInteger(flightId)||flightId<=0)return false;
+  const v22DeleteMode:string=V22_OWNER_TRASH_RETENTION_MODE;
+  if(v22DeleteMode!=="off"){
+    const session=await requireUser();
+    if(session.userId!==userId)throw new Error("V22 redelete owner authorization mismatch.");
+    requireV22TrashRetentionApproved(v22DeleteMode);
+  }
   await ensureDatabaseOptimizations();
   await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);
   await ensureFlightSharingSchema();
 
   const token=randomUUID();
+  // Proposed V22 path is source-frozen OFF. A future reviewed source
+  // activation MUST keep server session ownership before any candidate SQL.
+  if(v22DeleteMode!=="off"){
+    const archived=(await sql`SELECT public.logbook_v22_redelete_source_candidate(${userId},${flightId},${token}::uuid) AS archive_id`) as Array<{archive_id:number|string}>;
+    const archivedId=Number(archived[0]?.archive_id);
+    if(archived.length!==1||!Number.isSafeInteger(archivedId)||archivedId<=0)
+      throw new Error("V22 redelete source returned invalid archive identity.");
+    return true;
+  }
   const results=await sql.transaction([
     // Always lock an existing owned row *before* testing eligibility; another
     // writer must not change a previously ineligible row into an eligible one
@@ -85,7 +103,15 @@ export async function moveFlightToTrash(userId:number,flightId:number):Promise<b
   return Number(deleted?.deleted_count)===1 && Boolean((results[1] as Array<{id:number|string}>)[0]);
 }
 
-export async function restoreDeletedFlightRecord(userId:number,trashId:number):Promise<{flightId?:number;error?:string}>{await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);  // Preflight is read-only; the later candidate is locked and digest-bound.
+export async function restoreDeletedFlightRecord(userId:number,trashId:number):Promise<{flightId?:number;error?:string}>{
+const v22RestoreMode:string=V22_OWNER_TRASH_RETENTION_MODE;
+const v22RestorationActive=v22RestoreMode!=="off";
+if(v22RestorationActive){
+  const session=await requireUser();
+  if(session.userId!==userId)throw new Error("V22 restore owner authorization mismatch.");
+  requireV22TrashRetentionApproved(v22RestoreMode);
+}
+await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);  // Preflight is read-only; the later candidate is locked and digest-bound.
   // The canonical legacy statement remains unchanged for all pre-v21 records.
   const sourceRows=await sql`SELECT flight_data,expenses_data,
     md5(flight_data::text || expenses_data::text) AS archive_digest
@@ -227,6 +253,7 @@ export async function restoreDeletedFlightRecord(userId:number,trashId:number):P
   AND flight_data->>'price_per_hour_decimal' IS NULL
  LIMIT 1 FOR UPDATE OF deleted_flights),restored_flight AS (INSERT INTO flights(user_id,date,evidence,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_variant,aircraft_class,regulatory_category,balloon_class,balloon_group,balloon_operation,launch_method,launches,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,purpose_code,price_per_hour,billing_basis,note,locked_at,locked_by_user_id,operation_type,engine_type,operator_name,flight_number,operation_context,landings_day,landings_night,movement_evidence_recorded,takeoffs_day,takeoffs_night,approaches_day,approaches_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,verification_name,verification_reference) SELECT ${userId},NULLIF(flight_data->>'date','')::date,COALESCE(flight_data->>'evidence',''),COALESCE(flight_data->>'registration',''),COALESCE(flight_data->>'aircraft_type',''),flight_data->>'aircraft_make',flight_data->>'aircraft_model',flight_data->>'aircraft_variant',COALESCE(flight_data->>'aircraft_class',''),COALESCE(flight_data->>'regulatory_category',''),COALESCE(flight_data->>'balloon_class',''),COALESCE(flight_data->>'balloon_group',''),COALESCE(flight_data->>'balloon_operation',''),COALESCE(flight_data->>'launch_method',''),COALESCE(NULLIF(flight_data->>'launches','')::int,0),COALESCE(flight_data->>'departure',''),COALESCE(flight_data->>'arrival',''),COALESCE(flight_data->>'off_block',''),COALESCE(flight_data->>'takeoff',''),COALESCE(flight_data->>'landing',''),COALESCE(flight_data->>'on_block',''),COALESCE(NULLIF(flight_data->>'starts','')::int,0),COALESCE(flight_data->>'commander',''),COALESCE(flight_data->>'instructor',''),COALESCE(flight_data->>'role',''),COALESCE(flight_data->>'task',''),COALESCE(flight_data->>'purpose_code',''),NULLIF(flight_data->>'price_per_hour','')::numeric,COALESCE(flight_data->>'billing_basis','BLOCK'),COALESCE(flight_data->>'note',''),NULL,NULL,COALESCE(flight_data->>'operation_type','SP'),COALESCE(flight_data->>'engine_type','SE'),COALESCE(flight_data->>'operator_name',''),COALESCE(flight_data->>'flight_number',''),COALESCE(flight_data->>'operation_context',''),COALESCE(NULLIF(flight_data->>'landings_day','')::int,COALESCE(NULLIF(flight_data->>'starts','')::int,0)),COALESCE(NULLIF(flight_data->>'landings_night','')::int,0),COALESCE(NULLIF(flight_data->>'movement_evidence_recorded','')::boolean,FALSE),COALESCE(NULLIF(flight_data->>'takeoffs_day','')::int,0),COALESCE(NULLIF(flight_data->>'takeoffs_night','')::int,0),COALESCE(NULLIF(flight_data->>'approaches_day','')::int,0),COALESCE(NULLIF(flight_data->>'approaches_night','')::int,0),COALESCE(NULLIF(flight_data->>'night_minutes','')::int,0),COALESCE(NULLIF(flight_data->>'ifr_minutes','')::int,0),COALESCE(NULLIF(flight_data->>'pic_minutes','')::int,0),COALESCE(NULLIF(flight_data->>'copilot_minutes','')::int,0),COALESCE(NULLIF(flight_data->>'dual_minutes','')::int,0),COALESCE(NULLIF(flight_data->>'instructor_minutes','')::int,0),COALESCE(flight_data->>'verification_name',''),COALESCE(flight_data->>'verification_reference','') FROM candidate c WHERE NOT EXISTS(SELECT 1 FROM flights f WHERE f.user_id=${userId} AND f.date::text=c.flight_data->>'date' AND UPPER(TRIM(f.registration))=UPPER(TRIM(c.flight_data->>'registration')) AND COALESCE(f.off_block,'')=COALESCE(c.flight_data->>'off_block','') AND UPPER(TRIM(COALESCE(f.departure,'')))=UPPER(TRIM(COALESCE(c.flight_data->>'departure',''))) AND UPPER(TRIM(COALESCE(f.arrival,'')))=UPPER(TRIM(COALESCE(c.flight_data->>'arrival','')))) RETURNING id),track_source AS MATERIALIZED (SELECT nextval(pg_get_serial_sequence('flight_tracks','id')) new_id,track FROM candidate c CROSS JOIN LATERAL jsonb_array_elements(c.tracks_data) track),restored_tracks AS (INSERT INTO flight_tracks(id,user_id,flight_id,file_name,imported_at,point_count,distance_km,start_utc,end_utc,min_alt_m,max_alt_m,coordinates_json,overview_coordinates_json,overview_version) SELECT s.new_id,${userId},f.id,s.track->>'file_name',(s.track->>'imported_at')::timestamptz,(s.track->>'point_count')::int,(s.track->>'distance_km')::numeric,NULLIF(s.track->>'start_utc','')::timestamptz,NULLIF(s.track->>'end_utc','')::timestamptz,NULLIF(s.track->>'min_alt_m','')::numeric,NULLIF(s.track->>'max_alt_m','')::numeric,s.track->>'coordinates_json',s.track->>'overview_coordinates_json',(s.track->>'overview_version')::int FROM track_source s CROSS JOIN restored_flight f RETURNING id),restored_expenses AS (INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency,created_at) SELECT ${userId},f.id,e->>'category',e->>'label',(e->>'amount_minor')::bigint,e->>'currency',(e->>'created_at')::timestamptz FROM candidate c CROSS JOIN restored_flight f CROSS JOIN LATERAL jsonb_array_elements(c.expenses_data) e RETURNING id),marked AS (UPDATE deleted_flights SET restored_at=NOW(),restored_flight_id=(SELECT id FROM restored_flight) WHERE id=${trashId} AND user_id=${userId} AND EXISTS(SELECT 1 FROM restored_flight) RETURNING restored_flight_id) SELECT restored_flight_id FROM marked`;
 const tx=await sql.transaction([
+  ...(v22RestorationActive ? [sql`SELECT id FROM users WHERE id=${userId} FOR UPDATE`] : []),
   sql`SELECT pg_advisory_xact_lock(hashtextextended(concat_ws('|',
     user_id::text,
     UPPER(TRIM(COALESCE(flight_data->>'date',''))),
@@ -238,7 +265,11 @@ const tx=await sql.transaction([
   FROM deleted_flights
   WHERE id=${trashId} AND user_id=${userId}
     AND restored_at IS NULL AND purge_after>NOW()`,
-  restoreQuery],{isolationLevel:'ReadCommitted'});const rows=tx[1] as Array<{restored_flight_id:number|string}>;if(rows[0])return{flightId:Number(rows[0].restored_flight_id)};
+  restoreQuery,
+  ...(v22RestorationActive
+    ? [sql`SELECT public.logbook_v22_finalize_restored_source_candidate(${userId},${trashId}) AS restored_flight_id`]
+    : [])
+],{isolationLevel:'ReadCommitted'});const rows=tx[v22RestorationActive ? 3 : 1] as Array<{restored_flight_id:number|string}>;if(rows[0])return{flightId:Number(rows[0].restored_flight_id)};
 const needsNewRestore=await sql`SELECT 1 FROM deleted_flights
  WHERE id=${trashId} AND user_id=${userId} AND restored_at IS NULL AND purge_after>NOW()
  AND ((flight_data->>'price_currency_code' IS NOT NULL
