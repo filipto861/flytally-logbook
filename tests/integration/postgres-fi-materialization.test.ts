@@ -35,12 +35,30 @@ function literal(value:unknown){
   return`'${String(value).replaceAll("'","''")}'`;
 }
 function materializeSql(source:string){
-  const startNeedle="const result=await sql`WITH locked AS MATERIALIZED";
-  const start=source.indexOf(startNeedle);assert.ok(start>=0,"Production FI materialisation SQL start not found");
-  const sqlStart=source.indexOf("sql`",start)+4;
-  const endNeedle="SELECT participant_flight_id FROM linked` as Array<{participant_flight_id:number|string}>;";
-  const end=source.indexOf(endNeedle,sqlStart);assert.ok(end>=0,"Production FI materialisation SQL end not found");
-  return source.slice(sqlStart,end+"SELECT participant_flight_id FROM linked".length);
+  // Extract the actual SQL tagged template from the current production
+  // materialization function. Do NOT replace it with a synthetic SQL copy.
+  const functionStart=source.indexOf("async function materializeParticipation(");
+  const functionEnd=source.indexOf("async function insertPicParticipation(",functionStart);
+  assert.ok(functionStart>=0&&functionEnd>functionStart,"Production FI function boundary not found");
+  const fn=source.slice(functionStart,functionEnd);
+  const startNeedle="const materializationQuery=sql`WITH locked AS MATERIALIZED";
+  const start=fn.indexOf(startNeedle);
+  assert.ok(start>=0,"Production FI materialisation SQL start not found");
+  const sqlStart=fn.indexOf("sql`",start)+4;
+  const endNeedle="SELECT participant_flight_id FROM linked`;";
+  const end=fn.indexOf(endNeedle,sqlStart);
+  assert.ok(end>sqlStart,"Production FI materialisation SQL end not found");
+  // The V22 source-owner synchronization must not change the original OFF
+  // execution semantics, and must use a distinct fresh ReadCommitted
+  // statement after locking the source owner.
+  assert.match(fn,/const v22SourceMode:string=V22_OWNER_TRASH_RETENTION_MODE/);
+  assert.match(fn,/if\(v22SourceMode!=="off"\)\{\s*const session=await requireUser\(\);/);
+  assert.match(fn,/if\(session\.userId!==userId\)throw new Error/);
+  assert.match(fn,/requireV22TrashRetentionApproved\(v22SourceMode\)/);
+  const execution=fn.slice(end+endNeedle.length);
+  assert.match(execution,/const result=v22SourceMode==="off"\s*\?\s*await materializationQuery/);
+  assert.match(execution,/sql\.transaction\(\[\s*sql`SELECT 1 \/ COUNT\(\*\)::integer AS owner_gate\s+FROM \(SELECT id FROM users WHERE id=\$\{sourceOwnerId\} FOR UPDATE\) held_owner`,\s*materializationQuery\s*\],\{isolationLevel:'ReadCommitted'\}\)/);
+  return fn.slice(sqlStart,end+"SELECT participant_flight_id FROM linked".length);
 }
 function renderMaterialize(block:string,values:Record<string,unknown>){
   const rendered=block.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{
