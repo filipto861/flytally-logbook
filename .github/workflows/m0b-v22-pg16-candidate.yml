@@ -35,6 +35,12 @@ jobs:
           node --test tooling/sql/m0b-v22-expand-candidate.test.mjs
       - name: Install locked app dependencies for runtime boundary checks
         run: npm ci
+      - name: Full-v20 Restore source extraction preflight (no database writes)
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "0"
+          FLYTALLY_D2_FULL_V20_DISPOSABLE: "0"
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/integration/postgres-v380-full-v20-restore.test.ts
       - name: New owner/cron boundary tests and legacy privacy contract
         run: |
           node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/v22-trash-owner-boundary.test.ts tests/v280-privacy-self-service.test.ts
