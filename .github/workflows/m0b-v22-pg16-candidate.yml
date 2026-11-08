@@ -35,6 +35,20 @@ jobs:
           node --test tooling/sql/m0b-v22-expand-candidate.test.mjs
       - name: Install locked app dependencies for runtime boundary checks
         run: npm ci
+      - name: Offline Neon HTTP read-only scope and mock transaction guards (27 tests; no remote SQL)
+        env:
+          CI: "true"
+          DATABASE_URL: ""
+          FLYTALLY_M0B_HTTP_READONLY_URL: ""
+          FLYTALLY_M0B_HTTP_READONLY_CONFIRM: ""
+        run: |
+          set -euo pipefail
+          node --check tooling/m0b-b1b2c-neon-http-readonly-probe.mjs
+          node --check tooling/m0b-b1b2c-neon-http-readonly-probe.test.mjs
+          node --check tooling/m0b-b1b2c-neon-isolation-scope.mjs
+          node --check tooling/m0b-b1b2c-neon-isolation-scope.test.mjs
+          node --test --test-reporter=tap tooling/m0b-b1b2c-neon-http-readonly-probe.test.mjs
+          node --test --test-reporter=tap tooling/m0b-b1b2c-neon-isolation-scope.test.mjs
       - name: Full-v20 Restore source extraction preflight (no database writes)
         env:
           FLYTALLY_POSTGRES_INTEGRATION: "0"
