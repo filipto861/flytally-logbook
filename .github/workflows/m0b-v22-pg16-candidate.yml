@@ -111,6 +111,62 @@ jobs:
             tests/integration/postgres-fi-materialization.test.ts \
             tests/integration/v380-restore-lock-and-trigger-contract.test.ts
           echo 'PASS: 3 actual FI/PIC materializations and 7 restored-record lock/guard tests on disposable PostgreSQL16.'
+      - name: V22 pending-invitation cancel race (two physical PG16 backends)
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || exit 1
+          pgdb() {
+            local database="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d "$database" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          db=flytally_m0b_disposable_invite_gate
+          exists="$(printf "SELECT count(*) FROM pg_database WHERE datname='%s';\n" "$db" | pgdb postgres)"
+          [[ "$exists" == 0 ]] || { echo "Refused existing invitation fixture"; exit 1; }
+          printf "CREATE DATABASE %s;\n" "$db" | pgdb postgres
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb "$db")"
+          [[ "$identity" =~ ^flytally_m0b_disposable_invite_gate\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || { echo "Wrong invitation DB target"; exit 1; }
+          pgdb "$db" < tooling/sql/m0b-v22-invitation-gate-race-setup.sql
+          # A cancels the invitation but retains its row lock until COMMIT.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_invite_cancel_holder "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -q \
+            -c "BEGIN; UPDATE public.flight_participations SET status='cancelled' WHERE id=101; SELECT pg_sleep(4); COMMIT;" \
+            >/tmp/m0b-invite-holder.log 2>&1 &
+          holder=$!
+          ready=0
+          for i in $(seq 1 25); do
+            state="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_invite_cancel_holder' AND wait_event='PgSleep';\n" | pgdb "$db")"
+            if [[ "$state" == 1 ]]; then ready=1; break; fi
+            sleep 0.1
+          done
+          [[ "$ready" == 1 ]] || { echo "Cancel backend did not hold row lock"; exit 1; }
+          # B locks owner, then waits on the same invitation in a fresh
+          # READ COMMITTED statement; it MUST fail after cancellation commits.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_invite_cancel_waiter "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -q \
+            -c "BEGIN ISOLATION LEVEL READ COMMITTED; SELECT id FROM public.users WHERE id=11 FOR UPDATE; SELECT 1 / COUNT(*)::integer AS participation_gate FROM (SELECT id FROM public.flight_participations WHERE id=101 AND participant_user_id=22 AND source_user_id=11 AND source_flight_id=701 AND source_revision=1 AND source_hash='synthetic-hash' AND status IN ('pending','accepted') AND participant_flight_id IS NULL FOR UPDATE) held_participation; INSERT INTO public.materialization_receipts VALUES(101); COMMIT;" \
+            >/tmp/m0b-invite-waiter.log 2>&1 &
+          waiter=$!
+          waiting=0
+          for i in $(seq 1 25); do
+            state="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_invite_cancel_waiter' AND wait_event_type='Lock';\n" | pgdb "$db")"
+            if [[ "$state" == 1 ]]; then waiting=1; break; fi
+            sleep 0.1
+          done
+          [[ "$waiting" == 1 ]] || { echo "Invitation waiter did not block on row lock"; exit 1; }
+          wait "$holder"
+          if wait "$waiter"; then echo "FAIL: cancelled invitation was materialized"; exit 1; fi
+          grep -Fqi "division by zero" /tmp/m0b-invite-waiter.log
+          [[ "$(printf "SELECT status FROM public.flight_participations WHERE id=101;\n" | pgdb "$db")" == "cancelled" ]]
+          [[ "$(printf "SELECT count(*) FROM public.materialization_receipts;\n" | pgdb "$db")" == 0 ]]
+          # A still-active independent invitation must succeed after its gate.
+          printf "BEGIN ISOLATION LEVEL READ COMMITTED; SELECT id FROM public.users WHERE id=11 FOR UPDATE; SELECT 1 / COUNT(*)::integer AS participation_gate FROM (SELECT id FROM public.flight_participations WHERE id=102 AND participant_user_id=22 AND source_user_id=11 AND source_flight_id=701 AND source_revision=1 AND source_hash='synthetic-hash' AND status IN ('pending','accepted') AND participant_flight_id IS NULL FOR UPDATE) held_participation; INSERT INTO public.materialization_receipts VALUES (102); COMMIT;\n" | pgdb "$db" >/dev/null
+          [[ "$(printf "SELECT count(*) FROM public.materialization_receipts WHERE participation_id=102;\n" | pgdb "$db")" == 1 ]]
+          echo "PASS: two-backend cancellation blocks invitation gate, rolls back orphan insert, unaffected pending invitation succeeds."
       - name: Run source-exact 21 migrations and owner-gated V22 lifecycle on isolated PG16
         shell: bash
         env:
