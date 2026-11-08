@@ -20,6 +20,14 @@ test("function acquires owner gate before fresh candidate rows",()=>{
   assert.match(sql,/p_batch<1 OR p_batch>25/);
   assert.match(sql,/SECURITY INVOKER/);
   assert.match(sql,/REVOKE ALL ON FUNCTION[\s\S]+FROM PUBLIC/);
+  for(const signature of [
+    "logbook_v22_reject_witness_change_candidate()",
+    "logbook_v22_expire_owner_candidate(BIGINT,INTEGER)",
+    "logbook_v22_attest_redelete_candidate(BIGINT,UUID,BIGINT,BIGINT)",
+    "logbook_v22_finalize_restored_source_candidate(BIGINT,BIGINT)",
+    "logbook_v22_redelete_source_candidate(BIGINT,BIGINT,UUID)",
+  ]) assert.ok(sql.includes("REVOKE ALL ON FUNCTION public."+signature+" FROM PUBLIC;"),
+    "P5 candidate default PUBLIC EXECUTE still available: "+signature);
   assert.doesNotMatch(sql,/SECURITY DEFINER|SKIP LOCKED/);
 });
 test("known source UID reconciles active restored and restored-then-redeleted separately",()=>{

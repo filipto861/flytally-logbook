@@ -509,6 +509,7 @@ $source_delete$;
 
 -- PostgreSQL defaults public EXECUTE; do not grant this even to read-only
 -- test roles. The owning local fixture principal retains inherent access.
+REVOKE ALL ON FUNCTION public.logbook_v22_reject_witness_change_candidate() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.logbook_v22_expire_owner_candidate(BIGINT,INTEGER) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.logbook_v22_attest_redelete_candidate(BIGINT,UUID,BIGINT,BIGINT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.logbook_v22_finalize_restored_source_candidate(BIGINT,BIGINT) FROM PUBLIC;
