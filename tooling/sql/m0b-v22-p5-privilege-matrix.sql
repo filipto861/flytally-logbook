@@ -49,7 +49,10 @@ BEGIN
     END IF;
     SELECT prosecdef,proconfig INTO v_security_definer,v_config FROM pg_proc WHERE oid=v_oid;
     IF v_security_definer
-      OR NOT ('search_path=pg_catalog,pg_temp'=ANY(coalesce(v_config,ARRAY[]::text[])))
+      OR NOT EXISTS (
+        SELECT 1 FROM unnest(coalesce(v_config,ARRAY[]::text[])) AS cfg(value)
+        WHERE regexp_replace(cfg.value,'[[:space:]]','','g')='search_path=pg_catalog,pg_temp'
+      )
       OR EXISTS(SELECT 1 FROM aclexplode(coalesce(
            (SELECT proacl FROM pg_proc WHERE oid=v_oid),
            acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=v_oid))))
