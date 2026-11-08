@@ -205,7 +205,7 @@ jobs:
           grep -Fq 'permission denied for function logbook_v22_expire_owner_candidate' /tmp/m0b-v22-role.txt
           # P5 exact-V22 candidate matrix, not merely a synthetic function model.
           # Only the already checked disposable local PG16 database is touched.
-          printf 'CREATE ROLE m0b_v22_p5_pilot_a NOLOGIN;\\nCREATE ROLE m0b_v22_p5_pilot_b NOLOGIN;\\nCREATE ROLE m0b_v22_p5_sweep NOLOGIN;\\nGRANT USAGE ON SCHEMA public TO m0b_v22_p5_pilot_a,m0b_v22_p5_pilot_b,m0b_v22_p5_sweep;\\n' |
+          printf 'CREATE ROLE m0b_v22_p5_pilot_a NOLOGIN;\nCREATE ROLE m0b_v22_p5_pilot_b NOLOGIN;\nCREATE ROLE m0b_v22_p5_sweep NOLOGIN;\nGRANT USAGE ON SCHEMA public TO m0b_v22_p5_pilot_a,m0b_v22_p5_pilot_b,m0b_v22_p5_sweep;\n' |
             pgdb flytally_m0b_disposable_full_v21
           pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-p5-privilege-matrix.sql
           # Verify actual PostgreSQL permission errors, before any SQL body.
@@ -217,7 +217,7 @@ jobs:
             "m0b_v22_p5_sweep|SELECT public.logbook_v22_redelete_source_candidate(9001,1,NULL);"; do
             role="${specification%%|*}"
             query="${specification#*|}"
-            if printf 'SET ROLE %s; %s\\n' "$role" "$query" | pgdb flytally_m0b_disposable_full_v21 \
+            if printf 'SET ROLE %s; %s\n' "$role" "$query" | pgdb flytally_m0b_disposable_full_v21 \
               >/tmp/m0b-v22-p5-denied.log 2>&1; then
               echo "FAIL: P5 actor unexpectedly executed protected V22 function"; exit 1
             fi
