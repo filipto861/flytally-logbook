@@ -57,7 +57,24 @@ function materializeSql(source:string){
   assert.match(fn,/requireV22TrashRetentionApproved\(v22SourceMode\)/);
   const execution=fn.slice(end+endNeedle.length);
   assert.match(execution,/const result=v22SourceMode==="off"\s*\?\s*await materializationQuery/);
-  assert.match(execution,/sql\.transaction\(\[\s*sql`SELECT 1 \/ COUNT\(\*\)::integer AS owner_gate\s+FROM \(SELECT id FROM users WHERE id=\$\{sourceOwnerId\} FOR UPDATE\) held_owner`,\s*materializationQuery\s*\],\{isolationLevel:'ReadCommitted'\}\)/);
+  const v22Batch=execution.match(/sql\.transaction\(\[([\s\S]*?)\],\{isolationLevel:\'ReadCommitted\'\}\)/);
+  assert.ok(v22Batch,"V22 owner/invitation/materialization READ COMMITTED batch missing");
+  const statements=v22Batch[1];
+  const ownerGate=statements.indexOf("SELECT 1 / COUNT(*)::integer AS owner_gate");
+  const invitationGate=statements.indexOf("SELECT 1 / COUNT(*)::integer AS participation_gate");
+  const materialize=statements.lastIndexOf("materializationQuery");
+  assert.ok(ownerGate>=0&&invitationGate>ownerGate&&materialize>invitationGate,
+    "V22 must lock source owner, then recipient invitation, then materialize");
+  assert.match(statements,/FROM \(SELECT id FROM users WHERE id=\$\{sourceOwnerId\} FOR UPDATE\) held_owner/);
+  assert.match(statements,/FROM \(SELECT id FROM flight_participations[\s\S]*?FOR UPDATE\) held_participation/);
+  for(const check of ["id=${participationId}","participant_user_id=${userId}",
+    "source_user_id=${sourceOwnerId}","source_flight_id=${Number(row.source_flight_id)}",
+    "source_revision=${Number(row.source_revision)}","source_hash=${text(row.source_hash)}",
+    "status IN (\'pending\',\'accepted\')","participant_flight_id IS NULL"]){
+    assert.ok(statements.includes(check),"V22 invitation recheck missing "+check);
+  }
+  assert.equal((statements.match(/sql`SELECT 1 \/ COUNT\(\*\)::integer AS/g)||[]).length,2,
+    "Exactly source-owner and recipient-invitation pre-write guards required");
   return fn.slice(sqlStart,end+"SELECT participant_flight_id FROM linked".length);
 }
 function renderMaterialize(block:string,values:Record<string,unknown>){

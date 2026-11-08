@@ -66,7 +66,7 @@
         },
         {
           "file": "postgres-fi-materialization.test.ts",
-          "sha256": "85262e29b064f6257903a960de900f9e32c7297080c009c6e2692f1633817715",
+          "sha256": "98764730f96614615c8164e6f68e052c765dbeeeac00959251563e5e6e83fd27",
           "expectedTests": 3
         },
         {

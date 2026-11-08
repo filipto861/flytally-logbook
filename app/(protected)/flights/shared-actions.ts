@@ -116,9 +116,9 @@ async function materializeParticipation(participationId:number,userId:number){
    RETURNING p.participant_flight_id
  )
  SELECT participant_flight_id FROM linked`;
- // Two ordered SQL statements in one READ COMMITTED transaction: source
- // owner FOR UPDATE first, then a fresh snapshot for certified source
- // revalidation and immutable provenance INSERT. OFF executes V21 unchanged.
+ // Three ordered V22 READ COMMITTED statements: source owner gate,
+ // invitation-row lock/recheck, then a fresh snapshot for certified source
+ // materialization and immutable provenance INSERT. OFF stays original V21.
  const result=v22SourceMode==="off"
    ? await materializationQuery as Array<{participant_flight_id:number|string}>
    : (await sql.transaction([
