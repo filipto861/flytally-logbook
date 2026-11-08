@@ -31,7 +31,7 @@ test("v2.8 retention sweep removes stale share and auth artifacts on a documente
   assert.match(privacy,/auth_password_resets/);
   assert.match(privacy,/auth_sessions/);
   assert.match(privacy,/auth_events WHERE event_at<NOW\(\)-INTERVAL '90 days'/);
-  assert.match(cron,/runPrivacyRetentionSweep\(\)/);
+  assert.match(cron,/runPrivacyRetentionSweep\(request\.headers\.get\("authorization"\)\)/);
   assert.match(legal,/Revoked public-share metadata is removed after 30 days/);
   assert.match(legal,/90-day baseline/);
 });

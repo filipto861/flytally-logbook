@@ -484,7 +484,10 @@
         "lib/category-print",
         "lib/easa-print-layout"
       ],
-      "files": [],
+      "files": [
+        "lib/trash-retention-service.ts",
+        "lib/v22-trash-retention-mode.ts"
+      ],
       "risks": [
         "domain-data-integrity",
         "persistence-schema",
@@ -941,7 +944,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 418,
+    "auditedTotal": 420,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },

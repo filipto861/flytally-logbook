@@ -14,9 +14,28 @@ const restoreBlock=restoreSource.slice(start);
 // Parse both canonical branches, then execute ONLY the historical v20 SQL
 // from the explicit currencyRestore=false branch in the isolated v20 fixture.
 // Runtime transaction now passes the selected restoreQuery as its second query.
-const branches=restoreBlock.match(/const restoreQuery=currencyRestore \? sql`(WITH candidate AS MATERIALIZED[\s\S]*?)`\s*:\s*sql`(WITH candidate AS MATERIALIZED[\s\S]*?)`;\s*const tx=await sql\.transaction\(\[\s*sql`([\s\S]*?)`,\s*restoreQuery\],\{isolationLevel:'ReadCommitted'\}\);const rows=tx\[1\] as Array<\{restored_flight_id:number\|string\}>/);
-assert.ok(branches,"Both guarded currency and legacy restore SQL and their atomic advisory-lock transaction must exist");
-const [,currencyTagged,tagged,advisory]=branches;
+function extractRestoreSql(block:string){
+  const variants=block.match(/const restoreQuery=currencyRestore \? sql`(WITH candidate AS MATERIALIZED[\s\S]*?)`\s*:\s*sql`(WITH candidate AS MATERIALIZED[\s\S]*?)`;/);
+  assert.ok(variants,"Both production V21 restore SQL variants must exist");
+  const txStart=block.indexOf("const tx=await sql.transaction([",variants.index);
+  assert.ok(txStart>0,"Ordered restore transaction not found");
+  const endMarker="],{isolationLevel:'ReadCommitted'});const rows=tx[v22RestorationActive ? 3 : 1] as Array<{restored_flight_id:number|string}>";
+  const txEnd=block.indexOf(endMarker,txStart);
+  assert.ok(txEnd>txStart,"ReadCommitted transaction and V22 result selection not found");
+  const transaction=block.slice(txStart,txEnd+endMarker.length);
+  assert.match(block,/const v22RestoreMode:string=V22_OWNER_TRASH_RETENTION_MODE/);
+  assert.match(block,/const v22RestorationActive=v22RestoreMode!=="off"/);
+  assert.match(block,/if\(v22RestorationActive\)\{\s*const session=await requireUser\(\);\s*if\(session.userId!==userId\)throw new Error/);
+  assert.match(transaction,/\.\.\.\(v22RestorationActive \? \[sql`SELECT id FROM users WHERE id=\$\{userId\} FOR UPDATE`\] : \[\]\),\s*sql`SELECT pg_advisory_xact_lock\(/);
+  assert.match(transaction,/restoreQuery,\s*\.\.\.\(v22RestorationActive\s*\?\s*\[sql`SELECT public\.logbook_v22_finalize_restored_source_candidate\(\$\{userId\},\$\{trashId\}\) AS restored_flight_id`\]\s*:\s*\[\]\)/);
+  assert.equal((transaction.match(/pg_advisory_xact_lock\(/g)||[]).length,1);
+  const advisoryStart=transaction.indexOf("sql`SELECT pg_advisory_xact_lock(");
+  assert.ok(advisoryStart>=0,"Restore advisory lock missing");
+  const match=transaction.slice(advisoryStart).match(/^sql`([\s\S]*?)`,\r?\n  restoreQuery,/);
+  assert.ok(match,"Restore SQL must immediately follow advisory lock");
+  return {currencyTagged:variants[1],tagged:variants[2],advisory:match[1]};
+}
+const {currencyTagged,tagged,advisory}=extractRestoreSql(restoreBlock);
 assert.match(currencyTagged,/price_currency_code,price_currency_minor_units,price_per_hour_decimal/);
 assert.match(currencyTagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
 assert.match(tagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
@@ -82,6 +101,12 @@ before(()=>{
   assert.equal(sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='flights'"),"61");
 });
 test("actual runtime SQL is source-backed and locks archived rows",{skip:false},()=>{
+  const canonical=(value:string)=>value.replace(/\r\n/g,"\n");
+  for(const ending of ["\n","\r\n"]){
+    const parsed=extractRestoreSql(restoreBlock.replace(/\r?\n/g,ending));
+    assert.equal(canonical(parsed.tagged),canonical(tagged),"V21 legacy SQL changed with line endings");
+    assert.equal(canonical(parsed.advisory),canonical(advisory),"Restore lock SQL changed with line endings");
+  }
   assert.match(advisory,/pg_advisory_xact_lock\(hashtextextended\(concat_ws/);
   assert.match(tagged,/^WITH candidate AS MATERIALIZED/);
   assert.match(tagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);

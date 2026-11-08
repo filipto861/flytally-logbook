@@ -1,0 +1,610 @@
+name: V22 candidate disposable PostgreSQL 16 acceptance
+
+on:
+  push:
+    branches:
+      - feat/logbook-m0b-v22-expand-candidate-20261104
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_m0b_disposable_ci
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_m0b_disposable_ci"
+          --health-interval=5s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Exact branch Node 24 source tests
+        run: |
+          set -euo pipefail
+          node --version
+          node --check tooling/sql/m0b-v22-expand-candidate.test.mjs
+          node --test tooling/sql/m0b-v22-expand-candidate.test.mjs
+      - name: Install locked app dependencies for runtime boundary checks
+        run: npm ci
+      - name: Offline Neon HTTP read-only scope and mock transaction guards (27 tests; no remote SQL)
+        env:
+          CI: "true"
+          DATABASE_URL: ""
+          FLYTALLY_M0B_HTTP_READONLY_URL: ""
+          FLYTALLY_M0B_HTTP_READONLY_CONFIRM: ""
+        run: |
+          set -euo pipefail
+          node --check tooling/m0b-b1b2c-neon-http-readonly-probe.mjs
+          node --check tooling/m0b-b1b2c-neon-http-readonly-probe.test.mjs
+          node --check tooling/m0b-b1b2c-neon-isolation-scope.mjs
+          node --check tooling/m0b-b1b2c-neon-isolation-scope.test.mjs
+          node --test --test-reporter=tap tooling/m0b-b1b2c-neon-http-readonly-probe.test.mjs
+          node --test --test-reporter=tap tooling/m0b-b1b2c-neon-isolation-scope.test.mjs
+      - name: Full-v20 Restore source extraction preflight (no database writes)
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "0"
+          FLYTALLY_D2_FULL_V20_DISPOSABLE: "0"
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/integration/postgres-v380-full-v20-restore.test.ts
+      - name: New owner/cron boundary tests and legacy privacy contract
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/v22-trash-owner-boundary.test.ts tests/v280-privacy-self-service.test.ts
+      - name: TypeScript / Next source check
+        run: npm run typecheck
+      - name: Full Node unit and source regression
+        run: npm test
+      - name: Production build diagnostic (not deployment)
+        run: npm run build
+      - name: Source-only V22 transactional candidate and canonical V21 emitter tests
+        run: |
+          set -euo pipefail
+          node --check tooling/m0b-v22-canonical-v21-fixture.mjs
+          node --test tooling/sql/m0b-v22-trash-lifecycle.test.mjs
+          node tooling/m0b-v22-canonical-v21-fixture.mjs > /tmp/m0b-v21-source-exact.sql
+          test "$(wc -c < /tmp/m0b-v21-source-exact.sql)" -gt 20000
+      - name: Reproduce owner PG16 FI and restore acceptance files on disposable physical PostgreSQL16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          existing="$(printf "SELECT COUNT(*) FROM pg_database WHERE datname='flytally_m0b_fi_contract_ci';\n" | pgdb postgres)"
+          [[ "$existing" == 0 ]] || { echo 'Refused nonfresh FI test database'; exit 1; }
+          printf 'CREATE DATABASE flytally_m0b_fi_contract_ci;\n' | pgdb postgres
+          target="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb flytally_m0b_fi_contract_ci)"
+          [[ "$target" =~ ^flytally_m0b_fi_contract_ci\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Refused unsafe FI owner-race test target <$target>"; exit 1;
+          }
+          # The exact FI test fixture invokes psql via Node spawnSync.
+          # Isolate its process inside this already verified postgres:16
+          # service (the GitHub runner has no PostgreSQL client dependency).
+          wrapper="$(mktemp -d)"
+          cat > "$wrapper/psql" <<'PSQL_WRAPPER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          : "$M0B_TEST_PG_CONTAINER"
+          exec docker exec -i -e PGPASSWORD=flytally "$M0B_TEST_PG_CONTAINER" psql "$@"
+          PSQL_WRAPPER
+          chmod 700 "$wrapper/psql"
+          export PATH="$wrapper:$PATH"
+          export M0B_TEST_PG_CONTAINER="$PG_CONTAINER"
+          export DATABASE_URL="postgresql://flytally:flytally@127.0.0.1:5432/flytally_m0b_fi_contract_ci"
+          export FLYTALLY_POSTGRES_INTEGRATION=1
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \
+            --experimental-strip-types --test --test-reporter=tap \
+            tests/integration/postgres-fi-materialization.test.ts \
+            tests/integration/v380-restore-lock-and-trigger-contract.test.ts
+          echo 'PASS: 3 actual FI/PIC materializations and 7 restored-record lock/guard tests on disposable PostgreSQL16.'
+      - name: V22 pending-invitation cancel race (two physical PG16 backends)
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || exit 1
+          pgdb() {
+            local database="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d "$database" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          db=flytally_m0b_disposable_invite_gate
+          exists="$(printf "SELECT count(*) FROM pg_database WHERE datname='%s';\n" "$db" | pgdb postgres)"
+          [[ "$exists" == 0 ]] || { echo "Refused existing invitation fixture"; exit 1; }
+          printf "CREATE DATABASE %s;\n" "$db" | pgdb postgres
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb "$db")"
+          [[ "$identity" =~ ^flytally_m0b_disposable_invite_gate\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || { echo "Wrong invitation DB target"; exit 1; }
+          pgdb "$db" < tooling/sql/m0b-v22-invitation-gate-race-setup.sql
+          # A cancels the invitation but retains its row lock until COMMIT.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_invite_cancel_holder "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -q \
+            -c "BEGIN; UPDATE public.flight_participations SET status='cancelled' WHERE id=101; SELECT pg_sleep(4); COMMIT;" \
+            >/tmp/m0b-invite-holder.log 2>&1 &
+          holder=$!
+          ready=0
+          for i in $(seq 1 25); do
+            state="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_invite_cancel_holder' AND wait_event='PgSleep';\n" | pgdb "$db")"
+            if [[ "$state" == 1 ]]; then ready=1; break; fi
+            sleep 0.1
+          done
+          [[ "$ready" == 1 ]] || { echo "Cancel backend did not hold row lock"; exit 1; }
+          # B locks owner, then waits on the same invitation in a fresh
+          # READ COMMITTED statement; it MUST fail after cancellation commits.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_invite_cancel_waiter "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -q \
+            -c "BEGIN ISOLATION LEVEL READ COMMITTED; SELECT id FROM public.users WHERE id=11 FOR UPDATE; SELECT 1 / COUNT(*)::integer AS participation_gate FROM (SELECT id FROM public.flight_participations WHERE id=101 AND participant_user_id=22 AND source_user_id=11 AND source_flight_id=701 AND source_revision=1 AND source_hash='synthetic-hash' AND status IN ('pending','accepted') AND participant_flight_id IS NULL FOR UPDATE) held_participation; INSERT INTO public.materialization_receipts VALUES(101); COMMIT;" \
+            >/tmp/m0b-invite-waiter.log 2>&1 &
+          waiter=$!
+          waiting=0
+          for i in $(seq 1 25); do
+            state="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_invite_cancel_waiter' AND wait_event_type='Lock';\n" | pgdb "$db")"
+            if [[ "$state" == 1 ]]; then waiting=1; break; fi
+            sleep 0.1
+          done
+          [[ "$waiting" == 1 ]] || { echo "Invitation waiter did not block on row lock"; exit 1; }
+          wait "$holder"
+          if wait "$waiter"; then echo "FAIL: cancelled invitation was materialized"; exit 1; fi
+          grep -Fqi "division by zero" /tmp/m0b-invite-waiter.log
+          [[ "$(printf "SELECT status FROM public.flight_participations WHERE id=101;\n" | pgdb "$db")" == "cancelled" ]]
+          [[ "$(printf "SELECT count(*) FROM public.materialization_receipts;\n" | pgdb "$db")" == 0 ]]
+          # A still-active independent invitation must succeed after its gate.
+          printf "BEGIN ISOLATION LEVEL READ COMMITTED; SELECT id FROM public.users WHERE id=11 FOR UPDATE; SELECT 1 / COUNT(*)::integer AS participation_gate FROM (SELECT id FROM public.flight_participations WHERE id=102 AND participant_user_id=22 AND source_user_id=11 AND source_flight_id=701 AND source_revision=1 AND source_hash='synthetic-hash' AND status IN ('pending','accepted') AND participant_flight_id IS NULL FOR UPDATE) held_participation; INSERT INTO public.materialization_receipts VALUES (102); COMMIT;\n" | pgdb "$db" >/dev/null
+          [[ "$(printf "SELECT count(*) FROM public.materialization_receipts WHERE participation_id=102;\n" | pgdb "$db")" == 1 ]]
+          echo "PASS: two-backend cancellation blocks invitation gate, rolls back orphan insert, unaffected pending invitation succeeds."
+      - name: Run source-exact 21 migrations and owner-gated V22 lifecycle on isolated PG16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || { echo 'No owned PG service'; exit 1; }
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql -h 127.0.0.1 \
+              -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          printf 'CREATE DATABASE flytally_m0b_disposable_full_v21;\n' | pgdb postgres
+          target="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb flytally_m0b_disposable_full_v21)"
+          [[ "$target" =~ ^flytally_m0b_disposable_full_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "REFUSED full V21 test target <$target>"; exit 1;
+          }
+          pgdb flytally_m0b_disposable_full_v21 < /tmp/m0b-v21-source-exact.sql
+          pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-expand-candidate.sql
+          pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql
+          pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-trash-lifecycle-acceptance.sql
+          if pgdb postgres < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql >/dev/null 2>/tmp/m0b-v22-wrong-target.txt; then
+            echo 'FAIL: candidate allowed wrong database'; exit 1
+          fi
+          grep -Fq 'isolated loopback PG16 flytally target' /tmp/m0b-v22-wrong-target.txt
+          if pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql >/dev/null 2>/tmp/m0b-v22-rerun.txt; then
+            echo 'FAIL: candidate overwritten existing function'; exit 1
+          fi
+          grep -Fq 'already exists; review required' /tmp/m0b-v22-rerun.txt
+          printf 'CREATE ROLE m0b_v22_read_only NOLOGIN;\nGRANT USAGE ON SCHEMA public TO m0b_v22_read_only;\n' | pgdb flytally_m0b_disposable_full_v21
+          if printf 'SET ROLE m0b_v22_read_only; SELECT public.logbook_v22_expire_owner_candidate(9001,25);\n' |
+            pgdb flytally_m0b_disposable_full_v21 >/dev/null 2>/tmp/m0b-v22-role.txt; then
+            echo 'FAIL: PUBLIC EXECUTE unexpectedly allowed'; exit 1
+          fi
+          grep -Fq 'permission denied for function logbook_v22_expire_owner_candidate' /tmp/m0b-v22-role.txt
+          # P5 exact-V22 candidate matrix, not merely a synthetic function model.
+          # Only the already checked disposable local PG16 database is touched.
+          printf 'CREATE ROLE m0b_v22_p5_pilot_a NOLOGIN;\nCREATE ROLE m0b_v22_p5_pilot_b NOLOGIN;\nCREATE ROLE m0b_v22_p5_sweep NOLOGIN;\nGRANT USAGE ON SCHEMA public TO m0b_v22_p5_pilot_a,m0b_v22_p5_pilot_b,m0b_v22_p5_sweep;\n' |
+            pgdb flytally_m0b_disposable_full_v21
+          pgdb flytally_m0b_disposable_full_v21 < tooling/sql/m0b-v22-p5-privilege-matrix.sql
+          # Verify actual PostgreSQL permission errors, before any SQL body.
+          for specification in \
+            "m0b_v22_p5_pilot_a|SELECT public.logbook_v22_reject_witness_change_candidate();" \
+            "m0b_v22_p5_pilot_a|SELECT public.logbook_v22_expire_owner_candidate(9002,25);" \
+            "m0b_v22_p5_pilot_b|SELECT public.logbook_v22_attest_redelete_candidate(9001,NULL,NULL,NULL);" \
+            "m0b_v22_p5_sweep|SELECT public.logbook_v22_finalize_restored_source_candidate(9001,1);" \
+            "m0b_v22_p5_sweep|SELECT public.logbook_v22_redelete_source_candidate(9001,1,NULL);"; do
+            role="${specification%%|*}"
+            query="${specification#*|}"
+            if printf 'SET ROLE %s; %s\n' "$role" "$query" | pgdb flytally_m0b_disposable_full_v21 \
+              >/tmp/m0b-v22-p5-denied.log 2>&1; then
+              echo "FAIL: P5 actor unexpectedly executed protected V22 function"; exit 1
+            fi
+            grep -Fqi 'permission denied for function' /tmp/m0b-v22-p5-denied.log || {
+              echo "FAIL: expected permission-denied error not observed"; exit 1;
+            }
+          done
+          echo 'PASS: P5 exact-V22 five-function owner/role privileges, deny-by-default, no cross-owner execution.'
+          # Two independent PostgreSQL backends prove gate ordering, not a
+          # mocked transaction. Only on the freshly built disposable V21 DB.
+          printf "INSERT INTO public.users(id,email) VALUES(9013,'synthetic-lock@example.test');\n" |
+            pgdb flytally_m0b_disposable_full_v21
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_holder "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_full_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q -c \
+              'BEGIN; SELECT id FROM public.users WHERE id=9013 FOR UPDATE; SELECT pg_sleep(3); COMMIT;' \
+            >/tmp/m0b-v22-holder.log 2>&1 &
+          holder_pid=$!
+          holder_ready=0
+          for i in $(seq 1 25); do
+            active="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_holder' AND wait_event='PgSleep';\n" |
+              pgdb flytally_m0b_disposable_full_v21)"
+            if [[ "$active" == 1 ]]; then holder_ready=1; break; fi
+            sleep 0.1
+          done
+          [[ "$holder_ready" == 1 ]] || { echo 'FAIL: first backend never held account gate'; exit 1; }
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_waiter "$PG_CONTAINER" \
+            psql -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_full_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q -c \
+              'SELECT public.logbook_v22_expire_owner_candidate(9013,25);' \
+            >/tmp/m0b-v22-waiter.log 2>&1 &
+          waiter_pid=$!
+          observed_lock=0
+          for i in $(seq 1 25); do
+            waiting="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_waiter' AND wait_event_type='Lock';\n" |
+              pgdb flytally_m0b_disposable_full_v21)"
+            if [[ "$waiting" == 1 ]]; then observed_lock=1; break; fi
+            sleep 0.1
+          done
+          wait "$holder_pid"
+          wait "$waiter_pid"
+          [[ "$observed_lock" == 1 ]] || { echo 'FAIL: second backend did not block on first owner gate'; exit 1; }
+          grep -Fxq '0' /tmp/m0b-v22-waiter.log || {
+            echo 'FAIL: second backend did not resume and return zero'; exit 1;
+          }
+          echo 'PASS: two distinct PG16 backends serialize same-owner expiry on first user gate.'
+          echo 'PASS: exact V1-V21 source migrations + V22 SQL owner lifecycle, rollback, deny-by-role.'
+      - name: Derive complete browser-feature V21 fixture without destructive reset
+        run: |
+          set -euo pipefail
+          node --check tooling/m0b-v22-feature-v21-fixture.mjs
+          node tooling/m0b-v22-feature-v21-fixture.mjs > /tmp/m0b-v21-app-features.sql
+          test "$(wc -c < /tmp/m0b-v21-app-features.sql)" -gt 20000
+          if grep -Eiq '\bDROP\s+(SCHEMA|DATABASE|TABLE)\b' /tmp/m0b-v21-app-features.sql; then
+            echo 'FAIL: source feature fixture emits destructive DDL'; exit 1
+          fi
+      - name: V21 application feature catalog and immutable terminal lineage on disposable PG16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql -h 127.0.0.1 \
+              -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          printf 'CREATE DATABASE flytally_m0b_disposable_feature_v21;\n' | pgdb postgres
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb flytally_m0b_disposable_feature_v21)"
+          [[ "$identity" =~ ^flytally_m0b_disposable_feature_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Refused feature fixture target <$identity>"; exit 1;
+          }
+          pgdb flytally_m0b_disposable_feature_v21 < /tmp/m0b-v21-app-features.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-expand-candidate.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-trash-lifecycle-candidate.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-feature-v21-acceptance.sql
+          pgdb flytally_m0b_disposable_feature_v21 < tooling/sql/m0b-v22-source-writers-acceptance.sql
+          echo 'PASS: current application V21 feature snapshot and independent immutable terminal lineage on isolated PG16.'
+      - name: Prove concurrent late source link rollback with two real PG16 backends
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_feature_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb)"
+          [[ "$identity" =~ ^flytally_m0b_disposable_feature_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Refused source-race DB identity <$identity>"; exit 1;
+          }
+          pgdb < tooling/sql/m0b-v22-late-link-race-setup.sql
+          # A: account/flight are locked; trigger pauses after snapshot insert.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_race_writer \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q -c \
+            "SELECT public.logbook_v22_redelete_source_candidate(9041,7041,'94410000-0000-4000-8000-000000009041'::uuid);" \
+            >/tmp/m0b-v22-race-writer.log 2>&1 &
+          writer_pid=$!
+          observed_sleep=0
+          for i in $(seq 1 40); do
+            sleeping="$(printf "SELECT count(*) FROM pg_stat_activity WHERE datname='flytally_m0b_disposable_feature_v21' AND application_name='m0b_v22_race_writer' AND wait_event='PgSleep';\n" | pgdb)"
+            if [[ "$sleeping" == 1 ]]; then observed_sleep=1; break; fi
+            sleep 0.1
+          done
+          [[ "$observed_sleep" == 1 ]] || {
+            echo 'FAIL: writer never entered post-precheck archive pause'; cat /tmp/m0b-v22-race-writer.log; wait "$writer_pid" || :; exit 1;
+          }
+          # B: source_flight_id has NO FK, participant flight is independent
+          # and FK-protected. This link must commit before A's final DELETE.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_race_link \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q -c \
+            "INSERT INTO public.flight_source_provenance(participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,participant_role) VALUES(7042,9042,7041,9041,1,'synthetic-provenance','OBSERVER');" \
+            >/tmp/m0b-v22-race-link.log 2>&1 || {
+              cat /tmp/m0b-v22-race-link.log; wait "$writer_pid" || :; exit 1;
+            }
+          set +e
+          wait "$writer_pid"
+          writer_rc=$?
+          set -e
+          [[ "$writer_rc" -ne 0 ]] || {
+            echo 'FAIL: source redelete accepted after late protected link'; exit 1;
+          }
+          grep -Fq 'V22 redelete source flight deletion conflict' /tmp/m0b-v22-race-writer.log || {
+            echo 'FAIL: writer failure was not final protected DELETE'; cat /tmp/m0b-v22-race-writer.log; exit 1;
+          }
+          unchanged="$(cat <<'SQL' | pgdb
+          SELECT
+            (SELECT COUNT(*) FROM public.flights WHERE id=7041 AND user_id=9041)||'|'||
+            (SELECT COUNT(*) FROM public.flight_source_provenance
+              WHERE source_flight_id=7041 AND source_user_id=9041 AND participant_flight_id=7042)||'|'||
+            (SELECT COUNT(*) FROM public.deleted_flights
+              WHERE user_id=9041 AND original_flight_id=7041)||'|'||
+            (SELECT COUNT(*) FROM public.logbook_event_uid_registry
+              WHERE owner_id=9041 AND lifecycle_state='active'
+                AND original_trash_cutoff IS NULL AND marker_until IS NULL)||'|'||
+            (SELECT COUNT(*) FROM public.logbook_v22_redelete_edge_candidate
+              WHERE owner_id=9041);
+          SQL
+          )"
+          [[ "$unchanged" == '1|1|0|1|0' ]] || {
+            echo "FAIL: owner and immutable archive rollback mismatch <$unchanged>"; exit 1;
+          }
+          echo 'PASS: physical two-backend post-snapshot source link, final guarded DELETE refusal and full owner/archive rollback.'
+      - name: Prove reverse race source-owner gate waits until V22 delete commits
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == 'postgres:16' ]] || exit 1
+          pgdb() {
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_feature_v21 \
+              -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pgdb)"
+          [[ "$identity" =~ ^flytally_m0b_disposable_feature_v21\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || {
+            echo "Reverse source gate refused database <$identity>"; exit 1;
+          }
+          pgdb < tooling/sql/m0b-v22-reverse-source-gate-setup.sql
+          # Backend A completes guarded flight DELETE inside its transaction,
+          # then deliberately holds source owner's row lock before COMMIT.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_reverse_delete \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q < tooling/sql/m0b-v22-reverse-source-race-writer.sql \
+            >/tmp/m0b-v22-reverse-delete.log 2>&1 &
+          writer_pid=$!
+          saw_writer_sleep=0
+          for i in $(seq 1 40); do
+            sleepers="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_reverse_delete' AND datname='flytally_m0b_disposable_feature_v21' AND wait_event='PgSleep';\n" | pgdb)"
+            if [[ "$sleepers" == 1 ]]; then saw_writer_sleep=1; break; fi
+            sleep 0.1
+          done
+          [[ "$saw_writer_sleep" == 1 ]] || {
+            echo 'FAIL: deleted-flight writer did not reach uncommitted post-delete hold'
+            cat /tmp/m0b-v22-reverse-delete.log; wait "$writer_pid" || :; exit 1;
+          }
+          # Backend B uses TWO successive statements: source owner gate
+          # FOR UPDATE, THEN a fresh READ COMMITTED source read and INSERT.
+          docker exec -i -e PGPASSWORD=flytally -e PGAPPNAME=m0b_v22_reverse_link \
+            "$PG_CONTAINER" psql -h 127.0.0.1 -U flytally \
+            -d flytally_m0b_disposable_feature_v21 -X -v ON_ERROR_STOP=1 \
+            -A -t -q < tooling/sql/m0b-v22-reverse-source-race-provenance.sql \
+            >/tmp/m0b-v22-reverse-link.log 2>&1 &
+          link_pid=$!
+          observed_block=0
+          for i in $(seq 1 35); do
+            blocked="$(printf "SELECT count(*) FROM pg_stat_activity WHERE application_name='m0b_v22_reverse_link' AND datname='flytally_m0b_disposable_feature_v21' AND wait_event_type='Lock';\n" | pgdb)"
+            if [[ "$blocked" == 1 ]]; then observed_block=1; break; fi
+            sleep 0.1
+          done
+          [[ "$observed_block" == 1 ]] || {
+            echo 'FAIL: source link did not wait for same source-owner gate'
+            cat /tmp/m0b-v22-reverse-link.log
+            wait "$writer_pid" || :; wait "$link_pid" || :; exit 1;
+          }
+          wait "$writer_pid" || {
+            echo 'FAIL: source delete did not commit'; cat /tmp/m0b-v22-reverse-delete.log; exit 1;
+          }
+          wait "$link_pid" || {
+            echo 'FAIL: source link query rejected instead of returning zero'; cat /tmp/m0b-v22-reverse-link.log; exit 1;
+          }
+          grep -xq '0' /tmp/m0b-v22-reverse-link.log || {
+            echo 'FAIL: source link inserted after deleted source committed'; cat /tmp/m0b-v22-reverse-link.log; exit 1;
+          }
+          final="$(cat <<'SQL' | pgdb
+          SELECT
+            (SELECT count(*) FROM public.flights WHERE user_id=9051 AND id=7051)||'|'||
+            (SELECT count(*) FROM public.flight_source_provenance
+              WHERE source_user_id=9051 AND source_flight_id=7051)||'|'||
+            (SELECT count(*) FROM public.deleted_flights
+              WHERE user_id=9051 AND original_flight_id=7051)||'|'||
+            (SELECT count(*) FROM public.logbook_event_uid_registry
+              WHERE owner_id=9051 AND lifecycle_state='trash'
+                AND original_trash_cutoff IS NOT NULL)||'|'||
+            (SELECT count(*) FROM public.logbook_v22_redelete_edge_candidate
+              WHERE owner_id=9051);
+          SQL
+          )"
+          [[ "$final" == '0|0|1|1|0' ]] || {
+            echo "FAIL: reverse ordering missed source/archive invariant <$final>"; exit 1;
+          }
+          echo 'PASS: two real PG16 backends, reverse-ordered source link waits on V22 owner gate, fresh committed source read rejects link.'
+      - name: Execute unchanged candidate on single disposable local PG16
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || { echo "Refused: service identity missing"; exit 1; }
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || { echo "Refused: service image mismatch"; exit 1; }
+          pg() {
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d flytally_m0b_disposable_ci \
+              -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          identity="$(printf "SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num');\n" | pg)"
+          echo "Disposable PostgreSQL identity: <$identity>"
+          [[ "$identity" =~ ^flytally_m0b_disposable_ci\|flytally\|127\.0\.0\.1\|16[0-9]{4}$ ]] || { echo "Refused: SQL connection identity mismatch"; exit 1; }
+          cat <<'SQL' | pg
+          CREATE TABLE public.users (id BIGINT PRIMARY KEY);
+          CREATE TABLE public.flights (
+            id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES public.users(id));
+          CREATE TABLE public.fstd_sessions (
+            id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES public.users(id));
+          CREATE TABLE public.deleted_flights (
+            id BIGINT PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES public.users(id),
+            purge_after TIMESTAMPTZ, restored_at TIMESTAMPTZ, restored_flight_id BIGINT);
+          INSERT INTO public.users(id) VALUES(100),(200);
+          INSERT INTO public.flights(id,user_id) VALUES(1,100),(2,100),(3,200);
+          INSERT INTO public.fstd_sessions(id,user_id) VALUES(101,100),(102,100);
+          INSERT INTO public.deleted_flights(id,user_id,purge_after,restored_at,restored_flight_id)
+            VALUES(10,100,now()+'1 day',now(),1),(11,100,now()+'1 day',now(),1);
+          SQL
+          pg < tooling/sql/m0b-v22-expand-candidate.sql
+          assertion="$(cat <<'SQL' | pg
+          SELECT
+            (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND column_name='event_uid' AND table_name IN ('flights','fstd_sessions','deleted_flights'))||'|'||
+            (SELECT count(*) FROM public.flights WHERE event_uid IS NULL)||'|'||
+            (SELECT count(*) FROM public.fstd_sessions WHERE event_uid IS NULL)||'|'||
+            (SELECT count(*) FROM public.deleted_flights WHERE event_uid IS NULL)||'|'||
+            (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname IN ('idx_flights_owner_event_uid','idx_fstd_owner_event_uid','idx_deleted_flights_owner_event_uid'));
+          SQL
+          )"
+          [[ "$assertion" == "3|3|2|2|3" ]] || { echo "Legacy/catalog acceptance FAIL: $assertion"; exit 1; }
+          cat <<'SQL' | pg
+          UPDATE public.flights SET event_uid='00000000-0000-4000-8000-000000000001' WHERE id IN(1,3);
+          UPDATE public.fstd_sessions SET event_uid='00000000-0000-4000-8000-000000000002' WHERE id=101;
+          UPDATE public.deleted_flights SET event_uid='00000000-0000-4000-8000-000000000001' WHERE id IN(10,11);
+          INSERT INTO public.logbook_event_uid_registry(owner_id,event_kind,event_uid,lifecycle_state)
+            VALUES(100,'flight','00000000-0000-4000-8000-000000000001','active');
+          INSERT INTO public.logbook_event_uid_registry(
+            owner_id,event_kind,event_uid,lifecycle_state,original_trash_cutoff,marker_until)
+            VALUES(100,'flight','00000000-0000-4000-8000-000000000003','purged',now(),now()+'1 day');
+          SQL
+          assert="$(cat <<'SQL' | pg
+          SELECT (SELECT count(*) FROM public.deleted_flights WHERE event_uid='00000000-0000-4000-8000-000000000001')||'|'||
+                 (SELECT count(*) FROM public.flights WHERE event_uid='00000000-0000-4000-8000-000000000001')||'|'||
+                 (SELECT count(*) FROM public.logbook_event_uid_registry);
+          SQL
+          )"
+          [[ "$assert" == "2|2|2" ]] || { echo "Owner/history compatibility FAIL: $assert"; exit 1; }
+          expect_failure() {
+            local needle="$1" command="$2"
+            if printf '%s\n' "$command" | pg >/dev/null 2>/tmp/v22-error.txt; then
+              echo "Expected SQL rejection did not occur"; exit 1
+            fi
+            grep -Fq "$needle" /tmp/v22-error.txt || {
+              echo "Unexpected rejection class"; cat /tmp/v22-error.txt; exit 1;
+            }
+          }
+          expect_failure 'idx_flights_owner_event_uid' \
+            "UPDATE public.flights SET event_uid='00000000-0000-4000-8000-000000000001' WHERE id=2;"
+          expect_failure 'idx_fstd_owner_event_uid' \
+            "UPDATE public.fstd_sessions SET event_uid='00000000-0000-4000-8000-000000000002' WHERE id=102;"
+          expect_failure 'logbook_uid_registry_marker_shape' \
+            "INSERT INTO public.logbook_event_uid_registry(owner_id,event_kind,event_uid,lifecycle_state) VALUES(100,'flight','00000000-0000-4000-8000-000000000004','purged');"
+          expect_failure 'logbook_uid_registry_marker_shape' \
+            "INSERT INTO public.logbook_event_uid_registry(owner_id,event_kind,event_uid,lifecycle_state,marker_until) VALUES(100,'flight','00000000-0000-4000-8000-000000000005','active',now());"
+          if pg < tooling/sql/m0b-v22-expand-candidate.sql >/dev/null 2>/tmp/v22-rerun-error.txt; then
+            echo 'Unexpected SQL candidate rerun success'; exit 1
+          fi
+          grep -Fq 'target already contains UID objects' /tmp/v22-rerun-error.txt
+          [[ "$(printf "SELECT count(*) FROM public.logbook_event_uid_registry;\n" | pg)" == "2" ]] || exit 1
+          echo "PASS: PG16 disposable exact-candidate DDL, legacy, owner uniqueness, restored archives, marker checks, idempotence refusal."
+      - name: Reject wrong target and prove atomic DDL rollback after second ALTER
+        shell: bash
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || { echo "Refused: no isolated service"; exit 1; }
+          [[ "$(docker inspect --format '{{.Config.Image}}' "$PG_CONTAINER")" == "postgres:16" ]] || exit 1
+          pgdb() {
+            local db="$1"; shift
+            docker exec -i -e PGPASSWORD=flytally "$PG_CONTAINER" psql \
+              -h 127.0.0.1 -U flytally -d "$db" -X -v ON_ERROR_STOP=1 -A -t -q "$@"
+          }
+          if pgdb postgres < tooling/sql/m0b-v22-expand-candidate.sql >/dev/null 2>/tmp/v22-wrong-target.txt; then
+            echo "FAIL: wrong database accepted"; exit 1
+          fi
+          grep -Fq 'requires owned local disposable loopback target' /tmp/v22-wrong-target.txt
+          printf 'CREATE DATABASE flytally_m0b_disposable_rollback;\n' | pgdb postgres
+          cat <<'SQL' | pgdb flytally_m0b_disposable_rollback
+          CREATE TABLE public.users (id BIGINT PRIMARY KEY);
+          CREATE TABLE public.flights (id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL);
+          CREATE TABLE public.fstd_sessions (id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL);
+          CREATE TABLE public.deleted_flights (
+            id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,
+            purge_after TIMESTAMPTZ,restored_at TIMESTAMPTZ,restored_flight_id BIGINT);
+          CREATE FUNCTION public.v22_test_abort_second_alter() RETURNS event_trigger AS $abort$
+          BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns
+              WHERE table_schema='public' AND table_name='fstd_sessions' AND column_name='event_uid') THEN
+              RAISE EXCEPTION 'V22 intentional test-only forced failure after second ALTER';
+            END IF;
+          END
+          $abort$ LANGUAGE plpgsql;
+          CREATE EVENT TRIGGER v22_test_abort ON ddl_command_end
+            WHEN TAG IN ('ALTER TABLE') EXECUTE FUNCTION public.v22_test_abort_second_alter();
+          SQL
+          if pgdb flytally_m0b_disposable_rollback \
+              < tooling/sql/m0b-v22-expand-candidate.sql >/dev/null 2>/tmp/v22-forced-rollback.txt; then
+            echo "FAIL: synthetic mid-transaction DDL error did not stop candidate"; exit 1
+          fi
+          grep -Fq 'V22 intentional test-only forced failure after second ALTER' /tmp/v22-forced-rollback.txt
+          result="$(cat <<'SQL' | pgdb flytally_m0b_disposable_rollback
+          SELECT (SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_schema='public' AND table_name IN ('flights','fstd_sessions','deleted_flights')
+            AND column_name='event_uid')||'|'||
+            (to_regclass('public.logbook_event_uid_registry') IS NULL)::text;
+          SQL
+          )"
+          [[ "$result" == "0|true" ]] || { echo "FAIL: DDL rollback incomplete $result"; exit 1; }
+          echo 'PASS: wrong database refused; forced second-ALTER error rolls back all previous candidate DDL.'
+
+
+  windows-owner-runner-syntax:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell 5.1 parse only — no local or remote databases
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $source = (Resolve-Path "tooling/run-m0b-owned-pg16-windows.ps1").Path
+          $tokens = $null
+          $errors = $null
+          $parsed = [System.Management.Automation.Language.Parser]::ParseFile(
+            $source, [ref]$tokens, [ref]$errors)
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          if ($null -eq $parsed) { throw "PowerShell AST missing" }
+          Write-Host "PASS: Windows PowerShell 5.1 parser accepted local owner PG16 runner (syntax only)."
+          Write-Host "No PostgreSQL clusters, fixture SQL or 164-case owner suite executed in this Windows CI job."
