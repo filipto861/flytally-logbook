@@ -181,6 +181,25 @@ test("V22 source provenance producer takes account gate before fresh SQL write, 
  assert.ok(producer.includes("FROM (SELECT id FROM users WHERE id="));
  assert.ok(producer.includes("FOR UPDATE) held_owner"));
  assert.ok(producer.indexOf("held_owner")<producer.lastIndexOf("materializationQuery"));
+ // V22 cancellation must lock/recheck the exact invitation AFTER owner gate,
+ // BEFORE inserting recipient flights, tracks or non-FK source provenance.
+ assert.match(producer,/SELECT 1 \/ COUNT\(\*\)::integer AS participation_gate/);
+ const gate=producer.slice(producer.indexOf("AS participation_gate"),
+   producer.indexOf("held_participation"));
+ for(const predicate of [
+   "id=${participationId}",
+   "participant_user_id=${userId}",
+   "source_user_id=${sourceOwnerId}",
+   "source_flight_id=${Number(row.source_flight_id)}",
+   "source_revision=${Number(row.source_revision)}",
+   "source_hash=${text(row.source_hash)}",
+   "status IN ('pending','accepted')",
+   "participant_flight_id IS NULL",
+   "FOR UPDATE",
+ ])assert.ok(gate.includes(predicate),"V22 invitation gate missing: "+predicate);
+ assert.ok(producer.indexOf("held_owner")<producer.indexOf("AS participation_gate"));
+ assert.ok(producer.indexOf("held_participation")<producer.lastIndexOf("materializationQuery"));
+ assert.match(producer,/\? await materializationQuery[\s\S]*: \(await sql\.transaction\(\[/);
  assert.ok(producer.includes("{isolationLevel:'ReadCommitted'}"));
  assert.ok(producer.includes("current_source AS MATERIALIZED"));
  assert.ok(producer.includes("sf.certified_at IS NOT NULL"));

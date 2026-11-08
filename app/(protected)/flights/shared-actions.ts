@@ -124,6 +124,21 @@ async function materializeParticipation(participationId:number,userId:number){
    : (await sql.transaction([
      sql`SELECT 1 / COUNT(*)::integer AS owner_gate
        FROM (SELECT id FROM users WHERE id=${sourceOwnerId} FOR UPDATE) held_owner`,
+     // In V22, lock the exact recipient invitation after the source owner.
+     // Cancellation/withdrawal cannot race a committed provenance side
+     // effect; the next READ COMMITTED statement sees fresh source state.
+     // The V21/OFF original one-shot query remains untouched.
+     sql`SELECT 1 / COUNT(*)::integer AS participation_gate
+       FROM (SELECT id FROM flight_participations
+         WHERE id=${participationId}
+           AND participant_user_id=${userId}
+           AND source_user_id=${sourceOwnerId}
+           AND source_flight_id=${Number(row.source_flight_id)}
+           AND source_revision=${Number(row.source_revision)}
+           AND source_hash=${text(row.source_hash)}
+           AND status IN ('pending','accepted')
+           AND participant_flight_id IS NULL
+         FOR UPDATE) held_participation`,
      materializationQuery
    ],{isolationLevel:'ReadCommitted'}))[1] as Array<{participant_flight_id:number|string}>;
  return Number(result[0]?.participant_flight_id)||0;
