@@ -172,6 +172,28 @@ test("V22 final source DELETE repeats every original V21 A+ protected associatio
  assert.match(feature,/PERFORM pg_sleep\(4\)/);
 });
 
+test("P5 exact V22 function ACL and protected-table matrix fail closed for all synthetic roles",()=>{
+ const p5=read("./m0b-v22-p5-privilege-matrix.sql");
+ for(const name of [
+   "flights","deleted_flights","fstd_sessions","flight_source_provenance",
+   "flight_participations","flight_audit_log","logbook_event_uid_registry",
+   "logbook_v22_redelete_edge_candidate",
+   "logbook_v22_terminal_purge_candidate",
+   "logbook_v22_restored_source_receipt_candidate"
+ ])assert.ok(p5.includes("'"+name+"'"),"Missing protected relation "+name);
+ for(const privilege of ["SELECT","INSERT","UPDATE","DELETE","TRUNCATE","REFERENCES","TRIGGER"])
+   assert.ok(p5.includes("'"+privilege+"'"),"Missing tested SQL privilege "+privilege);
+ for(const op of ["to_regclass(format('public.%I',v_table))",
+   "has_table_privilege(v_role,format('public.%I',v_table),v_privilege)",
+   "has_function_privilege(v_role,v_oid,'EXECUTE')",
+   "pg_has_role(v_role,'flytally','MEMBER')"])
+   assert.ok(p5.includes(op),"Missing fail-closed P5 contract "+op);
+ assert.match(p5,/current_database\(\)<>'flytally_m0b_disposable_full_v21'/);
+ assert.match(p5,/current_user<>'flytally'/);
+ assert.match(p5,/v_security_definer/);
+ assert.match(p5,/grantee=0 AND privilege_type='EXECUTE'/);
+});
+
 test("V22 source provenance producer takes account gate before fresh SQL write, while OFF retains V21",()=>{
  const actions=read("../../app/(protected)/flights/shared-actions.ts");
  const mode=read("../../lib/v22-trash-retention-mode.ts");

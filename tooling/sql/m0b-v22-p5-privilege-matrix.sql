@@ -8,6 +8,18 @@ DECLARE
   v_oid OID;
   v_security_definer BOOLEAN;
   v_config TEXT[];
+  v_table TEXT;
+  v_privilege TEXT;
+  v_protected_tables TEXT[]:=ARRAY[
+    'flights','deleted_flights','fstd_sessions','flight_source_provenance',
+    'flight_participations','flight_audit_log','logbook_event_uid_registry',
+    'logbook_v22_redelete_edge_candidate',
+    'logbook_v22_terminal_purge_candidate',
+    'logbook_v22_restored_source_receipt_candidate'
+  ];
+  v_table_privileges TEXT[]:=ARRAY[
+    'SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'
+  ];
   v_names TEXT[]:=ARRAY[
     'public.logbook_v22_reject_witness_change_candidate()',
     'public.logbook_v22_expire_owner_candidate(bigint,integer)',
@@ -41,6 +53,23 @@ BEGIN
     THEN
       RAISE EXCEPTION 'P5 limited principal has wrong login, membership, schema or table access: %',v_role;
     END IF;
+  END LOOP;
+  -- Denying EXECUTE alone is insufficient if a pilot/sweeper role can
+  -- bypass a function through direct table reads or DML. Check every
+  -- relevant existing V21 and staged V22 protected relation, including
+  -- inherited grants and PUBLIC defaults. Missing schema is not a PASS.
+  FOREACH v_table IN ARRAY v_protected_tables LOOP
+    IF to_regclass(format('public.%I',v_table)) IS NULL THEN
+      RAISE EXCEPTION 'P5 protected relation unavailable: %',v_table;
+    END IF;
+    FOREACH v_role IN ARRAY v_roles LOOP
+      FOREACH v_privilege IN ARRAY v_table_privileges LOOP
+        IF has_table_privilege(v_role,format('public.%I',v_table),v_privilege) THEN
+          RAISE EXCEPTION 'P5 limited principal % has direct % on %',
+            v_role,v_privilege,v_table;
+        END IF;
+      END LOOP;
+    END LOOP;
   END LOOP;
   FOREACH v_sig IN ARRAY v_names LOOP
     v_oid:=to_regprocedure(v_sig)::oid;
