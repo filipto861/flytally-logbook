@@ -11,7 +11,7 @@ Short and current. Update it when the state changes. Old detail is in git histor
   - Process and handoff documentation was removed.
   - Tooling was reduced to standard runners, and CI now runs automatically on PRs.
   - Tests that only checked documents or tooling were removed.
-  - Results: unit 1516/1516, PostgreSQL integration 164/164 (42 files, previously 32 skipped and 8 failing on `main`), typecheck and build pass. Browser: 112/123 pass, with 9 old failures in 5 specs (backlog #0).
+  - Results: unit 1516/1516, PostgreSQL integration 164/164 (42 files, previously 32 skipped and 8 failing on `main`), typecheck and build pass. Browser: 121/123 pass, 2 conditional skips. The 5 stale specs were fixed on 2026-11-21; one of them (F3.5 crafted aircraft drift) had silently stopped testing the server check.
 
 ## Owner decisions in force
 
@@ -25,7 +25,6 @@ Short and current. Update it when the state changes. Old detail is in git histor
 
 | # | Item | Notes |
 |---|---|---|
-| 0 | **Fix 5 failing browser specs** | The first full run of all 123 Playwright tests (2026-11-21) gave 112 passed, 9 failed, 2 skipped. The failing specs are: `advisory-presentation` E1.4, `manual-authority-certification` F3.4 and F3.5, `responsive-presentation` F5.3 (desktop and mobile) and `map-layers` pane ordering (mobile only). Failures look like stale selectors after UI changes, e.g. two "Aircraft profile" buttons. Decide per spec whether the spec or the UI is wrong. |
 | 1 | **Light-mode contrast bugs** | `.form-error` (~1.7:1) and `.field-message-error` (`#f59e0b !important` in `app/v158-flight-entry-polish.css`, ~2.15:1). Small, high value. See [DESIGN §11](docs/DESIGN.md#11-known-structural-debt-input-for-css-consolidation). |
 | 2 | **CSS consolidation** | 47 global stylesheets, `:where()` token rules overridden by old selectors, 168 `!important`, 33 breakpoints. Use a staged plan with before/after computed-style snapshots. |
 | 3 | **Test triage** | 231 of the 277 unit test files read source files and assert their text by regex. Rewrite the ones that guard real invariants (SQL tenant scoping, certification and money) as behavioural tests, and delete the rest. |
