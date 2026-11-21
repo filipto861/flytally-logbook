@@ -261,17 +261,21 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await page.reload();
     await checkStandardPanes(page, ".route-overview-map", true);
   }
-  // On a phone-width viewport the fixture's two nearby airports are ~12 px
-  // apart, so their markers (correctly drawn above route lines) cover the whole
-  // route. Zoom in so the route extends beyond the markers before testing it.
-  if ((page.viewportSize()?.width ?? 1280) < 600) {
-    for (let step = 0; step < 2; step += 1) {
-      await map.getByRole("button", { name: "Zoom in" }).click();
-      await page.waitForTimeout(400);
-    }
-  }
   // Once dismissed, the control must not intercept route hover or clicks.
   const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
+  // On a phone-width viewport the fixture's two nearby airports are ~12 px
+  // apart, so their markers (correctly drawn above route lines) cover the whole
+  // route. Wheel-zoom around the route itself (Leaflet keeps the point under
+  // the cursor fixed) so the route extends beyond its markers and stays visible.
+  if ((page.viewportSize()?.width ?? 1280) < 600) {
+    for (let step = 0; step < 2; step += 1) {
+      const box = await routeHit.boundingBox();
+      expect(box).not.toBeNull();
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.wheel(0, -240);
+      await page.waitForTimeout(500);
+    }
+  }
   await routeHit.hover();
   await expect(map.locator(".leaflet-tooltip")).toBeVisible();
   await routeHit.click();
