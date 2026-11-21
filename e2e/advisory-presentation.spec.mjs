@@ -85,7 +85,7 @@ test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared
   try{
     await loginBrowserPilot(page,"/flights/9914");
   const ownerPanel=page.getByRole("tabpanel");
-  await expect(ownerPanel.locator("small").filter({hasText:/^GPS import/}).first()).toBeVisible();
+  await expect(ownerPanel.locator("p").filter({has:page.locator(".legacy-task-inline")}).filter({hasText:/^GPS import/}).first()).toBeVisible();
   await expect(ownerPanel.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
 
   await page.getByRole("tab",{name:"Logbook data"}).click();

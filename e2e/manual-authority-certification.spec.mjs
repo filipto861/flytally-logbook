@@ -75,7 +75,7 @@ test("F3.4 Manual compact context exposes only A+ choice and blocks invalid prof
   await invalidForm.locator('select[name="registration"]').selectOption("OK-BAD1");
   await expect(invalidDetails).toHaveAttribute("open","");
   await expect(invalidDetails.locator("[data-aircraft-context-card]")).toContainText("Needs configuration");
-  await expect(invalidForm.getByRole("button",{name:"Aircraft profile"})).toBeVisible();
+  await expect(invalidForm.getByLabel("Missing required fields").getByRole("button",{name:"Aircraft profile"})).toBeVisible();
   const configLink=invalidDetails.getByRole("link",{name:/Open Aircraft/});
   await expect(configLink).toHaveAttribute("target","_blank");
   await expectNoHorizontalOverflow(page);
@@ -103,9 +103,21 @@ test("F3.5 same-registration SNAPSHOT survives invalid current profile and rejec
   await expect(form.getByText("Flight changes saved.")).toBeVisible();
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE id=9920")).toBe("EASA|SEP|AEROPLANE|B23");
 
-  await form.locator('input[name="aircraftClass"]').evaluate(input=>{input.value="MEP";input.setAttribute("value","MEP")});
+  // Craft the request itself: React restores controlled hidden inputs before submit,
+  // so DOM tampering never reaches the server. Rewrite the POSTed aircraftClass instead.
+  let crafted=false;
+  await page.route(/\/flights\/9920(?:\?|$)/,async route=>{
+    const request=route.request();
+    if(request.method()!=="POST")return route.continue();
+    const body=request.postData()||"";
+    const postData=body.replace(/(name="[^"]*aircraftClass"\r\n\r\n)SEP\r\n/,"$1MEP\r\n");
+    crafted=postData!==body;
+    await route.continue({postData});
+  });
   await form.getByRole("button",{name:"Save changes"}).click();
   await expect(form.getByRole("alert")).toContainText("This edit changes the stored aircraft context.");
+  expect(crafted).toBe(true);
+  await page.unroute(/\/flights\/9920(?:\?|$)/);
   expect(browserSqlScalar("SELECT aircraft_class FROM flights WHERE id=9920")).toBe("SEP");
 
   await page.goto("/flights/9921");

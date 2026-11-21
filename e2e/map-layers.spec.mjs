@@ -261,6 +261,15 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await page.reload();
     await checkStandardPanes(page, ".route-overview-map", true);
   }
+  // On a phone-width viewport the fixture's two nearby airports are ~12 px
+  // apart, so their markers (correctly drawn above route lines) cover the whole
+  // route. Zoom in so the route extends beyond the markers before testing it.
+  if ((page.viewportSize()?.width ?? 1280) < 600) {
+    for (let step = 0; step < 2; step += 1) {
+      await map.getByRole("button", { name: "Zoom in" }).click();
+      await page.waitForTimeout(400);
+    }
+  }
   // Once dismissed, the control must not intercept route hover or clicks.
   const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
   await routeHit.hover();
