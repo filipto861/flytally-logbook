@@ -1,5 +1,6 @@
-// PR340: build real optimizer v1..v20 catalog in the runner-owned empty public PG16 DB.
-// Uses canonical lib/db-optimization.ts migration statements, not version stamping.
+// Builds the real optimizer v1..v20 schema in an EMPTY localhost PG16 database
+// from the canonical lib/db-optimization.ts statements (no version stamping).
+// Used by tooling/run-postgres-tests.mjs before suites that need a real v20 catalog.
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {spawnSync} from "node:child_process";
@@ -61,4 +62,4 @@ for(let v=1;v<=20;v++){
 }
 assert.equal(run("SELECT COUNT(*) FROM public.flytally_schema_migrations WHERE version BETWEEN 1 AND 20"),"20");
 assert.equal(run("SELECT COUNT(*) FROM public.flytally_schema_migrations WHERE version>20"),"0");
-console.log("real_v20_catalog_bootstrap=PASS migrations=20 target=owned-localhost-PG16 schema=public release_status=NOT RUN");
+console.log("real_v20_catalog_bootstrap=PASS migrations=20");
