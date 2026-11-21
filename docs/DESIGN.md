@@ -197,7 +197,6 @@ All figures below were measured on this checkout. "Effective" values come from h
   - `box-shadow: none !important` on panels cancels `--shadow-soft`.
   - Transitions run at .16 s, and the focus outline uses `--accent2` instead of `--focus-color`.
   - Dark inputs use the literal `#07131b` instead of `--control-bg`.
-  - **Light theme bugs:** `.form-error` renders `#fda4af` on `--danger-bg` (about 1.7:1) because `globals.css` `.form-error{color:#fda4af}` beats `:where(.form-error)`. `.field-message-error{color:#f59e0b!important}` (`v158-flight-entry-polish.css`) is about 2.15:1 on white.
 - **The specificity race is the escape hatch.** Later layers win with long selectors (`.app-grid .shell-workspace > .ui-page-stack > …`) and `!important`: 168 uses across app CSS (55 in `globals`, 43 in `ui-system`), plus many in `sidebar.module.css`.
 - **Duplicate and conflicting tokens.**
   - `v1342-ui-polish.css` declares `--ui-radius-control:7px`, `--ui-radius-panel:9px`, `--ui-control-min:38px`, `--ui-touch-min:44px` and `--ui-hover`.

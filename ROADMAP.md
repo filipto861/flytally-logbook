@@ -25,7 +25,6 @@ Short and current. Update it when the state changes. Old detail is in git histor
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **Light-mode contrast bugs** | `.form-error` (~1.7:1) and `.field-message-error` (`#f59e0b !important` in `app/v158-flight-entry-polish.css`, ~2.15:1). Small, high value. See [DESIGN §11](docs/DESIGN.md#11-known-structural-debt-input-for-css-consolidation). |
 | 2 | **CSS consolidation** | 47 global stylesheets, `:where()` token rules overridden by old selectors, 168 `!important`, 33 breakpoints. Use a staged plan with before/after computed-style snapshots. |
 | 3 | **Test triage** | 231 of the 277 unit test files read source files and assert their text by regex. Rewrite the ones that guard real invariants (SQL tenant scoping, certification and money) as behavioural tests, and delete the rest. |
 | 4 | **Dependency security audit** | `npm audit` and upgrades from a fresh branch (replaces the closed `filipto861/flytally-logbook#432`). |
