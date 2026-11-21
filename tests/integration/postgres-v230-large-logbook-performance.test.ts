@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { assertScaleBudget } from "./scale-budget.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -76,10 +77,34 @@ function explain(statement:string){
   const top=parsed[0]??{};
   return{planningMs:Number(top["Planning Time"]??0),executionMs:Number(top["Execution Time"]??0),plan:top.Plan};
 }
+// Blocks touched per metric on this fixture (about 2x the measured baseline). Re-baseline with
+// SCALE_BUDGET_REPORT=1 only after an intended query change, and say so in the PR.
+const BLOCK_BUDGETS:Record<string,number>={
+  dashboardAllTime100k:34100, // measured 17043
+  flightListFirstPage100k:70200, // measured 35099
+  pilotInsights100k:116100, // measured 58021
+  pilotInsightsOverview100k:58700, // measured 29334
+  pilotInsightsExperience100k:45000, // measured 22494
+  pilotInsightsAircraft100k:52200, // measured 26100
+  pilotInsightsPlaces100k:58700, // measured 29334
+  pilotInsightsCareer100k:31400, // measured 15655
+  printCompleteSql100k:21200, // measured 10557
+  exportCompleteSql100k:35200, // measured 17561
+  pendingActionCount4500:31800, // measured 15876
+  pendingSharedList2250:23100, // measured 11517
+  pendingConnectionList1000:300, // measured 54
+  pendingTrainingList1000:18200, // measured 9055
+  pendingLegacyList250:5700, // measured 2806
+  auditCurrentFlight:300, // measured 9
+  auditArchivedRevisions500:300, // measured 18
+  auditApprovals500:300, // measured 22
+  auditVerifications500:300, // measured 21
+  flightAuditLatest100Of5000:300, // measured 10
+};
 function recordMetric(name:string,result:{planningMs:number;executionMs:number;plan:unknown},limitMs:number){
-  evidence[name]={planningMs:result.planningMs,executionMs:result.executionMs,limitMs};
-  console.log(`V230 SCALE ${name}: execution=${result.executionMs.toFixed(3)}ms planning=${result.planningMs.toFixed(3)}ms limit=${limitMs}ms`);
-  assert.ok(result.executionMs<limitMs,`${name} exceeded ${limitMs}ms on the controlled v2.3 dataset: ${result.executionMs}ms`);
+  // limitMs is the historical wall-clock target; it is now only a 3x ceiling. Blocks are the real guard.
+  const ceilingMs=limitMs*3,maxBlocks=BLOCK_BUDGETS[name]??0,{blocks}=assertScaleBudget("V230",name,result,{maxBlocks,ceilingMs});
+  evidence[name]={planningMs:result.planningMs,executionMs:result.executionMs,blocks,maxBlocks,ceilingMs};
 }
 
 before(()=>{
@@ -259,6 +284,9 @@ test("v2.3 global production reads remain bounded on 100k flights",{skip:!enable
     userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,
     "rolling.currentStart":"2025-09-07","rolling.currentEnd":"2026-09-06","rolling.previousStart":"2024-09-07","rolling.previousEnd":"2025-09-06",
   };
+  // section "all" computes every Statistics section in one query. The app never requests it
+  // (app/(protected)/statistics/page.tsx always sends one section, default "overview"); it is
+  // kept as the worst-case read. The per-section queries below are the production paths.
   const insightsQuery=render(insightsBlock,{...insightValues,section:"all"});
   const insightsResult=explain(insightsQuery);recordMetric("pilotInsights100k",insightsResult,7_000);
   const insight=rows(insightsQuery)[0]??{};assert.equal(Number(insight.flights),LOGGED_ROWS);

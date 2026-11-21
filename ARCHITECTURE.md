@@ -62,7 +62,7 @@ Connections, shared flights, instructor verification, the action center and noti
 - No cross-tenant caching. Avoid N+1 queries on hot pages. Aggregate in SQL.
 - List payloads exclude GPS geometry. Detail/review views load it on demand.
 - The dashboard uses lean bounded read models (`lib/data/dashboard-*.ts`). Historical analysis belongs to Statistics.
-- Scale tests (10k/50k flights, 100k read benchmark) live in `tests/integration/postgres-*scale*` / `*performance*`.
+- Scale tests (10k/50k flights, 100k read benchmark) live in `tests/integration/postgres-*scale*` / `*performance*`. They guard hot paths by block budgets; re-baseline with `SCALE_BUDGET_REPORT=1` only after an intended query change.
 
 ## Maps
 
@@ -71,7 +71,7 @@ Leaflet with Standard (OSM) and optional Satellite and openAIP aviation overlays
 ## Deployment and verification
 
 - Vercel git auto-deploy is disabled. Deploys are manual and owner-approved. Cron jobs: backups 02:15 UTC and recency 05:15 UTC.
-- CI (`.github/workflows/ci.yml`) blocks every PR on typecheck, unit tests, build and the PostgreSQL correctness suite. The timing-based scale suite runs on `main`, nightly and on demand, because wall-clock limits vary with shared-runner hardware. Browser tests run on manual dispatch.
+- CI (`.github/workflows/ci.yml`) blocks every PR on typecheck, unit tests, build and the full PostgreSQL suite, including scale tests. Scale tests assert the number of data blocks each production query touches on a fixed fixture (`tests/integration/scale-budget.ts`), with only a generous wall-clock ceiling, so shared-runner speed does not matter. Browser tests run on manual dispatch.
 - Test runners (`tooling/run-postgres-tests.mjs`, `tooling/run-auth-browser.mjs`) only accept localhost databases. Each integration file gets a fresh database.
 
 ## Rules for new work

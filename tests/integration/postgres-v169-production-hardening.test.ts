@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { assertScaleBudget } from "./scale-budget.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -60,10 +61,19 @@ function explain(statement:string){
   const top=parsed[0]??{};
   return{planningMs:Number(top["Planning Time"]??0),executionMs:Number(top["Execution Time"]??0),plan:top.Plan};
 }
+// Blocks touched per metric on this fixture (about 2x the measured baseline). Re-baseline with
+// SCALE_BUDGET_REPORT=1 only after an intended query change, and say so in the PR.
+const BLOCK_BUDGETS:Record<string,number>={
+  categoryBrowse50k:300, // measured 55
+  dashboardAllTime50k:13400, // measured 6665
+  flightListFirstPage50k:33700, // measured 16839
+  pilotInsights50k:56300, // measured 28115
+  printCompleteSql50k:9800, // measured 4870
+};
 function recordMetric(name:string,result:{planningMs:number;executionMs:number;plan:unknown},limitMs:number){
-  evidence[name]={planningMs:result.planningMs,executionMs:result.executionMs,limitMs};
-  console.log(`V169 SCALE ${name}: execution=${result.executionMs.toFixed(3)}ms planning=${result.planningMs.toFixed(3)}ms limit=${limitMs}ms`);
-  assert.ok(result.executionMs<limitMs,`${name} exceeded ${limitMs}ms on the controlled 50k mixed-category account: ${result.executionMs}ms`);
+  // limitMs is the historical wall-clock target; it is now only a 3x ceiling. Blocks are the real guard.
+  const ceilingMs=limitMs*3,maxBlocks=BLOCK_BUDGETS[name]??0,{blocks}=assertScaleBudget("V169",name,result,{maxBlocks,ceilingMs});
+  evidence[name]={planningMs:result.planningMs,executionMs:result.executionMs,blocks,maxBlocks,ceilingMs};
 }
 function jsonArray(value:unknown){
   if(Array.isArray(value))return value as Array<Record<string,unknown>>;

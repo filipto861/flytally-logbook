@@ -33,8 +33,6 @@ Short and current. Update it when the state changes. Old detail is in git histor
 | 7 | **Map provider rights** | Esri/openAIP rights, quotas, attribution and export restrictions are unverified. |
 | 8 | **Multi-aircraft proof** | Heterogeneous Add/Edit across all categories, then sharing, recovery and scale closeout. |
 | 9 | **Schema init consolidation** | `lib/db-optimization.ts` plus many `lib/v*-schema.ts` runtime gates. |
-| 12 | **Hardware-independent scale assertions** | The scale tests assert wall-clock `EXPLAIN ANALYZE` time against fixed limits. On shared CI runners the same query varies a lot, e.g. `pilotInsights100k` ran in 4.7–7.7 s on CI against a 7 s limit and in 2.3 s locally. Since 2026-11-21 the scale suite runs on `main`, nightly and on demand instead of gating PRs. Next step: assert buffers read and plan shape (index use, no seq scan on large tables), keep a generous time ceiling, then let the suite gate PRs again. |
-| 13 | **Profile `pilotInsights100k`** | It is the slowest scale query by far (seconds; the others are under 1 s). Check its plan for an aggregation or index improvement. |
 | 10 | **Privacy/operations note** | GDPR processing record, retention periods and the incident procedure were dropped from docs during the cleanup. Rewrite them from code if needed. |
 | 11 | **Regulatory doc check** | The Easy Access Rules edition date conflicts in the old sources (Nov 2025 vs Feb 2026). See [REGULATORY §5](docs/REGULATORY.md#5-regulatory-source-snapshot). |
 | — | Research | GPS touch-and-go time-normalised evidence; professional logbook platform. |

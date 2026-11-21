@@ -27,7 +27,7 @@ npm run test:target -- tests/foo.test.ts
 npm run build
 npm run verify              # typecheck + unit tests + build
 npm run test:postgres       # integration correctness tests (39 files), needs local PostgreSQL 16
-npm run test:postgres:scale # timing-based 10k/50k/100k-flight scale tests
+npm run test:postgres:scale # 10k/50k/100k-flight scale tests (block budgets)
 npm run test:postgres:full  # both
 npm run test:browser        # Playwright, needs local PostgreSQL 16 and a prior build
 ```
