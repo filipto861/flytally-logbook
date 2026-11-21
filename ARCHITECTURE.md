@@ -71,7 +71,7 @@ Leaflet with Standard (OSM) and optional Satellite and openAIP aviation overlays
 ## Deployment and verification
 
 - Vercel git auto-deploy is disabled. Deploys are manual and owner-approved. Cron jobs: backups 02:15 UTC and recency 05:15 UTC.
-- CI (`.github/workflows/ci.yml`) runs on every PR and on `main`: typecheck, unit tests, build and the PostgreSQL integration suite. Browser tests run on manual dispatch.
+- CI (`.github/workflows/ci.yml`) blocks every PR on typecheck, unit tests, build and the PostgreSQL correctness suite. The timing-based scale suite runs on `main`, nightly and on demand, because wall-clock limits vary with shared-runner hardware. Browser tests run on manual dispatch.
 - Test runners (`tooling/run-postgres-tests.mjs`, `tooling/run-auth-browser.mjs`) only accept localhost databases. Each integration file gets a fresh database.
 
 ## Rules for new work

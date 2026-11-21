@@ -26,8 +26,9 @@ npm test                    # unit tests (no database)
 npm run test:target -- tests/foo.test.ts
 npm run build
 npm run verify              # typecheck + unit tests + build
-npm run test:postgres       # integration tests, needs local PostgreSQL 16
-npm run test:postgres:full  # including scale tests
+npm run test:postgres       # integration correctness tests (39 files), needs local PostgreSQL 16
+npm run test:postgres:scale # timing-based 10k/50k/100k-flight scale tests
+npm run test:postgres:full  # both
 npm run test:browser        # Playwright, needs local PostgreSQL 16 and a prior build
 ```
 
@@ -41,7 +42,7 @@ PostgreSQL and browser tests need `DATABASE_URL=postgresql://flytally@127.0.0.1:
 4. **No regulatory or commercial claims** beyond what [docs/REGULATORY.md](docs/REGULATORY.md) allows. Tests passing is not authority approval.
 5. **Never touch production without the owner's explicit approval in the current conversation.** This covers the production Neon database, migrations, Vercel deploys, environment variables, feature flags and the backup crons. Never point tests at a non-local database.
 6. **Small, scoped changes.** One concern per branch or PR. Don't mix refactoring with behaviour changes in high-risk areas.
-7. **Verify by risk.** Every change runs `npm run verify`. Changes to SQL, schema, restore, Trash, certification or sharing also run `npm run test:postgres`. User-visible flows also run the relevant browser specs. Report exactly what ran and what didn't. Never claim a run you didn't do.
+7. **Verify by risk.** Every change runs `npm run verify`. Changes to SQL, schema, restore, Trash, certification or sharing also run `npm run test:postgres`. Changes to hot read paths (dashboard, flight list, statistics, print/export) also run `npm run test:postgres:scale`. User-visible flows also run the relevant browser specs. Report exactly what ran and what didn't. Never claim a run you didn't do.
 8. **UI work** follows [docs/DESIGN.md](docs/DESIGN.md): use existing tokens and components, keep light and dark themes and mobile/iPad working, keep focus and keyboard behaviour, and use 44 px touch targets.
 9. **No secrets or private pilot data** in the repository, commits or logs.
 
