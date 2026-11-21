@@ -262,20 +262,20 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await checkStandardPanes(page, ".route-overview-map", true);
   }
   // Once dismissed, the control must not intercept route hover or clicks.
-  const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
-  // On a phone-width viewport the fixture's two nearby airports are ~12 px
-  // apart, so their markers (correctly drawn above route lines) cover the whole
-  // route. Wheel-zoom around the route itself (Leaflet keeps the point under
-  // the cursor fixed) so the route extends beyond its markers and stays visible.
-  if ((page.viewportSize()?.width ?? 1280) < 600) {
-    for (let step = 0; step < 2; step += 1) {
-      const box = await routeHit.boundingBox();
-      expect(box).not.toBeNull();
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await page.mouse.wheel(0, -240);
-      await page.waitForTimeout(500);
-    }
+  // Use the longest visible route: at phone width a short route between two
+  // nearby airports is entirely covered by their markers, which are correctly
+  // drawn above route lines, so it cannot be hovered at all.
+  const routeTargets=map.locator(".leaflet-routeLines-pane .route-click-target");
+  const viewport=page.viewportSize() ?? { width: 1280, height: 800 };
+  let longest=-1, longestIndex=-1;
+  for (let index=0; index<await routeTargets.count(); index+=1) {
+    const box=await routeTargets.nth(index).boundingBox();
+    if (!box || box.x<0 || box.y<0 || box.x+box.width>viewport.width || box.y+box.height>viewport.height) continue;
+    const length=Math.hypot(box.width, box.height);
+    if (length>longest) { longest=length; longestIndex=index; }
   }
+  expect(longestIndex).toBeGreaterThanOrEqual(0);
+  const routeHit=routeTargets.nth(longestIndex);
   await routeHit.hover();
   await expect(map.locator(".leaflet-tooltip")).toBeVisible();
   await routeHit.click();
