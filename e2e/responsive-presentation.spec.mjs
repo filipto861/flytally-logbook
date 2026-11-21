@@ -192,7 +192,7 @@ test("F5.3 role change keeps required DUAL identity inline and removes the defau
   const instructor=form.locator('.role-crew-inline-grid input[name="instructor"]');
   await expect(instructor).toBeVisible();
   await expect(instructor).toHaveAttribute("required","");
-  await expect(form.getByRole("button",{name:"Instructor / PIC"})).toBeVisible();
+  await expect(form.getByLabel("Missing required fields").getByRole("button",{name:"Instructor / PIC"})).toBeVisible();
 
   for(const viewport of [
     {width:1024,height:768},
