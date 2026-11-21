@@ -43,7 +43,7 @@ jobs:
 
   postgres:
     name: PostgreSQL integration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # ships PostgreSQL 16; must match production major
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
   browser:
     name: Browser (Playwright)
     if: github.event_name == 'workflow_dispatch' && inputs.browser
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # ships PostgreSQL 16; must match production major
     timeout-minutes: 30
     env:
       FLYTALLY_BROWSER_PASSWORD: FlyTally-Browser-2026!
