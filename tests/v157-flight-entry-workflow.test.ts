@@ -6,8 +6,6 @@ const form=fs.readFileSync("components/flight-form.tsx","utf8");
 const page=fs.readFileSync("app/(protected)/flights/new/page.tsx","utf8");
 const css=fs.readFileSync("app/v157-flight-entry-workflow.css","utf8");
 const layout=fs.readFileSync("app/layout.tsx","utf8");
-const changelog=fs.readFileSync("CHANGELOG.md","utf8");
-const audit=fs.readFileSync("docs/history/FLIGHT_ENTRY_UX_V157.md","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 
@@ -17,14 +15,6 @@ test("v1.57 package metadata, UX layer and release records remain synchronized",
   const [major,minor]=String(pkg.version).split(".").map(Number);
   assert.ok(major>1||(major===1&&minor>=57));
   assert.ok(layout.indexOf('v157-flight-entry-workflow.css')>layout.indexOf('v156-mobile-hardening.css'));
-  assert.match(changelog,/## 1\.57\.0 — Flight Entry Workflow Simplification/);
-  assert.match(audit,/## Deliberately unchanged/);
-});
-
-test("v1.57 release record preserves the original route-shortcut rationale",()=>{
-  assert.match(changelog,/Recent-route shortcuts/);
-  assert.match(audit,/Route repetition/);
-  assert.match(audit,/Local · DEP → DEP/);
 });
 
 test("v1.57 exposes live BLOCK and AIR feedback without changing flight parsing",()=>{
@@ -42,7 +32,6 @@ test("v1.57 names missing required choices and keeps them discoverable after B1A
   assert.match(form,/className="entry-save-state"/);
   for(const label of ["Date","Aircraft","Role","Aircraft profile","Aircraft context"])assert.ok(form.includes(`"${label}"`));
   assert.doesNotMatch(form,/!billing&&"billing"/);
-  assert.match(audit,/Auto-open is one-way assistance/);
 });
 
 test("v1.57 keeps mobile source selection compact",()=>{

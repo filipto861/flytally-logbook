@@ -58,10 +58,3 @@ test("v1.69 production responses carry baseline transport and browser hardening 
   assert.match(config,/strict-origin-when-cross-origin/);
   assert.match(config,/source:\"\/:path\*\"/);
 });
-
-test("v1.69 CI retains both 10k and 50k PostgreSQL scale evidence",()=>{
-  const workflow=read(".github/workflows/verify-web.yml");
-  assert.match(workflow,/flytally-scale-evidence[.]json/);
-  assert.match(workflow,/flytally-v169-scale-evidence[.]json/);
-  assert.match(workflow,/retention-days: 90/);
-});

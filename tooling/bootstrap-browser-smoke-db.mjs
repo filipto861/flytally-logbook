@@ -290,7 +290,7 @@ CREATE TABLE flight_certified_revisions (
   UNIQUE(user_id,flight_id,revision_number)
 );
 
--- Browser-only v20 archive/provenance schema mirrored from tooling/v350-v20-migrate.sql.
+-- Browser-only v20 archive/provenance schema mirrored from sql/migrations/v20-migrate.sql.
 CREATE TABLE voided_certified_flights (
       id BIGSERIAL PRIMARY KEY,
       user_id BIGINT NOT NULL,

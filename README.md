@@ -1,67 +1,46 @@
 # FlyTally Logbook
 
-FlyTally Logbook is a private multi-user electronic pilot logbook built with Next.js, React, Neon PostgreSQL and Vercel.
+A private, multi-user electronic pilot logbook (EASA Part-FCL oriented), live at [fly-tally.com](https://fly-tally.com). It's built with Next.js 16, React 19, TypeScript, Neon PostgreSQL and Vercel.
 
-The production source of truth lives in `app/`, `components/` and `lib/`. Regression and PostgreSQL acceptance coverage lives in `tests/`.
+## What it does
 
-## Start here
+- **Flight records:** a canonical Add/Edit flight model for aeroplane, helicopter, sailplane, balloon, ULL and other categories. Flights go through review, certification and auditable correction or voiding, with search, filters and detail views.
+- **Aircraft and airports:** personal aircraft profiles with defaults, a type catalogue, airport reference data, and copying aircraft profiles between connections.
+- **GPS:** KML/GPX/CSV import, evidence-limited takeoff, touch-and-go and day/night suggestions, and track playback. Maps offer Standard, optional Satellite and an openAIP aviation overlay (reference only).
+- **Licences and recency:** licences, ratings, medical and qualifications, plus category-aware recency planning (FCL.060, FCL.140, SFCL, BFCL, helicopter). Status is never shown as CURRENT when evidence is missing.
+- **Collaboration:** pilot connections, shared flights, instructor verification and signatures, an action center, notifications and web push, revocable public flight views and story cards.
+- **Data:** print and export, signed portable backups and validation, and deleted-flight (Trash) recovery. Full-account restore is currently disabled by design.
+- **Platform:** responsive desktop, iPad and mobile layouts, light and dark themes, and an installable PWA. It is online-only.
 
-This README is a stable navigation entrypoint, not the authority for current release status. Always establish the current GitHub `main` SHA before starting a new development session. AI contributors should first read the short [AGENTS entrypoint](AGENTS.md), then consult only the relevant source documents below.
-
-1. **[ROADMAP](ROADMAP.md)** — current release status, work order, owner decisions and next step.
-2. **[DEVELOPMENT](DEVELOPMENT.md)** — active branch, risk-based verification and release workflow.
-3. **[FEATURE LIST](FEATURES.md)** — capabilities, limitations and intentional exclusions.
-4. **[ARCHITECTURE](ARCHITECTURE.md)** — runtime, data ownership, security and regulatory contracts.
-5. **[CHANGELOG](CHANGELOG.md)** — append-only shipped/history evidence; read relevant sections, not the whole file by default.
-6. **[Documentation index](docs/README.md)** — current supporting contracts, review records and dated history.
-
-Historic [repository audit](docs/maintenance/2026-10-10-repository-audit.md), [roadmap snapshot](docs/history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) and [feature snapshot](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) remain dated evidence, not current instructions. For the current product version and next release, use the ROADMAP and independently verified deployment evidence.
-
-## Runtime architecture
-
-- Next.js 16 App Router and React 19
-- Neon PostgreSQL transactional production database
-- Vercel deployment
-- server actions and authenticated API routes for mutations/private data
-- certified flight revisions and audit/integrity evidence
-- category-aware pilot logbook workflows
-- recency/evidence planning with explicit regulatory boundaries
-- pilot connections, shared flights and instructor verification
-- GPS import, review and playback
-- print/export, backup and recovery
-
-## Repository layout
-
-- `app/` — routes, pages, server actions and API endpoints
-- `components/` — shared client/server UI
-- `lib/` — database, regulatory, certification, backup, GPS and domain services
-- `tests/` — TypeScript regression tests and PostgreSQL acceptance tests
-- `e2e/` — browser/end-to-end coverage
-- `data/` — read-only/reference datasets
-- `docs/` — active supporting documentation and archived development evidence
-
-## Verification
-
-Typical local gate:
+## Getting started
 
 ```bash
+cp .env.example .env.local   # fill DATABASE_URL, SESSION_SECRET, …
 npm ci
-npm run typecheck
-npm test
-npm run build
+npm run dev
 ```
 
-Database acceptance when the PostgreSQL test environment is configured:
+Checks:
 
 ```bash
-npm run test:postgres
-npm run test:postgres:full
+npm run verify              # typecheck + unit tests + build
+npm run test:postgres       # integration tests (local PostgreSQL 16)
+npm run test:browser        # Playwright (local PostgreSQL 16, after build)
 ```
 
-The exact verification policy is defined in `DEVELOPMENT.md`. Never report a test, build, migration or deployment as successful unless it actually ran.
+For the test database setup, see [CLAUDE.md](CLAUDE.md#commands).
 
-## Safety and regulatory boundary
+## Documentation
 
-FlyTally can preserve and evaluate pilot-entered evidence, but internal implementation and test success do not constitute approval by EASA, ÚCL, LAA or another authority.
+| Document | Contents |
+|---|---|
+| [CLAUDE.md](CLAUDE.md) | Working rules for contributors and AI agents |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System map, data model and invariants |
+| [ROADMAP.md](ROADMAP.md) | Current state, owner decisions and backlog |
+| [docs/REGULATORY.md](docs/REGULATORY.md) | Regulatory rules ↔ code, and claims the product must never make |
+| [docs/DESIGN.md](docs/DESIGN.md) | UI tokens, components, accessibility and CSS debt |
+| [sql/migrations/](sql/migrations/README.md) | Applied production migrations |
 
-The product must fail closed when required regulatory evidence is missing or ambiguous and must preserve certified/finalized records rather than silently rewriting them.
+## Regulatory boundary
+
+FlyTally records and evaluates pilot-entered evidence. Neither the implementation nor passing tests constitute approval by EASA, ÚCL, LAA or any other authority. When required evidence is missing or ambiguous, the product fails closed. It preserves certified records rather than rewriting them.

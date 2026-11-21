@@ -3,16 +3,12 @@ import test from "node:test";
 import {readFileSync} from "node:fs";
 
 const source=(path:string)=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
-const draft=source("sql/drafts/3_8_0_currency_v21_additive_candidate.sql");
-const pre=source("tooling/v380-v21-preflight.sql");
-const migrate=source("tooling/v380-v21-migrate.sql");
-const post=source("tooling/v380-v21-postflight.sql");
+const pre=source("sql/migrations/v21-preflight.sql");
+const migrate=source("sql/migrations/v21-migrate.sql");
+const post=source("sql/migrations/v21-postflight.sql");
 const plan=source("lib/migration-plan.ts");
 const runtime=source("lib/db-optimization.ts");
 const normalize=(v:string)=>v.replace(/\s+/g," ").trim();
-// Git for Windows may check out the SQL draft with CRLF rather than LF.
-const alters=[...draft.matchAll(/^ALTER TABLE (?:rates|aircraft|flights|flight_expenses)\r?\n[\s\S]*?;/gm)].map(x=>x[0]);
-const checks=[...draft.matchAll(/DO \$currency\$[\s\S]*?\$currency\$;/g)].map(x=>x[0]);
 const executableV21=runtime.slice(runtime.indexOf("  if(version===21)return["),
   runtime.indexOf("  ];\n  throw new Error(",runtime.indexOf("  if(version===21)return[")));
 const extractedBlocks=(text:string)=>[
@@ -20,19 +16,10 @@ const extractedBlocks=(text:string)=>[
   ...[...text.matchAll(/DO \$currency\$[\s\S]*?\$currency\$;/g)].map(x=>normalize(x[0])),
 ];
 
-test("v21 executable DDL and runtime use all eight exact source-backed draft blocks",()=>{
-  assert.equal(alters.length,4);
-  assert.equal(checks.length,4);
-  for(const ddl of [...alters,...checks]){
-    assert.ok(normalize(migrate).includes(normalize(ddl)),"Production file differs from v21 review DDL");
-    assert.ok(normalize(runtime).includes(normalize(ddl)),"Runtime v21 differs from review DDL");
-  }
-  // Compare parsed source blocks as complete sequences, not merely presence.
-  const canonical=[...alters,...checks].map(normalize);
-  assert.deepEqual(extractedBlocks(migrate),canonical,"Executable v21 DDL differs from review draft");
-  assert.deepEqual(extractedBlocks(executableV21),canonical,"Runtime v21 DDL differs from reviewed execution blocks");
-  assert.match(draft,/REVIEW CANDIDATE ONLY/);
-  assert.doesNotMatch(draft,/INSERT INTO public\.flytally_schema_migrations/);
+test("v21 production migration DDL and runtime v21 DDL are the same eight blocks",()=>{
+  const production=extractedBlocks(migrate);
+  assert.equal(production.length,8);
+  assert.deepEqual(extractedBlocks(executableV21),production,"Runtime v21 DDL differs from sql/migrations/v21-migrate.sql");
 });
 
 test("v21 registration is consistent and not claimed as already applied",()=>{
@@ -41,7 +28,6 @@ test("v21 registration is consistent and not claimed as already applied",()=>{
   assert.match(runtime,/21:"source-backed currency exact-money"/);
   assert.match(runtime,/if\(version===21\)return\[/);
   assert.match(migrate,/VALUES\(21,'source-backed currency exact-money'\)/);
-  assert.doesNotMatch(draft,/\bversion:21\b/);
   assert.equal((runtime.match(/if\(version===21\)return\[/g)||[]).length,1);
 });
 

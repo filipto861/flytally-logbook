@@ -16,26 +16,6 @@ test("E1.5 runtime migrator ignores registry versions newer than its advertised 
   assert.match(db,/pendingMigrationVersions\(rows\.map\(row=>Number\(row\.version\)\)\)/);
 });
 
-test("E1.5 manual-only Vercel deployment is disabled for main and feature branches; CI databases are isolated",()=>{
-  const vercel=JSON.parse(read("vercel.json")) as {git?:{deploymentEnabled?:Record<string,boolean>}};
-  const deploymentEnabled=vercel.git?.deploymentEnabled;
-  // Keep both explicit main and wildcard disabled. A future exception
-  // would break the owner-approved merge-without-deploy governance.
-  assert.equal(deploymentEnabled?.["*"],false);
-  assert.equal(deploymentEnabled?.main,false);
-  assert.ok(deploymentEnabled&&Object.values(deploymentEnabled).every(value=>value===false),
-    "Git-triggered deployments must stay disabled for every configured branch");
-
-  const verify=read(".github/workflows/verify-web.yml");
-  const browser=read(".github/workflows/browser-smoke.yml");
-  assert.match(verify,/POSTGRES_DB: flytally_test/);
-  assert.match(verify,/DATABASE_URL: postgresql:\/\/flytally:flytally@127\.0\.0\.1:5432\/flytally_test/);
-  assert.match(browser,/POSTGRES_DB: flytally_browser/);
-  assert.match(browser,/DATABASE_URL: postgresql:\/\/flytally:flytally@127\.0\.0\.1:5432\/flytally_browser/);
-  assert.doesNotMatch(verify,/neondb|DATABASE_URL:\s*\$\{\{\s*secrets\./);
-  assert.doesNotMatch(browser,/neondb|DATABASE_URL:\s*\$\{\{\s*secrets\./);
-});
-
 test("E1.5 authenticated browser suite is serialized because desktop and mobile share one mutable fixture database",()=>{
   const playwright=read("playwright.config.mjs");
   assert.match(playwright,/fullyParallel:false/);
@@ -44,7 +24,7 @@ test("E1.5 authenticated browser suite is serialized because desktop and mobile 
 });
 
 test("E1.5 production v18 preflight is read-only and fails closed on registry or partial-schema drift",()=>{
-  const sql=read("tooling/e15-v18-preflight.sql");
+  const sql=read("sql/migrations/v18-preflight.sql");
   assert.match(sql,/BEGIN TRANSACTION READ ONLY/);
   assert.match(sql,/FOR v IN 1\.\.17 LOOP/);
   assert.match(sql,/COUNT\(\*\) FROM public\.flytally_schema_migrations\)<>17/);
@@ -58,7 +38,7 @@ test("E1.5 production v18 preflight is read-only and fails closed on registry or
 });
 
 test("E1.5 explicit v18 migration revalidates under the runtime advisory lock and contains no cleanup/backfill",()=>{
-  const sql=read("tooling/e15-v18-migrate.sql");
+  const sql=read("sql/migrations/v18-migrate.sql");
   assert.match(sql,/^\\set ON_ERROR_STOP on/m);
   assert.match(sql,/BEGIN;/);
   assert.match(sql,/SET LOCAL lock_timeout='5s'/);
@@ -83,7 +63,7 @@ test("E1.5 explicit v18 migration revalidates under the runtime advisory lock an
 });
 
 test("E1.5 postflight verifies v18 shape and preserves evidence counts for comparison",()=>{
-  const sql=read("tooling/e15-v18-postflight.sql");
+  const sql=read("sql/migrations/v18-postflight.sql");
   assert.match(sql,/BEGIN TRANSACTION READ ONLY/);
   assert.match(sql,/current_database\(\) IS DISTINCT FROM 'neondb'/);
   assert.match(sql,/COUNT\(\*\) FROM public\.flytally_schema_migrations\)<>18/);

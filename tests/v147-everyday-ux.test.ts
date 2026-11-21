@@ -45,12 +45,3 @@ test("v1.47.0 technical data checks remain secondary to everyday aircraft manage
   const aircraftBlock=database.slice(database.indexOf('view==="aircraft"'),database.indexOf('view==="airports"'));
   assert.doesNotMatch(aircraftBlock,/DataQualityPanel|Advanced counts|airport-code-migration/);
 });
-
-test("v1.47.0 remains presentation-only around protected flight evidence",()=>{
-  const layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),certification=read("lib/certification-integrity.ts"),gps=read("lib/track-processing.ts");
-  assert.match(layout,/v147-everyday\.css/);
-  assert.match(roadmap,/## v1\.47\.0 · Everyday UX refinement/);
-  assert.match(certification,/flightCertificationHash/);
-  assert.match(gps,/takeoffEvidenceIndex/);
-  assert.match(roadmap,/does not change flight ownership, certification, recency or GPS inference/i);
-});

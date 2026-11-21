@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: Also run the authenticated Playwright browser tests
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Disposable local test database. Port 55441 and the fixed database name are
+  # required by the schema-first v21 test guards (see tooling/run-auth-browser.mjs).
+  DATABASE_URL: postgresql://flytally@127.0.0.1:55441/flytally_currency_test
+  SIGNING_SECRET: ci-signing-secret-not-for-production-0123456789
+  SESSION_SECRET: ci-session-secret-not-for-production-0123456789
+
+jobs:
+  app:
+    name: Typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  postgres:
+    name: PostgreSQL integration
+    runs-on: ubuntu-24.04  # ships PostgreSQL 16; must match production major
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Start local PostgreSQL 16 on 127.0.0.1:55441
+        # Native server, not a Docker service: several suites verify that the
+        # server itself reports 127.0.0.1 and the URL port.
+        run: |
+          PGBIN=/usr/lib/postgresql/16/bin
+          if [ ! -x "$PGBIN/initdb" ]; then sudo apt-get update && sudo apt-get install -y postgresql-16; fi
+          sudo install -d -o postgres /tmp/pg
+          sudo -u postgres "$PGBIN/initdb" -D /tmp/pg/data -U flytally --auth=trust
+          sudo -u postgres "$PGBIN/pg_ctl" -D /tmp/pg/data -l /tmp/pg/server.log -o "-p 55441 -k /tmp/pg -c listen_addresses=127.0.0.1" start
+          psql "postgresql://flytally@127.0.0.1:55441/postgres" -c "CREATE DATABASE flytally_currency_test"
+      - run: npm run test:postgres:full
+
+  browser:
+    name: Browser (Playwright)
+    if: github.event_name == 'workflow_dispatch' && inputs.browser
+    runs-on: ubuntu-24.04  # ships PostgreSQL 16; must match production major
+    timeout-minutes: 30
+    env:
+      FLYTALLY_BROWSER_PASSWORD: FlyTally-Browser-2026!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Start local PostgreSQL 16 on 127.0.0.1:55441
+        # Native server, not a Docker service: several suites verify that the
+        # server itself reports 127.0.0.1 and the URL port.
+        run: |
+          PGBIN=/usr/lib/postgresql/16/bin
+          if [ ! -x "$PGBIN/initdb" ]; then sudo apt-get update && sudo apt-get install -y postgresql-16; fi
+          sudo install -d -o postgres /tmp/pg
+          sudo -u postgres "$PGBIN/initdb" -D /tmp/pg/data -U flytally --auth=trust
+          sudo -u postgres "$PGBIN/pg_ctl" -D /tmp/pg/data -l /tmp/pg/server.log -o "-p 55441 -k /tmp/pg -c listen_addresses=127.0.0.1" start
+          psql "postgresql://flytally@127.0.0.1:55441/postgres" -c "CREATE DATABASE flytally_currency_test"
+      - run: npx --no-install playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:browser
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7

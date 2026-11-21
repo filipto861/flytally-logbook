@@ -41,25 +41,6 @@ test("v1.42.0 removes parser point numbers from normal import review",()=>{
   assert.match(form,/Detected on profile/);
 });
 
-test("v1.42.0 keeps stabilized GPS inference unchanged",()=>{
-  const processing=read("lib/track-processing.ts"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
-  assert.match(processing,/function takeoffEvidenceIndex/);
-  assert.match(processing,/hasImplausibleAltitudeJump/);
-  assert.match(processing,/export function suggestedSplits/);
-  assert.match(processing,/export function touchAndGoEvents/);
-  assert.match(roadmap,/retain the v1\.38\.1–v1\.38\.2 split\/landing\/take-off heuristics unchanged/);
-});
-
-test("v1.42 import-player styling stays isolated in later releases",()=>{
-  const css=read("app/v142-gps-import.css"),layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
-  assert.match(layout,/v142-gps-import\.css/);
-  assert.match(css,/\.import-player-review/);
-  assert.match(css,/\.profile-event-marker/);
-  assert.doesNotMatch(css,/mobile-toggle|mobile-nav-backdrop|sidebar nav|\.sidebar/);
-  assert.match(roadmap,/v1\.42\.0–v1\.42\.1: visual GPS import player/);
-  assert.match(roadmap,/v1\.43: Print & Export finalisation/);
-});
-
 test("v1.42.1 keeps only the authoritative import player map",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,42,1));
   const form=read("components/kml-import-form.tsx");

@@ -27,14 +27,6 @@ test("settings validates timezone before any account settings transaction",()=>{
   assert.match(page,/Numeric offsets such as \+02:00 are not supported/);
 });
 
-test("development registry owns the strict timezone boundary",()=>{
-  const registry=JSON.parse(read("tooling/development-modules.json"));
-  const platform=registry.modules.find((item:{id:string})=>item.id==="platform");
-  assert.ok(platform);
-  assert.ok(platform.prefixes.includes("lib/calendar-date"));
-  assert.ok(platform.prefixes.includes("lib/data/user-calendar"));
-});
-
 test("P1.4 aircraft and rate defaults use strict server calendar authority",()=>{
   const databasePage=read("app/(protected)/database/page.tsx");
   const manager=read("components/aircraft-manager.tsx");

@@ -8,8 +8,6 @@ const css=fs.readFileSync("app/v158-flight-entry-polish.css","utf8");
 const layout=fs.readFileSync("app/layout.tsx","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
-const changelog=fs.readFileSync("CHANGELOG.md","utf8");
-const audit=fs.readFileSync("docs/history/FLIGHT_ENTRY_UX_V158.md","utf8");
 
 test("v1.58 metadata and final UX layer are synchronized",()=>{
   const [major,minor]=String(pkg.version).split(".").map(Number);
@@ -17,8 +15,6 @@ test("v1.58 metadata and final UX layer are synchronized",()=>{
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.ok(layout.indexOf("v158-flight-entry-polish.css")>layout.indexOf("v157-flight-entry-workflow.css"));
-  assert.match(changelog,/## 1\.58\.0 — Flight Entry Polish & Smart Defaults/);
-  assert.match(audit,/## Deliberately unchanged/);
 });
 
 test("v1.58 removes Quick Routes from the current flight-entry surface",()=>{

@@ -65,12 +65,3 @@ test("v1.53 makes everyday role choices readable without changing stored role co
   assert.doesNotMatch(form,/Save and add another/);
   assert.match(detail,/Add another flight/);
 });
-
-test("v1.53 has one final UX layer and documents a behavior-preserving scope",()=>{
-  const layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),css=read("app/v153-everyday-ux.css");
-  assert.match(layout,/v153-everyday-ux\.css/);
-  assert.match(css,/\.first-aircraft-callout/);
-  assert.match(css,/\.aircraft-advanced-fields/);
-  assert.match(roadmap,/## Current development — v1\.53\.0 · Guided everyday entry/);
-  assert.match(roadmap,/keep v1\.51 regulatory rules, certification revisions\/hashes, signatures, GPS evidence, ownership, print\/export and backup\/restore behavior unchanged/i);
-});

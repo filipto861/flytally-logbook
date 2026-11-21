@@ -32,10 +32,3 @@ test("v1.33 authority report exposes certification, signature and identity-assur
   assert.match(report,/AUTHORITY VERIFICATION REPORT/);assert.match(report,/Technical evidence report/);assert.match(report,/verificationCryptographicStatus/);assert.match(report,/SignaturePreview/);assert.match(report,/does not state or imply approval/);
   assert.match(audit,/Verification report/);assert.match(audit,/Identity source:/);assert.doesNotMatch(audit,/Deleted account/);
 });
-
-test("v1.33 certification-readiness documentation set is version controlled",()=>{
-  for(const file of ["README.md","DATA_DICTIONARY.md","FCL050_COMPLIANCE_MATRIX.md","VERIFICATION_SPEC.md","ACCEPTANCE_MATRIX.md","CHANGE_CONTROL.md"]){
-    const target=file==="README.md"?"docs/certification-readiness/README.md":`docs/certification-readiness/${file}`;assert.ok(read(target).length>200,target);
-  }
-  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,33,0));
-});

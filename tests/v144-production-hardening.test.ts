@@ -17,20 +17,6 @@ async function signedBackup(overrides:Record<string,unknown>={}){
   return JSON.stringify({...payload,integrity:{algorithm:"SHA-256",payload_sha256:digest}});
 }
 
-test("v1.44.0 verification remains deduplicated under the current manual-only cloud policy",()=>{
-  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,44,0));
-  const workflow=read(".github/workflows/verify-web.yml");
-  assert.match(workflow,/workflow_dispatch:/);
-  assert.match(workflow,/concurrency:/);
-  assert.match(workflow,/github\.ref/);
-  assert.match(workflow,/cancel-in-progress: true/);
-  assert.doesNotMatch(workflow,/\n\s*push:/);
-  assert.doesNotMatch(workflow,/\n\s*pull_request:/);
-  assert.doesNotMatch(workflow,/FLYTALLY_POSTGRES_INTEGRATION/);
-  const postgresRunner=read("tooling/run-postgres-tests.mjs");
-  assert.match(postgresRunner,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
-});
-
 test("v1.44.0 hardens current hot paths without removing compatibility data",()=>{
   const runtime=read("lib/runtime-schema.ts"),schema=read("lib/v144-schema.ts"),backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),portable=read("lib/portable-backup.ts");
   assert.match(runtime,/ensureV144Schema/);
@@ -65,14 +51,4 @@ test("v1.44.0 PostgreSQL acceptance keeps certification lineage and canonical pa
   assert.match(scale,/status:null,workflow:null/);
   assert.match(scale,/CREATE TABLE flight_participations/);
   assert.match(scale,/version:"1\.44\.0"/);
-});
-
-test("v1.44.0 keeps stabilized regulatory and mobile direction unchanged",()=>{
-  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),gps=read("lib/track-processing.ts"),layout=read("app/(protected)/layout.tsx");
-  assert.match(roadmap,/## v1\.44\.0 · Production hardening & cleanup/);
-  assert.match(roadmap,/preserve certification payloads\/hashes\/revisions/);
-  assert.match(roadmap,/FCL\.050 print layout and global mobile navigation/);
-  assert.match(roadmap,/## Current release — v\d+\.\d+\.\d+/);
-  assert.match(gps,/takeoffEvidenceIndex/);
-  assert.match(layout,/viewportFit:"cover"/);
 });

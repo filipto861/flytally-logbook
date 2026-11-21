@@ -47,21 +47,3 @@ test("v1.39.0 mapped legacy approval URLs converge on the shared workflow",()=>{
   assert.match(page,/redirect\(`\/connections\/shared\/\$\{Number\(row\.participation_id\)\}`\)/);
   assert.match(page,/ensureRuntimeSchema/);
 });
-
-test("v1.39.0 deliberately preserves backup restore compatibility tables",()=>{
-  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),portable=read("lib/portable-backup.ts"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
-  assert.doesNotMatch(backup,/FROM track_points|track_points:/);
-  assert.match(portable,/const legacyArrays=.*"track_points"/);
-  assert.match(backup,/instructor_flight_approvals/);
-  assert.doesNotMatch(restore,/SELECT[^\n]*FROM track_points|INSERT INTO track_points|NULL::track_points/);
-  assert.match(restore,/instructor_flight_approvals/);
-  assert.match(roadmap,/explicitly retain legacy `track_points`/);
-  assert.match(roadmap,/no longer populated by the modern request path/);
-});
-
-test("v1.39.0 does not alter the stabilized GPS inference module",()=>{
-  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),gps=read("lib/track-processing.ts");
-  assert.match(roadmap,/keep certification payloads\/hashes\/revisions, Recency Engine, GPS inference/);
-  assert.match(gps,/takeoffEvidenceIndex/);
-  assert.match(gps,/hasImplausibleAltitudeJump/);
-});

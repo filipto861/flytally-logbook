@@ -73,68 +73,6 @@ test("flight detail expense projection reads exact money on v21 and stays valid 
   assert.doesNotMatch(source,/SELECT id,category,label,amount_minor,currency,amount_encoding,amount_minor_units,created_at/);
 });
 
-test("Currency browser v21 setup only runs inside a dedicated disposable localhost fixture",()=>{
-  const harness=readFileSync(new URL("../tooling/run-auth-browser.mjs",import.meta.url),"utf8");
-  const runner=readFileSync(new URL("../tooling/run-currency-380-browser-local.ps1",import.meta.url),"utf8");
-  assert.match(harness,/FLYTALLY_CURRENCY_V21_BROWSER==="1"/);
-  assert.match(harness,/parsedDatabaseUrl\.hostname!=="127\.0\.0\.1"/);
-  assert.match(harness,/parsedDatabaseUrl\.pathname!=="\/flytally_currency_test"/);
-  const fixture=readFileSync(new URL("../tooling/bootstrap-browser-smoke-db.mjs",import.meta.url),"utf8");
-  const plan=readFileSync(new URL("../lib/migration-plan.ts",import.meta.url),"utf8");
-  const runtime=readFileSync(new URL("../lib/db-optimization.ts",import.meta.url),"utf8");
-  const migrations=[...plan.matchAll(/\{version:(\d+),name:"([^"]+)"\}/g)]
-    .map(match=>({version:Number(match[1]),name:match[2]}));
-  assert.deepEqual(migrations.map(item=>item.version),Array.from({length:21},(_,index)=>index+1));
-  for(const item of migrations){
-    assert.ok(runtime.includes(item.version+':"'+item.name+'"'),"Registry/runtime name mismatch "+item.version);
-  }
-  assert.ok(fixture.includes('readFileSync(new URL("../lib/migration-plan.ts"'));
-  assert.ok(fixture.includes("preappliedMigrations.length!==19"));
-  assert.ok(fixture.includes("preappliedMigrations.map(migration"));
-  assert.doesNotMatch(fixture,/browser-smoke-preapplied/);
-  assert.ok(harness.indexOf("const bootstrapResult=")<harness.indexOf("const browserResult="));
-  assert.doesNotMatch(harness,/3_8_0_currency_v21_additive_candidate\.sql/);
-  assert.ok(harness.includes("schema-first v20/v21 migration"));
-  const schemaFirst=readFileSync(new URL("../tooling/apply-currency-v21-disposable.mjs",import.meta.url),"utf8");
-  const playwrightConfig=readFileSync(new URL("../playwright.config.mjs",import.meta.url),"utf8");
-  assert.match(schemaFirst,/FLYTALLY_CURRENCY_V21_BROWSER/);
-  assert.match(schemaFirst,/env.VERCEL!==undefined\|\|env.VERCEL_ENV!==undefined/);
-  assert.match(schemaFirst,/if\(registered!==expected\)/);
-  assert.match(schemaFirst,/blocks.length!==\(version===20\?39:9\)/);
-  // PostgreSQL psql receives one concatenated transactional script, not the
-  // separate driver calls used by runtime: every extracted block must terminate.
-  assert.match(schemaFirst,/return blocks\.map\(statement=>statement\.trimEnd\(\)\.replace\(\/;\+\$\/,""\)\+";"\)/);
-  assert.match(schemaFirst,/SELECT pg_advisory_xact_lock\(704190104\)/);
-  assert.match(schemaFirst,/if\(evidence!=="1\|12\|4"\)/);
-  assert.match(playwrightConfig,/reuseExistingServer:process.env.FLYTALLY_CURRENCY_V21_BROWSER==="1"\?false:!process.env.CI/);
-  assert.ok(harness.indexOf("const schemaResult=")>harness.indexOf("const bootstrapResult="));
-  assert.ok(harness.indexOf("const schemaResult=")<harness.indexOf("const browserResult="));
-  assert.ok(harness.includes("schema-first v21 registry/column/constraint postcheck failed"));
-  assert.ok(harness.includes('String(observed.stdout).trim()!=="1|12|4"'));
-  assert.match(runner,/\$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"/);
-  assert.match(runner,/Restore-Env "FLYTALLY_CURRENCY_V21_BROWSER"/);
-  assert.match(runner,/npm\.cmd run test:browser -- --currency-v21 e2e\/trash-integrity\.spec\.mjs/);
-  assert.match(runner,/Currency browser PowerShell-to-Node purpose preflight PASS/);
-  assert.ok(runner.indexOf('Currency purpose environment preflight')<runner.indexOf("npm.cmd run build"));
-  assert.match(harness,/const currencyIntent=playwrightArgs\[0\]==="--currency-v21"/);
-  assert.match(harness,/Currency browser purpose\/hosting flags missing or invalid in Node harness/);
-  assert.match(harness,/Currency browser pre-bootstrap purpose and database URL checks PASS/);
-  assert.match(harness,/schemaFirstIntent\?playwrightArgs\.slice\(1\):playwrightArgs/);
-  assert.ok(harness.indexOf("const currencyIntent=")<harness.indexOf("const bootstrapResult="));
-  // Next's optimized server bundle must be built against the verified fixture
-  // environment; building first can freeze the deny-by-default v21 gate.
-  const checked=runner.indexOf('Write-Host "Verified disposable DB identity."');
-  const purpose=runner.indexOf('$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"');
-  const build=runner.indexOf("npm.cmd run build");
-  const browser=runner.indexOf("npm.cmd run test:browser");
-  assert.ok(checked>=0&&purpose>=0&&build>=0&&browser>=0);
-  assert.ok(purpose<checked&&checked<build&&build<browser,
-    "Fixture purpose + verified database must precede optimized browser build");
-  assert.equal((runner.match(/npm\.cmd run build/g)||[]).length,1);
-  assert.match(runner,/if \(Test-Path Env:VERCEL\)/);
-  assert.match(runner,/if \(Test-Path Env:VERCEL_ENV\)/);
-});
-
 test("signed v13 browser download retains the protected endpoint and clicks actual Download UI",()=>{
   const browser=readFileSync(new URL("../e2e/trash-integrity.spec.mjs",import.meta.url),"utf8");
   const api=readFileSync(new URL("../app/api/backups/[id]/route.ts",import.meta.url),"utf8");

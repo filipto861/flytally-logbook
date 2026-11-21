@@ -16,7 +16,6 @@ const insights=read("lib/data/pilot-insights.ts");
 const exportRoute=read("app/api/export/route.ts");
 const printPage=read("app/(protected)/print/page.tsx");
 const recency=read("lib/recency-service.ts");
-const characterization=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F00_CHARACTERIZATION.md");
 
 const importStart=actions.indexOf("export async function importKmlFlight");
 const importEnd=actions.indexOf("\nexport async function",importStart+40);
@@ -33,18 +32,7 @@ function validManualForm(role="PIC"){
   return form;
 }
 
-test("F0.0 preserves the historical fail-open characterization in documentation",()=>{
-  assert.match(characterization,/aircraft class → .*\|\| "ULL"/);
-  assert.match(characterization,/evidence\/logbook → .*\|\| "ULL"/);
-  assert.match(characterization,/form\.get\("evidence"\).*\|\| "ULL"/);
-  assert.match(characterization,/form\.get\("aircraftClass"\).*\|\| "ULL"/);
-  assert.match(characterization,/This is the confirmed F0\.1 fail-open defect/);
-});
-
 test("F0.0 preserves the historical separate GPS semantic path while F1.4 converges current runtime",()=>{
-  assert.match(characterization,/importKmlFlight\(\)` does not call `parseFlightInput\(\)`/);
-  assert.match(characterization,/allocates function time directly/);
-  assert.match(characterization,/This is a confirmed semantic-write divergence/);
   assert.match(importAction,/gpsFlightCandidate\(\{/);
   assert.match(importAction,/normalizeFlightDraft\(candidate\)/);
   assert.match(importAction,/INSERT INTO flights\(user_id,date,evidence,registration,aircraft_type,aircraft_class/);
@@ -53,8 +41,6 @@ test("F0.0 preserves the historical separate GPS semantic path while F1.4 conver
 });
 
 test("F0.0 preserves the historical GPS role surface and INSTRUKTOR mismatch in documentation",()=>{
-  for(const role of ["PIC","DUAL","SAFETY PILOT","CO-PILOT","PAX","OBSERVER"])assert.ok(characterization.includes(`| \`${role}\``));
-  assert.match(characterization,/INSTRUKTOR mismatch/);
   assert.equal(ROLES.includes("INSTRUKTOR" as (typeof ROLES)[number]),false);
   assert.equal(ROLES.includes("INSTRUCTOR" as (typeof ROLES)[number]),true);
   assert.deepEqual(allocatedFunctionTimes("INSTRUKTOR",60),{picMinutes:0,copilotMinutes:0,dualMinutes:0,instructorMinutes:0});

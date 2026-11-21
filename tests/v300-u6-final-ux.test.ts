@@ -45,14 +45,3 @@ test("v3.0 U6 final CSS covers safe areas, touch sizing, overflow and accessibil
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/forced-colors:active/);
 });
-
-test("v3.0 U6 is loaded last and closes the cross-product UX consolidation track",()=>{
-  const layout=read("app/layout.tsx");
-  const roadmap=read("docs/history/ROADMAP_PRE_NUMERIC_2026-10-04.md");
-  const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
-  assert.ok(layout.indexOf('import "./v300-u6-acceptance.css"')>layout.indexOf('import "./v300-u4-flight-workflow.css"'));
-  assert.match(roadmap,/\| v3\.0 — UX & Product Consolidation \| ✅ \|/);
-  assert.match(roadmap,/\| UX & design consistency \| ✅ \|/);
-  assert.match(audit,/Status: \*\*v3\.0 complete\*\*/);
-  assert.match(audit,/U6 ✅ Mobile, accessibility and final UX acceptance/);
-});

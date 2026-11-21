@@ -34,15 +34,3 @@ test("v1.33.5 preserves explicit aliases on critical joined action projections",
   assert.match(certification,/SELECT\s+f[.]id,f[.]xmin::text row_xmin,[\s\S]*f[.]date::text date/);
   assert.match(instructor,/SELECT a[.]flight_id,a[.]student_user_id,a[.]record_revision/);
 });
-
-test("v1.33.5 retains scale evidence as a dedicated CI artifact and controlled documentation",()=>{
-  const workflow=read(".github/workflows/verify-web.yml");
-  const matrix=read("docs/certification-readiness/ACCEPTANCE_MATRIX.md");
-  const finalization=read("docs/certification-readiness/FINALIZATION_EVIDENCE.md");
-  assert.match(workflow,/flytally-scale-evidence/);
-  assert.match(matrix,/Version: 1[.]33[.]5/);
-  assert.match(matrix,/v1[.]33[.]5 finalization evidence/);
-  assert.match(finalization,/PostgreSQL 16/);
-  assert.match(finalization,/10,000/);
-  assert.match(finalization,/not a browser/i);
-});

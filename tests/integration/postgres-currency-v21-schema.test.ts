@@ -13,8 +13,16 @@ const databaseUrl=process.env.DATABASE_URL||"";
 const schema="ft_currency_"+randomUUID().replaceAll("-","");
 const quoted='"'+schema+'"';
 const root=resolve(import.meta.dirname,"../..");
-const draft=readFileSync(resolve(root,"sql/drafts/3_8_0_currency_v21_additive_candidate.sql"),"utf8");
 const dbSource=readFileSync(resolve(root,"lib/db-optimization.ts"),"utf8");
+// The eight canonical v21 DDL blocks exactly as the runtime executes them
+// (identical to sql/migrations/v21-migrate.sql, see currency-v21-release-contract).
+const v21Start=dbSource.indexOf("  if(version===21)return[");
+// Block 0 is the registry preflight guard; blocks 1..8 are the additive DDL.
+const v21Blocks=[...dbSource.slice(v21Start,dbSource.indexOf("  ];\n  throw new Error(",v21Start)).matchAll(/sql`([\s\S]*?)`/g)].map(m=>m[1]).slice(1);
+if(v21Start<0||v21Blocks.length!==8||v21Blocks.some(block=>block.includes("${"))
+  ||v21Blocks.filter(block=>/^\s*ALTER TABLE /.test(block)).length!==4
+  ||v21Blocks.filter(block=>/^\s*DO \$currency\$/.test(block)).length!==4)throw new Error("Runtime v21 DDL source changed");
+const draft="BEGIN;\n"+v21Blocks.map(block=>block.trimEnd().replace(/;+$/,"")+";").join("\n")+"\nCOMMIT;";
 
 function execSql(statement:string,withSchema=true){
   return spawnSync("psql",["-w","-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{
