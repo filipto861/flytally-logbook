@@ -45,20 +45,6 @@ jobs:
     name: PostgreSQL integration
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: flytally
-          POSTGRES_DB: flytally_currency_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 55441:5432
-        options: >-
-          --health-cmd="pg_isready -U flytally"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,6 +52,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Start local PostgreSQL 16 on 127.0.0.1:55441
+        # Native server, not a Docker service: several suites verify that the
+        # server itself reports 127.0.0.1 and the URL port.
+        run: |
+          PGBIN=/usr/lib/postgresql/16/bin
+          if [ ! -x "$PGBIN/initdb" ]; then sudo apt-get update && sudo apt-get install -y postgresql-16; fi
+          sudo install -d -o postgres /tmp/pg
+          sudo -u postgres "$PGBIN/initdb" -D /tmp/pg/data -U flytally --auth=trust
+          sudo -u postgres "$PGBIN/pg_ctl" -D /tmp/pg/data -l /tmp/pg/server.log -o "-p 55441 -k /tmp/pg -c listen_addresses=127.0.0.1" start
+          psql "postgresql://flytally@127.0.0.1:55441/postgres" -c "CREATE DATABASE flytally_currency_test"
       - run: npm run test:postgres:full
 
   browser:
@@ -73,20 +69,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.browser
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: flytally
-          POSTGRES_DB: flytally_currency_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 55441:5432
-        options: >-
-          --health-cmd="pg_isready -U flytally"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
     env:
       FLYTALLY_BROWSER_PASSWORD: FlyTally-Browser-2026!
     steps:
@@ -96,6 +78,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Start local PostgreSQL 16 on 127.0.0.1:55441
+        # Native server, not a Docker service: several suites verify that the
+        # server itself reports 127.0.0.1 and the URL port.
+        run: |
+          PGBIN=/usr/lib/postgresql/16/bin
+          if [ ! -x "$PGBIN/initdb" ]; then sudo apt-get update && sudo apt-get install -y postgresql-16; fi
+          sudo install -d -o postgres /tmp/pg
+          sudo -u postgres "$PGBIN/initdb" -D /tmp/pg/data -U flytally --auth=trust
+          sudo -u postgres "$PGBIN/pg_ctl" -D /tmp/pg/data -l /tmp/pg/server.log -o "-p 55441 -k /tmp/pg -c listen_addresses=127.0.0.1" start
+          psql "postgresql://flytally@127.0.0.1:55441/postgres" -c "CREATE DATABASE flytally_currency_test"
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run build
       - run: npm run test:browser
