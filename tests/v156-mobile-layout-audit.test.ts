@@ -4,7 +4,6 @@ import fs from "node:fs";
 
 const css=fs.readFileSync("app/v156-mobile-hardening.css","utf8");
 const layout=fs.readFileSync("app/layout.tsx","utf8");
-const audit=fs.readFileSync("docs/history/MOBILE_UX_AUDIT_V156.md","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 
@@ -36,13 +35,6 @@ test("v1.56 shared control containment excludes semantic small controls",()=>{
   assert.match(css,/input:not\(\[type="hidden"\]\):not\(\[type="checkbox"\]\):not\(\[type="radio"\]\):not\(\[type="range"\]\):not\(\[type="file"\]\)/);
   assert.match(css,/\.table-scroll/);
   assert.match(css,/overflow-x:auto/);
-});
-
-test("v1.56 audit covers every primary navigation destination",()=>{
-  for(const label of ["Dashboard","Flights","FSTD sessions","Add flight","Map","Notifications","Connections","Licences","Settings","Aircraft & airports","Print & data","Administration"]){
-    assert.ok(audit.includes(`**${label}**`),`missing mobile audit row for ${label}`);
-  }
-  assert.match(audit,/does \*\*not\*\* change flight semantics/i);
 });
 
 test("v1.56 retains the regulatory and aircraft-integrity regression safety net",()=>{

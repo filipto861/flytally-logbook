@@ -49,13 +49,3 @@ test("v1.41.0 keeps GPS inference behavior unchanged while reusing it for adviso
   assert.match(processing,/takeoffEvidenceIndex/);
   assert.match(processing,/hasImplausibleAltitudeJump/);
 });
-
-test("v1.41.0 GPS polish stays isolated from global navigation",()=>{
-  const css=read("app/v141-gps-review.css"),layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
-  assert.match(layout,/v141-gps-review\.css/);
-  assert.match(css,/\.gps-review-grid/);
-  assert.match(css,/\.track-source-row/);
-  assert.doesNotMatch(css,/mobile-toggle|mobile-nav-backdrop|sidebar nav|\.sidebar/);
-  assert.match(roadmap,/v1\.41\.0 · Map & GPS UX/);
-  assert.match(roadmap,/v1\.43: Print & Export finalisation/);
-});

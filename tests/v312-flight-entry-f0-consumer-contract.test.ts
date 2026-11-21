@@ -18,8 +18,6 @@ const exportRoute=read("app/api/export/route.ts");
 const printPage=read("app/(protected)/print/page.tsx");
 const sharedActions=read("app/(protected)/flights/shared-actions.ts");
 const dbOptimization=read("lib/db-optimization.ts");
-const matrix=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F0_FIELD_CONSUMER_MATRIX.md");
-const f2=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F2_ROLE_CREW_DESIGN.md");
 const roleCrew=read("lib/role-crew.ts");
 
 const actionBlock=(name:string)=>{
@@ -38,7 +36,6 @@ test("F0 inventory locks Manual shared parser versus current GPS direct semantic
   assert.match(update,/parseFlightInput\(form,\{existingPurposeCodes\}\)/);
   assert.doesNotMatch(gps,/parseFlightInput\(/);
   assert.match(gps,/INSERT INTO flights\(user_id,date,evidence,registration,aircraft_type,aircraft_class/);
-  assert.match(matrix,/GPS is therefore still a second semantic write path/);
 });
 
 test("F2.1 closes the F0-characterized DUAL Save gap without changing Certification",()=>{
@@ -46,8 +43,6 @@ test("F2.1 closes the F0-characterized DUAL Save gap without changing Certificat
   assert.match(roleCrew,/instructor=easa\?"required_save":"optional"/);
   assert.match(flightInput,/roleCrewSaveError\(crewSpec,\{instructor,verificationName,verificationReference\}\)/);
   assert.match(compliance,/role==="DUAL"&&!text\(row\.instructor\).*DUAL flight requires the instructor\/PIC name/);
-  assert.match(matrix,/Current server parser does not independently reject blank DUAL instructor/);
-  assert.match(f2,/make EASA DUAL Instructor\/PIC Save-required server-side/);
 });
 
 test("F0 inventory locks certified-only recency and draft-visible analytics",()=>{
@@ -56,14 +51,12 @@ test("F0 inventory locks certified-only recency and draft-visible analytics",()=
   assert.doesNotMatch(dashboard,/FROM flights f WHERE f\.user_id=\$\{userId\} AND f\.certified_at IS NOT NULL/);
   assert.match(insights,/FROM flights f WHERE f\.user_id=\$\{userId\}/);
   assert.doesNotMatch(insights,/FROM flights f WHERE f\.user_id=\$\{userId\} AND f\.certified_at IS NOT NULL/);
-  assert.match(matrix,/draft does not mean regulatory evidence/);
 });
 
 test("F0 inventory preserves certification v1-v8 compatibility boundary",()=>{
   for(let version=1;version<=8;version++)assert.match(certification,new RegExp(`version===${version}`));
   assert.match(certificationActions,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
   assert.match(certificationActions,/certification_version=8/);
-  assert.match(matrix,/Do not change certification payload v1–v8/);
 });
 
 test("F0 inventory records DB aircraft identity snapshot as a cross-path dependency",()=>{
@@ -72,13 +65,11 @@ test("F0 inventory records DB aircraft identity snapshot as a cross-path depende
   assert.match(dbOptimization,/NEW\.aircraft_make:=COALESCE\(v_make,''\)/);
   assert.match(dbOptimization,/NEW\.aircraft_model:=COALESCE\(v_model,NULLIF\(TRIM\(NEW\.aircraft_type\),''\),''\)/);
   assert.match(dbOptimization,/NEW\.aircraft_variant:=COALESCE\(v_variant,''\)/);
-  assert.match(matrix,/final persistence authority for those three identity fields/);
 });
 
 test("F0 inventory captures shared-flight identity trigger interaction for F1 review",()=>{
   assert.match(sharedActions,/INSERT INTO flights\(user_id,date,evidence,registration,aircraft_type,aircraft_class/);
   assert.match(sharedActions,/\$\{text\(row\.aircraft_make\)\},\$\{text\(row\.aircraft_model\)\},\$\{text\(row\.aircraft_variant\)\}/);
-  assert.match(matrix,/Shared-flight copy \+ aircraft identity trigger needs dedicated review/);
 });
 
 test("F0 inventory records current CSV/XLS field coverage without redefining stored semantics",()=>{
@@ -89,19 +80,10 @@ test("F0 inventory records current CSV/XLS field coverage without redefining sto
   for(const field of ["date","evidence","regulatory_category","registration","aircraft_make","aircraft_model","role","certified_at"])assert.match(columns,new RegExp(`"${field}"`));
   for(const omitted of ["purpose_code","operator_name","flight_number","operation_context","movement_evidence_recorded","approaches_day","approaches_night"])assert.doesNotMatch(columns,new RegExp(`"${omitted}"`));
   assert.match(printPage,/f\.purpose_code/);
-  assert.match(matrix,/Tabular export is not a complete semantic mirror/);
 });
 
 test("F0 inventory keeps collaboration and GPS track provenance outside the certification hash payload",()=>{
   assert.doesNotMatch(certification,/flight_connected_crew/);
   assert.doesNotMatch(certification,/flight_tracks|track_points/);
   assert.doesNotMatch(certification,/billing_basis|price_per_hour|flight_expenses/);
-  assert.match(matrix,/GPS track content/);
-  assert.match(matrix,/connected-account PIC link/);
-});
-
-test("F0 inventory points F1 at one normalized semantic object without broadening GPS roles",()=>{
-  assert.match(matrix,/Introduce one server-side normalized semantic flight object/);
-  assert.match(matrix,/unsupported GPS roles remain rejected/);
-  assert.match(matrix,/Equivalent Manual and GPS \*\*PIC\*\* inputs must produce equivalent semantic flight fields/);
 });

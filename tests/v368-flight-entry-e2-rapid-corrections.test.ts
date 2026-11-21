@@ -116,7 +116,7 @@ test("E2 aircraft profile default engine is persisted, shared and applied as an 
 });
 
 test("E2 production v19 tooling is strict, transactional and no-backfill",()=>{
-  const pre=read("tooling/e2-v19-preflight.sql"),mig=read("tooling/e2-v19-migrate.sql"),post=read("tooling/e2-v19-postflight.sql");
+  const pre=read("sql/migrations/v19-preflight.sql"),mig=read("sql/migrations/v19-migrate.sql"),post=read("sql/migrations/v19-postflight.sql");
   assert.match(pre,/BEGIN TRANSACTION READ ONLY/);
   assert.match(pre,/registry is not exact versions 1\.\.18/);
   assert.match(pre,/default_engine_type already exists/);

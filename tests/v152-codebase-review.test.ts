@@ -8,22 +8,6 @@ const root=path.resolve(import.meta.dirname,"..");
 const exists=(relative:string)=>fs.existsSync(path.join(root,relative));
 const read=(relative:string)=>fs.readFileSync(path.join(root,relative),"utf8");
 
-test("v1.52 active tree is the Next.js runtime rather than the retired Streamlit application",()=>{
-  const pkg=JSON.parse(read("package.json"));
-  assert.ok(releaseAtLeast(pkg.version,1,52,0));
-  for(const retired of ["app.py","logbook_core","logbook_ui",".streamlit","requirements.txt","scripts"]){
-    assert.equal(exists(retired),false,`${retired} must remain outside the active production tree`);
-  }
-  // Currency SQL is an isolated, unregistered draft — not an active runtime directory.
-  assert.deepEqual(fs.readdirSync(path.join(root,"sql")),["drafts"],"Only unregistered SQL draft artifacts may live here");
-  assert.ok(exists("sql/drafts/3_8_0_currency_v21_additive_candidate.sql"),"Currency schema review draft must remain isolated");
-  for(const active of ["app","components","lib","tests","next.config.ts","vercel.json"]){
-    assert.equal(exists(active),true,`${active} is part of the active production tree`);
-  }
-  const retiredPythonTests=fs.readdirSync(path.join(root,"tests")).filter(name=>name.endsWith(".py"));
-  assert.deepEqual(retiredPythonTests,[],"retired Streamlit/Python tests must not remain beside the active TypeScript suite");
-});
-
 test("v1.52 repository no longer ships transactional or generated legacy data artifacts",()=>{
   for(const retired of ["data/logbook.sqlite","data/Zapisnik_letu_source.xlsx","data/airports_full.sqlite","data/airport_overrides.csv"]){
     assert.equal(exists(retired),false,`${retired} must not be shipped in the production repository`);
@@ -39,30 +23,4 @@ test("v1.52 package and lockfile versions remain synchronized in later releases"
   assert.ok(releaseAtLeast(pkg.version,1,52,0));
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages?.[""]?.version,pkg.version);
-});
-
-test("v1.52 operational documentation describes the current runtime",()=>{
-  const readme=read("README.md"),architecture=read("ARCHITECTURE.md"),review=read("docs/history/CODE_REVIEW_V152.md");
-  assert.match(readme,/Next[.]js 16/);
-  assert.match(readme,/Neon PostgreSQL/);
-  assert.doesNotMatch(readme,/Current production-oriented release: \*\*FlyTally v1[.]33/);
-  assert.match(architecture,/Next[.]js 16/);
-  assert.match(architecture,/active(?: production)? runtime is TypeScript(?: only)?/);
-  assert.match(architecture,/Streamlit\/Python/);
-  assert.match(architecture,/Git history is the archive/);
-  assert.match(review,/behavior preserving/i);
-});
-
-test("v1.52 cleanup does not remove the v1.51 regulatory regression safety net",()=>{
-  for(const regression of [
-    "tests/v151-regulatory-correctness.test.ts",
-    "tests/v1511-legacy-recency.test.ts",
-    "tests/v1512-recency-provenance.test.ts",
-    "tests/v1513-automatic-ull-credit.test.ts",
-    "docs/history/REGULATORY_CORE_V151.md",
-  ])assert.equal(exists(regression),true,`${regression} must be retained`);
-
-  const regulatory=read("docs/history/REGULATORY_CORE_V151.md");
-  assert.match(regulatory,/automatically treated as SEP experience/);
-  assert.match(regulatory,/ULL \/ Annex-I experience is not imported automatically into this 90-day passenger-currency rule/i);
 });

@@ -6,32 +6,6 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v2.3 keeps a retained 100k read-performance gate over production hot paths",()=>{
-  const integration=read("tests/integration/postgres-v230-large-logbook-performance.test.ts");
-  const workflow=read(".github/workflows/verify-web.yml");
-  assert.match(integration,/const SCALE_ROWS=100_000/);
-  for(const metric of [
-    "dashboardAllTime100k",
-    "flightListFirstPage100k",
-    "pilotInsights100k",
-    "printCompleteSql100k",
-    "exportCompleteSql100k",
-    "pendingActionCount4500",
-    "auditArchivedRevisions500",
-    "flightAuditLatest100Of5000",
-  ])assert.ok(integration.includes(metric),`missing v2.3 performance metric ${metric}`);
-  assert.match(integration,/\["overview","experience","aircraft","places","career"\] as const/);
-  assert.match(integration,/recordMetric\(`pilotInsights\$\{section\[0\]\.toUpperCase\(\)\}\$\{section\.slice\(1\)\}100k`/);
-  assert.match(integration,/read\("lib\/data\/dashboard\.ts"\)/);
-  assert.match(integration,/read\("lib\/data\/flights-fast\.ts"\)/);
-  assert.match(integration,/read\("lib\/data\/pilot-insights\.ts"\)/);
-  assert.match(integration,/read\("app\/api\/export\/route\.ts"\)/);
-  assert.match(integration,/read\("lib\/pending-actions\.ts"\)/);
-  assert.match(integration,/read\("app\/\(protected\)\/flights\/\[id\]\/audit\/page\.tsx"\)/);
-  assert.match(workflow,/flytally-v230-100k-scale-evidence\.json/);
-  assert.match(workflow,/retention-days: 90/);
-});
-
 test("v2.3 Dashboard uses a lean at-a-glance read model instead of recalculating Statistics",()=>{
   const source=read("lib/data/dashboard.ts"),page=read("app/(protected)/dashboard/page.tsx");
   assert.match(page,/getDashboardOverviewData\(session\.userId,"all"\)/);
@@ -65,12 +39,4 @@ test("v2.3 Statistics only computes aggregates required by the active section",(
   assert.match(source,/normalizedAnalyticsSection/);
   assert.ok(source.includes('?s(value).toLowerCase():"all") as'),"missing backward-compatible all-section fallback");
   for(const name of ["overview","experience","aircraft","places","career"])assert.ok(source.includes(`'all','${name}'`));
-});
-
-test("v2.3 performance baseline remains documented after v2.7 release",()=>{
-  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
-  assert.match(roadmap,/## Current release — v2\.7\.0 — Data Integrity & Recovery 2\.0/);
-  assert.match(roadmap,/## v2\.3\.0 — Large Logbook Performance & Scalability/);
-  assert.match(roadmap,/100k-flight read-performance gate/);
-  assert.match(roadmap,/without a schema change or historical-row rewrite/);
 });

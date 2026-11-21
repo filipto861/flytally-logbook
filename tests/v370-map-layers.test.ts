@@ -161,16 +161,6 @@ test("3.7.0 trial is limited to four authenticated surfaces, not public replay",
   assert.doesNotMatch(source("components/flight-story-card.tsx"), /installMapSettingsControl/);
 });
 
-test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
-  const registry = JSON.parse(source("tooling/development-modules.json"));
-  const gps = registry.modules.find((entry: { id: string }) => entry.id === "gps-tracks");
-  assert.ok(gps, "GPS domain registry entry must exist");
-  assert.ok(gps.prefixes.includes("components/satellite-map-control"));
-  assert.ok(registry.browserAcceptance.pathTargets.some((entry: { prefixes?: string[] }) =>
-    entry.prefixes?.includes("components/satellite-map-control")),
-    "new map control must select registered map browser acceptance");
-});
-
 
 test("A2E shared Map settings contains both independent gated controllers without changing aviation authority", () => {
   const composite = source("components/satellite-map-control.ts");

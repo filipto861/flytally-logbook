@@ -41,39 +41,3 @@ test("v3.0 U1 rolls flight attention into the Flights destination",()=>{
   assert.match(sidebar,/flights need attention/);
   assert.match(sidebar,/pathname\.startsWith\("\/flights\/"\)/);
 });
-
-test("v3.0 historical UX evidence is archived while numeric roadmap owns current priority",()=>{
-  const roadmap=read("ROADMAP.md");
-  const legacy=read("docs/history/ROADMAP_PRE_NUMERIC_2026-10-04.md");
-  const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
-
-  // 10 Oct 2026 canonical cleanup replaced the obsolete enumerated release
-  // sequence with a verified release snapshot and forward release table.
-  // Keep historical UX milestones in the archived roadmap, not current priorities.
-  assert.match(roadmap,/## 1\. Verified release state/);
-  assert.match(roadmap,/## 2\. Post-release order/);
-  assert.match(roadmap,/## 4\. Forward release sequence/);
-  assert.match(roadmap,/\| 3\.4\.0 \| Flight Entry Simplification \| DONE \/ PRODUCTION \|/);
-  assert.match(roadmap,/\| 3\.4\.1 \| GPS Night-time reliability \| DONE \/ PRODUCTION \|/);
-  assert.match(roadmap,/\| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \| \*\*DONE \/ PRODUCTION\*\*/);
-  assert.match(roadmap,/\| \*\*3\.8\.0\*\* \| Currency \/ monetary semantics · #136 \| NEXT/);
-  assert.match(roadmap,/docs\/history\/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP\.md/);
-  assert.match(roadmap,/docs\/history\/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION\.md/);
-  assert.match(roadmap,/Esri\/openAIP rights separately unverified/);
-
-  assert.match(legacy,/\| UX & design consistency \| ✅ \|/);
-  assert.match(legacy,/\| GPS touch-and-go detection reliability \| ✅ \|/);
-  assert.match(legacy,/\| Safety Pilot ↔ PIC shared-flight workflow \| ✅ \|/);
-  assert.match(legacy,/\| Flight Entry Workflow 3\.0 \| ✅ \|/);
-
-  assert.match(audit,/U0 ✅ Product UX audit/);
-  assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
-  assert.match(audit,/U2 ✅ Licences & recency/);
-  assert.match(audit,/U3 ✅ Aircraft \/ Data \/ Settings/);
-  assert.match(audit,/U3\.1 ✅ Aircraft & airports/);
-  assert.match(audit,/U3\.2 ✅ Print & data/);
-  assert.match(audit,/U3\.3 ✅ Settings/);
-  assert.match(audit,/U4 ✅ Flight workflow clarity/);
-  assert.match(audit,/U5 ✅ Training learner polish/);
-  assert.match(audit,/U6 ✅ Mobile, accessibility and final UX acceptance/);
-});

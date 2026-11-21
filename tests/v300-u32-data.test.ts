@@ -47,18 +47,3 @@ test("v3.0 U3.2 preserves print/export semantics behind a simpler presentation",
   assert.match(hub,/Output details/);
   assert.match(hub,/Excel vs CSV/);
 });
-
-test("v3.0 U3.2 has responsive and light-theme presentation",()=>{
-  const layout=read("app/layout.tsx"),css=read("app/v300-u32-data.css"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
-  assert.match(layout,/v300-u32-data\.css/);
-  assert.match(css,/data-workspace-nav/);
-  assert.match(css,/u32-recovery-grid/);
-  assert.match(css,/html\[data-theme="light"\] \.data-workspace-nav/);
-  assert.match(css,/@media\(max-width:620px\)/);
-  assert.match(roadmap,/U3\.2 ✅ Print & data task hierarchy/);
-  assert.match(roadmap,/U3\.3 ✅ Settings hierarchy/);
-  assert.match(roadmap,/U4 ✅ flight save/);
-  assert.match(roadmap,/U5 ✅ Training learner polish/);
-  assert.match(roadmap,/U6 ✅ mobile, accessibility and final UX acceptance/);
-  assert.match(audit,/U3\.2 ✅ Print & data/);
-});

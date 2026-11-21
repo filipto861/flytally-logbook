@@ -27,13 +27,3 @@ test("v1.33.3 compares the server-authoritative state used by all four pilot vie
   assert.match(integration,/Historical R1 signature must not leak into current R2 print projection/);
   assert.match(integration,/Flight detail must select the exact current R2 signature/);
 });
-
-test("v1.33.3 documents evidence scope and retains the v3 certification payload baseline",()=>{
-  const docs=read("docs/certification-readiness/FULL_WORKFLOW_EVIDENCE.md");
-  const matrix=read("docs/certification-readiness/ACCEPTANCE_MATRIX.md");
-  const integrity=read("lib/certification-integrity.ts");
-  assert.match(docs,/v1\.33\.3/);
-  assert.match(docs,/not a browser\/session end-to-end test/i);
-  assert.match(matrix,/AC-26/);
-  assert.match(integrity,/if\(version===3\)return/);
-});

@@ -92,10 +92,10 @@ test("flight source provenance is append-only except exact same-transaction tomb
 
 
 test("3.5.0 production v20 tooling mirrors runtime migration and closes the deploy-window provenance race",()=>{
-  const pre=fs.readFileSync(path.join(root,"tooling/v350-v20-preflight.sql"),"utf8");
-  const mig=fs.readFileSync(path.join(root,"tooling/v350-v20-migrate.sql"),"utf8");
-  const reconcile=fs.readFileSync(path.join(root,"tooling/v350-v20-reconcile-provenance.sql"),"utf8");
-  const post=fs.readFileSync(path.join(root,"tooling/v350-v20-postflight.sql"),"utf8");
+  const pre=fs.readFileSync(path.join(root,"sql/migrations/v20-preflight.sql"),"utf8");
+  const mig=fs.readFileSync(path.join(root,"sql/migrations/v20-migrate.sql"),"utf8");
+  const reconcile=fs.readFileSync(path.join(root,"sql/migrations/v20-reconcile-provenance.sql"),"utf8");
+  const post=fs.readFileSync(path.join(root,"sql/migrations/v20-postflight.sql"),"utf8");
 
   assert.match(pre,/BEGIN TRANSACTION READ ONLY/);
   assert.match(pre,/registry is not exact versions 1\.\.19/);

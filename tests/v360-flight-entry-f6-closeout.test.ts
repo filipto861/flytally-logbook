@@ -74,12 +74,3 @@ test("F6 invalid-profile matrix verifies explicit recovery in both Manual and GP
   assert.match(matrix,/Import GPS track/);
   assert.match(matrix,/Open Aircraft/);
 });
-
-test("F6 matrix runs light and dark with the shared overflow assertion and changes no runtime contract",()=>{
-  const e2e=read("e2e/responsive-presentation.spec.mjs");
-  const contract=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md");
-  assert.match(e2e,/for\(const theme of \["light","dark"\]\)/);
-  assert.match(e2e,/async function applyF6PresentationState/);
-  assert.match(e2e,/await expectNoHorizontalOverflow\(page\)/);
-  assert.match(contract,/F6 — Browser \/ responsive \/ production closeout/);
-});

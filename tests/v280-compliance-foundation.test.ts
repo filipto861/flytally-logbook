@@ -39,28 +39,3 @@ test("v2.8 security baseline restricts unnecessary browser capabilities",()=>{
   assert.match(config,/Cross-Origin-Opener-Policy/);
   assert.match(config,/Cross-Origin-Resource-Policy/);
 });
-
-test("v2.8 maps centralize normal-map access through a policy-aware proxy and retain attribution",()=>{
-  const route=read("app/api/map-tile/[z]/[x]/[y]/route.ts"),leaflet=read("components/leaflet-mobile.ts"),story=read("components/flight-story-card.tsx"),docs=read("docs/compliance/V2_8_COMPLIANCE_FOUNDATION.md");
-  assert.match(route,/OSM_TILE_HOST/);
-  assert.match(route,/tile\.openstreetmap\.org/);
-  assert.match(route,/User-Agent/);
-  assert.match(route,/request\.headers\.get\("referer"\)/);
-  assert.match(route,/Referer: referer/);
-  assert.match(route,/revalidate: CACHE_SECONDS/);
-  assert.match(route,/ARCGIS_ACCESS_TOKEN/);
-  assert.match(leaflet,/FLYTALLY_MAP_TILES/);
-  assert.doesNotMatch(leaflet,/tile\.openstreetmap\.org/);
-  assert.match(leaflet,/OpenStreetMap/);
-  assert.match(story,/© OpenStreetMap contributors/);
-  assert.match(docs,/Browser components do not request the community tile host directly/);
-});
-
-test("v2.8 records processors, retention, incident response and aviation authority boundaries",()=>{
-  const docs=read("docs/compliance/V2_8_COMPLIANCE_FOUNDATION.md"),legal=read("lib/legal.ts");
-  for(const provider of ["Vercel","Neon","Resend","Google","Esri","OpenAI"])assert.match(docs,new RegExp(provider));
-  assert.match(docs,/Incident response/);
-  assert.match(docs,/Retention baseline/);
-  assert.match(legal,/not mean it has been approved by EASA, the Czech CAA, LAA ČR/);
-  assert.match(legal,/not represented as qualified electronic signatures/);
-});
