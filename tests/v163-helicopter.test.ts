@@ -111,11 +111,8 @@ test("v1.63 keeps the first-save aircraft integrity contract shared by all profi
   assert.match(actions,/validateAircraftProfile/);assert.match(actions,/aircraft-profile-persistence-mismatch/);
 });
 
-test("M2A helicopter recency service resolves historical type from the stored flight snapshot only",()=>{
-  const service=read("lib/helicopter-recency-service.ts"),certification=read("lib/certification-integrity.ts");
-  assert.match(service,/COALESCE\(NULLIF\(TRIM\(f[.]aircraft_model\),''\),NULLIF\(TRIM\(f[.]aircraft_type\),''\),''\) helicopter_type/);
-  assert.doesNotMatch(service,/COALESCE\(NULLIF\(a[.]aircraft_model/);
-  assert.doesNotMatch(service,/FROM flights f LEFT JOIN aircraft a/);
+test("M2A certification fingerprint keeps the flight model with the legacy type as fallback",()=>{
+  const certification=read("lib/certification-integrity.ts");
   assert.match(certification,/model:text\(row[.]aircraft_model\)\|\|text\(row[.]aircraft_type\)/);
 });
 

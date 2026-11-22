@@ -4,22 +4,14 @@ import path from "node:path";
 import test from "node:test";
 import { buildRecencyAudit,type RecencyAuditFlight } from "../lib/recency-audit.ts";
 import { evaluatePassengerCurrencyMode } from "../lib/recency-engine.ts";
-import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const flight=(partial:Partial<RecencyAuditFlight>={}):RecencyAuditFlight=>({id:1,date:"2026-08-23",evidence:"EASA",registration:"OK-BID",aircraftClass:"SEP",role:"PIC",departure:"LKKV",arrival:"LKSZ",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});
 
-test("v1.51.2 uses the structured-movement migration boundary in both recency views",()=>{
-  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,51,2));
+test("both recency views pass the SQL creation-provenance flag through resolveMovementCompatibility",()=>{
+  // The provenance SQL itself runs in tests/integration/postgres-recency-flight-evidence.test.ts.
   for(const file of ["lib/recency-service.ts","lib/recency-audit-service.ts"]){
-    const source=read(file);
-    assert.match(source,/flight_audit_log created_audit/);
-    assert.match(source,/flytally_feature_migrations movement_migration/);
-    assert.match(source,/movement_migration[.]migration_key='v1[.]35[.]3-fcl060-structured-movements'/);
-    assert.match(source,/created_audit[.]action='created'/);
-    assert.match(source,/created_audit[.]changed_at>=movement_migration[.]applied_at/);
-    assert.match(source,/resolveMovementCompatibility/);
-    assert.doesNotMatch(source,/new_data \? 'movement_evidence_recorded'/);
+    assert.match(read(file),/resolveMovementCompatibility\(\{[^}]*legacyMovementCandidate:row\.legacy_movement_candidate/);
   }
 });
 
