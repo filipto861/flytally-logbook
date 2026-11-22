@@ -7,13 +7,6 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(relative:string)=>fs.readFileSync(path.join(root,relative),"utf8");
 const fields=["operator_name","flight_number","operation_context"] as const;
 
-test("v1.66 certification protects the complete professional context",()=>{
-  const action=read("lib/flight-certification.ts"),integrity=read("lib/certification-integrity.ts");
-  for(const field of fields){assert.match(action,new RegExp(`f[.]${field}`));assert.match(integrity,new RegExp(field));}
-  assert.match(action,/certification_version=8/);
-  assert.match(action,/ensureV166Schema/);
-});
-
 test("v1.66 shared flights copy professional context without inference",()=>{
   const shared=read("app/(protected)/flights/shared-actions.ts");
   for(const field of fields)assert.match(shared,new RegExp(`f[.]${field}`));

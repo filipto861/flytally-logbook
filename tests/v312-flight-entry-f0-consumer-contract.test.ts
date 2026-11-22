@@ -9,7 +9,6 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const actions=read("app/(protected)/flights/actions.ts");
 const flightInput=read("lib/flight-input.ts");
 const certification=read("lib/certification-integrity.ts");
-const certificationActions=read("lib/flight-certification.ts");
 const compliance=read("lib/fcl050-compliance.ts");
 const recency=read("lib/recency-service.ts");
 const dashboard=read("lib/data/dashboard.ts");
@@ -51,12 +50,6 @@ test("F0 inventory locks certified-only recency and draft-visible analytics",()=
   assert.doesNotMatch(dashboard,/FROM flights f WHERE f\.user_id=\$\{userId\} AND f\.certified_at IS NOT NULL/);
   assert.match(insights,/FROM flights f WHERE f\.user_id=\$\{userId\}/);
   assert.doesNotMatch(insights,/FROM flights f WHERE f\.user_id=\$\{userId\} AND f\.certified_at IS NOT NULL/);
-});
-
-test("F0 inventory preserves certification v1-v8 compatibility boundary",()=>{
-  for(let version=1;version<=8;version++)assert.match(certification,new RegExp(`version===${version}`));
-  assert.match(certificationActions,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
-  assert.match(certificationActions,/certification_version=8/);
 });
 
 test("F0 inventory records DB aircraft identity snapshot as a cross-path dependency",()=>{

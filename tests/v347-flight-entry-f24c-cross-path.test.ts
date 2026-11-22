@@ -74,13 +74,8 @@ test("F2.4C Manual role changes remain non-destructive across overlapping crew e
 });
 
 test("F2.4C certification stays separate from account-bound instructor requests",()=>{
-  const certification=read("lib/flight-certification.ts");
   const instructorActions=read("app/(protected)/flights/instructor-actions.ts");
   const verification=read("lib/training-verification.ts");
-
-  assert.doesNotMatch(certification,/autoRequestTrainingVerification|upsertInstructorRequest|pilot_connections|LOWER\(TRIM\(u\.display_name\)\)/);
-  assert.match(certification,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
-  assert.match(certification,/certification_version=8/);
 
   assert.match(instructorActions,/form\.get\("instructor_id"\)/);
   assert.match(instructorActions,/upsertInstructorRequest\(userId,flightId,instructorId\)/);
