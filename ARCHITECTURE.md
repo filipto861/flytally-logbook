@@ -72,7 +72,7 @@ Leaflet with Standard (OSM) and optional Satellite and openAIP aviation overlays
 
 - Vercel git auto-deploy is disabled. Deploys are manual and owner-approved. Cron jobs: backups 02:15 UTC and recency 05:15 UTC.
 - CI (`.github/workflows/ci.yml`) blocks every PR on typecheck, unit tests, build and the full PostgreSQL suite, including scale tests. Scale tests assert the number of data blocks each production query touches on a fixed fixture (`tests/integration/scale-budget.ts`), with only a generous wall-clock ceiling, so shared-runner speed does not matter. Browser tests run on manual dispatch.
-- Test runners (`tooling/run-postgres-tests.mjs`, `tooling/run-auth-browser.mjs`) only accept localhost databases. Each integration file gets a fresh database.
+- Test runners (`tooling/run-postgres-tests.mjs`, `tooling/run-auth-browser.mjs`) only accept localhost databases. Each integration file gets a fresh database. Integration tests can call real server modules through `tests/integration/server-modules.ts`, which resolves `@/` imports, stubs `server-only` and builds the full production-like schema with the browser bootstrap scripts.
 
 ## Rules for new work
 

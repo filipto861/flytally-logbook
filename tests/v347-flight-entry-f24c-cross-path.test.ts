@@ -138,10 +138,7 @@ test("F2.4C audit and backup keep raw RoleCrew evidence observable and recoverab
   );
   assert.deepEqual(changes.map(item=>item.field),["commander","instructor","verification_name","verification_reference"]);
 
-  const accountBackup=read("lib/account-backup.ts");
   const portable=read("lib/portable-backup.ts");
-  assert.match(accountBackup,/SELECT \* FROM flights WHERE user_id=\$\{userId\}/);
-  assert.match(accountBackup,/flight_verifications/);
   assert.match(portable,/flights:BackupRow\[\]/);
   assert.match(portable,/flight_verifications\?:BackupRow\[\]/);
 });

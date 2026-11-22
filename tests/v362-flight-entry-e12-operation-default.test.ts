@@ -116,9 +116,7 @@ test("E1.2 sharing carries the default and rejects unknown imported values inste
 });
 
 test("E1.2 account backup and exact restore are schema-aware and preserve the aircraft column through SELECT star JSON restore",()=>{
-  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts");
-  assert.match(backup,/ensureDatabaseOptimizations\(\)/);
-  assert.match(backup,/SELECT \* FROM aircraft WHERE user_id=/);
+  const restore=read("lib/account-restore-v6.ts");
   assert.match(restore,/ensureDatabaseOptimizations\(\)/);
   assert.match(restore,/INSERT INTO aircraft SELECT \(json_populate_record\(NULL::aircraft,item\)\)\.\*/);
 });

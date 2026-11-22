@@ -26,7 +26,7 @@ npm test                    # unit tests (no database)
 npm run test:target -- tests/foo.test.ts
 npm run build
 npm run verify              # typecheck + unit tests + build
-npm run test:postgres       # integration correctness tests (43 files), needs local PostgreSQL 16
+npm run test:postgres       # integration correctness tests (44 files), needs local PostgreSQL 16
 npm run test:postgres:scale # 10k/50k/100k-flight scale tests (block budgets)
 npm run test:postgres:full  # both
 npm run test:browser        # Playwright, needs local PostgreSQL 16 and a prior build
@@ -52,7 +52,7 @@ Vercel git auto-deploy is **disabled** (`vercel.json`). Production deploys are m
 
 ## Known debt (don't spread it; reduce it when you're working nearby)
 
-- About 1,150 unit tests. Most still assert **source text by regex** rather than behaviour. Since the 2026-11-22 triage, the remaining ones guard real invariants: SQL scoping, security, regulatory rules, certification, money and fail-closed handling. Presentation-only locks (UI text, CSS, layout, versions) were removed, and the browser specs cover UI. When you touch one of these tests, prefer replacing it with a behavioural test (call the function, or use the PostgreSQL/browser suites), and do not add new presentation-only text locks.
+- About 1,150 unit tests. Most still assert **source text by regex** rather than behaviour. Since the 2026-11-22 triage, the remaining ones guard real invariants: SQL scoping, security, regulatory rules, certification, money and fail-closed handling. Presentation-only locks (UI text, CSS, layout, versions) were removed, and the browser specs cover UI. When you touch one of these tests, prefer replacing it with a behavioural test (call the function, or use the PostgreSQL/browser suites; `tests/integration/server-modules.ts` loads real server modules against the full production-like schema), and do not add new presentation-only text locks.
 - 47 global stylesheets with version-named layers and override specificity. See the [DESIGN debt section](docs/DESIGN.md#11-known-structural-debt-input-for-css-consolidation).
 - Runtime schema initialisation is spread over `lib/db-optimization.ts` and many `lib/v*-schema.ts` modules.
 - Test and file names carry historical version prefixes (`v140-…`, `v380-…`). New files use descriptive names without version prefixes.

@@ -62,9 +62,8 @@ test("v1.45.0 binds connected and in-person signatures to exact training content
 });
 
 test("v1.45.0 training evidence remains user-scoped and inside the portable backup graph",()=>{
-  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),section=read("components/aircraft-qualifications-section.tsx"),backup=read("lib/account-backup.ts"),portable=read("lib/portable-backup.ts");
+  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),section=read("components/aircraft-qualifications-section.tsx"),portable=read("lib/portable-backup.ts");
   assert.match(actions,/user_id=\$\{userId\}/);
   assert.match(section,/q\.user_id=\$\{userId\}/);
-  assert.match(backup,/SELECT \* FROM pilot_qualifications WHERE user_id=\$\{userId\}/);
   assert.match(portable,/pilot_qualifications\?:BackupRow\[\]/);
 });

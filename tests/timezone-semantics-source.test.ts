@@ -81,13 +81,9 @@ test("P1.5 active GPS timestamp consumers stay on UTC authority",()=>{
 });
 
 test("P1.5 backup and exact restore preserve calendar-date fields without timezone conversion",()=>{
-  const backup=read("lib/account-backup.ts");
   const restore=read("lib/account-restore-v6.ts");
   const portable=read("lib/portable-backup.ts");
 
-  assert.match(backup,/SELECT \* FROM flights WHERE user_id=/);
-  assert.match(backup,/SELECT \* FROM rates WHERE user_id=/);
-  assert.match(backup,/SELECT \* FROM user_settings WHERE user_id=/);
 
   assert.match(restore,/INSERT INTO user_settings SELECT \(json_populate_record\(NULL::user_settings,item\)\)\.\*/);
   assert.match(restore,/INSERT INTO rates SELECT \(json_populate_record\(NULL::rates,item\)\)\.\*/);

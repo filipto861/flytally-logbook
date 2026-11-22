@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { parsePortableBackup,portableBackupDigest } from "../lib/portable-backup.ts";
-import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
@@ -18,7 +17,7 @@ async function signedBackup(overrides:Record<string,unknown>={}){
 }
 
 test("v1.44.0 hardens current hot paths without removing compatibility data",()=>{
-  const runtime=read("lib/runtime-schema.ts"),schema=read("lib/v144-schema.ts"),backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),portable=read("lib/portable-backup.ts");
+  const runtime=read("lib/runtime-schema.ts"),schema=read("lib/v144-schema.ts"),restore=read("lib/account-restore-v6.ts"),portable=read("lib/portable-backup.ts");
   assert.match(runtime,/ensureV144Schema/);
   assert.match(schema,/idx_v144_track_points_user_track_seq/);
   assert.match(schema,/idx_v144_participations_source_status/);
@@ -26,7 +25,6 @@ test("v1.44.0 hardens current hot paths without removing compatibility data",()=
   assert.match(schema,/idx_v144_verifications_exact_revision/);
   assert.match(schema,/idx_v144_notifications_user_href/);
   assert.match(portable,/const legacyArrays=.*"track_points"/);
-  assert.doesNotMatch(backup,/FROM track_points|track_points:/);
   assert.doesNotMatch(restore,/SELECT[^\n]*FROM track_points|INSERT INTO track_points|NULL::track_points/);
 });
 

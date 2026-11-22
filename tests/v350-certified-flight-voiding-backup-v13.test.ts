@@ -6,19 +6,6 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v13 account backup exports protected void history and omits legacy track_points",()=>{
-  const source=read("lib/account-backup.ts");
-  assert.match(source,/version:13/);
-  for(const section of [
-    "voided_certified_flights",
-    "voided_flight_certified_revisions",
-    "voided_flight_verifications",
-    "voided_flight_archive_items",
-    "flight_source_provenance",
-  ])assert.ok(source.includes(section),`missing v13 backup section ${section}`);
-  assert.doesNotMatch(source,/FROM track_points|track_points:/);
-});
-
 test("portable parser keeps v12 track_points compatibility but requires v13 protected history",()=>{
   const source=read("lib/portable-backup.ts");
   assert.match(source,/const legacyArrays=.*"track_points"/);
