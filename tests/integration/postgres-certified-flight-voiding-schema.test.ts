@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -27,7 +28,7 @@ function migration20Blocks(){
   const end=source.indexOf("  ];",start);
   assert.ok(start>=0&&end>start,"schema v20 migration block exists");
   const block=source.slice(start,end);
-  const sqlBlocks=[...block.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  const sqlBlocks=[...block.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
   assert.ok(sqlBlocks.length>=20,"schema v20 exposes the expected SQL statements");
   return sqlBlocks;
 }

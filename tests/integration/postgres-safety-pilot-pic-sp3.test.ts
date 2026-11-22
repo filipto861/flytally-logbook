@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -21,7 +22,7 @@ function run(statement:string){
 }
 function inviteSql(){
   const source=fs.readFileSync(path.join(root,"app/(protected)/flights/shared-actions.ts"),"utf8");
-  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
   const block=blocks.find(value=>value.includes("INSERT INTO flight_participations")&&value.includes("pic_commander_basis")&&value.includes("active_pic"));
   assert.ok(block,"PIC participation insert SQL is present");
   return block;

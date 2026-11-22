@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
 import { assertScaleBudget } from "./scale-budget.ts";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -30,7 +31,7 @@ function rows(statement:string){
   return JSON.parse(run(`WITH q AS (${clean}) SELECT COALESCE(json_agg(row_to_json(q)),'[]'::json)::text FROM q`)||"[]") as Array<Record<string,unknown>>;
 }
 function sqlBlock(source:string,needle:string,which:"first"|"last"="first"){
-  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]).filter(value=>value.includes(needle));
+  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])).filter(value=>value.includes(needle));
   const block=which==="last"?blocks.at(-1):blocks[0];
   assert.ok(block,`Production SQL block not found: ${needle}`);
   return block;

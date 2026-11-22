@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
 import { summarizeRegistrationCosts } from "../../lib/flight-cost-summary.ts";
+import { cookSql } from "./production-sql.ts";
 
 // Behavioural replacement for regex checks of the Statistics per-aircraft cost source.
 // Runs the real production SQL from lib/data/pilot-insights.ts (section "aircraft")
@@ -39,7 +40,7 @@ function literal(value:unknown){
 type Registration={registration:string;flights:number;cost_rows:unknown};
 function registrations(values:{userId?:number;start?:string|null;end?:string|null;category?:string|null}={}){
   const source=read("lib/data/pilot-insights.ts");
-  const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(m=>m[1].replace(/\\([\\`$])/g,"$1")).find(b=>b.includes("WITH base0 AS MATERIALIZED("));
+  const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(m=>cookSql(m[1])).find(b=>b.includes("WITH base0 AS MATERIALIZED("));
   assert.ok(block,"Statistics SQL not found in lib/data/pilot-insights.ts");
   const all:Record<string,unknown>={
     userId:values.userId??PILOT,"bounds.start":values.start===undefined?"2026-01-01":values.start,"bounds.end":values.end===undefined?"2026-12-31":values.end,

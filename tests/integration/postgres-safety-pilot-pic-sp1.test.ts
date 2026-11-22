@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -25,11 +26,11 @@ function migration15Blocks(){
   const next=source.indexOf("if(version===16)return[",start);
   const end=next>start?next:source.indexOf("throw new Error",start);
   assert.ok(start>=0&&end>start,"migration 15 block is present");
-  return [...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  return [...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
 }
 function sqlBlock(file:string,needle:string){
   const source=fs.readFileSync(path.join(root,file),"utf8");
-  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
   const block=blocks.find(value=>value.includes(needle));
   assert.ok(block,`Production SQL block not found: ${needle}`);
   return block;

@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
 import { assertScaleBudget } from "./scale-budget.ts";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -52,7 +53,7 @@ function rows(statement:string){
   return JSON.parse(run(`WITH q AS (${clean}) SELECT COALESCE(json_agg(row_to_json(q)),'[]'::json)::text FROM q`)||"[]") as Array<Record<string,unknown>>;
 }
 function sqlBlock(source:string,needle:string,which:"first"|"last"="first"){
-  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]).filter(value=>value.includes(needle));
+  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])).filter(value=>value.includes(needle));
   const block=which==="last"?blocks.at(-1):blocks[0];
   assert.ok(block,`Production SQL block not found: ${needle}`);
   return block;
@@ -82,12 +83,12 @@ function explain(statement:string){
 const BLOCK_BUDGETS:Record<string,number>={
   dashboardAllTime100k:34100, // measured 17043
   flightListFirstPage100k:70200, // measured 35099
-  pilotInsights100k:116100, // measured 58021
-  pilotInsightsOverview100k:58700, // measured 29334
-  pilotInsightsExperience100k:45000, // measured 22494
-  pilotInsightsAircraft100k:52200, // measured 26100
-  pilotInsightsPlaces100k:58700, // measured 29334
-  pilotInsightsCareer100k:31400, // measured 15655
+  pilotInsights100k:123100, // measured 61513 (cooked SQL)
+  pilotInsightsOverview100k:61900, // measured 30929 (cooked SQL)
+  pilotInsightsExperience100k:47400, // measured 23654 (cooked SQL)
+  pilotInsightsAircraft100k:55200, // measured 27562 (cooked SQL)
+  pilotInsightsPlaces100k:61900, // measured 30929 (cooked SQL)
+  pilotInsightsCareer100k:32800, // measured 16380 (cooked SQL)
   printCompleteSql100k:21200, // measured 10557
   exportCompleteSql100k:35200, // measured 17561
   pendingActionCount4500:31800, // measured 15876

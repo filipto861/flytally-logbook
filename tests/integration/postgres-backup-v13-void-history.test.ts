@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -25,10 +26,10 @@ function run(statement:string){
 function migration20Blocks(){
   const source=read("lib/db-optimization.ts"),start=source.indexOf("if(version===20)return["),end=source.indexOf("  ];",start);
   assert.ok(start>=0&&end>start,"schema v20 migration block exists");
-  return[...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  return[...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
 }
 function sqlBlock(source:string,needle:string){
-  const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]).find(value=>value.includes(needle));
+  const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])).find(value=>value.includes(needle));
   assert.ok(block,`Production restore SQL block not found: ${needle}`);
   return block;
 }

@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after, before, test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -32,7 +33,7 @@ function reject(sql:string,pattern:RegExp){
 }
 
 function productionSqlBlock(source:string,needle:string,which:"first"|"last"="first"){
-  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]).filter(value=>value.includes(needle));
+  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])).filter(value=>value.includes(needle));
   const block=which==="last"?blocks.at(-1):blocks[0];
   assert.ok(block,`Production SQL block not found: ${needle}`);
   assert.doesNotMatch(block,/\$\{/ ,`Acceptance DDL block contains unresolved template interpolation: ${needle}`);

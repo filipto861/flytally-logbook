@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -12,7 +13,7 @@ const schema=`ft_v200_rc_${randomUUID().replaceAll("-","")}`,quoted=`"${schema}"
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 function raw(statement:string){return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:8*1024*1024})}
 function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim().replace(/\r\n/g,"\n")}
-function sqlBlock(source:string,needle:string){const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]).find(value=>value.includes(needle));assert.ok(block,`Production SQL block not found: ${needle}`);return block}
+function sqlBlock(source:string,needle:string){const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])).find(value=>value.includes(needle));assert.ok(block,`Production SQL block not found: ${needle}`);return block}
 function literal(value:unknown){if(value===null||value===undefined)return"NULL";if(typeof value==="number")return String(value);return`'${String(value).replaceAll("'","''")}'`}
 function render(block:string,values:Record<string,unknown>){const rendered=block.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{const key=String(expression).trim();assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No RC SQL value for ${key}`);return literal(values[key])});assert.doesNotMatch(rendered,/\$\{/);return rendered}
 

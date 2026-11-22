@@ -9,12 +9,13 @@ import { verificationCryptographicStatus } from "../../lib/authority-verificatio
 import { signVerificationPayload } from "../../lib/verification-signature.ts";
 import { validateBackupCertificationHistory } from "../../lib/backup-certification.ts";
 import { parsePortableBackup,portableBackupDigest,type PortableBackup } from "../../lib/portable-backup.ts";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1",databaseUrl=process.env.DATABASE_URL??"",root=path.resolve(import.meta.dirname,"../.."),schema=`ft_security_${randomUUID().replaceAll("-","")}`,quotedSchema=`"${schema}"`,read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 function rawPsql(statement:string){const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}});if(result.error)throw result.error;return result}
 function run(statement:string){const result=rawPsql(`SET search_path TO ${quotedSchema};\n${statement}`);if(result.status!==0)throw new Error(`PostgreSQL security/restore command failed:\n${result.stderr||result.stdout}`);return String(result.stdout??"").trim().replace(/\r\n/g,"\n")}
 function rows(statement:string){const clean=statement.trim().replace(/;\s*$/,"");return JSON.parse(run(`WITH q AS (${clean}) SELECT COALESCE(json_agg(row_to_json(q)),'[]'::json)::text FROM q`)||"[]") as Array<Record<string,unknown>>}
-function sqlBlock(source:string,needle:string,which:"first"|"last"="first"){const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]).filter(value=>value.includes(needle)),block=which==="last"?blocks.at(-1):blocks[0];assert.ok(block,`Production SQL block not found: ${needle}`);return block}
+function sqlBlock(source:string,needle:string,which:"first"|"last"="first"){const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])).filter(value=>value.includes(needle)),block=which==="last"?blocks.at(-1):blocks[0];assert.ok(block,`Production SQL block not found: ${needle}`);return block}
 function literal(value:unknown){if(value===null)return"NULL";if(typeof value==="number")return String(value);if(typeof value==="boolean")return value?"TRUE":"FALSE";const raw=typeof value==="string"?value:(JSON.stringify(value)??"");return`'${raw.replaceAll("'","''")}'`}
 function render(block:string,values:Record<string,unknown>){const rendered=block.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{const key=String(expression).trim();assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No SQL test value for ${key}`);return literal(values[key])});assert.doesNotMatch(rendered,/\$\{/);return rendered}
 
