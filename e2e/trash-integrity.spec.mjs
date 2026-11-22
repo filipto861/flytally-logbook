@@ -234,3 +234,37 @@ test("M0-A browser: signed v13 backup remains checkable while full restore is bl
   expect(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='pre_restore'")).toBe(beforePreRestore);
   expect(scalar("SELECT COUNT(*) FROM flight_audit_log WHERE user_id=9001")).toBe(beforeAudit);
 });
+
+test("Currency 3.8 browser: restoring a monetary archive whose flight already exists says so and writes nothing",async({page},testInfo)=>{
+  test.skip(!authenticated,"Requires dedicated disposable localhost PostgreSQL16 and authenticated browser fixture.");
+  const mobile=testInfo.project.name==="mobile-chromium";
+  const flightId=mobile?9975:9965,duplicateId=mobile?9976:9966,registration=mobile?"OK-C386":"OK-C385";
+  runBrowserSql(`DELETE FROM flights WHERE id=${duplicateId} AND user_id=9001 AND certified_at IS NULL;`);
+  seed(flightId);
+  runBrowserSql(`
+    UPDATE flights SET registration='${registration}',billing_basis='BLOCK',price_per_hour=1234.125,
+      price_currency_code='KWD',price_currency_minor_units=3,price_per_hour_decimal=1234.125
+      WHERE id=${flightId} AND user_id=9001;
+  `);
+  await loginBrowserPilot(page,`/flights/${flightId}`);
+  await page.locator("details.flight-detail-more").locator("summary").click();
+  await page.getByRole("button",{name:"Move to trash"}).click();
+  await page.getByRole("button",{name:"Confirm deletion"}).click();
+  await expect(page).toHaveURL(/\/flights(?:\?|$)/,{timeout:20000});
+  // The pilot re-enters the same flight before restoring the archived one.
+  runBrowserSql(`
+    INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_type,aircraft_make,aircraft_model,
+      aircraft_class,regulatory_category,operation_type,engine_type,departure,arrival,
+      off_block,takeoff,landing,on_block,role,starts,landings_day,commander)
+    VALUES(${duplicateId},9001,'2026-10-12','EASA','${registration}','B23','BRM Aero','Bristell B23',
+      'SEP','AEROPLANE','SP','SE','LKLT','LKPR','11:00','11:05','11:50','11:55','PIC',1,1,'Browser Smoke Pilot');
+  `);
+  await page.goto("/data?view=deleted");
+  const row=page.locator(".flight-trash article").filter({hasText:registration});
+  await expect(row).toHaveCount(1);
+  await row.getByRole("button",{name:"Restore flight"}).click();
+  await expect(page.locator(".flight-trash [role=alert]")).toContainText("This flight already exists in the logbook.",{timeout:15000});
+  await expect(page.locator(".flight-trash [role=alert]")).not.toContainText("newer monetary restore process");
+  expect(scalar(`SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='${registration}'`)).toBe("1");
+  expect(scalar(`SELECT COUNT(*) FROM deleted_flights WHERE original_flight_id=${flightId} AND user_id=9001 AND restored_at IS NULL`)).toBe("1");
+});

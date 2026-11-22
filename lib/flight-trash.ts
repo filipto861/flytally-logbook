@@ -239,7 +239,9 @@ const tx=await sql.transaction([
   WHERE id=${trashId} AND user_id=${userId}
     AND restored_at IS NULL AND purge_after>NOW()`,
   restoreQuery],{isolationLevel:'ReadCommitted'});const rows=tx[1] as Array<{restored_flight_id:number|string}>;if(rows[0])return{flightId:Number(rows[0].restored_flight_id)};
-const needsNewRestore=await sql`SELECT 1 FROM deleted_flights
+// Only the legacy branch can be refused for monetary metadata. After the v21 branch ran,
+// fall through to the archive and duplicate checks so the pilot sees the real reason.
+const needsNewRestore=currencyRestore?[]:await sql`SELECT 1 FROM deleted_flights
  WHERE id=${trashId} AND user_id=${userId} AND restored_at IS NULL AND purge_after>NOW()
  AND ((flight_data->>'price_currency_code' IS NOT NULL
     OR flight_data->>'price_currency_minor_units' IS NOT NULL
