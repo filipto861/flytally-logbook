@@ -80,12 +80,9 @@ test("Statistics never assigns currency or zero costs to invalid and untracked s
   assert.equal(s.notTrackedFlights,1);
   assert.equal(s.complete,false);
 });
-test("Statistics registration source preserves the selected category/period/auxiliary scope",()=>{
+test("Statistics wires each registration's SQL cost rows into its cost summary",()=>{
+  // Scope (period, category, auxiliary roles, other pilots) is exercised against PostgreSQL in
+  // tests/integration/postgres-statistics-cost-scope.test.ts. This only guards the wiring.
   const stats=readFileSync(new URL("../lib/data/pilot-insights.ts",import.meta.url),"utf8");
-  const statPage=readFileSync(new URL("../app/(protected)/statistics/page.tsx",import.meta.url),"utf8");
-  assert.match(stats,/FROM selected WHERE \$\{section\}::text IN \('all','aircraft'\) AND NOT auxiliary AND registration<>'' GROUP BY registration/);
-  assert.match(stats,/price_per_hour_decimal::text price_per_hour_decimal/);
-  assert.match(stats,/jsonb_agg\(jsonb_build_object\('billing',monetary_billing_basis/);
-  assert.match(stats,/costSummary:summarizeRegistrationCosts\(item.cost_rows\)/);
-  assert.match(statPage,/row.costSummary.headline/);
+  assert.match(stats,/costSummary:summarizeRegistrationCosts\(item\.cost_rows\)/);
 });
