@@ -33,11 +33,8 @@ test("3.5.0 M5 active operational consumers stay on the active flight graph",()=
 });
 
 test("3.5.0 M5 every category recency and professional-credit service requires an active certified flight",()=>{
+  // The recency services are exercised in tests/integration/postgres-recency-flight-evidence.test.ts.
   for(const file of [
-    "lib/recency-service.ts",
-    "lib/helicopter-recency-service.ts",
-    "lib/spl-recency-service.ts",
-    "lib/balloon-recency-service.ts",
     "lib/professional-experience-service.ts",
   ]){
     const source=read(file);

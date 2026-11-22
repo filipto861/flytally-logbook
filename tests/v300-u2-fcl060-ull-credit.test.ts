@@ -73,7 +73,6 @@ test("v3.0 U2 recency services feed native ULL starts into calculation and audit
   const service=read("lib/recency-service.ts"),auditService=read("lib/recency-audit-service.ts");
   assert.match(service,/starts:row\.starts/);
   assert.match(service,/ullMovementInferred:movement\.ullMovementInferred/);
-  assert.match(auditService,/SELECT f\.id,f\.date,f\.starts/);
   assert.match(auditService,/starts:row\.starts/);
   assert.match(auditService,/ullMovementInferred:movement\.ullMovementInferred/);
 });

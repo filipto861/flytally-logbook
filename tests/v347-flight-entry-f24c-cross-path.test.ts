@@ -146,17 +146,6 @@ test("F2.4C audit and backup keep raw RoleCrew evidence observable and recoverab
   assert.match(portable,/flight_verifications\?:BackupRow\[\]/);
 });
 
-test("F2.4C recency accepts instructor evidence only when signed verification matches exact revision and hash",()=>{
-  const recency=read("lib/recency-service.ts");
-  assert.match(recency,/v\.flight_id=f\.id/);
-  assert.match(recency,/v\.flight_user_id=f\.user_id/);
-  assert.match(recency,/v\.record_revision=COALESCE\(f\.record_revision,1\)/);
-  assert.match(recency,/v\.flight_hash=f\.certification_hash/);
-  assert.match(recency,/v\.verification_role='INSTRUCTOR'/);
-  assert.match(recency,/v\.status='signed'/);
-  assert.doesNotMatch(recency,/instructor_signed[^\n]*verification_name/);
-});
-
 test("F2.4C Safety Pilot F2.3 remains server-authoritative and account identity stays separate metadata",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const connected=read("lib/flight-connected-crew.ts");
