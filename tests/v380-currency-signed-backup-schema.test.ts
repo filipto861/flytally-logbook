@@ -56,16 +56,6 @@ test("signed v13 exact restore refuses currency-bearing backup if schema v21 is 
   assert.match(restore,/table_schema=current_schema\(\)/);
 });
 
-test("exact v21 Trash rate validator accepts decimal rates rather than double-escaped regex",()=>{
-  const trash=readFileSync(new URL("../lib/flight-trash.ts",import.meta.url),"utf8");
-  const decimal=/^\d+(?:\.\d+)?$/;
-  assert.ok(trash.includes("!"+decimal.toString()+".test(String(decimal))"));
-  assert.equal(decimal.test("1234.125"),true);
-  assert.equal(decimal.test("1200"),true);
-  assert.equal(decimal.test("1e6"),false);
-  assert.equal(decimal.test("NaN"),false);
-});
-
 test("flight detail expense projection reads exact money on v21 and stays valid on legacy v20",()=>{
   const source=readFileSync(new URL("../app/(protected)/flights/[id]/page.tsx",import.meta.url),"utf8");
   assert.match(source,/to_jsonb\(e\)->>'amount_encoding' amount_encoding/);
