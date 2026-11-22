@@ -2,16 +2,24 @@
 
 Short and current. Update it when the state changes. Old detail is in git history (everything before the 2026-11-21 cleanup).
 
-## Current state (2026-11-21)
+## Current state (2026-11-22)
 
 - **Version:** 3.8.1 (`package.json`), schema **v21** (`lib/migration-plan.ts`).
-- **Production:** last recorded owner-approved deploy is `main@f8116a7` on 2026-11-02 (M0-A, full-account restore disabled). It was not re-verified during the cleanup. The production database, schema and flags have not been read back since.
+- **Production:** `main@d4ed0e0` deployed on 2026-11-22 (owner-approved; Vercel `dpl_2pzwzm9GMki47oqywrMSCWbdy89G`, READY, `fly-tally.com`).
+  - Contents compared to the previous deploy (`main@f8116a7`, `dpl_H3e5qcMDqzd9m5NyqmKALVd9qmub`, kept as the rollback target): Next.js 16.3.2 → 16.4.6 (security fixes, including critical RCE advisories) and the light-mode error-text contrast fix.
+  - No schema, migration, environment or Vercel setting changes.
+  - Checks: public pages respond, no runtime errors after deploy, and the owner confirmed signed-in use.
+  - Production database, schema and flags were not read back (no DB changes were made).
 - **Repository cleanup (2026-11-21):**
   - All 36 abandoned draft PRs were closed (DATA-1 and M0-B stacks).
   - Process and handoff documentation was removed.
   - Tooling was reduced to standard runners, and CI now runs automatically on PRs.
   - Tests that only checked documents or tooling were removed.
-  - Results: unit 1516/1516, PostgreSQL integration 164/164 (42 files, previously 32 skipped and 8 failing on `main`), typecheck and build pass. Browser: 121/123 pass, 2 conditional skips. The 5 stale specs were fixed on 2026-11-21; one of them (F3.5 crafted aircraft drift) had silently stopped testing the server check.
+  - Results: unit 1520/1520, PostgreSQL integration 164/164 (42 files, previously 32 skipped and 8 failing on `main`), typecheck and build pass. Browser: 121/123 pass, 2 conditional skips. The 5 stale specs were fixed on 2026-11-21; one of them (F3.5 crafted aircraft drift) had silently stopped testing the server check.
+- **Since the cleanup:**
+  - Scale tests assert blocks touched instead of wall-clock time and gate PRs again.
+  - `npm audit` is clean.
+  - Error text in light mode meets WCAG AA.
 
 ## Owner decisions in force
 
@@ -34,4 +42,5 @@ Short and current. Update it when the state changes. Old detail is in git histor
 | 9 | **Schema init consolidation** | `lib/db-optimization.ts` plus many `lib/v*-schema.ts` runtime gates. |
 | 10 | **Privacy/operations note** | GDPR processing record, retention periods and the incident procedure were dropped from docs during the cleanup. Rewrite them from code if needed. |
 | 11 | **Regulatory doc check** | The Easy Access Rules edition date conflicts in the old sources (Nov 2025 vs Feb 2026). See [REGULATORY §5](docs/REGULATORY.md#5-regulatory-source-snapshot). |
+| 12 | **Vercel secret hygiene** | Production `DATABASE_URL` is stored as type "encrypted", and Vercel flags it as `readable-secret`: anyone with project access can read it in the dashboard. Re-create it as type "sensitive" (owner action in Vercel; no code change). |
 | — | Research | GPS touch-and-go time-normalised evidence; professional logbook platform. |
