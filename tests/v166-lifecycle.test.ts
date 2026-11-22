@@ -16,13 +16,6 @@ test("v1.66 shared flights copy professional context without inference",()=>{
   assert.match(shared,/text\(row[.]operation_context\)/);
 });
 
-test("v1.66 trash restore preserves professional context from the stored flight snapshot",()=>{
-  const trash=read("lib/flight-trash.ts");
-  assert.match(trash,/ensureV166Schema/);
-  assert.match(trash,/to_jsonb\(f\)/);
-  for(const field of fields){assert.match(trash,new RegExp(field));assert.match(trash,new RegExp(`flight_data->>'${field}'`));}
-});
-
 test("v1.66 portable backup exports additive flight columns and restore keeps them generically",()=>{
   const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),layout=read("app/(protected)/layout.tsx"),runtime=read("lib/runtime-schema.ts");
   assert.match(backup,/ensureV166Schema/);

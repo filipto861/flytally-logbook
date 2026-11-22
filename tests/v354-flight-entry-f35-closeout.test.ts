@@ -53,13 +53,7 @@ test("F3.5 Print keeps F3 authority context on the flight snapshot",()=>{
 
 test("F3.5 trash restore round-trips raw stored aircraft context without profile validation",()=>{
   const trash=read("lib/flight-trash.ts");
-  assert.match(trash,/to_jsonb\(f\)/);
-  assert.match(trash,/COALESCE\(flight_data->>'evidence',''\)/);
-  assert.match(trash,/COALESCE\(flight_data->>'aircraft_type',''\)/);
-  assert.match(trash,/COALESCE\(flight_data->>'aircraft_class',''\)/);
-  assert.match(trash,/COALESCE\(flight_data->>'regulatory_category',''\)/);
-  assert.match(trash,/COALESCE\(flight_data->>'balloon_class',''\)/);
-  assert.match(trash,/COALESCE\(flight_data->>'balloon_group',''\)/);
+  // The raw round trip itself runs in tests/integration/postgres-trash-roundtrip.test.ts.
   assert.doesNotMatch(trash,/validateAircraftProfile|allowedFlightContexts/);
 });
 

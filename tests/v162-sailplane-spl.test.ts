@@ -88,9 +88,9 @@ test("v5 certification fingerprint binds regulatory category and launch evidence
 });
 
 test("v1.62 integrity plumbing preserves SPL fields through UI sharing trash and portable backup",()=>{
-  const form=read("components/flight-form.tsx"),shared=read("app/(protected)/flights/shared-actions.ts"),trash=read("lib/flight-trash.ts"),backup=read("lib/account-backup.ts"),portable=read("lib/portable-backup.ts"),detail=read("components/readonly-logbook-entry.tsx");
+  const form=read("components/flight-form.tsx"),shared=read("app/(protected)/flights/shared-actions.ts"),backup=read("lib/account-backup.ts"),portable=read("lib/portable-backup.ts"),detail=read("components/readonly-logbook-entry.tsx");
   assert.match(form,/TMG take-off evidence/);assert.match(form,/name="takeoffsDay"/);assert.match(form,/name="launchMethod"/);
-  for(const source of [shared,trash]){assert.match(source,/regulatory_category/);assert.match(source,/launch_method/);assert.match(source,/launches/)}
+  for(const source of [shared]){assert.match(source,/regulatory_category/);assert.match(source,/launch_method/);assert.match(source,/launches/)}
   const backupVersion=Number(backup.match(/version:(\d+)/)?.[1]??0);assert.ok(backupVersion>=9);assert.match(backup,/spl_recency_evidence/);assert.match(portable,/v9Arrays/);
   assert.match(detail,/Part-SFCL logbook entry/);assert.match(detail,/launch_method/);
 });
