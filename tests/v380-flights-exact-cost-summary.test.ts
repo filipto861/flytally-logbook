@@ -45,19 +45,11 @@ test("integer totals larger than JS safe integer remain exact",()=>{
   const s=presentFlightCostSummary([bucket("EUR",2,"99999999999999912",1)],1,0,0,0);
   assert.equal(s.headline,"999,999,999,999,999.12 EUR");
 });
-test("flight list money aggregator uses entire selected SQL scope, not paginated rows",()=>{
-  assert.match(source,/scoped AS MATERIALIZED \(SELECT \* FROM b WHERE/);
-  assert.match(source,/classified AS MATERIALIZED/);
-  assert.match(source,/costed AS MATERIALIZED/);
-  assert.match(source,/cost_totals AS/);
-  assert.match(source,/FROM costed CROSS JOIN cost_totals ORDER BY/);
-  assert.match(source,/TRUNC\(SUM\(cost_exact \* POWER\(10::numeric,price_currency_minor_units\)\)\)::text total_minor/);
-  assert.match(source,/ROUND\([\s\S]*?price_per_hour_decimal::numeric \*[\s\S]*?60::numeric[\s\S]*?price_currency_minor_units\)/);
-  assert.match(source,/cost_state='not_tracked'/);
-  assert.match(source,/cost_state='unknown'/);
-  assert.match(source,/cost_state='invalid'/);
-  assert.match(page,/presentFlightCostSummary\(result.costSummarySource.buckets,result.summary.flights/);
-  assert.doesNotMatch(page,/<strong>Unverified<\/strong><small>Legacy rates have no recorded currency/);
+test("flight list wires the SQL cost columns into the summary in the right order",()=>{
+  // The aggregation itself is exercised against PostgreSQL in
+  // tests/integration/postgres-flight-cost-summary.test.ts. This only guards the wiring.
+  assert.match(source,/costSummarySource:\{buckets:x\.summary_cost_groups\?\?\[\],notTracked:n\(x\.summary_cost_not_tracked\),unknown:n\(x\.summary_cost_unknown\),invalid:n\(x\.summary_cost_invalid\)\}/);
+  assert.match(page,/presentFlightCostSummary\(result\.costSummarySource\.buckets,result\.summary\.flights,result\.costSummarySource\.notTracked,result\.costSummarySource\.unknown,result\.costSummarySource\.invalid\)/);
 });
 
 test("Statistics groups flight costs after individual per-flight rounding and split, not before",()=>{
