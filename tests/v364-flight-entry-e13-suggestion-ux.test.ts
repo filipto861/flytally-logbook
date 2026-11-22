@@ -2,21 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 
-const profilePage=fs.readFileSync("app/(protected)/profile/page.tsx","utf8");
-const profileActions=fs.readFileSync("app/(protected)/profile/actions.ts","utf8");
-const newFlight=fs.readFileSync("app/(protected)/flights/new/page.tsx","utf8");
 const gps=fs.readFileSync("components/kml-import-form.tsx","utf8");
-
-test("3.5.2 removes the account Night-definition switch from active Settings and flight-entry runtime",()=>{
-  assert.doesNotMatch(profilePage,/name="night_definition"/);
-  assert.doesNotMatch(profilePage,/Manual · no automatic Day\/Night split/);
-  assert.doesNotMatch(profilePage,/SERA · GPS civil-twilight suggestion/);
-  assert.doesNotMatch(profileActions,/night_definition:normalizeNightDefinition/);
-  assert.doesNotMatch(profileActions,/pick\(f,"night_definition"/);
-  assert.doesNotMatch(newFlight,/getUserNightDefinition/);
-  assert.doesNotMatch(newFlight,/nightDefinition=\{/);
-  assert.doesNotMatch(gps,/NightDefinition/);
-});
 
 test("3.5.2 GPS SERA suggestions are automatic but remain gated by canonical flight-context applicability",()=>{
   assert.match(gps,/const seraLandingSuggestionEnabled=sourceRequirements\?\.landingMode==="DAY_NIGHT",seraNightTimeSuggestionEnabled=sourceRequirements\?\.reviewNightIfr===true/);
@@ -41,13 +27,4 @@ test("3.5.2 Night-time state stays sticky and unavailable GPS evidence still fal
   assert.match(gps,/GPS Night-time unavailable —/);
   assert.match(gps,/Enter manually/);
   assert.match(gps,/GPS does not prove IFR/);
-});
-
-test("3.5.2 Day Night suggestion provenance remains visible and pilot-editable",()=>{
-  assert.match(gps,/aria-describedby=\{seraLandingSuggestionEnabled\?landingHelpId:undefined\}/);
-  assert.match(gps,/SERA civil-twilight suggestion · GPS event time\/location/);
-  assert.match(gps,/Pilot-edited Day\/Night split/);
-  assert.match(gps,/Day\/Night split unavailable from the GPS event evidence/);
-  assert.match(gps,/onChange=\{event=>updateLandingSplit\(index,"landingsDay",event\.target\.value\)\}/);
-  assert.match(gps,/onChange=\{event=>updateLandingSplit\(index,"landingsNight",event\.target\.value\)\}/);
 });

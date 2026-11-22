@@ -51,17 +51,6 @@ test("v2.5 presentation model stays rule-free while the service delegates to aut
   assert.match(service,/evaluationProvenance/);assert.match(service,/sourceFlights/);assert.match(service,/proficiencyEvidenceId/);assert.match(service,/row\.href/);assert.match(service,/credentialValidity/);
 });
 
-test("v2.5 Recency defaults to one open action queue and keeps current privileges collapsed",()=>{
-  const route=read("app/(protected)/credentials/page.tsx"),workspace=read("components/recency-compliance-workspace.tsx"),legacy=read("app/(protected)/credentials/legacy-page.tsx");
-  assert.match(route,/rawView==="recency"[\s\S]*RecencyComplianceWorkspace/);
-  assert.match(route,/rawDetail==="1"/);
-  assert.match(workspace,/FLYING RECENCY/);assert.match(workspace,/NEEDS ATTENTION/);assert.match(workspace,/Recorded evidence/);
-  assert.match(workspace,/attention=flyingItems\.filter\(item=>item\.status!=="current"\)/);assert.match(workspace,/currentFlying=flyingItems\.filter\(item=>item\.status==="current"\)/);assert.match(workspace,/<details className="compliance-current-monitoring">/);assert.match(workspace,/currentFlying\.map/);
-  assert.doesNotMatch(workspace,/compliance-credential-summary/);
-  for(const panel of ["RecencyPanel","SplRecencyPanel","HelicopterRecencyPanel","BalloonRecencyPanel"])assert.match(workspace,new RegExp(`<${panel}`));
-  assert.match(legacy,/view==="recency"[\s\S]*<RecencyPanel/);
-});
-
 test("v2.5 workspace is read-only and has a dedicated responsive stylesheet",()=>{
   const workspace=read("components/recency-compliance-workspace.tsx"),service=read("lib/recency-workspace-service.ts"),layout=read("app/layout.tsx"),css=read("app/v250-recency-workspace.css");
   assert.doesNotMatch(workspace,/\bINSERT\b|\bUPDATE\b|\bDELETE\b/i);

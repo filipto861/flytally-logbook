@@ -44,18 +44,6 @@ test("B1A populated billing remains canonical and malformed values fail closed",
   assert.equal(parseFlightInput(malformed).data,undefined);
 });
 
-test("B1A New Flight no longer treats billing as a draft-save blocker",()=>{
-  const form=read("components/flight-form.tsx");
-  assert.doesNotMatch(form,/!billing&&"billing"/);
-  assert.doesNotMatch(form,/if\(registration&&!billing\)setCostOpen\(true\)/);
-  assert.match(form,/<option value="">Not tracked<\/option>/);
-  assert.match(form,/billing==="INVALID"\?"Needs configuration"/);
-  assert.match(form,/Stored billing is invalid/);
-  assert.match(form,/Aircraft cost not tracked/);
-  assert.doesNotMatch(form,/Billing time <span className="field-hint"[^>]*>Required/);
-  assert.doesNotMatch(form,/name="billingBasis"[^>]*required/);
-});
-
 test("B1A aircraft defaults preserve absence instead of synthesizing BLOCK",()=>{
   const options=read("lib/data/aircraft.ts"),actions=read("app/(protected)/database/actions.ts"),manager=read("components/aircraft-manager.tsx"),quick=read("components/quick-aircraft-form.tsx");
   assert.match(options,/COALESCE\(billing_basis, ''\) AS billing_basis/);

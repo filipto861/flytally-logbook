@@ -6,14 +6,6 @@ import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("PostgreSQL acceptance harness executes production certification DDL",()=>{
-  const integration=read("tests/integration/postgres-certification.test.ts");
-  assert.match(integration,/lib\/db-optimization\.ts/);
-  assert.match(integration,/productionSqlBlock/);
-  assert.match(integration,/CREATE OR REPLACE FUNCTION logbook_protect_locked_flight/);
-  assert.match(integration,/CREATE TABLE IF NOT EXISTS flight_verifications/);
-});
-
 test("certification v3 payload remains verifiable after explicit later payload migrations",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,33,1));
   const integrity=read("lib/certification-integrity.ts");

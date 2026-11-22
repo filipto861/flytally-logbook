@@ -12,16 +12,6 @@ test("v2.0-C keeps explicit and legacy TMG category semantics distinct",()=>{
   assert.equal(aircraftCategoryCapabilities({aircraftClass:"TMG",evidence:"EASA"}).category,"aeroplane");
 });
 
-test("v2.0-C Flights exposes category as a first-class persistent filter",()=>{
-  const page=read("app/(protected)/flights/page.tsx"),detail=read("app/(protected)/flights/[id]/page.tsx"),core=read("lib/data/flights.ts");
-  assert.match(page,/category\?:string/);
-  assert.match(page,/aria-label="Logbook category"/);
-  assert.match(page,/AEROPLANE","ULL","SAILPLANE","HELICOPTER","BALLOON/);
-  assert.match(page,/params[.]q\|\|params[.]category\?href\(\{\}, \{q:params[.]q,category:params[.]category\}\)/);
-  assert.match(detail,/category\?:string/);
-  assert.match(core,/FlightFilters=\{q\?:string;category\?:string/);
-});
-
 test("v2.0-C fast list resolves category without rewriting historical rows",()=>{
   const source=read("lib/data/flights-fast.ts");
   assert.match(source,/resolved_category/);

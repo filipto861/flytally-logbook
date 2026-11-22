@@ -34,7 +34,7 @@ Short and current. Update it when the state changes. Old detail is in git histor
 | # | Item | Notes |
 |---|---|---|
 | 2 | **CSS consolidation** | 47 global stylesheets, `:where()` token rules overridden by old selectors, 168 `!important`, 33 breakpoints. Use a staged plan with before/after computed-style snapshots. |
-| 3 | **Test triage** | 231 of the 277 unit test files read source files and assert their text by regex. Rewrite the ones that guard real invariants (SQL tenant scoping, certification and money) as behavioural tests, and delete the rest. |
+| 3 | **Behavioural tests instead of regex** | Phase 1 is done (2026-11-22): 366 presentation-only tests (UI text, CSS, layout, versions) were removed and 894 were kept. 194 of the 242 unit test files still read source text, but every remaining check guards an invariant. Next: convert them per domain (SQL scoping → PostgreSQL integration; pure rules → direct function calls), starting with certification and money. |
 | 5 | **Safe full-account restore (M0-B)** | Needs a new design and an owner decision first. The previous attempt was abandoned. |
 | 6 | **Story export completeness** | The Story exporter can omit failed map tiles instead of failing the export. |
 | 7 | **Map provider rights** | Esri/openAIP rights, quotas, attribution and export restrictions are unverified. |

@@ -18,16 +18,6 @@ test("A2B2 airspaces control is private, opt-in and build OFF by default", () =>
   assert.doesNotMatch(control, /OPENAIP_API_KEY|x-openaip-api-key|api\.tiles\.openaip\.net/);
 });
 
-test("A2B2 airspaces layer is independent of basemap and noninteractive in the aviation pane", () => {
-  assert.match(control, /pane: "flytallyAviation"/);
-  assert.match(control, /map\.removeLayer\(layer\)/);
-  assert.doesNotMatch(control, /attachSatelliteBasemap|attachStandardBasemap|\.fitBounds\(|\.setView\(|map\.remove\(/);
-  const controller = source("components/map-layer-controller.ts");
-  assert.match(controller, /ensurePane\(map, "flytallyAviation", "300"\)/);
-  assert.match(controller, /aviationPane\.style\.pointerEvents = "none"/);
-  assert.match(controller, /aviationPane\.style\.filter = "none"/);
-});
-
 test("A2B2 explicit zoom budget, fail-closed tile error and attribution contract", () => {
   assert.match(control, /MAX_AIRSPACE_REQUEST_ZOOM = 14/);
   assert.match(control, /MAX_AIRSPACE_DISPLAY_ZOOM = 18/);
@@ -62,15 +52,4 @@ test("A2B2 four authenticated maps install and dispose, public replay is exclude
   assert.match(source("components/flight-track-player.tsx"), /installMapSettingsControl\(map,!publicView\)/);
   assert.match(source("components/satellite-map-control.ts"), /installAirspaceMapControl\(map, enabled, panel\)/);
   assert.doesNotMatch(source("components/public-flight-map.tsx"), /installMapSettingsControl/);
-});
-
-test("A2D Aviation browser tests use synthetic PNG, unavailable status and public exclusion", () => {
-  const spec = source("e2e/map-layers.spec.mjs");
-  assert.match(spec, /NEXT_PUBLIC_FLYTALLY_AIRSPACES_MAPS === "true"/);
-  assert.match(spec, /AIRSPACE_PNG = Buffer\.from/);
-  assert.match(spec, /route\.fulfill\(\{ status: 200, contentType: "image\/png", body: AIRSPACE_PNG \}\)/);
-  assert.match(spec, /status: 503, body: "Aviation overlay unavailable"/);
-  assert.match(spec, /Aviation overlay/);
-  assert.doesNotMatch(spec, /Airspaces overlay/);
-  assert.match(spec, /publicMap\.getByRole\("button", \{ name: "Aviation overlay" \}\)\)\.toHaveCount\(0\)/);
 });

@@ -50,18 +50,6 @@ test("P1.4 aircraft and rate defaults use strict server calendar authority",()=>
   assert.doesNotMatch(quick,/timeZone:"Europe\/Prague"|const today=|new Date\(\)/);
 });
 
-test("P1.4 unresolved calendar state stays visible and editable instead of inventing a rate date",()=>{
-  const manager=read("components/aircraft-manager.tsx");
-  const quick=read("components/quick-aircraft-form.tsx");
-
-  assert.match(manager,/Needs configuration for automatic date/);
-  assert.match(manager,/Enter the effective date manually/);
-  assert.match(manager,/Automatic date is temporarily unavailable/);
-  assert.match(quick,/Automatic rate date needs timezone configuration/);
-  assert.match(quick,/Add the aircraft without a rate/);
-  assert.match(quick,/Automatic rate date is temporarily unavailable/);
-});
-
 test("P1.4 rejects a rate-bearing aircraft save before persistence when the effective date is invalid",()=>{
   const actions=read("app/(protected)/database/actions.ts");
   const start=actions.indexOf("async function persistAircraft");

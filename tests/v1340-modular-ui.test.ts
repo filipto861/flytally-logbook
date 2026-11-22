@@ -46,36 +46,3 @@ test("appearance contract is System/Dark/Light and is wired through settings, pr
   assert.match(theme,/data-theme="light"/);
   assert.match(uiSystem,/--bg:#f4f7fb/);
 });
-
-test("dashboard renders registered widget boundaries and maps follow the resolved theme",()=>{
-  const dashboard=read("app/(protected)/dashboard/page.tsx"),map=read("components/leaflet-mobile.ts"),layers=read("components/map-layer-controller.ts");
-  assert.match(dashboard,/dashboardLayoutFromPreferences/);
-  assert.match(dashboard,/data-dashboard-widget/);
-  assert.match(map,/MutationObserver/);
-  assert.match(map,/dataset[.]theme/);
-  assert.match(map,/applyStandardMapTheme/);
-  assert.match(layers,/STANDARD_DARK_FILTER/);
-  assert.match(layers,/basePane\.style\.filter/);
-  assert.doesNotMatch(layers,/tilePane\.style\.filter/);
-});
-
-test("light appearance overrides legacy dark workspace surfaces across the application",()=>{
-  const theme=read("app/theme.css"),uiSystem=read("app/v150-ui-system.css");
-  assert.match(uiSystem,/--surface:#ffffff/);
-  assert.match(uiSystem,/--border:#d5dee8/);
-  assert.match(theme,/\.dashboard-chart-v3\{background:var\(--surface\)\}/);
-  assert.match(theme,/\.chart-summary>span\{background:var\(--surface-raised\)/);
-  assert.match(theme,/\.chart-focus\{background:#f4f9fb/);
-  assert.match(theme,/\.credential-card\{background:var\(--surface\);border-color:var\(--line\)\}/);
-  assert.match(theme,/\.entry-section,/);
-  assert.match(theme,/\.flight-review-card\{background:var\(--surface\)/);
-  assert.match(theme,/\.add-aircraft-card,\s*html\[data-theme="light"\] \.aircraft-card\{background:var\(--surface\);border-color:var\(--line\)\}/);
-  assert.match(theme,/\.data-hub-nav\{background:#fffffff2/);
-  assert.match(theme,/\.sidebar nav\{background:var\(--surface-raised\)/);
-  assert.match(theme,/\.entry-progress\{background:var\(--surface-raised\);border-color:var\(--line\)\}/);
-  assert.match(theme,/\.connection-search-result,\s*html\[data-theme="light"\] \.connection-card\{background:var\(--surface\)/);
-  assert.match(theme,/\.security-grid>section,/);
-  assert.match(theme,/\.session-list>div,/);
-  assert.match(theme,/\.invite-list>div\{background:var\(--surface\);color:var\(--text\);border-color:var\(--line\)\}/);
-  assert.match(theme,/\.security-panel>summary\{color:var\(--text\)\}/);
-});

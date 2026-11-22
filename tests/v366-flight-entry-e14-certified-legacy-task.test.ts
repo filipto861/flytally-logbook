@@ -63,10 +63,3 @@ test("E1.4 authenticated browser fixture cleans up its certified legacy rows bet
   assert.match(browserDb,/DELETE FROM flights WHERE id IN \(9914,9915\)/);
   assert.match(browser,/finally\{\s*clearE14LegacyTaskFixture\(\);\s*\}/);
 });
-
-test("E1.4 legacy annotation styles are bounded and responsive",()=>{
-  const css=read("app/globals.css");
-  assert.match(css,/\.legacy-task-note\{/);
-  assert.match(css,/\.legacy-task-badge,\.legacy-task-inline\{/);
-  assert.match(css,/@media\(max-width:600px\)\{\.legacy-task-note/);
-});

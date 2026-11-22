@@ -57,11 +57,3 @@ test("v2.6 professional export reuses the canonical professional read model",()=
   assert.match(route,/Recorded operators/);assert.match(route,/Aircraft types/);assert.match(route,/Operation context/);
   assert.match(route,/text\/csv/);assert.match(route,/application\/vnd\.ms-excel/);
 });
-
-test("v2.6 keeps Licences professional reporting compact and routes detail to Career",()=>{
-  const panel=read("components/professional-experience-panel.tsx");
-  assert.match(panel,/href="\/statistics\?section=career"/);
-  assert.match(panel,/Career summary/);
-  assert.match(panel,/Detailed role, operator and type reporting in Career/);
-  assert.doesNotMatch(panel,/credentials-overview-grid/);
-});

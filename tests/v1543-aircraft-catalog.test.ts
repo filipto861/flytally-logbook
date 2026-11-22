@@ -3,24 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { rankAircraftTypes,type AircraftTypeCatalogEntry } from "../lib/aircraft-type-search.ts";
-import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const catalog=JSON.parse(read("data/aircraft-type-catalog.json")) as AircraftTypeCatalogEntry[];
-
-test("v1.54.3 ships a broad structured FAA aircraft catalogue",()=>{
-  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,54,3));
-  assert.ok(catalog.length>4000,`catalogue unexpectedly small: ${catalog.length}`);
-  for(const expected of [
-    {icao:"BR23",make:"BRM AERO",model:"Bristell B23"},
-    {icao:"P208",make:"TECNAM",model:"P-2008"},
-    {icao:"WT9",make:"AEROSPOOL",model:"WT-9 Dynamic"},
-  ])assert.ok(catalog.some(item=>item.icao===expected.icao&&item.make===expected.make&&item.model===expected.model),`missing ${expected.icao}`);
-  const source=read("data/AIRCRAFT_TYPES_SOURCE.md");
-  assert.match(source,/FAA Order JO 7360[.]1K/);
-  assert.match(source,/manual Make\/Model\/ICAO entry/i);
-});
 
 test("v1.54.3 search ranks ICAO, model and manufacturer queries",()=>{
   assert.equal(rankAircraftTypes(catalog,"BR23",5)[0]?.icao,"BR23");

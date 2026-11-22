@@ -2,18 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { shouldApplyAircraftProfileDefaults } from "../lib/flight-form-rules.ts";
-import { releaseAtLeast } from "./release-version.ts";
 
 const form=fs.readFileSync("components/flight-form.tsx","utf8");
 const data=fs.readFileSync("lib/data/flights.ts","utf8");
-const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
-const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
-
-test("v1.59.2 package metadata remains synchronized in later releases",()=>{
-  assert.ok(releaseAtLeast(pkg.version,1,59,2));
-  assert.equal(lock.version,pkg.version);
-  assert.equal(lock.packages[""].version,pkg.version);
-});
 
 test("new manual flight starts without previous aircraft or airport defaults",()=>{
   const start=data.indexOf("export async function getManualEntryDefaults");
@@ -48,10 +39,4 @@ test("explicit aircraft selection atomically refreshes aircraft-dependent defaul
   const pick=form.slice(start,end);
   for(const pattern of [/setType\(a\.aircraft_type\|\|""\)/,/setClass\(nextClass\)/,/setEngineType\(normalizeChoice\(a\.default_engine_type,ENGINE_TYPES,defaultEngineType\(nextClass\)\)\)/,/setOperationType\(nextOperationProfile\.showOperationEngineControls\?normalizeChoice\(a\.default_operation_type,OPERATION_TYPES,""\):"SP"\)/,/setEvidence\(nextEvidence\)/,/setBilling\(nextBilling\.error\?"INVALID":nextBilling\.settings\?\.basis\|\|""\)/,/setBillingShare\(nextBilling\.settings\?\.share\|\|1\)/,/setHourlyRate\(Number\(a\.price_per_hour\)\|\|0\)/])assert.match(pick,pattern);
   assert.doesNotMatch(pick,/setRole\(/);
-});
-
-test("blank aircraft state does not force open aircraft-dependent sections",()=>{
-  assert.match(form,/\[logbookOpen,setLogbookOpen\]=useState\(false\)/);
-  assert.match(form,/if\(profileNeedsConfiguration\)setLogbookOpen\(true\)/);
-  assert.doesNotMatch(form,/if\(registration&&!billing\)setCostOpen\(true\)/);
 });

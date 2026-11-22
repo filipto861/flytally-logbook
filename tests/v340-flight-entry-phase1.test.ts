@@ -97,19 +97,6 @@ test("3.4.0 picker and update path both consume the shared applicability contrac
 });
 
 
-test("3.4.0 Phase 2 removes fake GPS wizard chrome and collapses clean-track/context detail",()=>{
-  const gps=read("components/kml-import-form.tsx");
-  assert.doesNotMatch(gps,/className="entry-progress"/);
-  assert.doesNotMatch(gps,/className="import-step"/);
-  assert.match(gps,/className="entry-section gps-track-review" open=\{gpsReviewNeedsAttention\}/);
-  assert.match(gps,/parts\.length===1&&!cuts\.length/);
-  assert.match(gps,/Split into multiple flights/);
-  assert.match(gps,/className="entry-section gps-flight-context" open=\{flightContextNeedsAttention\}/);
-  assert.match(gps,/regulatoryContextLabel/);
-  assert.match(gps,/FLIGHT DETAILS/);
-});
-
-
 test("3.4.0 replaces the generic GPS review checkbox with a targeted quality acknowledgement",()=>{
   const gps=read("components/kml-import-form.tsx");
   const actions=read("app/(protected)/flights/actions.ts");
@@ -126,28 +113,6 @@ test("3.4.0 replaces the generic GPS review checkbox with a targeted quality ack
   assert.match(actions,/gpsQualityNeedsReview=trackQuality\(points\)\.status!=="good"/);
   assert.match(actions,/form\.get\("gpsWarningReviewed"\)/);
   assert.match(actions,/Review the GPS quality warning before saving this import/);
-});
-
-test("3.4.0 Phase 2 keeps the clean GPS path compact and truthful",()=>{
-  const gps=read("components/kml-import-form.tsx");
-
-  assert.doesNotMatch(gps,/GPS track quality: good/);
-  assert.match(gps,/Complete flight details/);
-  assert.match(gps,/Save draft/);assert.match(gps,/Save &amp; certify flight/);
-  assert.match(gps,/Save \$\{partCount\} flight drafts/);
-  assert.match(gps,/data-ready=\{sourceReady&&credible\?"true":"false"\}/);
-  assert.match(gps,/flight-review-card\[data-ready="false"\]/);
-});
-
-test("3.4.0 Phase 3 keeps Billing secondary to regulatory flight context",()=>{
-  const gps=read("components/kml-import-form.tsx");
-
-  assert.match(gps,/className="entry-section entry-section-optional gps-cost-details"/);
-  assert.match(gps,/billingSummary=billing==="INVALID"\?"Needs configuration"/);
-  assert.match(gps,/Resolve the stored aircraft billing setting/);
-
-  const contextAssignment=gps.match(/flightContextSummary=selectedProfile\?compactContextSummary\(\[([^\]]+)\]\)/)?.[1]??"";
-  assert.doesNotMatch(contextAssignment,/Billing|billing/);
 });
 
 
@@ -170,13 +135,6 @@ test("3.4.0 single GPS import exposes draft first and explicit certification sec
   assert.match(actions,/Multi-flight GPS imports are saved as drafts/);
   assert.match(actions,/completionIntent==="certify"&&prepared\.length===1/);
   assert.match(actions,/certifyStoredFlight\(userId,lastId\)/);
-});
-
-test("3.4.0 single GPS completion summary exposes certification evidence",()=>{
-  const gps=read("components/kml-import-form.tsx");
-  assert.match(gps,/gps-certification-summary/);
-  for(const label of ["Flight","Aircraft / role","UTC times","Evidence"])assert.ok(gps.includes(`<span>${label}</span>`),label);
-  assert.match(gps,/Certified flights are locked; later changes are recorded as corrections\./);
 });
 
 test("3.4.0 flight detail uses the same category-aware certification blocker contract as direct certification",()=>{

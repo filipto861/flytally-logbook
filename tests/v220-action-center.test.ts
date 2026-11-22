@@ -42,16 +42,6 @@ test("v2.2 Action Center reuses existing decision workflows and refreshes inline
   assert.match(page,/Data-quality problems stay in Needs attention/);
 });
 
-test("v2.2 keeps Notifications as history and Dashboard surfaces Actions only when pending",()=>{
-  const notifications=read("app/(protected)/notifications/page.tsx"),dashboard=read("app/(protected)/dashboard/page.tsx"),icons=read("components/nav-icon.tsx");
-  assert.match(notifications,/Anything still waiting for your decision is collected in Actions/);
-  assert.match(notifications,/href="\/actions"/);
-  assert.match(dashboard,/getPendingActionCount/);
-  assert.match(dashboard,/actionCount>0/);
-  assert.match(dashboard,/href="\/actions"/);
-  assert.match(icons,/actions:/);
-});
-
 test("v2.2 pending flight requests require current certified source revision",()=>{
   const pending=read("lib/pending-actions.ts");
   assert.match(pending,/f[.]certified_at IS NOT NULL/);

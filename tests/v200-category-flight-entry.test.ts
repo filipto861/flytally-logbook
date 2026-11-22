@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
 import {aircraftCategoryCapabilities} from "../lib/aircraft-category.ts";
 import {flightEntryProfile} from "../lib/flight-entry-profile.ts";
 import {supportsProfessionalContext} from "../lib/professional-context.ts";
 
-const root=path.resolve(import.meta.dirname,"..");
-const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v2.0-B exposes regulatory labels and category-specific technical controls",()=>{
   const aeroplane=flightEntryProfile({hasAircraft:true,regulatoryCategory:"AEROPLANE",aircraftClass:"SEP",evidence:"EASA"});
@@ -40,15 +36,4 @@ test("v2.0-B preserves distinct movement evidence modes in the entry workspace",
   assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"SAILPLANE",aircraftClass:"GLIDER",evidence:"EASA"}).movementEvidenceMode,"SFCL_LAUNCH");
   assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"SAILPLANE",aircraftClass:"TMG",evidence:"EASA"}).movementEvidenceMode,"SFCL_TMG");
   assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"BALLOON",aircraftClass:"BALLOON",evidence:"EASA"}).movementEvidenceMode,"BFCL_TAKEOFF_LANDING");
-});
-
-test("v2.0-B FlightForm consumes capabilities instead of duplicating the main category branches",()=>{
-  const form=read("components/flight-form.tsx");
-  assert.match(form,/entryProfile[.]movementEvidenceMode==="SFCL_TMG"/);
-  assert.match(form,/entryProfile[.]movementEvidenceMode==="BFCL_TAKEOFF_LANDING"/);
-  assert.match(form,/entryProfile[.]supportsProfessionalContext/);
-  assert.match(form,/entryProfile[.]showOperationEngineControls/);
-  assert.match(form,/type="hidden" name="operationType"/);
-  assert.match(form,/Part-BFCL/);
-  assert.match(form,/Part-SFCL/);
 });

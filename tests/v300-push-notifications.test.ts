@@ -49,21 +49,6 @@ test("service worker presents push and deep-links notification clicks",()=>{
   assert.doesNotMatch(sw,/fetch.*respondWith/s);
 });
 
-test("push is discoverable through onboarding, context and Settings",()=>{
-  const shell=read("components/app-shell.tsx"),onboarding=read("components/push-notification-onboarding.tsx"),controls=read("components/push-notification-controls.tsx"),profile=read("app/(protected)/profile/page.tsx"),recency=read("components/recency-compliance-workspace.tsx"),inbox=read("app/(protected)/notifications/page.tsx");
-  assert.match(shell,/PushNotificationOnboarding/);
-  assert.match(onboarding,/Never miss an important flying deadline/);
-  assert.match(onboarding,/Not now/);
-  assert.match(onboarding,/14/);
-  assert.match(controls,/Flying & compliance/);
-  assert.match(controls,/Activity/);
-  assert.match(controls,/Account security/);
-  assert.match(controls,/INSTALL APP FIRST/);
-  assert.match(profile,/PushNotificationSettings/);
-  assert.match(recency,/PushNotificationInline context="recency"/);
-  assert.match(inbox,/PushNotificationInline context="updates"/);
-});
-
 test("existing browser subscriptions are rebound to the current signed-in session",()=>{
   const pwa=read("components/pwa-client.tsx"),route=read("app/api/push/subscription/route.ts");
   assert.match(pwa,/pushManager\.getSubscription\(\)/);

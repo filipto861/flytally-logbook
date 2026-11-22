@@ -40,12 +40,3 @@ test("v1.41.0 keeps derived GPS evidence explicit and reviewable in later releas
   assert.match(manager,/pointCount/);
   assert.match(manager,/fileName/);
 });
-
-test("v1.41.0 keeps GPS inference behavior unchanged while reusing it for advisory review",()=>{
-  const review=read("lib/data/flight-track-review.ts"),processing=read("lib/track-processing.ts");
-  assert.match(review,/flightEnvelope/);
-  assert.match(review,/landingCount/);
-  assert.match(review,/localParts/);
-  assert.match(processing,/takeoffEvidenceIndex/);
-  assert.match(processing,/hasImplausibleAltitudeJump/);
-});
