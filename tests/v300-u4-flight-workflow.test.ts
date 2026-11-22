@@ -18,11 +18,10 @@ test("v3.0 U4 makes Save hand off directly to final Logbook review",()=>{
 });
 
 test("v3.0 U4 keeps certification explicit and blocks sharing until the record is certified",()=>{
-  const page=read("app/(protected)/flights/[id]/page.tsx"),sharing=read("lib/flight-sharing.ts"),sharePage=read("app/(protected)/flights/[id]/share/page.tsx");
+  const page=read("app/(protected)/flights/[id]/page.tsx"),sharePage=read("app/(protected)/flights/[id]/share/page.tsx");
   assert.match(page,/name="confirm" value="certify"/);
   assert.match(page,/disabled=\{certificationBlockers\.length>0\}/);
-  assert.match(sharing,/WHERE id=\$\{flightId\} AND user_id=\$\{userId\} AND certified_at IS NOT NULL/);
-  assert.match(sharing,/s\.revoked_at IS NULL AND f\.certified_at IS NOT NULL/);
+  // The sharing SQL itself runs in tests/integration/postgres-public-flight-share.test.ts.
   assert.match(sharePage,/if\(!f\.certified_at\)return/);
   assert.match(sharePage,/Certify the final record first/);
   assert.match(sharePage,/SHARE CERTIFIED R/);

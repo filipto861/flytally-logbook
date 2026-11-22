@@ -27,9 +27,6 @@ test("3.5.0 M5 active operational consumers stay on the active flight graph",()=
   }
   const tracks=read("lib/data/tracks.ts");
   assert.ok(tracks.includes("flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id"));
-  const publicShare=read("lib/flight-sharing.ts");
-  assert.ok(publicShare.includes("flight_public_shares s JOIN flights f ON f.id=s.flight_id AND f.user_id=s.user_id"));
-  assert.ok(publicShare.includes("s.revoked_at IS NULL AND f.certified_at IS NOT NULL"));
 });
 
 test("3.5.0 M5 every category recency and professional-credit service requires an active certified flight",()=>{

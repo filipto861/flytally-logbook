@@ -26,8 +26,7 @@ test("v2.8 account deletion purges non-core account data but preserves signed av
 });
 
 test("v2.8 retention sweep removes stale share and auth artifacts on a documented schedule",()=>{
-  const privacy=read("lib/privacy-account.ts"),sharing=read("lib/flight-sharing.ts"),cron=read("app/api/cron/backups/route.ts"),legal=read("lib/legal.ts");
-  assert.match(sharing,/revoked_at<NOW\(\)-INTERVAL '30 days'/);
+  const privacy=read("lib/privacy-account.ts"),cron=read("app/api/cron/backups/route.ts"),legal=read("lib/legal.ts");
   assert.match(privacy,/auth_password_resets/);
   assert.match(privacy,/auth_sessions/);
   assert.match(privacy,/auth_events WHERE event_at<NOW\(\)-INTERVAL '90 days'/);
