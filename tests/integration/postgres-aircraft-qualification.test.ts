@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -22,7 +23,7 @@ before(()=>{
     CREATE TABLE pilot_qualifications(id BIGSERIAL PRIMARY KEY,licence_id BIGINT NOT NULL REFERENCES pilot_licences(id) ON DELETE CASCADE,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,qualification_type TEXT NOT NULL,certificate_reference TEXT NOT NULL DEFAULT '',validity_mode TEXT NOT NULL,valid_until DATE,recency_until DATE,active BOOLEAN NOT NULL DEFAULT TRUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),UNIQUE(licence_id,qualification_type,certificate_reference));
     INSERT INTO users(id) VALUES(41),(42);INSERT INTO pilot_licences(id,user_id,licence_type,licence_number) VALUES(501,41,'LAPL(A)','CZ-TEST'),(502,42,'PPL(A)','OTHER');`;
   const base=rawPsql(setup);if(base.status!==0)throw new Error(base.stderr||base.stdout);
-  const source=fs.readFileSync(path.join(root,"lib/v145-schema.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]).filter(value=>(value.startsWith("ALTER TABLE pilot_qualifications")||value.startsWith("CREATE INDEX IF NOT EXISTS idx_v145")));
+  const source=fs.readFileSync(path.join(root,"lib/v145-schema.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])).filter(value=>(value.startsWith("ALTER TABLE pilot_qualifications")||value.startsWith("CREATE INDEX IF NOT EXISTS idx_v145")));
   assert.ok(blocks.length>=20,"Expected production v1.45 aircraft-training migration blocks");
   for(const block of blocks)run(block);
 });

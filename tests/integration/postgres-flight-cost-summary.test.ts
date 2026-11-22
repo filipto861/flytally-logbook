@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
 import { presentFlightCostSummary } from "../../lib/flight-cost-summary.ts";
+import { cookSql } from "./production-sql.ts";
 
 // Behavioural replacement for regex checks of the flight-list cost aggregator.
 // Runs the real production SQL from lib/data/flights-fast.ts against a small,
@@ -38,7 +39,7 @@ function literal(value:unknown){
 }
 function listQuery(values:Record<string,unknown>){
   const source=read("lib/data/flights-fast.ts");
-  const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(m=>m[1].replace(/\\([\\`$])/g,"$1")).find(b=>b.includes("cost_totals AS ("));
+  const block=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(m=>cookSql(m[1])).find(b=>b.includes("cost_totals AS ("));
   assert.ok(block,"flight list SQL with cost_totals not found in lib/data/flights-fast.ts");
   const defaults={userId:PILOT,q:null,e:null,r:null,reg:null,from:null,to:null,c:null,a:null,route:null,rf:null,rt:null,y:null,g:null,status:null,workflow:null,category:null,sort:"newest",size:50,offset:0};
   const all:Record<string,unknown>={...defaults,...values};

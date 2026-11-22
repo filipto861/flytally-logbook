@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -21,7 +22,7 @@ function run(statement:string){
 }
 function resolverSql(){
   const source=fs.readFileSync(path.join(root,"lib/flight-connected-crew.ts"),"utf8");
-  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
   const block=blocks.find(value=>value.includes("WHERE u.id=${connectedUserId}")&&value.includes("pc.status='accepted'"));
   assert.ok(block,"F2.3 accepted PIC snapshot SQL is present");
   return block;

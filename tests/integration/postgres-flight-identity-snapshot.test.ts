@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -60,7 +61,7 @@ before(()=>{
   const end=source.indexOf("];",start);
   assert.ok(start>=0&&end>start,"migration 17 source block missing");
   const section=source.slice(start,end+2);
-  const blocks=[...section.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  const blocks=[...section.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
   assert.equal(blocks.length,3,"migration 17 should contain function + trigger replacement");
   for(const block of blocks)run(block);
 });
@@ -112,7 +113,7 @@ test("exact-restore style second-stage identity UPDATE remains authoritative",{s
 test("migration 17 can be reapplied without changing row identity",{skip:!enabled},()=>{
   const beforeRows=rows(`SELECT id||':'||aircraft_make||'|'||aircraft_model||'|'||aircraft_variant FROM flights ORDER BY id`);
   const source=fs.readFileSync(path.join(root,"lib/db-optimization.ts"),"utf8"),start=source.indexOf("if(version===17)return["),end=source.indexOf("];",start),section=source.slice(start,end+2);
-  for(const block of [...section.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]))run(block);
+  for(const block of [...section.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1])))run(block);
   const afterRows=rows(`SELECT id||':'||aircraft_make||'|'||aircraft_model||'|'||aircraft_variant FROM flights ORDER BY id`);
   assert.deepEqual(afterRows,beforeRows);
 });

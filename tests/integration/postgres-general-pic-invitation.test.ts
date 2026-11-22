@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
 const databaseUrl=process.env.DATABASE_URL??"";
@@ -24,7 +25,7 @@ function migration16Blocks(){
   const start=source.indexOf("if(version===16)return[");
   const end=source.indexOf("if(version===17)return[",start);
   assert.ok(start>=0&&end>start,"migration 16 block is present");
-  return [...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
+  return [...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));
 }
 
 before(()=>{

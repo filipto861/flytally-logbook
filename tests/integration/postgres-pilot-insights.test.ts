@@ -4,12 +4,13 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { after,before,test } from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1",databaseUrl=process.env.DATABASE_URL??"",root=path.resolve(import.meta.dirname,"../.."),schema=`ft_insights_${randomUUID().replaceAll("-","")}`,quoted=`"${schema}"`;
 function raw(statement:string){return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:8*1024*1024})}
 function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim().replace(/\r\n/g,"\n")}
 function literal(value:unknown){if(value===null||value===undefined)return"NULL";if(typeof value==="number")return String(value);return`'${String(value).replaceAll("'","''")}'`}
-function queryBlock(){const source=fs.readFileSync(path.join(root,"lib/data/pilot-insights.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);const block=blocks.find(value=>value.includes("WITH base0 AS MATERIALIZED"));assert.ok(block,"pilot insights SQL block not found");return block.replaceAll("\\\\","\\")}
+function queryBlock(){const source=fs.readFileSync(path.join(root,"lib/data/pilot-insights.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>cookSql(match[1]));const block=blocks.find(value=>value.includes("WITH base0 AS MATERIALIZED"));assert.ok(block,"pilot insights SQL block not found");return block.replaceAll("\\\\","\\")}
 function render(block:string,scopeCategory:string|null=null,bounds:{start:string|null;end:string|null}={start:null,end:null}){const values:Record<string,unknown>={userId:1,"bounds.start":bounds.start,"bounds.end":bounds.end,scopeCategory,section:"all","rolling.currentStart":"2025-09-05","rolling.currentEnd":"2026-09-04","rolling.previousStart":"2024-09-05","rolling.previousEnd":"2025-09-04"};const rendered=block.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{const key=String(expression).trim();assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No SQL fixture for ${key}`);return literal(values[key])});assert.doesNotMatch(rendered,/\$\{/);return rendered}
 
 let localTargetValidated=false;

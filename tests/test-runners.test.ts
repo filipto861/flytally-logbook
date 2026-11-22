@@ -47,3 +47,12 @@ test("browser runner refuses anything but a 127.0.0.1 database before resetting 
     assert.match(result.stderr, /did not run|only run on 127\.0\.0\.1/);
   }
 });
+
+test("cookSql turns extracted template SQL into the string PostgreSQL actually receives",async()=>{
+  const { cookSql } = await import("./integration/production-sql.ts");
+  // Source text of: sql`... ~'^\\d{4}-\\d{2}' ... \`x\` ... \${y}`
+  const raw=String.raw`date::text~'^\\d{4}-\\d{2}' AND a=\`x\` AND b='\${y}'`;
+  assert.equal(cookSql(raw),"date::text~'^\\d{4}-\\d{2}' AND a=`x` AND b='${y}'");
+  // SQL without escapes is unchanged.
+  assert.equal(cookSql("SELECT 1 WHERE user_id=${userId}"),"SELECT 1 WHERE user_id=${userId}");
+});

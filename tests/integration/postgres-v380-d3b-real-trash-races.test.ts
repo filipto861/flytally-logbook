@@ -3,6 +3,7 @@ import {randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {spawn,spawnSync} from "node:child_process";
 import {after,before,test} from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 const enabled=process.env.FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE==="1";
 let verifiedDisposableTarget=false;
@@ -69,7 +70,7 @@ function migration20(){
   const a=db.indexOf("if(version===20)return[");
   const b=db.indexOf("  ];",a);
   assert.ok(a>=0 && b>a,"v20 migration code is missing");
-  const blocks=[...db.slice(a,b).matchAll(/sql`([\s\S]*?)`/g)].map(m=>m[1]);
+  const blocks=[...db.slice(a,b).matchAll(/sql`([\s\S]*?)`/g)].map(m=>cookSql(m[1]));
   assert.ok(blocks.length>=20,"Incomplete actual v20 migration extraction");
   return blocks;
 }

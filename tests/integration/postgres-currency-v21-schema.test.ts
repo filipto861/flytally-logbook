@@ -4,6 +4,7 @@ import {spawnSync} from "node:child_process";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {after,before,test} from "node:test";
+import { cookSql } from "./production-sql.ts";
 
 // Focused integration test on a disposable schema with the *actual v20 trigger*.
 // NOT a full v20 database migration/portable signed-backup end-to-end test.
@@ -18,7 +19,7 @@ const dbSource=readFileSync(resolve(root,"lib/db-optimization.ts"),"utf8");
 // (identical to sql/migrations/v21-migrate.sql, see currency-v21-release-contract).
 const v21Start=dbSource.indexOf("  if(version===21)return[");
 // Block 0 is the registry preflight guard; blocks 1..8 are the additive DDL.
-const v21Blocks=[...dbSource.slice(v21Start,dbSource.indexOf("  ];\n  throw new Error(",v21Start)).matchAll(/sql`([\s\S]*?)`/g)].map(m=>m[1]).slice(1);
+const v21Blocks=[...dbSource.slice(v21Start,dbSource.indexOf("  ];\n  throw new Error(",v21Start)).matchAll(/sql`([\s\S]*?)`/g)].map(m=>cookSql(m[1])).slice(1);
 if(v21Start<0||v21Blocks.length!==8||v21Blocks.some(block=>block.includes("${"))
   ||v21Blocks.filter(block=>/^\s*ALTER TABLE /.test(block)).length!==4
   ||v21Blocks.filter(block=>/^\s*DO \$currency\$/.test(block)).length!==4)throw new Error("Runtime v21 DDL source changed");
@@ -46,7 +47,7 @@ function rows(query:string):Array<Record<string,unknown>>{
   return JSON.parse(run("SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json)::text FROM ("+query+") t")||"[]");
 }
 function installedFlightProtection(){
-  const blocks=[...dbSource.matchAll(/sql`([\s\S]*?)`/g)].map(m=>m[1])
+  const blocks=[...dbSource.matchAll(/sql`([\s\S]*?)`/g)].map(m=>cookSql(m[1]))
     .filter(s=>s.includes("CREATE OR REPLACE FUNCTION logbook_protect_locked_flight()"));
   const latest=blocks.at(-1);
   assert.ok(latest&&latest.includes("certified_void_transition"),
