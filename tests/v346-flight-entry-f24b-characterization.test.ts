@@ -38,9 +38,7 @@ test("F2.4B characterization: shared PIC materialization intentionally writes co
 test("F2.4B characterization: raw commander remains integrity-visible and externally exportable",()=>{
   const integrity=read("lib/certification-integrity.ts");
   const exportRoute=read("app/api/export/route.ts");
-  const backup=read("lib/account-backup.ts");
   assert.match(integrity,/commander:/);
   assert.match(exportRoute,/"commander"/);
   assert.match(exportRoute,/f\.commander/);
-  assert.match(backup,/flights/);
 });

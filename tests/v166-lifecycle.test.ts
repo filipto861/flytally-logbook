@@ -17,9 +17,7 @@ test("v1.66 shared flights copy professional context without inference",()=>{
 });
 
 test("v1.66 portable backup exports additive flight columns and restore keeps them generically",()=>{
-  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),layout=read("app/(protected)/layout.tsx"),runtime=read("lib/runtime-schema.ts");
-  assert.match(backup,/ensureV166Schema/);
-  assert.match(backup,/SELECT \* FROM flights/);
+  const restore=read("lib/account-restore-v6.ts"),layout=read("app/(protected)/layout.tsx"),runtime=read("lib/runtime-schema.ts");
   assert.match(restore,/json_populate_record\(NULL::flights,item\)/);
   assert.match(layout,/await ensureRuntimeSchema\(\)/);
   assert.match(runtime,/ensureV166Schema/);

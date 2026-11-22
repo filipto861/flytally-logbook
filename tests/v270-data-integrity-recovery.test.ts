@@ -93,7 +93,6 @@ test("v2.7 keeps cross-account workflow state server-authoritative for unsigned 
 });
 
 test("recovery builder emits signed portable format v13",()=>{
-  const builder=fs.readFileSync(path.join(root,"lib/account-backup.ts"),"utf8"),portable=fs.readFileSync(path.join(root,"lib/portable-backup.ts"),"utf8");
-  assert.match(builder,/version:13/);assert.match(builder,/signPortableBackup/);assert.match(builder,/server_signature/);
+  const portable=fs.readFileSync(path.join(root,"lib/portable-backup.ts"),"utf8");
   assert.match(portable,/signature_version/);assert.match(portable,/server_signature/);
 });

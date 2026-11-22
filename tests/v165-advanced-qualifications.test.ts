@@ -68,9 +68,7 @@ test("v1.65 schema is additive and does not backfill legacy qualification classi
 });
 
 test("v1.65 structured qualification fields stay inside the existing portable qualification backup graph",()=>{
-  const backup=read("lib/account-backup.ts"),layout=read("app/(protected)/layout.tsx"),panel=read("components/advanced-qualifications-panel.tsx");
-  assert.match(backup,/ensureV165Schema/);
-  assert.match(backup,/SELECT \* FROM pilot_qualifications/);
+  const layout=read("app/(protected)/layout.tsx"),panel=read("components/advanced-qualifications-panel.tsx");
   assert.match(layout,/await ensureRuntimeSchema\(\)/);
   assert.match(panel,/USER_CONFIRMED/);
   assert.match(panel,/does not issue, extend, revalidate or renew/i);

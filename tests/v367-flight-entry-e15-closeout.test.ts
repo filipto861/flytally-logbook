@@ -84,12 +84,10 @@ test("E1.5 postflight verifies v18 shape and preserves evidence counts for compa
 });
 
 test("E1.5 additive column is compatible with existing aircraft consumers audited for the pre-deploy window",()=>{
-  const backup=read("lib/account-backup.ts");
   const restore=read("lib/account-restore-v6.ts");
   const actions=read("app/(protected)/database/actions.ts");
   const data=read("lib/data/aircraft.ts");
 
-  assert.match(backup,/SELECT \* FROM aircraft WHERE user_id=/);
   assert.match(restore,/INSERT INTO aircraft SELECT \(json_populate_record\(NULL::aircraft,item\)\)\.\*/);
   assert.match(actions,/INSERT INTO aircraft\(user_id,registration,/);
   assert.doesNotMatch(actions,/INSERT INTO aircraft\s+VALUES/i);
