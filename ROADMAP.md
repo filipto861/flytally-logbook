@@ -27,7 +27,6 @@ Short and current. Update it when the state changes. Old detail is in git histor
 |---|---|---|
 | 2 | **CSS consolidation** | 47 global stylesheets, `:where()` token rules overridden by old selectors, 168 `!important`, 33 breakpoints. Use a staged plan with before/after computed-style snapshots. |
 | 3 | **Test triage** | 231 of the 277 unit test files read source files and assert their text by regex. Rewrite the ones that guard real invariants (SQL tenant scoping, certification and money) as behavioural tests, and delete the rest. |
-| 4 | **Dependency security audit** | `npm audit` and upgrades from a fresh branch (replaces the closed `filipto861/flytally-logbook#432`). |
 | 5 | **Safe full-account restore (M0-B)** | Needs a new design and an owner decision first. The previous attempt was abandoned. |
 | 6 | **Story export completeness** | The Story exporter can omit failed map tiles instead of failing the export. |
 | 7 | **Map provider rights** | Esri/openAIP rights, quotas, attribution and export restrictions are unverified. |
