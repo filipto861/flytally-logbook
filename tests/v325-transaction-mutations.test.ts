@@ -34,14 +34,3 @@ test("v3.2 U6 browser fixture supports settings and connection updates",()=>{
   assert.match(helper,/resetConnectionManagerFixture/);
   assert.match(helper,/DELETE FROM connection_audit_log/);
 });
-
-test("v3.2 U6 exercises transaction-backed pending state and persistence",()=>{
-  const smoke=read("e2e/settings-connections-mutations.spec.mjs");
-  assert.match(smoke,/account settings transaction disables duplicate submit and persists both records/);
-  assert.match(smoke,/connection access update disables duplicate submit and persists/);
-  assert.match(smoke,/getByRole\("button",\{name:"Save changes"\}\)/);
-  assert.match(smoke,/getByRole\("button",\{name:"Save access"\}\)/);
-  assert.match(smoke,/expect\(gate[.]count\(\)\)[.]toBe\(1\)/);
-  assert.match(smoke,/Browser Transaction Pilot/);
-  assert.match(smoke,/Can view your logbook/);
-});

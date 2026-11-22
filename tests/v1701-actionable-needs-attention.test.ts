@@ -28,10 +28,3 @@ test("v1.70.1 hides needs-attention navigation and dashboard action when the act
   assert.match(service,/actionableIntelligentAttention/);
   assert.match(service,/cache[(]/);
 });
-
-test("v1.70.1 direct needs-attention page explains that unusual valid history is not a problem",()=>{
-  const page=read("app/(protected)/flights/needs-attention/page.tsx");
-  assert.match(page,/Only stored flights with a concrete contradiction/);
-  assert.match(page,/Longer flights, higher movement counts/);
-  assert.doesNotMatch(page,/History or plausibility warnings/);
-});

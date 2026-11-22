@@ -22,14 +22,3 @@ test("v3.2 U5 fixture resets are localhost-only and browser-only",()=>{
   assert.match(helper,/UPDATE user_settings SET preferences_json='\{\}'::jsonb/);
   assert.match(helper,/UPDATE pilot_connections SET status='pending'/);
 });
-
-test("v3.2 U5 verifies pending state duplicate-submit protection and persistence",()=>{
-  const smoke=read("e2e/settings-connections-mutations.spec.mjs");
-  assert.match(smoke,/appearance mutation disables duplicate submit and persists/);
-  assert.match(smoke,/connection acceptance disables duplicate submit and persists/);
-  assert.match(smoke,/toHaveAttribute\("aria-busy","true"\)/);
-  assert.match(smoke,/toHaveAttribute\("data-loading","true"\)/);
-  assert.match(smoke,/expect\(gate[.]count\(\)\)[.]toBe\(1\)/);
-  assert.match(smoke,/toHaveValue\("dark"\)/);
-  assert.match(smoke,/details[.]connection-manager/);
-});

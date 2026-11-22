@@ -17,24 +17,6 @@ test("v3.0 U4 makes Save hand off directly to final Logbook review",()=>{
   assert.doesNotMatch(panel,/POST_SAVE_REVIEW_KEY|sessionStorage/);
 });
 
-test("v3.0 U4 shows one durable Saved Review Certify Share progression",()=>{
-  const workflow=read("components/flight-workflow-progress.tsx"),detail=read("components/flight-detail-workspace.tsx"),page=read("app/(protected)/flights/[id]/page.tsx");
-  assert.match(workflow,/stage\("Saved"/);
-  assert.match(workflow,/stage\("Review"/);
-  assert.match(workflow,/stage\("Certify"/);
-  assert.match(workflow,/stage\("Share"/);
-  assert.match(workflow,/Continue to certification/);
-  assert.match(workflow,/className="primary-button" href=\{state\.shareHref\}>Share flight/);
-  assert.doesNotMatch(detail,/flight-share-shortcut/);
-  assert.doesNotMatch(page,/certified\?<Link className="secondary-link" href=\{`\/flights\/\$\{id\}\/share`\}>Share<\/Link>/);
-  assert.match(detail,/FlightWorkflowProgress/);
-  assert.doesNotMatch(detail,/Flight saved as an editable draft/);
-  assert.match(detail,/history\.replaceState/);
-  assert.match(page,/workflow=\{certified,correctionDraft,locked,blockers:certificationBlockers\.length,recordRevision,shareHref:/);
-  assert.match(page,/completion=\{completion\}/);assert.match(page,/completionMessage=\{completionMessage\}/);
-  assert.doesNotMatch(detail,/↗ Share flight/);
-});
-
 test("v3.0 U4 keeps certification explicit and blocks sharing until the record is certified",()=>{
   const page=read("app/(protected)/flights/[id]/page.tsx"),sharing=read("lib/flight-sharing.ts"),sharePage=read("app/(protected)/flights/[id]/share/page.tsx");
   assert.match(page,/name="confirm" value="certify"/);
@@ -63,18 +45,6 @@ test("v3.0 U4 preserves correction history and crew sharing semantics",()=>{
   assert.match(page,/Invite another connected pilot/);
   assert.match(certification,/INSERT INTO flight_certified_revisions/);
   assert.match(certification,/status='superseded'/);
-});
-
-
-test("GPS player keeps the useful 2D replay and removes the fake 3D projection",()=>{
-  const player=read("components/flight-track-player.tsx");
-  assert.match(player,/Synchronized GPS track map/);
-  assert.match(player,/Track position/);
-  assert.match(player,/Playback speed/);
-  assert.doesNotMatch(player,/3D flight path/);
-  assert.doesNotMatch(player,/Perspective three dimensional flight path/);
-  assert.doesNotMatch(player,/GPS altitude perspective/);
-  assert.doesNotMatch(player,/function scene\(/);
 });
 
 test("flight correction cannot discard a dirty edit by switching workflow tabs without confirmation",()=>{

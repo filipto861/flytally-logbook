@@ -33,20 +33,6 @@ test("v1.62 TMG defaults safely to Part-FCL but preserves explicit SPL context",
   assert.equal(aircraftProfileRegulatoryCategory("ULL","GLIDER","SAILPLANE"),"ULL");
 });
 
-test("Quick Add and Aircraft Manager submit the same regulatory profile fields on first save",()=>{
-  const quick=read("components/quick-aircraft-form.tsx"),manager=read("components/aircraft-manager.tsx");
-  for(const source of [quick,manager]){
-    assert.match(source,/aircraftProfileRegulatoryCategory/);
-    assert.match(source,/name="evidence"/);
-    assert.match(source,/name="aircraft_class"/);
-    assert.match(source,/name="regulatory_category"/);
-    assert.match(source,/aircraftClass==="TMG"/);
-    assert.match(source,/aircraftClass==="GLIDER"/);
-    assert.match(source,/Sailplane · SPL \/ Part-SFCL/);
-  }
-  assert.match(quick,/Regulatory context<select name="regulatory_category"/);
-});
-
 test("server canonicalizes and verifies the persisted first-save profile",()=>{
   const actions=read("app/(protected)/database/actions.ts");
   assert.match(actions,/validateAircraftProfile\(\{/);

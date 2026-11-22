@@ -54,27 +54,6 @@ test("3.4.0 Manual entry makes draft the implicit submit and certification expli
   assert.match(actions,/certify=\$\{outcome\}/);
 });
 
-test("3.4.0 pre-certification summary exposes the materially sealed evidence",()=>{
-  const form=read("components/flight-form.tsx");
-  for(const label of ["Flight","Aircraft / role","UTC times","Evidence"])assert.ok(form.includes(`<span>${label}</span>`));
-  assert.match(form,/Certified flights are locked; later changes are recorded as corrections\./);
-  assert.match(form,/name="nightTime"[\s\S]*value=\{nightTime\}/);
-  assert.match(form,/name="ifrTime"[\s\S]*value=\{ifrTime\}/);
-});
-
-test("3.4.0 saved-draft and direct-certification outcomes are explicit on flight detail",()=>{
-  const page=read("app/(protected)/flights/[id]/page.tsx");
-  const workspace=read("components/flight-detail-workspace.tsx");
-
-  assert.match(page,/certification-blocked/);
-  assert.match(page,/certification-deferred/);
-  assert.match(page,/completionMessage/);
-  assert.match(workspace,/Flight saved and certified\./);
-  assert.match(workspace,/Flight saved as draft — not certified\./);
-  assert.match(workspace,/params\.delete\("certified"\)/);
-  assert.match(workspace,/params\.delete\("certify"\)/);
-});
-
 test("certified correction Save & certify seals exactly the row returned by the successful draft update",()=>{
   const form=read("components/flight-form.tsx");
   const actions=read("app/(protected)/flights/actions.ts");

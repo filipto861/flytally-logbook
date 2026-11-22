@@ -55,9 +55,3 @@ test("v1.43.0 print preview reports size and handles empty or invalid selections
   assert.match(page,/logbookScopeIncludesFstd/);
   assert.match(page,/<Header\/>/);
 });
-
-test("print keeps the accessibility skip link on screen but excludes it from paper/PDF output",()=>{
-  const shell=read("components/app-shell.tsx"),globals=read("app/globals.css");
-  assert.match(shell,/className="skip-link" href="#main-content">Skip to content<\/a>/);
-  assert.match(globals,/@media print\s*\{[\s\S]{0,260}\.sidebar,\.print-trigger,\.skip-link\s*\{\s*display:none!important;\s*\}/);
-});

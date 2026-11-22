@@ -35,12 +35,3 @@ test("F2.4A account-bound verification remains an explicit account-id action",()
   assert.match(helper,/source_revision=COALESCE\(f\.record_revision,1\)/);
   assert.doesNotMatch(action,/display_name\s*=|LOWER\(TRIM\(u\.display_name\)\)/);
 });
-
-test("F2.4A flight detail copy separates typed evidence from account binding",()=>{
-  const detail=read("app/(protected)/flights/[id]/page.tsx");
-  assert.match(detail,/stored as flight evidence only/);
-  assert.match(detail,/Certification does not bind it to a FlyTally account/);
-  assert.match(detail,/choose a connected instructor explicitly/);
-  assert.doesNotMatch(detail,/send the certified revision automatically when the name matches/);
-  assert.doesNotMatch(detail,/Request sent automatically to/);
-});

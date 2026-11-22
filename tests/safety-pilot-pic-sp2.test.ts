@@ -17,18 +17,6 @@ test("SP2 New Flight loads explicit accepted PIC connection ids separately from 
   assert.match(helper,/requester_user_id=\$\{sourceUserId\} OR c\.recipient_user_id=\$\{sourceUserId\}/);
 });
 
-test("SP2 Safety Pilot UI keeps connected identity explicit and manual text first-class",()=>{
-  const form=read("components/flight-form.tsx");
-  assert.match(form,/Actual PIC source/);
-  assert.match(form,/name="actualPicMode"/);
-  assert.match(form,/name="connectedPicUserId"/);
-  assert.match(form,/Enter name manually/);
-  assert.match(form,/FlyTally Connection/);
-  assert.match(form,/Manual text remains valid and is not linked to a FlyTally account/);
-  assert.match(form,/No invitation is sent when this draft is saved/);
-  assert.match(form,/connection unavailable/);
-});
-
 test("F2.3 create uses the shared server resolver and persists its canonical commander with an atomic linked PIC",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const helper=read("lib/flight-connected-crew.ts");

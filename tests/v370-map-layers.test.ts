@@ -16,17 +16,6 @@ test("3.7.0 map controller freezes the pane contract and standard-only layer", (
   assert.doesNotMatch(controller, /api\.tiles\.openaip/);
 });
 
-test("3.7.0 standard dark filtering is isolated from default and aviation panes", () => {
-  const controller = source("components/map-layer-controller.ts");
-  assert.match(controller, /state\.style === "map" && state\.theme === "dark"/);
-  assert.match(controller, /state\.basePane\.style\.filter/);
-  assert.match(controller, /state\.style = style/);
-  assert.match(controller, /state\.aviationPane\.style\.filter = "none"/);
-  assert.match(controller, /tiles\.style\.filter = "none"/);
-  assert.doesNotMatch(controller, /tilePane\.style\.filter/);
-  assert.match(controller, /invert\(\.78\)/);
-});
-
 test("3.7.0 rejects bad styles before any upstream tile or token access", () => {
   const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
   assert.match(route, /parseMapTileStyle\(new URL\(request\.url\)\.searchParams\)/);

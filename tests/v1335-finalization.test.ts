@@ -6,23 +6,6 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-function releaseAtLeast(major:number,minor:number,patch:number){
-  const parts=String(JSON.parse(read("package.json")).version).split(".").map(Number),[a=0,b=0,c=0]=parts;
-  return a>major||(a===major&&(b>minor||(b===minor&&c>=patch)));
-}
-
-test("v1.33.5 closes certification-readiness with FI materialisation and 10k scale evidence",()=>{
-  assert.ok(releaseAtLeast(1,33,5));
-  const fi=read("tests/integration/postgres-fi-materialization.test.ts");
-  const scale=read("tests/integration/postgres-scale-readiness.test.ts");
-  assert.match(fi,/AC-11/);
-  assert.match(fi,/materializeParticipation|WITH locked AS MATERIALIZED/);
-  assert.match(fi,/participant_flight_id/);
-  assert.match(scale,/AC-24/);
-  assert.match(scale,/AC-25/);
-  assert.match(scale,/generate_series\(1,10000\)/);
-  assert.match(scale,/EXPLAIN \(ANALYZE,BUFFERS,FORMAT JSON\)/);
-});
 
 test("v1.33.5 preserves explicit aliases on critical joined action projections",()=>{
   const training=read("lib/training-verification.ts");

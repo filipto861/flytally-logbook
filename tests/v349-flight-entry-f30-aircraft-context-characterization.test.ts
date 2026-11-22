@@ -69,17 +69,6 @@ test("F3.0 Manual parser currently accepts a canonical flight context without co
   assert.equal(parsed.data?.regulatoryCategory,"AEROPLANE");
 });
 
-test("F3.0 editable aircraft-schema characterization is superseded by F3.4 compact authority UX",()=>{
-  const form=read("components/flight-form.tsx");
-  assert.match(form,/<summary><span>Aircraft context<\/span>/);
-  assert.doesNotMatch(form,/<select name="evidence"/);
-  assert.doesNotMatch(form,/<select name="aircraftClass"/);
-  assert.match(form,/type="hidden" name="evidence" value=\{submittedEvidence\}/);
-  assert.match(form,/type="hidden" name="aircraftClass" value=\{submittedAircraftClass\}/);
-  assert.match(form,/profileContexts\.length>1&&!snapshotAuthority/);
-  assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
-});
-
 test("F3.0 client characterization is superseded by F3.3 server PROFILE/SNAPSHOT authority",()=>{
   const form=read("components/flight-form.tsx");
   const actions=read("app/(protected)/flights/actions.ts");

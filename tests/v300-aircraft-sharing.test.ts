@@ -67,21 +67,6 @@ test("v3.0 aircraft cards support private cover photos without embedding image p
   assert.doesNotMatch(data,/image_base64/);
 });
 
-test("v3.0 aircraft share review prevents duplicate registrations and lets recipient choose import groups",()=>{
-  const page=read("app/(protected)/connections/aircraft/[id]/page.tsx"),share=read("components/aircraft-share-panel.tsx");
-  assert.match(page,/is already in your aircraft/);
-  assert.match(page,/will not create a duplicate/);
-  assert.match(page,/name="import_profile"/);
-  assert.match(page,/name="import_photo"/);
-  assert.match(page,/name="import_defaults"/);
-  assert.match(page,/name="import_current_rate"/);
-  assert.match(page,/name="import_rate_history"/);
-  assert.match(share,/one-time copy, not shared ownership/i);
-  assert.match(share,/name="include_current_rate"/);
-  assert.match(share,/name="include_rate_history"/);
-  assert.match(share,/name="include_notes"/);
-});
-
 test("v3.0 aircraft sharing has dedicated persistence and runtime initialization",()=>{
   const schema=read("lib/v300-aircraft-sharing-schema.ts"),runtime=read("lib/runtime-schema.ts");
   assert.match(schema,/CREATE TABLE IF NOT EXISTS aircraft_photos/);

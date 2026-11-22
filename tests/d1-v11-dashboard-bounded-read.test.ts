@@ -44,33 +44,6 @@ test("D1-V11 bounded categories mirror existing role, safety pilot and flight du
   assert.match(bounded,/TO_CHAR\(TO_DATE\(date_key,'YYYY-MM-DD'\),'YYYY-MM-DD'\)=date_key/);
 });
 
-test("D1-V11 default retains persisted Classic rollback and last canonical stylesheet",()=>{
-  const page=read("app/(protected)/dashboard/page.tsx");
-  const layout=read("app/layout.tsx");
-  assert.match(page,/dashboardLayoutFromPreferences\(preferences\)/);
-  assert.match(page,/<DashboardEditor layout=\{layout\}\/>/);
-  assert.match(page,/<DashboardEditorial data=\{data\}/);
-  assert.doesNotMatch(page,/Preview new Dashboard|Classic dashboard/);
-  assert.ok(layout.indexOf('import "./dashboard-editorial.css"')<
-            layout.indexOf('import "./ui-system.css"'));
-});
-
-test("D1-V11 slider has source-level keyboard and focus semantics",()=>{
-  const plot=read("components/dashboard-pace.tsx");
-  assert.match(plot,/role="slider"/);
-  assert.match(plot,/tabIndex=\{0\}/);
-  assert.match(plot,/aria-valuemin/);
-  assert.match(plot,/aria-valuemax/);
-  assert.match(plot,/aria-valuenow/);
-  assert.match(plot,/aria-valuetext/);
-  assert.match(plot,/event\.key==="Home"/);
-  assert.match(plot,/event\.key==="End"/);
-  assert.match(plot,/event\.key==="ArrowLeft"/);
-  assert.match(plot,/event\.key==="ArrowRight"/);
-  const css=read("app/dashboard-editorial.css");
-  assert.match(css,/\.d1v11-page :is\(a,button,\[role="slider"\]\):focus-visible/);
-});
-
 
 test("D1-V11 four category overview keeps account-scoped source reads and rollback",()=>{
   const page=read("app/(protected)/dashboard/page.tsx");

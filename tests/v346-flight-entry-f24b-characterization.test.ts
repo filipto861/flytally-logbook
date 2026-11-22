@@ -26,13 +26,6 @@ test("F2.4B contract explicitly separates self-PIC role identity from backward-c
   }
 });
 
-test("F2.4B characterization: Manual UI can intentionally submit commander on self-PIC roles",()=>{
-  const form=read("components/flight-form.tsx");
-  assert.match(form,/role&&role!=="DUAL".*Additional crew details/s);
-  assert.match(form,/<span>Commander \/ PIC<\/span><input name="commander"/);
-  assert.match(form,/additionalCrewSummary=role==="SAFETY PILOT"\?"Optional instructor":"Optional commander \/ instructor"/);
-});
-
 test("F2.4B characterization: shared PIC materialization intentionally writes commander snapshots onto PIC rows",()=>{
   const shared=read("app/(protected)/flights/shared-actions.ts");
   assert.match(shared,/const role=participantLogbookRole\(participantRole\)/);

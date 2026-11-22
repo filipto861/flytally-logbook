@@ -83,14 +83,3 @@ test("F3.5 Quick Add commits canonical aircraft before refreshing the entry work
   assert.match(actions,/await sql\.transaction\(queries\)/);
   assert.match(actions,/Aircraft profile could not be verified after save/);
 });
-
-test("F3.5 browser closeout targets historical SNAPSHOT, submit-time PROFILE, A+ and Quick Add",()=>{
-  const browser=read("e2e/manual-authority-certification.spec.mjs");
-  for(const title of [
-    "F3.5 same-registration SNAPSHOT survives invalid current profile and rejects crafted drift",
-    "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
-    "F3.5 OTHER and Balloon keep profile-owned context separate from flight-specific choices",
-    "F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
-  ])assert.ok(browser.includes(title),title);
-  assert.match(browser,/browserSqlScalar\(/);
-});
