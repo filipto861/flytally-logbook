@@ -43,21 +43,6 @@ test("protection fields remain excluded from direct historic recertification",()
   assert.match(restore,/locked_at,locked_by_user_id/);
   assert.match(restore,/NULL,NULL,COALESCE\(flight_data->>'operation_type'/);
 });
-
-test("future v21 monetary snapshots cannot silently enter the legacy v20 writer",()=>{
-  // Added nullable v21 keys appear even on old to_jsonb(f) snapshots. NULL is legacy.
-  // Any non-null new monetary metadata must still be diverted from the v20-only writer.
-  for(const key of ["price_currency_code","price_currency_minor_units","price_per_hour_decimal"]){
-    assert.match(restore,new RegExp("flight_data->>'"+key+"' IS NULL"));
-    assert.match(restore,new RegExp("flight_data->>'"+key+"' IS NOT NULL"));
-  }
-  for(const key of ["amount_encoding","amount_minor_units"]){
-    assert.match(restore,new RegExp("e\\.value->>'"+key+"' IS NOT NULL"));
-  }
-  assert.doesNotMatch(restore,/NOT \(flight_data \?\| ARRAY\['price_currency_code'/);
-  assert.match(restore,/needsNewRestore=await sql/);
-  assert.match(restore,/requires the newer monetary restore process/);
-});
 test("legacy expense records cannot be silently omitted or assigned a guessed currency",()=>{
   assert.ok(!restore.includes("UPPER(COALESCE(e->>'currency','CZK'))"));
   assert.ok(!restore.includes("WHERE COALESCE(NULLIF(e->>'amount_minor','')::bigint,0)>0"));

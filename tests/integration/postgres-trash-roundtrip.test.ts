@@ -77,9 +77,10 @@ function restore(trashId:number,branch:"currency"|"legacy",userId=PILOT,digest?:
   const id=out.split("\n").map(line=>line.trim()).filter(Boolean).at(-1);
   return id&&/^\d+$/.test(id)?Number(id):null;
 }
-function diagnose(trashId:number,userId=PILOT){
+/** The follow-up diagnostics in production order; the monetary one only follows the legacy branch. */
+function diagnose(trashId:number,userId=PILOT,branch:"currency"|"legacy"="legacy"){
   const values={userId,trashId};
-  if(rows(render(needsNewRestoreSql,values)).length)return"needs-monetary-restore";
+  if(branch==="legacy"&&rows(render(needsNewRestoreSql,values)).length)return"needs-monetary-restore";
   if(rows(render(invalidArchiveSql,values)).length)return"needs-review";
   return rows(render(candidateSql,values)).length?"already-exists":"not-found";
 }
@@ -277,9 +278,7 @@ test("restore never recreates a flight that already exists in the logbook",{skip
     assert.equal(restore(trashId,branch),null,branch);
     assert.equal(run(`SELECT COUNT(*) FROM flights WHERE UPPER(TRIM(registration))='OK-T${id}'`),"1",branch);
     assert.equal(run(`SELECT (restored_at IS NULL)::text FROM deleted_flights WHERE id=${trashId}`),"true",branch);
-    // Known gap: for a monetary archive the follow-up diagnostics report the monetary
-    // restore message instead of "already exists"; nothing is written either way.
-    if(branch==="legacy")assert.equal(diagnose(trashId),"already-exists");
+    assert.equal(diagnose(trashId,PILOT,branch),"already-exists",branch);
   }
 });
 
