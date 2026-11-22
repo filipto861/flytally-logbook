@@ -52,9 +52,3 @@ test("SP5 dedicated PIC reinvite reopens declined or cancelled requests but neve
   assert.doesNotMatch(invite,/participant_flight_id=/);
   assert.match(invite,/WHEN flight_participations\.participant_role='PIC' THEN flight_participations\.pic_commander_basis/);
 });
-
-test("SP5 PIC collaboration does not change the certification payload version",()=>{
-  const certification=read("lib/flight-certification.ts");
-  assert.match(certification,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
-  assert.match(certification,/certification_version=8/);
-});

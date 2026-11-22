@@ -6,25 +6,27 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("3.4.0 certification authority is centralized on the persisted owned row",()=>{
+test("certifyStoredFlight checks the re-read owned row before it fingerprints and seals it",()=>{
+  // The SQL itself (owner scope, stale-row, lock and certified guards, column coverage and
+  // a verifiable v8 fingerprint) runs in tests/integration/postgres-flight-certification-gate.test.ts.
   const service=read("lib/flight-certification.ts");
   const action=read("app/(protected)/flights/certification-actions.ts");
-
-  assert.match(service,/FROM flights f[\s\S]*JOIN users u ON u\.id=f\.user_id[\s\S]*WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\}/);
-  assert.match(service,/flightCertificationCompliance\(row,text\(row\.pilot_name\)\)/);
-  assert.match(service,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
-  assert.match(service,/certification_version=8/);
+  const body=service.slice(service.indexOf("export async function certifyStoredFlight"));
+  const steps=[
+    "const row=await certificationRow(userId,flightId)",
+    'expectedRowXmin!==undefined&&String(row.row_xmin??"")!==expectedRowXmin)return{status:"stale"',
+    'if(row.certified_at)return{status:"already-certified"',
+    "blockingComplianceIssues(flightCertificationCompliance(row,text(row.pilot_name)))",
+    'if(row.locked_at)return{status:"locked"',
+    "flightCertificationHash({...row,certification_version:8},userId,8)",
+    "certification_version=8",
+    "await refreshRecencySnapshot(userId)",
+  ];
+  let at=-1;
+  for(const step of steps){const next=body.indexOf(step);assert.ok(next>at,`missing or out of order: ${step}`);at=next;}
   assert.match(action,/certifyStoredFlight\(userId,flightId\)/);
   assert.doesNotMatch(action,/flightCertificationHash/);
-});
-
-test("3.4.0 certification uses optimistic row-version protection before sealing",()=>{
-  const service=read("lib/flight-certification.ts");
-  assert.match(service,/f\.xmin::text row_xmin/);
-  assert.match(service,/AND xmin::text=\$\{String\(row\.row_xmin\?\?\"\"\)\}/);
-  assert.match(service,/status:"stale"/);
-  assert.match(service,/AND certified_at IS NULL/);
-  assert.match(service,/AND locked_at IS NULL/);
+  assert.match(action,/revalidateFlightCertificationViews\(flightId\)/);
 });
 
 test("3.4.0 keeps explicit legacy certification able to unlock a ready locked draft",()=>{
@@ -37,6 +39,8 @@ test("3.4.0 keeps explicit legacy certification able to unlock a ready locked dr
 test("3.4.0 shared certification service has no invitation or sharing side effect",()=>{
   const service=read("lib/flight-certification.ts");
   assert.doesNotMatch(service,/flight_participations|instructor_flight_approvals|user_notifications|invite|flight_public_shares/);
+  // Certification never infers a verifier account from typed crew names.
+  assert.doesNotMatch(service,/autoRequestTrainingVerification|upsertInstructorRequest|pilot_connections|LOWER\(TRIM\(u\.display_name\)\)/);
 });
 
 test("3.4.0 Manual entry makes draft the implicit submit and certification explicit",()=>{
